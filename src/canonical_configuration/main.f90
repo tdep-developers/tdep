@@ -108,15 +108,24 @@ if (opts%semirandom) then
     call generate_semirandom_configurations(uc, ss, fc, fcss, opts%temperature, opts%zpm, opts%dielcutoff2, opts%dielcutoff3, opts%output_format, opts%nconf, mw, mem, opts%verbosity)
 end if
 
-write (*, "(1X,A)") '         ek(K)            ep(K)            <ek/ep>           T(K)            <T>(K)       <msd>(A)'
+! fkdev: write each mode displacement separately
+if (opts%modes) then
+    opts%nconf = 6*fcss%na
+    if (mw%talk) write (*, *) '!!! generate 2 (+/-) displacements for each mode'
+    if (mw%talk) write (*, '(1X,A,I5,A)') '--> ', opts%nconf, ' structures'
+end if
+
+write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)'
 dumpconf: block
     type(lo_mdsim) :: sim
     type(lo_crystalstructure) :: p
     real(r8), dimension(3, 3) :: m0
     real(r8), dimension(:, :, :, :), allocatable :: polar_fc
     real(r8) :: ep, ek, temp, avgtemp, avgmsd, msd, ratio, rek, rep
-    integer :: i, a1, a2, iconf
+    integer :: i, a1, a2, iconf, imode
+    logical :: invert
     character(len=1000) :: fname
+    character(len=1) :: invert_char
 
     ! Get a copy of the structure
     if (uc%info%alloy) then
@@ -153,6 +162,8 @@ dumpconf: block
     avgmsd = 0.0_r8
     rek = 0.0_r8
     rep = 0.0_r8
+    imode = 1
+    invert = .false.
 
     do iconf = 1, opts%nconf
         ! reset the structure
@@ -169,7 +180,18 @@ dumpconf: block
         p%u = 0.0_r8
 
         ! create the thermal configuration
-        call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw)
+        if (opts%modes) then
+            ! create +/- displacement for each mode
+            imode = (iconf - 1)/2 + 1
+            if (mod(iconf, 2) == 0) then
+                invert = .true.
+            else
+                invert = .false.
+            end if
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert)
+        else
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw)
+        end if
 
         ! dump to file
         select case (opts%output_format)
@@ -245,7 +267,13 @@ dumpconf: block
 
         avgmsd = avgmsd + msd
         avgtemp = avgtemp + temp
-        write (*, "(1X,5(2X,F15.5),2X,F15.8)") ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
+        if (invert) then
+            invert_char = '-'
+        else
+            invert_char = '+'
+        end if
+        write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8)") iconf, invert_char, &
+            ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
     end do
 
     ! And, at the end, maybe dump the fake simulation

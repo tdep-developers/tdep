@@ -363,7 +363,7 @@ contains
 end subroutine
 
 !> use the harmonic model to initialize a cell
-module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync)
+module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
     !> force constant for this (super) cell
     class(lo_forceconstant_secondorder), intent(inout) :: fcss
     !> supercell to be thermally populated
@@ -384,11 +384,23 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
     type(lo_mpi_helper), intent(inout) :: mw
     !> No syncing, different distribution on all ranks
     logical, intent(in), optional :: nosync
+    !> only use displacement stemming from mode with this index
+    integer, intent(in), optional :: imode
+    !> use negative mode amplitude so that u_i = \sum_s -Q_s X_si)
+    logical, intent(in), optional :: invert
+    real(r8) :: inv_prefactor
 
     ! Not sure about save attribute here.
     type(lo_mersennetwister), save :: tw
     integer :: solrnk
     logical :: sync
+
+    inv_prefactor = 1.0_r8
+    if (present(invert)) then
+        if (.not. invert) then
+            inv_prefactor = -1.0_r8
+        end if
+    end if
 
     init: block
         ! Seed rng if needed
@@ -435,6 +447,7 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
                     ! set to zero for acoustic modes
                     fcss%amplitudes(i) = 0.0_r8
                 end if
+                fcss%amplitudes(i) = inv_prefactor*fcss%amplitudes(i)
             end do
         end block setamplitude
 
@@ -455,50 +468,61 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
             end if
 
             ! Iterate to make sure I get a configuration with no atoms too close to each other?
-            dstloop: do iter = 1, maxiter
-                ! Generate displacements
-                modeloop: do i = 1, ss%na*3
-                    call tw%rnd_boxmuller_pair(1.0_r8, 0.0_r8, x1, x2)
-                    l = 0
-                    do a1 = 1, ss%na
-                    do j = 1, 3
-                        l = l + 1
-                        ss%u(j, a1) = ss%u(j, a1) + fcss%amplitudes(i)*ss%invsqrtmass(a1)*x1*fcss%eigenvectors(l, i)
-                        ss%v(j, a1) = ss%v(j, a1) - fcss%amplitudes(i)*ss%invsqrtmass(a1)*x2*fcss%eigenvectors(l, i)*fcss%omega(i)
-                    end do
-                    end do
-                end do modeloop
+            if (present(imode)) then
+                l = 0
+                do a1 = 1, ss%na
+                do j = 1, 3
+                    l = l + 1
+                    ss%u(j, a1) = +fcss%amplitudes(imode)*ss%invsqrtmass(a1)*fcss%eigenvectors(l, imode)
+                    ss%v(j, a1) = -fcss%amplitudes(imode)*ss%invsqrtmass(a1)*fcss%eigenvectors(l, imode)*fcss%omega(imode)
+                end do
+                end do
+            else
+                dstloop: do iter = 1, maxiter
+                    ! Generate displacements
+                    modeloop: do i = 1, ss%na*3
+                        call tw%rnd_boxmuller_pair(1.0_r8, 0.0_r8, x1, x2)
+                        l = 0
+                        do a1 = 1, ss%na
+                        do j = 1, 3
+                            l = l + 1
+                            ss%u(j, a1) = ss%u(j, a1) + fcss%amplitudes(i)*ss%invsqrtmass(a1)*x1*fcss%eigenvectors(l, i)
+                            ss%v(j, a1) = ss%v(j, a1) - fcss%amplitudes(i)*ss%invsqrtmass(a1)*x2*fcss%eigenvectors(l, i)*fcss%omega(i)
+                        end do
+                        end do
+                    end do modeloop
 
-                if (closest_distance .gt. 0.0_r8) then
-                    ! Check distances
-                    f0 = lo_huge
-                    do i = 1, dt%np
-                    do j = 2, dt%particle(i)%n
-                        v0 = dt%particle(i)%v(:, j) + ss%u(:, dt%particle(i)%ind(j)) - ss%u(:, i)
-                        f0 = min(f0, norm2(v0))
-                    end do
-                    end do
-                    f0 = f0/nndist
-                    if (f0 .lt. closest_distance) then
-                        ! It's ok, configuration is fine
+                    if (closest_distance .gt. 0.0_r8) then
+                        ! Check distances
+                        f0 = lo_huge
+                        do i = 1, dt%np
+                        do j = 2, dt%particle(i)%n
+                            v0 = dt%particle(i)%v(:, j) + ss%u(:, dt%particle(i)%ind(j)) - ss%u(:, i)
+                            f0 = min(f0, norm2(v0))
+                        end do
+                        end do
+                        f0 = f0/nndist
+                        if (f0 .lt. closest_distance) then
+                            ! It's ok, configuration is fine
+                            exit dstloop
+                        end if
+                    else
+                        ! No check, just skip iterating
                         exit dstloop
                     end if
-                else
-                    ! No check, just skip iterating
-                    exit dstloop
-                end if
 
-                ! If we went through too many times and it did not help, I will manually
-                ! force the displacements small enough.
-                if (iter .eq. maxiter) then
-                    do i = 1, ss%na
-                        f0 = norm2(ss%u(:, i))
-                        if (f0/nndist .gt. closest_distance*0.5_r8) then
-                            ss%u(:, i) = ss%u(:, i)*closest_distance*0.5_r8/f0
-                        end if
-                    end do
-                end if
-            end do dstloop
+                    ! If we went through too many times and it did not help, I will manually
+                    ! force the displacements small enough.
+                    if (iter .eq. maxiter) then
+                        do i = 1, ss%na
+                            f0 = norm2(ss%u(:, i))
+                            if (f0/nndist .gt. closest_distance*0.5_r8) then
+                                ss%u(:, i) = ss%u(:, i)*closest_distance*0.5_r8/f0
+                            end if
+                        end do
+                    end if
+                end do dstloop
+            end if
 
             ! Remove all drift, make sure that momentum add up to zero, and center of mass does not move.
             ctot = 0.0_r8

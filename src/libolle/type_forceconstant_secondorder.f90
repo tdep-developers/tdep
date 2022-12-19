@@ -190,7 +190,7 @@ interface
         real(r8), intent(in), optional :: maximum_frequency
         integer, intent(in), optional :: verbosity
     end subroutine
-    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync)
+    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
         class(lo_forceconstant_secondorder), intent(inout) :: fcss
         type(lo_crystalstructure), intent(inout) :: ss
         type(lo_crystalstructure), intent(in) :: uc
@@ -201,6 +201,8 @@ interface
         real(r8), intent(in) :: closest_distance
         type(lo_mpi_helper), intent(inout) :: mw
         logical, intent(in), optional :: nosync
+        integer, intent(in), optional :: imode
+        logical, intent(in), optional :: invert
     end subroutine
     module subroutine setsumtozero(fc)
         class(lo_forceconstant_secondorder), intent(inout) :: fc
@@ -275,7 +277,7 @@ interface
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
     end subroutine
-    module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
+    module subroutine write_to_anaddb(fc, uc, qgrid, mw, mem)
         class(lo_forceconstant_secondorder), intent(inout) :: fc
         type(lo_crystalstructure), intent(inout) :: uc
         integer, dimension(3), intent(in) :: qgrid

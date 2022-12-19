@@ -25,6 +25,7 @@ type lo_opts
     logical :: semirandom = .false.
     real(r8) :: dielcutoff2 = -lo_huge
     real(r8) :: dielcutoff3 = -lo_huge
+    logical :: modes = .false.
 contains
     procedure :: parse
 end type
@@ -114,6 +115,10 @@ subroutine parse(opts)
                  help='Cutoff for the triplet dielectric interactions', &
                  required=.false., act='store', def='-1.0', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--modes', &
+                 help='Print displacements for every individual mode.', hidden=.true., &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     cli_manpage
     cli_verbose
@@ -147,6 +152,7 @@ subroutine parse(opts)
     call cli%get(switch='--semirandom', val=opts%semirandom)
     call cli%get(switch='-dc2', val=opts%dielcutoff2)
     call cli%get(switch='-dc3', val=opts%dielcutoff3)
+    call cli%get(switch='--modes', val=opts%modes)
 
     ! Convert input to atomic units right away
     opts%maximum_frequency = opts%maximum_frequency*lo_frequency_THz_to_hartree
