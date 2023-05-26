@@ -377,6 +377,7 @@ if (opts%ediff) then
         real(r8), dimension(3) :: v0, u2, u3, u4
         real(r8) :: energy, baseline, tomev, toev
         real(r8) :: mf0, mfp, mf2, mf3, mf4
+        real(r8) :: sf0, sfp, sf2, sf3, sf4
         real(r8) :: dfp, df2, df3, df4
         integer :: t, i, a1, a2, a3, a4, i1, i2, i3, i4, u, ctr, ctrtot
 
@@ -560,8 +561,10 @@ if (opts%ediff) then
         if (mw%talk) then
 
             write (*, *) ''
-            write (*, "(1X,A,11X,A,10X,A,7X,A)") 'ENERGIES:', 'rms', 'stddev', 'stddev(residual) (meV/atom)'
-            write (*, '(1X,A15,2(1X,F12.6),5X,A)') 'input:', sqrt(lo_mean(e0**2))*tomev, lo_stddev(e0)*tomev, '-'
+            write (*, "(1X,A)") 'ENERGIES (meV/atom):'
+            write (*, "(21X,A,10X,A,10X,A)") 'rms', 'std', 'std(res)'
+            write (*, '(1X,A15,2(1X,F12.6),5X,A)') 'input:', &
+                sqrt(lo_mean(e0**2))*tomev, lo_stddev(e0)*tomev, '-'
             if (map%polar .gt. 0) write (*, '(1X,A15,3(1X,F12.6))') 'polar', &
                 sqrt(lo_mean(ep**2))*tomev, lo_stddev(ep)*tomev, lo_stddev(e0 - ep)*tomev
             if (map%have_fc_pair) write (*, '(1X,A15,3(1X,F12.6))') 'second order:', &
@@ -572,12 +575,18 @@ if (opts%ediff) then
                 sqrt(lo_mean(e4**2))*tomev, lo_stddev(e4)*tomev, lo_stddev(e0 - ep - e2 - e3 - e4)*tomev
 
             ! some things on the forces?
-            !real(r8) :: mf0,mfp,mf2,mf3,mf4
             mf0 = sqrt(sum(f0**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
             mfp = sqrt(sum(fp**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
             mf2 = sqrt(sum(f2**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
             mf3 = sqrt(sum(f3**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
             mf4 = sqrt(sum(f4**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+
+            ! flokno: stddev as well
+            sf0 = lo_stddev(f0)*lo_force_hartreebohr_to_eVa
+            sfp = lo_stddev(f0 - fp)*lo_force_hartreebohr_to_eVa
+            sf2 = lo_stddev(f0 - fp - f2)*lo_force_hartreebohr_to_eVa
+            sf3 = lo_stddev(f0 - fp - f2 - f3)*lo_force_hartreebohr_to_eVa
+            sf4 = lo_stddev(f0 - fp - f2 - f3 - f4)*lo_force_hartreebohr_to_eVa
 
             dfp = sqrt(sum((f0 - fp)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
             df2 = sqrt(sum((f0 - fp - f2)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
@@ -585,12 +594,13 @@ if (opts%ediff) then
             df4 = sqrt(sum((f0 - fp - f2 - f3 - f4)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
 
             write (*, *) ''
-            write (*, "(1X,A,13X,A,10X,A)") 'FORCES:', 'rms', 'rms(residual) (eV/Å)'
-            write (*, '(1X,A15,1X,F12.6,5X,A)') 'input:', mf0, '-'
-            if (map%polar .gt. 0) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'polar:', mfp, dfp
-            if (map%have_fc_pair) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'second order:', mf2, df2
-            if (map%have_fc_triplet) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'third order:', mf3, df3
-            if (map%have_fc_quartet) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'fourth order:', mf4, df4
+            write (*, "(1X,A)") 'FORCES (eV/A):'
+            write (*, "(21X,A,10X,A,5X,A,5X,A,11X,A)") 'rms', 'rms(res)', 'std(res)', 'R2', 'normalized std(res)'
+            write (*, '(1X,A15,1X,F12.6,5X,A,8X,F12.6,5X,A,12X,A)') 'input:', mf0, '-', sf0, '-', '-'
+            if (map%polar .gt. 0) write (*, '(1X,A15,5(1X,F12.6))') 'polar:', mfp, dfp, sfp, 1 - (sfp/sf0)**2, sfp/sf0
+            if (map%have_fc_pair) write (*, '(1X,A15,5(1X,F12.6),13X,A)') 'second order:', mf2, df2, sf2, 1 - (sf2/sf0)**2, sf2/sf0, '<-- anharmonicity measure'
+            if (map%have_fc_triplet) write (*, '(1X,A15,4(1X,F12.6))') 'third order:', mf3, df3, sf3, sf3/sf0
+            if (map%have_fc_quartet) write (*, '(1X,A15,4(1X,F12.6))') 'fourth order:', mf4, df4, sf4, sf4/sf0
 
             write (*, *) ''
             write (*, *) 'Baseline energy, U0:', baseline, 'eV/atom'
