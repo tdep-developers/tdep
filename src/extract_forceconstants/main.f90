@@ -338,7 +338,8 @@ getfc: block
         if (mw%talk) then
             call fc2%writetofile(uc, 'outfile.forceconstant')
             call fc2%get_elastic_constants(uc)
-            write (*, *) 'elastic constants (GPa):'
+            write (*, *) ''
+            write (*, *) 'ELASTIC CONSTANTS (GPa):'
             do i = 1, 6
                 write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
@@ -429,7 +430,7 @@ if (opts%ediff) then
         tomev = lo_Hartree_to_eV*1000/ss%na
         toev = lo_Hartree_to_eV/ss%na
 
-        if (mw%talk) then
+        if ((mw%talk) .and. (opts%verbosity > 0)) then
             write (*, *) ''
             write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
             write (*, '(A)') '   conf        Epot                  Epolar                &
@@ -532,7 +533,7 @@ if (opts%ediff) then
                 end do
                 e4(t) = energy
             end if
-            if (mw%talk) then
+            if ((mw%talk) .and. (opts%verbosity > 0)) then
                 ctr = ctr + 1
                 if (lo_trueNtimes(ctr, 20, ctrtot)) then
                     write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
@@ -603,7 +604,8 @@ if (opts%ediff) then
             if (map%have_fc_quartet) write (*, '(1X,A15,4(1X,F12.6))') 'fourth order:', mf4, df4, sf4, sf4/sf0
 
             write (*, *) ''
-            write (*, *) 'Baseline energy, U0:', baseline, 'eV/atom'
+            write (*, *) 'BASELINE ENERGY (eV/atom):'
+            write (*, '(1X,A15,1X,F12.6)') '            U0:', baseline
 
             ! Dump it to file
             u = open_file('out', 'outfile.U0')
