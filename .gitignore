@@ -1,0 +1,83 @@
+
+# the binaries
+#src/autocorrelation/autocorrelation
+#src/classicalmd/classicalmd
+#src/initialize_md/initialize_md
+#src/mean_square_displacement/mean_square_displacement
+#src/phonon_dispersion_relations/phonon_dispersion_relations
+#src/phonon_linewidths/phonon_linewidths
+#src/lineshape/lineshape
+#src/initialize_md/initialize_md
+#src/samples_from_md/samples_from_md
+#src/probability_distribution/probability_distribution
+#src/thermal_conductivity/thermal_conductivity
+#src/pair_distribution_function/pair_distribution_function
+#src/figure_out_symmetry_things/figure_out_symmetry_things
+#src/generate_structure/generate_structure
+#src/autocorrelation/autocorrelation
+#src/small_hello_world/small_hello_world
+#src/crystal_structure_info/crystal_structure_info
+#src/extract_forceconstants/extract_forceconstants
+#src/fermisurface/fermisurface
+#src/fold_bands/fold_bands
+#src/unfold_arcs_data/unfold_arcs_data
+#src/generate_displacements/generate_displacements
+#src/fold_bands/fold_bands
+#src/elastic_constants/elastic_constants
+#src/unstable_extract_forceconstants_do_not_use/unstable_extract_forceconstants_do_not_use
+#src/vector_distribution/vector_distribution
+#src/remap_forceconstant/remap_forceconstants
+
+# directories not to look at
+bin/
+lib/
+inc/
+doc/
+man/
+build/
+
+Makefile.inc
+
+# things in the tests
+tests/test*/extract_forceconstants
+tests/test*/*.m
+tests/test*/disprel_xtck
+
+# things in the staging area
+staging/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.a
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+
+# misc stupid things
+outfile.*
+mathoutfile.*
+*.swp
+bashrc_tdep
+important_settings
+*.png
+documentation_carousel.md
+
+# git
+**/gitinformation
+
+# Annoying OSX files
+.DS_Store
+fortls_debug.log

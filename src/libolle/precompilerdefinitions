@@ -1,0 +1,31 @@
+#define lo_allocate(statement) allocate(statement)
+
+#define lo_deallocate(statement) deallocate(statement,stat=lo_status); if ( lo_status .ne. 0 ) then; write(*,*) ' '; write(*,*) 'PRÖBLÄM'; write(*,*) 'Failed deallocating in: ',__FILE__,' on line: ',__LINE__; write(*,*) 'stopped'; stop; endif
+
+#define cli_unit call cli%add(switch='--unit',help='Choose the output unit. The options are terahertz (in frequency, not angular frequency), inverse cm or meV.',required=.false.,act='store',def='thz',choices='thz,mev,icm',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_nq_on_path call cli%add(switch='--nq_on_path',switch_ab='-nq',help='Number of q-points between each high symmetry point',required=.false.,act='store',def='100',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_readpath call cli%add(switch='--readpath',switch_ab='-rp', help='Read the q-point path from `infile.qpoints_dispersion`.',help_markdown='Use [crystal structure into](crystal_structure_info.html) to generate an example.',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_qpoint_grid call cli%add(switch='--qpoint_grid',switch_ab='-qg',help='Density of q-point mesh for Brillouin zone integrations.',nargs='3',required=.false.,act='store',def='26 26 26',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_meshtype call cli%add(switch='--meshtype',help='Type of q-point mesh. 1 Is a Monkhorst-Pack mesh, 2 an FFT mesh and 3 my fancy wedge-based mesh with approximately the same density the grid-based meshes. 4 build the commensurate mesh of an approximately cubic supercell.',required=.false.,act='store',def='1',choices='1,2,3,4',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_sigma call cli%add(switch='--sigma',help='Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.',required=.false.,act='store',def='1.0',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_readqmesh call cli%add(switch='--readqmesh',help='Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_manpage call cli%add(switch='--manpage',hidden=.true.,help='',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_verbose call cli%add(switch='--verbose',hidden=.true.,help='',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_readiso call cli%add(switch='--readiso',help='Read the isotope distribution from file',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_no_isotope_scattering call cli%add(switch='--no_isotope_scattering',help='Switch off isotope (mass disorder) scattering',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_temperature call cli%add(switch='--temperature',help='Temperature used in the occupation numbers. Should be the same as the temperature the force constants where determined at.',required=.false.,act='store',def='300',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_support_qpoint_grid call cli%add(switch='--support_qpoint_grid',switch_ab='-sqg',help='Specify a different density for the support q-mesh for the perturbation theory integrals',nargs='3',required=.false.,act='store',def='-1 -1 -1',error=lo_status); if ( lo_status .ne. 0 ) stop
+
+#define cli_threshold call cli%add(switch='--threshold',help='Consider a Gaussian distribution to be 0 after this many standard deviations.',required=.false.,act='store',def='4.0',error=lo_status); if ( lo_status .ne. 0 ) stop

@@ -1,0 +1,5 @@
+125     #natoms
+141     #ionsteps
+1.0     #timestep
+500     #temperature of thermostat
+

@@ -1,0 +1,234 @@
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c options.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/options.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c lo_spacegroup.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/lo_spacegroup.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c refine.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/refine.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c lo_spacegroup_genoperations.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/lo_spacegroup_genoperations.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c lo_spacegroup_charactertable.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/lo_spacegroup_charactertable.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c lo_spacegroup_applyoperation.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/lo_spacegroup_applyoperation.o
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c lo_spacegroup_helpers.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/lo_spacegroup_helpers.o
+lo_spacegroup_helpers.f90:277:4:
+
+  277 |     op = buf1(:, :, 1:n)
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:194:16:
+
+  194 |                 rotcluster = matmul(valops(:, :, iop), cluster)
+      |                1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:194:16:
+
+  194 |                 rotcluster = matmul(valops(:, :, iop), cluster)
+      |                1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:1092:27:
+
+ 1092 |     integer :: i, j, n, iop
+      |                           1
+Warning: Unused variable 'iop' declared at (1) [-Wunused-variable]
+refine.f90:1064:27:
+
+ 1064 |     integer :: i, j, n, iop
+      |                           1
+Warning: Unused variable 'iop' declared at (1) [-Wunused-variable]
+refine.f90:1006:4:
+
+ 1006 |     cluster = dt%particle(1)%v
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:911:8:
+
+  911 |         newr = dumr2(1:3, :)
+      |        1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:912:8:
+
+  912 |         newspecies = int(anint(dumr2(4, :)))
+      |        1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:913:8:
+
+  913 |         newflavor = int(anint(dumr2(5, :)))
+      |        1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:794:47:
+
+  794 |             dum(:, i) = matmul(latticevectors, dum(:, i))
+      |                                               1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:714:4:
+
+  714 |     r0 = r
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:715:4:
+
+  715 |     species0 = species
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:716:4:
+
+  716 |     flavor0 = flavor
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:735:12:
+
+  735 |             r0 = r1
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:736:12:
+
+  736 |             species0 = species1
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:737:12:
+
+  737 |             flavor0 = flavor1
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:749:4:
+
+  749 |     primr = r0
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:750:4:
+
+  750 |     primspecies = species0
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:512:4:
+
+  512 |     r0 = uc%r
+      |    1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:531:12:
+
+  531 |             uc%r = lo_chop(r0, 1E-12_r8)
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:539:12:
+
+  539 |             r1 = lo_clean_fractional_coordinates(r1 - r0 + 0.5_r8, 1E-13_r8) - 0.5_r8
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:540:12:
+
+  540 |             r0 = lo_clean_fractional_coordinates(r0 + 0.25_r8*r1, 1E-13_r8)
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:83:58:
+
+   83 |         real(r8), dimension(:, :, :), allocatable :: bufop
+      |                                                          1
+Warning: Unused variable 'bufop' declared at (1) [-Wunused-variable]
+refine.f90:87:30:
+
+   87 |         real(r8) :: f0, f1, f2
+      |                              1
+Warning: Unused variable 'f2' declared at (1) [-Wunused-variable]
+refine.f90:86:44:
+
+   86 |         real(r8), dimension(3, 3) :: m0, im0, m1, m2, m3
+      |                                            1
+Warning: Unused variable 'im0' declared at (1) [-Wunused-variable]
+refine.f90:90:57:
+
+   90 |         integer :: i, j, k, l, iter, ctr, nc, iop, initer, errcounter
+      |                                                         1
+Warning: Unused variable 'initer' declared at (1) [-Wunused-variable]
+refine.f90:86:48:
+
+   86 |         real(r8), dimension(3, 3) :: m0, im0, m1, m2, m3
+      |                                                1
+Warning: Unused variable 'm1' declared at (1) [-Wunused-variable]
+refine.f90:86:52:
+
+   86 |         real(r8), dimension(3, 3) :: m0, im0, m1, m2, m3
+      |                                                    1
+Warning: Unused variable 'm2' declared at (1) [-Wunused-variable]
+refine.f90:86:56:
+
+   86 |         real(r8), dimension(3, 3) :: m0, im0, m1, m2, m3
+      |                                                        1
+Warning: Unused variable 'm3' declared at (1) [-Wunused-variable]
+refine.f90:96:12:
+
+   96 |             op = hexops
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:99:12:
+
+   99 |             op = octops
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:153:16:
+
+  153 |                 op = hexops
+      |                1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:158:16:
+
+  158 |                 op = octops
+      |                1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:194:16:
+
+  194 |                 rotcluster = matmul(valops(:, :, iop), cluster)
+      |                1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:308:35:
+
+  308 |         integer :: na, iop, i, j, k, l, nop, iter
+      |                                   1
+Warning: Unused variable 'k' declared at (1) [-Wunused-variable]
+refine.f90:300:34:
+
+  300 |         integer, parameter :: nmax = 4 ! max fractional translation?
+      |                                  1
+Warning: Unused parameter 'nmax' declared at (1) [-Wunused-parameter]
+refine.f90:377:12:
+
+  377 |             rv0 = symerr
+      |            1
+Warning: Code for reallocating the allocatable array at (1) will be added [-Wrealloc-lhs]
+refine.f90:455:27:
+
+  455 | subroutine refine_supercell(uc, ss)
+      |                           ^
+Warning: 'refine_supercell' defined but not used [-Wunused-function]
+refine.f90:498:26:
+
+  498 | subroutine refine_unitcell(uc, sym)
+      |                          ^
+Warning: 'refine_unitcell' defined but not used [-Wunused-function]
+refine.f90:654:29:
+
+  654 | subroutine find_true_unitcell(p)
+      |                             ^
+Warning: 'find_true_unitcell' defined but not used [-Wunused-function]
+refine.f90:1054:0:
+
+ 1054 | function operation_cell_transform_error(op, r) result(err)
+      | 
+Warning: 'operation_cell_transform_error' defined but not used [-Wunused-function]
+gfortran-12 -ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs -DGPaqua -Dclusterprogressbar -L../../lib  -L/Users/flokno/local/hdf5-1.12.2/build_2022_11/lib -L/opt/homebrew/lib -I../../inc/libolle -I../../inc/libflap  -I/Users/flokno/local/hdf5-1.12.2/build_2022_11/include -I/opt/homebrew/include -J ../../build/refine_structure/ -O3  -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -c main.f90 -lolle -lflap -framework accelerate -lhdf5 -lhdf5_fortran -lmpi_mpifh -lmpi -o ../../build/refine_structure/main.o
+main.f90:75:55:
+
+   75 |     call p%classify('bravais',tolerance=opts%tolerance,refine=.false.)
+      |                                                       1
+Error: 'tolerance' at (1) is not a member of the 'lo_opts' structure; did you mean 'tolerance_lattice'?
+main.f90:76:91:
+
+   76 |     call sym%generate(p%latticevectors,.true.,p%r,p%atomic_number,tolerance=opts%tolerance)
+      |                                                                                           1
+Error: 'tolerance' at (1) is not a member of the 'lo_opts' structure; did you mean 'tolerance_lattice'?
+main.f90:83:56:
+
+   83 |     call uc%classify('bravais',tolerance=opts%tolerance,refine=.false.)
+      |                                                        1
+Error: 'tolerance' at (1) is not a member of the 'lo_opts' structure; did you mean 'tolerance_lattice'?
+main.f90:84:94:
+
+   84 |     call sym%generate(uc%latticevectors,.true.,uc%r,uc%atomic_number,tolerance=opts%tolerance)
+      |                                                                                              1
+Error: 'tolerance' at (1) is not a member of the 'lo_opts' structure; did you mean 'tolerance_lattice'?
+make: *** [../../build/refine_structure/main.o] Error 1

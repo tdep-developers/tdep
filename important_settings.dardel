@@ -1,0 +1,59 @@
+#!/bin/bash 
+#
+# This is on the PDC computer Dardel and this should work as of Jan 2022
+#
+
+# consider to choose specific module versions
+module swap PrgEnv-cray/8.2.0 PrgEnv-gnu/8.2.0
+module load cray-hdf5
+module load cray-fftw
+
+# the fortran compiler
+FORTRAN_COMPILER="ftn"
+# OPTIMIZATION_LEVEL="-O0"
+OPTIMIZATION_LEVEL="-O3 -march=znver2 -mtune=znver2 -mfma -mavx2 -m3dnow -fomit-frame-pointer"
+
+# the flag that sets the default real to a double.
+DOUBLE_FLAG="-fdefault-real-8"
+# The flag that tells the compiler where to put .o and .mod files.
+MODULE_FLAG="-J"
+
+# Precompiler flags. Selecting default gnuplot terminal, and makes the progressbars work.
+PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
+# PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dgfortranprogressbar"
+
+# flags for the fortran compiler to make it play nice.
+FCFLAGS="-ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fopenmp"
+
+# Which gnuplot terminal to use by default.
+GNUPLOTTERMINAL="aqua"
+
+# The following are already linked through the PrgEnv
+# BLAS/LAPACK
+PATH_TO_BLASLAPACK_LIB=""
+PATH_TO_BLASLAPACK_INC=""
+BLASLAPACK_LIBS=""
+
+# fftw
+PATH_TO_FFTW_LIB=""
+PATH_TO_FFTW_INC=""
+FFTW_LIBS=""
+
+# MPI stuff
+PATH_TO_MPI_LIB=""
+PATH_TO_MPI_INC=""
+MPI_LIBS=""
+
+# hdf5 stuff
+PATH_TO_HDF5_LIB=""
+PATH_TO_HDF5_INC=""
+HDF5_LIBS=""  # "-lhdf5 -lhdf5_fortran"
+
+# Now I also need a C-compiler
+C_COMPILER="cc"
+
+# the header to put in python scripts.
+PYTHONHEADER="#!/usr/bin/python"
+# If you want to try and use CGAL.
+USECGAL="no"
+
