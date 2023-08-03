@@ -605,7 +605,7 @@ if (opts%ediff) then
 
             write (*, *) ''
             write (*, *) 'BASELINE ENERGY (eV/atom):'
-            write (*, '(1X,A15,1X,F12.6)') '            U0:', baseline
+            write (*, '(1X,A15,1X,F25.6)') '            U0:', baseline
 
             ! Dump it to file
             u = open_file('out', 'outfile.U0')
