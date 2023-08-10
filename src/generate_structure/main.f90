@@ -1,7 +1,7 @@
 #include "precompilerdefinitions"
 program generate_structure
 !!{!src/generate_structure/manual.md!}
-use konstanter, only: flyt, lo_pi, lo_sqtol
+use konstanter, only: flyt, lo_pi, lo_sqtol, lo_A_to_bohr
 use gottochblandat, only: open_file, tochar, lo_determ, lo_chop, lo_get_axis_angles
 use geometryfunctions, only: lo_inscribed_sphere_in_box
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
@@ -72,10 +72,10 @@ getsupercell: block
         do i = 1, 3
             write (*, *) tochar(supercellmatrix(:, i))
         end do
-        write (*, *) '    Filling ratio: ', tochar(fillratio), '% of the ideal cube'
-        write (*, "(1X,'            a,b,c:',3(2X,F14.7))") a, b, c
-        write (*, "(1X,' alpha,beta,gamma:',3(2X,F14.7))") al*180/lo_pi, be*180/lo_pi, gm*180/lo_pi
-        write (*, *) '  number of atoms: ', lo_determ(supercellmatrix)*uc%na
+        write (*, "(1X,'         Filling ratio:',(2X,F14.7,A))") fillratio, ' % of the ideal cube'
+        write (*, "(1X,'           a,b,c (Ang):',3(2X,F14.7))") a/lo_A_to_bohr, b/lo_A_to_bohr, c/lo_A_to_bohr
+        write (*, "(1X,'alpha,beta,gamma (deg):',3(2X,F14.7))") al*180/lo_pi, be*180/lo_pi, gm*180/lo_pi
+        write (*, *) '       number of atoms: ', lo_determ(supercellmatrix)*uc%na
         write (*, *) ''
 
         select case (opts%outputformat)
