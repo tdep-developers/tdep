@@ -14,7 +14,7 @@ To minimize the equilibration time, the simulation cell can be initialized to a 
 
 Starting with the equations of motion for the supercell (given harmonic [force constants](../program/extract_forceconstants.html))
 
-$$
+```math
 \begin{equation}
 \begin{pmatrix}
 m_1 \ddot{\mathbf{u}}_1 \\
@@ -35,16 +35,16 @@ m_{N_a} \ddot{\mathbf{u}}_{N_a}
 \mathbf{u}_{N_a} \\
 \end{pmatrix}
 \end{equation}
-$$
+```
 
 we diagonalise these and get obtaining $3N_a$ eigenvalues $\omega^2_s$ and eigenvectors $\epsilon_s$. In the given cell, we can use this normal mode transformation to express the instantaneous positions and velocities,
 
-$$
+```math
 \begin{align}
 u_i = & \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \sin( \omega_s t+\delta_s ) \\
 \dot{u}_i = & \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \omega_s \cos( \omega_s t+\delta_s)
 \end{align}
-$$
+```
 
 This is identical to the transformation introduced in [phonon dispersion relations](phonon_dispersion_relations.html), except that the masses are incorporated in the normal mode amplitudes. We also omit the choice of $\mathbf{q}$-vector, since we are only interested in the modes that are commensurate with the supercell. This leads to the dynamical matrix being a real symmetric matrix, with real eigenvalues and real eigenvectors.
 
