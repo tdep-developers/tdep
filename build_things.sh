@@ -192,6 +192,7 @@ pack_simulation
 refine_structure
 convert_abinit_ddb_to_forceconstant
 thermal_conductivity
+anharmonic_free_energy
 "
 
 #some things that are not quite ok yet
