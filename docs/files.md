@@ -1,15 +1,23 @@
-title: Files
-author: Olle Hellman
 
-### Input files
-
-This page details the format for all input files. The format of the output files is
+This page details the format for all input files.
 
 ### <a name="infile.ucposcar"></a> infile.ucposcar
 
-An example of a crystal structure (this is exactly the VASP 5 file format):
+An example of a crystal structure (this is exactly the VASP 5+ file format):
 
-	Bi2Te3	10.314046162	 0.243360208934  0.000000000000  0.969935981757	-0.121680104467  0.210756123207  0.969935981757	-0.121680104467 -0.210756123207  0.969935981757	Bi Te	2 3	direct coordinates	0.599898812406 0.599898812406 0.599898812406	0.400101187594 0.400101187594 0.400101187594	0.791308614612 0.791308614612 0.791308614612	0.208691385388 0.208691385388 0.208691385388	0.000000000000 0.000000000000 0.000000000000
+	Bi2Te3
+	10.314046162
+	 0.243360208934  0.000000000000  0.969935981757
+	-0.121680104467  0.210756123207  0.969935981757
+	-0.121680104467 -0.210756123207  0.969935981757
+	Bi Te
+	2 3
+	direct coordinates
+	0.599898812406 0.599898812406 0.599898812406
+	0.400101187594 0.400101187594 0.400101187594
+	0.791308614612 0.791308614612 0.791308614612
+	0.208691385388 0.208691385388 0.208691385388
+	0.000000000000 0.000000000000 0.000000000000
 
 The first line is a comment, the second line a global scaling factor \(a\), and the three following lines the lattice vectors \(\mathbf{a}_1\),\(\mathbf{a}_2\),\(\mathbf{a}_3\). These will be multiplied by \(a\). Next is the specfication of what elements there are, and below that how many of each. The line direct coordinates specify that the coordinates of the atoms are in fractional coordinates. Each atom has it's own line, with two first specifying the Bi positions and the last three Te positions.
 
@@ -37,52 +45,15 @@ This file hold the positions. It looks something like this:
 
 and goes on for many many lines. The format is as follows:
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>\(1\)</td>
-	<td>
-		\( r_1^x \qquad r_1^y \qquad r_1^z \)
-	</td>
-</tr>
-<tr>
-	<td>\(2\)</td>
-	<td>
-		\( r_2^x \qquad r_2^y \qquad r_2^z \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-<tr>
-	<td>\(N_a\)</td>
-	<td>
-	\( r_{N_a}^x \qquad r_{N_a}^y \qquad r_{N_a}^z \)
-	</td>
-</tr>
-<tr>
-	<td>\(N_a+1\)</td>
-	<td>
-	\( r_1^x \qquad r_1^y \qquad r_1^z \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-<tr>
-	<td>\(N_aN_c\)</td>
-	<td>
-	\( r_{N_a}^x \qquad r_{N_a}^y \qquad r_{N_a}^z \)
-	</td>
-</tr>
-</tbody>
-</table>
+| row ||||
+|-----|-------------|---|---|
+| 1   | \( r_1^x \) | \( r_1^y \) | \( r_1^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
+| N   | \( r_N^x \) | \( r_N^y \) | \( r_N^z \) |
+| N+1 | \( r_1^x \) | \( r_1^y \) | \( r_1^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
+| 2N   | \( r_N^x \) | \( r_N^y \) | \( r_N^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
 
 That is the positions in fractional coordinates for each atom in the simulation cell, in the same order as in [infile.ssposcar](#infile.ssposcar). Once all the positions are specified, it starts over with the next configuration, for a total of number of atoms times number of configurations lines.
 
@@ -90,52 +61,15 @@ That is the positions in fractional coordinates for each atom in the simulation 
 
 The format for this file is nearly identical to [infile.positions](#infile.positions), only that
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>\(1\)</td>
-	<td>
-		\( f_1^x \qquad f_1^y \qquad f_1^z \)
-	</td>
-</tr>
-<tr>
-	<td>\(2\)</td>
-	<td>
-		\( f_2^x \qquad f_2^y \qquad f_2^z \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-<tr>
-	<td>\(N_a\)</td>
-	<td>
-	\( f_{N_a}^x \qquad f_{N_a}^y \qquad f_{N_a}^z \)
-	</td>
-</tr>
-<tr>
-	<td>\(N_a+1\)</td>
-	<td>
-	\( f_1^x \qquad f_1^y \qquad f_1^z \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-<tr>
-	<td>\(N_aN_c\)</td>
-	<td>
-	\( f_{N_a}^x \qquad f_{N_a}^y \qquad f_{N_a}^z \)
-	</td>
-</tr>
-</tbody>
-</table>
+| row ||||
+|-----|-------------|---|---|
+| 1   | \( f_1^x \) | \( f_1^y \) | \( f_1^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
+| N   | \( f_N^x \) | \( f_N^y \) | \( f_N^z \) |
+| N+1 | \( f_1^x \) | \( f_1^y \) | \( f_1^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
+| 2N   | \( f_N^x \) | \( f_N^y \) | \( f_N^z \) |
+| \(\vdots\)   | \(\vdots\) | \(\vdots\) | \(\vdots\) |
 
 each line is the force on each atom in Cartesian coordinates, in eV/Å. Again, a total of number of atoms times number of configurations lines.
 
@@ -143,38 +77,22 @@ each line is the force on each atom in Cartesian coordinates, in eV/Å. Again, a
 
 This file contains all the energy and stresses in the following format:
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>1</td>
-	<td>
-		\( i \quad t \quad E_t \quad E_p \quad E_k \quad T \quad P \quad \sigma_{xx} \quad \sigma_{yy} \quad \sigma_{zz} \quad \sigma_{xz} \quad \sigma_{yz} \quad \sigma_{xy} \)
-	</td>
-</tr>
-<tr>
-	<td>2</td>
-	<td>
-		\( i \quad t \quad E_t \quad E_p \quad E_k \quad T \quad P \quad \sigma_{xx} \quad \sigma_{yy} \quad \sigma_{zz} \quad \sigma_{xz} \quad \sigma_{yz} \quad \sigma_{xy} \)	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-<tr>
-	<td>\( N_c \)</td>
-	<td>
-		\( i \quad t \quad E_t \quad E_p \quad E_k \quad T \quad P \quad \sigma_{xx} \quad \sigma_{yy} \quad \sigma_{zz} \quad \sigma_{xz} \quad \sigma_{yz} \quad \sigma_{xy} \)	</td>
-</tr>
-</tbody>
-</table>
+|row|   |   |   |   |   |   |   |   |   |   |   |   |   |   |
+|----|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | i | \(t\) | \(E_t\) | \(E_p\) | \(E_k\) | \(T\) | \(P\) | \(\sigma_{xx}\) | \(\sigma_{yy}\) |\(\sigma_{zz}\) | \(\sigma_{xz}\) | \(\sigma_{yz}\) | \(\sigma_{xy}\) |
+| 2 | i | \(t\) | \(E_t\) | \(E_p\) | \(E_k\) | \(T\) | \(P\) | \(\sigma_{xx}\) | \(\sigma_{yy}\) |\(\sigma_{zz}\) | \(\sigma_{xz}\) | \(\sigma_{yz}\) | \(\sigma_{xy}\) |
+| 3 | i | \(t\) | \(E_t\) | \(E_p\) | \(E_k\) | \(T\) | \(P\) | \(\sigma_{xx}\) | \(\sigma_{yy}\) |\(\sigma_{zz}\) | \(\sigma_{xz}\) | \(\sigma_{yz}\) | \(\sigma_{xy}\) |
+| \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) | \(\vdots\) |\(\vdots\) |
+
+The columns are, in order configuration (integer), time (in fs), total energy, potential energy, kinetic energy, temperature, pressure and stress tensor. Energies are in eV/supercell, temperature in K, pressures and stress tensor in GPa. There is one line per configuration in the simulation.
 
 One line for every configuration in the simulation. The energies are in eV/supercell, temperature in K, pressure and stress in GPa.
 
-@note The information in this file is only crucial when calculating the free energy. For other applications this can safely be filled with mock data.
+!!! note
+	The information in this file is only crucial when calculating the free energy. For other applications this can safely be filled with mock data, in case the method you use to calculate forces does not output e.g. stress tensors.
+
+!!! note
+	In case you use stochastic sampling, the time column is of no importance and can be set to any number. However, the column still needs to exist in the file.
 
 ### <a name="infile.meta"></a> infile.meta
 
@@ -189,7 +107,8 @@ Some information about the MD run, an example:
 
 The first line is the number of atoms in the simulation, the second line the number of timesteps. Then the timestep and the temperature.
 
-@note The timestep and temperature can safely be set to 0, except for [autocorrelation](../program/autocorrelation.html) and [atomic distribution](../program/atomic_distribution.html)
+!!! note
+	The timestep and temperature can safely be set to 0 in case you use stochastic sampling.
 
 ### <a name="infile.lotosplitting"></a> infile.lotosplitting
 
@@ -245,7 +164,7 @@ K   GM                      !
 GM  L                       !
 ```
 
-Where the first line specify the Bravais family, followed by the number of points on each line segment and the number of line segments. Each line segment is specified by two labels. Use [crystal structure info](../program/crystal_structure_info.html) to get a list of the possible labels and their coordinates. If this is not flexible enough, an arbitrary path can be specified
+Where the first line specify the Bravais family, followed by the number of points on each line segment and the number of line segments. Each line segment is specified by two labels. Use [crystal structure info](program/crystal_structure_info.md) to get a list of the possible labels and their coordinates. If this is not flexible enough, an arbitrary path can be specified
 
 ```
 CUSTOM                      !

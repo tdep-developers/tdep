@@ -1,4 +1,32 @@
 
+### Short description
+
+Choose representative uncorrelated samples from an MD simulation. The samples are chosen to be approximately evenly spaced, and reproduce the average potential energy, average kinetic energy have the same standard deviation of potential and kinetic energy.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--nsamples value`, `-n value`  
+    default value 50  
+    Number of samples
+
+* `--output_format value`, `-of value`, value in: `1,2,3,4`  
+    default value 1  
+    Output format. 1 is VASP, 2 Abinit, 3 LAMMPS, 4 FHI-AIMS.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`samples_from_md -n 100` 
+
 ### Longer summary
 
 Ab initio molecular dynamics are expensive calculations. There will be a tradeoff between numerical precision and the number of timesteps. To work around this, you can run the MD with rather low precision and gather statistics. Then, from the long simulation, choose a set of uncorrelated configurations and recalculate these with high precision.

@@ -62,7 +62,7 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--quantum', &
                  help='Use Bose-Einstein statistics instead of Maxwell-Boltzmann. ', &
-                 help_markdown="That is, use $$ \sqrt{\frac{\hbar (2n+1) }{2 m \omega}} $$ as the mean normal mode amplitudes instead of the classical $$ \frac{1}{\omega}\sqrt{\frac{k_BT}{m}} $$", &
+                 help_markdown="That is, use \( \sqrt{\frac{\hbar (2n+1) }{2 m \omega}} \) as the mean normal mode amplitudes instead of the classical \( \frac{1}{\omega}\sqrt{\frac{k_BT}{m}} \)", &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--output_format', switch_ab='-of', &

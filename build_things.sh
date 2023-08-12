@@ -55,7 +55,6 @@ important_directories="
 bin
 inc
 lib
-doc
 man
 man/man1
 build"
@@ -225,7 +224,8 @@ do
             [ -f ../../build/${code}/${code} ] && ../../build/${code}/${code} --manpage
             [ -f ${code} ] && ./${code} --manpage
             [ -f "${code}.1" ] && mv ${code}.1 ../../man/man1 # manpage
-            [ -f "${code}.md" ] && mv ${code}.md ../../man/ # same thing in markdown format.
+            [ -f "${code}.md" ] && mv ${code}.md ../../docs/program/${code}.md # same thing in markdown format.
+			cat manual.md >> ../../docs/program/${code}.md
         fi
     cd ../../
     # link it to bin?

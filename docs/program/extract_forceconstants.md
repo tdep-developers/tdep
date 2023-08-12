@@ -1,4 +1,60 @@
 
+### Short description
+
+The main algorithm of the TDEP method. Starting with a symmetry analysis, this code finds the irreducible representation of interatomic forceconstants and extracts them from position and force data.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--secondorder_cutoff value`, `-rc2 value`  
+    default value 5.0  
+    Cutoff for the second order force constants
+
+* `--thirdorder_cutoff value`, `-rc3 value`  
+    default value -1
+    mutually exclude "--thirdorder_njump"  
+    Cutoff for the third order force constants
+
+* `--fourthorder_cutoff value`, `-rc4 value`  
+    default value -1
+    mutually exclude "--fourthorder_njump"  
+    Cutoff for the fourth order force constants
+
+* `--polar`  
+    default value .false.  
+    Add dipole-dipole corrections for polar materials.
+
+* `--stride value`, `-s value`  
+    default value 1  
+    Use every N configuration instead of all. Useful for long MD simulations with linearly dependent configurations.
+
+* `--firstorder`  
+    default value .false.  
+    Include the first order force constants. These can be used to find the finite temperature equilibrium structure.
+
+* `--temperature value`  
+    default value -1  
+    Temperature for self-consistent solver.
+
+* `--norotational`  
+    default value .false.  
+    Turn off imposing rotational invariance. Needed for 2D systems.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`extract_forceconstants -rc2 5.1` 
+
+`extract_forceconstants -rc2 4.5 -rc3 3.21` 
+
 ### Longer summary
 
 Calculations of the interatomic force constants are the most important part of any lattice dynamics calculation as they are used to calculate many micro and macroscopic properties of the system, e.g. phonon, thermodynamic, and transport properties, etc. This codes takes sets of displacements and forces, and uses these to fit the coefficients in an effective lattice dynamical Hamiltonian. This is by no means a new idea.[^Klein1972] The main advantage of the TDEP method is in the implementation: it is numerically robust, well tested and general. It is not limited in order, nor limited to simple ordered systems.
@@ -14,6 +70,10 @@ Calculations of the interatomic force constants are the most important part of a
 
 ### New outline
 
+* What is a force constant model
+* Rough sketch of what this code does
+* Sketch of formal derivation
+* Into the details: first state the symmetries
 * How do you turn symmetries into something useful
 * How do you write the least squares problem?
 	* note on solver = 2

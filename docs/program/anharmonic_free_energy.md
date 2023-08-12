@@ -1,4 +1,66 @@
 
+### Short description
+
+End world hunger!
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--temperature value`  
+    default value 300  
+    Temperature used in the occupation numbers. Should be the same as the temperature the force constants where determined at.
+
+* `--qpoint_grid value#1 value#2 value#3`, `-qg value#1 value#2 value#3`  
+    default value 26 26 26  
+    Density of q-point mesh for Brillouin zone integrations.
+
+* `--integrationtype value`, `-it value`, value in: `1,2,3`  
+    default value 2  
+    Type of integration. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.
+
+* `--sigma value`  
+    default value 1.0  
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.
+
+* `--path`  
+    default value .false.
+    mutually exclude "--temperature_range"  
+    Calculate the anharmonic free energy on a path through the BZ.
+
+* `--support_qpoint_grid value#1 value#2 value#3`, `-sqg value#1 value#2 value#3`  
+    default value -1 -1 -1  
+    Interpolate to a (preferrably) denser q-mesh when calculating the DOS.
+
+* `--temperature_range value#1 value#2 value#3`  
+    default value -1 -1 -1
+    mutually exclude "--path"  
+    Evaluate thermodynamic phonon properties for a series of temperatures, specify min, max and the number of points.
+
+* `--readiso`  
+    default value .false.  
+    Read the isotope distribution from file
+
+* `--meshtype value`, value in: `1,2,3,4`  
+    default value 1  
+    Type of q-point mesh. 1 Is a Monkhorst-Pack mesh, 2 an FFT mesh and 3 my fancy wedge-based mesh with approximately the same density the grid-based meshes. 4 build the commensurate mesh of an approximately cubic supercell.
+
+* `--readqmesh`  
+    default value .false.  
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`mpirun anharmonic_free_energy` 
+
 This code calculates the anharmonic Helmholtz free energy. It includes the contributions from baseline shifts, renormalized phonons and higher order terms.
 
 ### Free energy

@@ -1,4 +1,116 @@
 
+### Short description
+
+Calculate the frequency-dependent self-energy and phonon spectral function.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--unit value`, value in: `thz,mev,icm`  
+    default value thz  
+    Choose the output unit. The options are terahertz (in frequency, not angular frequency), inverse cm or meV.
+
+* `--temperature value`  
+    default value 300  
+    Temperature used in the occupation numbers. Should be the same as the temperature the force constants where determined at.
+
+* `--n_energies value`, `-ne value`  
+    default value 1200  
+    Number of energies for the energy-dependent self-energy.
+
+* `--qpoint_grid value#1 value#2 value#3`, `-qg value#1 value#2 value#3`  
+    default value 26 26 26  
+    Density of q-point mesh for Brillouin zone integrations.
+
+* `--meshtype value`, value in: `1,2,3`  
+    default value 2  
+    Type of q-point mesh. 1 Is a Monkhorst-Pack mesh, 2 an FFT mesh and 3 my fancy wedge-based mesh with approximately the same density the grid-based meshes. 4 build the commensurate mesh of an approximately cubic supercell.
+
+* `--integrationtype value`, `-it value`, value in: `1,2,3,4,5`  
+    default value 2  
+    Type of integration for phase space integrals. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.
+
+* `--sigma value`  
+    default value 1.0  
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.
+
+* `--path`  
+    default value .false.  
+    Calculate the self-energy and spectral function on a path through the BZ.
+
+* `--readpath`, `-rp`  
+    default value .false.  
+    Read the q-point path from `infile.qpoints_dispersion`. Use [crystal structure into](crystal_structure_info.md) to generate an example.
+
+* `--nq_on_path value`, `-nq value`  
+    default value 100  
+    Number of q-points between each high symmetry point
+
+* `--dos`  
+    default value .false.  
+    Calculate the broadened and shifted phonon DOS.
+
+* `--dos_qpoint_grid value#1 value#2 value#3`  
+    default value -1 -1 -1  
+    Interpolate to a (preferrably) denser q-mesh when calculating the DOS.
+
+* `--qpoint value#1 value#2 value#3`  
+    default value 0 0 0  
+    Calculate the self-energy at a single q-point, input in fractional coordinates.
+
+* `--highsymmetrypoint value`  
+    default value none  
+    Samy as above, but you can specify the label of a high-symmetry point instead, e.g. "X" or "L".
+
+* `--max_energy value`  
+    default value 1.4  
+    Maximum energy where the output is cut off, in multiples of the maximum harmonic frequency.
+
+* `--no_isotope_scattering`  
+    default value .false.  
+    Switch off isotope (mass disorder) scattering
+
+* `--no_thirdorder_scattering`  
+    default value .false.  
+    Switch of three-phonon scattering
+
+* `--geninterp`  
+    default value .false.  
+    First rule of interpolation is you do not talk about interpolation.
+
+* `--fancyinterp`  
+    default value .false.  
+    Second rule of interpolation is you do not talk about interpolation.
+
+* `--grid`  
+    default value .false.  
+    Calculate spectral functions on a grid.
+
+* `--readiso`  
+    default value .false.  
+    Read the isotope distribution from file
+
+* `--readqmesh`  
+    default value .false.  
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`mpirun lineshape --highsymmetrypoint X --temperature 500` 
+
+`mpirun lineshape --path -qg 10 10 10 --noisotope` 
+
+`mpirun lineshape --dos -qg 10 10 10 --dos_qpoint_grid 24 24 24` 
+
 ### Long summary
 
 This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:

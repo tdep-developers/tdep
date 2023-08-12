@@ -1,4 +1,42 @@
 
+### Short description
+
+Builds supercells, diagonal and non-diagonal. Also has the capability to find the optimal supercells for a given lattice, very handy when you have complicated structures.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--dimensions value#1 value#2 value#3`, `-d value#1 value#2 value#3`  
+    default value 5 5 5  
+    Dimensions of supercell.
+
+* `--nondiagonal_dimensions value#1 value#2 value#3 value#4 value#5 value#6 value#7 value#8 value#9`, `-nd value#1 value#2 value#3 value#4 value#5 value#6 value#7 value#8 value#9`  
+    default value 0 0 0 0 0 0 0 0 0  
+    Non-diagonal dimensions of supercell.
+
+* `--output_format value`, `-of value`, value in: `1,2,3,4,5`  
+    default value 1  
+    Output format. 1 is VASP, 2 Abinit, 3 LAMMPS, 4 FHI-Aims and 5 Siesta
+
+* `--desired_na value`, `-na value`  
+    default value -1  
+    Desired number of atoms in supercell. Will try to choose a cell as cubic as possible.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`generate_structure -dim 4 3 5` 
+
+`generate_structure -na 200` 
+
 ### Longer summary
 
 This code builds a supercell with user-specified dimensions from the unit cell given in `infile.ucposcar`. All positions are in fractional coordinates.

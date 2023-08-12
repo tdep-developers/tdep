@@ -6,7 +6,7 @@
 
 #define cli_nq_on_path call cli%add(switch='--nq_on_path',switch_ab='-nq',help='Number of q-points between each high symmetry point',required=.false.,act='store',def='100',error=lo_status); if ( lo_status .ne. 0 ) stop
 
-#define cli_readpath call cli%add(switch='--readpath',switch_ab='-rp', help='Read the q-point path from `infile.qpoints_dispersion`.',help_markdown='Use [crystal structure into](crystal_structure_info.html) to generate an example.',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
+#define cli_readpath call cli%add(switch='--readpath',switch_ab='-rp', help='Read the q-point path from `infile.qpoints_dispersion`.',help_markdown='Use [crystal structure into](crystal_structure_info.md) to generate an example.',required=.false.,act='store_true',def='.false.',error=lo_status); if ( lo_status .ne. 0 ) stop
 
 #define cli_qpoint_grid call cli%add(switch='--qpoint_grid',switch_ab='-qg',help='Density of q-point mesh for Brillouin zone integrations.',nargs='3',required=.false.,act='store',def='26 26 26',error=lo_status); if ( lo_status .ne. 0 ) stop
 

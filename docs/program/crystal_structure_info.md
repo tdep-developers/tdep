@@ -1,4 +1,30 @@
 
+### Short description
+
+This code serves as a diagnostic tool to check that symmetry heuristics are working as they should. The code prints which Bravais lattice was identified, which high symmetry points in the BZ are inequivalent, and so on. The Brillouin zone and its irreducible wedges are printed to files as polyhedra for manual inspection, and the symmetry operations of the lattice can be printed.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--printsymmetry`  
+    default value .false.  
+    Also prints the symmetry operations
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`crystal_structure_info` 
+
+`crystal_structure_info --printsymmetry` 
+
 ## Long summary
 
 This is mainly a diagnostic tool, to make sure that my heuristics are working as they should. For example, if you want to calculate fcc Al, and things look strange, run this code to make sure that the symmetry detection actually identifies it as fcc. As a bonus, the Brillouin zone and the irreducible wedge is printed to file, so that you can make figures like the one below.

@@ -1,4 +1,86 @@
 
+### Short description
+
+Calculate phonon dispersions and related quantities. Per default, only the dispersions along a default path will be calculated. Options are available for calculating mode gruneisen parameters, phonon density of states projected in a variety of ways, thermodynamic quantities and pure data dumps.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--unit value`, value in: `thz,mev,icm`  
+    default value thz  
+    Choose the output unit. The options are terahertz (in frequency, not angular frequency), inverse cm or meV.
+
+* `--nq_on_path value`, `-nq value`  
+    default value 100  
+    Number of q-points between each high symmetry point
+
+* `--readpath`, `-rp`  
+    default value .false.  
+    Read the q-point path from `infile.qpoints_dispersion`. Use [crystal structure into](crystal_structure_info.md) to generate an example.
+
+* `--dos`  
+    default value .false.  
+    Calculate the phonon DOS
+
+* `--qpoint_grid value#1 value#2 value#3`, `-qg value#1 value#2 value#3`  
+    default value 26 26 26  
+    Density of q-point mesh for Brillouin zone integrations.
+
+* `--meshtype value`, value in: `1,2,3,4`  
+    default value 1  
+    Type of q-point mesh. 1 Is a Monkhorst-Pack mesh, 2 an FFT mesh and 3 my fancy wedge-based mesh with approximately the same density the grid-based meshes. 4 build the commensurate mesh of an approximately cubic supercell.
+
+* `--sigma value`  
+    default value 1.0  
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.
+
+* `--readqmesh`  
+    default value .false.  
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.
+
+* `--integrationtype value`, `-it value`, value in: `1,2,3`  
+    default value 2  
+    Type of integration for the phonon DOS. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.
+
+* `--dospoints value`  
+    default value 400  
+    Number of points on the frequency axis of the phonon dos.
+
+* `--temperature value`  
+    default value -1  
+    Evaluate thermodynamic phonon properties at a single temperature.
+
+* `--temperature_range value#1 value#2 value#3`  
+    default value -1 -1 -1  
+    Evaluate thermodynamic phonon properties for a series of temperatures, specify min, max and the number of points.
+
+* `--gruneisen`  
+    default value .false.  
+    Use third order force constants to calculate mode Gruneisen parameters.
+
+* `--dumpgrid`  
+    default value .false.  
+    Write files with q-vectors, frequencies, eigenvectors and group velocities for a grid.
+
+* `--pdf`, `-p`  
+    default value .false.  
+    Produce gnuplot_pdf output file for printing to pdf.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`phonon_dispersion_relations` 
+
+`phonon_dispersion_relations --dos --qpoint_grid 24 24 24` 
+
 ### What does this code produce?
 
 This code calculates phonon dispersion relations, usually presented like this:

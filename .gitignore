@@ -35,6 +35,7 @@ inc/
 doc/
 man/
 build/
+site/
 
 Makefile.inc
 
@@ -65,15 +66,12 @@ staging/
 # Fortran module files
 *.mod
 
-
 # misc stupid things
 outfile.*
 mathoutfile.*
 *.swp
 bashrc_tdep
 important_settings
-*.png
-documentation_carousel.md
 
 # git
 **/gitinformation

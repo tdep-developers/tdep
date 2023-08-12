@@ -1,4 +1,50 @@
 
+### Short description
+
+Calculates properties of the atomic distribution from molecular dynamics, such as mean square displacement, pair distribution function, vector distribution functions and probability densities. Useful for analysing simulations close to instabilities/phase transitions to have some idea where the atoms are.
+
+### Command line options:
+
+
+
+
+Optional switches:
+
+* `--cutoff value`, `-r value`  
+    default value 5.0  
+    Consider pairs up to this distance, in A.
+
+* `--nbins value`, `-n value`  
+    default value 300  
+    Number of bins in each dimension.
+
+* `--notransform`  
+    default value .false.  
+    Do no rotate the coordinate systems of the vector distribution. By default, the coordinate system is aligned with the positive x-direction in the direction of the bond.
+
+* `--bintype value`, value in: `1,2,3`  
+    default value 1  
+    Select the binning type for the vector distribution. 1 is straight binning (fastest), 2 is binning with a Gaussian, 3 is binning with a gaussian, but without the subpixel resolution.
+
+* `--stride value`, `-s value`  
+    default value 1  
+    Use every N configuration instead of all.
+
+* `--nodiffusion`  
+    default value .false.  
+    Treat the system as though it is crystalline and not diffusing, not matter what.
+
+* `--help`, `-h`  
+    Print this help message
+
+* `--version`, `-v`  
+    Print version
+### Examples
+
+`atomic_distribution --cutoff 4.3` 
+
+`atomic_distribution --cutoff 4.3 --notransform` 
+
 ### What can this code produce
 
 @todo Add example plots
