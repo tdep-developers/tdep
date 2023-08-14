@@ -3,14 +3,17 @@ Installation
 
 `TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.
 
-### Prerequisitess
+## Requirements
 
+- Fortran compiler. Several f2003/2008 features are extensively used, so the compiler should not be super ancient.
 - BLAS and LAPACK need to be installed
 - FFTW needs to be installed
 - MPI needs to be installed
 - HDF5 needs to be installed
+- python should be installed
+- gnuplot should be installed
 
-### Example
+## Example
 
 For example on Macbook with `gfortran-12`, you would pick `important_settings.apple_silicon_gfortran12`,
 
@@ -26,19 +29,40 @@ Then run the build script via
 bash build_things.sh --nthreads_make 4
 ```
 
-### Check your installation
+## Check your installation
 
 We advise to run the examples in `tdep/examples` to test your installation after compilation.
 
-## Instructions for specific platforms
+# Instructions for specific platforms
 
-- [Platform-agnostic installation using `Anaconda`](#Anaconda)
+- [macOS](#macOS)
+- [Supercomputers](#Supercomputers)
+- [Platform-agnostic installation using Anaconda](#Anaconda)
 
-### Anaconda
+## macOS
+
+If you are using [`Homebrew`](https://brew.sh/), you can install all dependencies via `brew install`, e.g., something like
+
+```bash
+brew install gcc openmpi gnuplot hdf5
+```
+
+Then proceed as [in the example above](#Example). Check out the [`important_settings.osx_gfortran_accelerate`](./important_settings.osx_gfortran_accelerate) file as well for reference.
+
+## Supercomputers
+
+This will depend on the supercomputer you work with, but there should be no big problem per se since the requirements are standard software.
+
+There are two template settings files you can look into:
+
+- [`important_settings.sigma`](./important_settings.sigma) is a template file for a supercomputer with traditional Intel architecture and Intel compilers + MKL math library.
+- [`important_settings.dardel`](./important_settings.dardel) is for a Cray supercomputer with AMD CPUs where `gfortran` is used to compile.
+
+## Anaconda
 
 One convenient, (mostly) platform-agnostic way to install TDEP is to use [Anaconda](https://anaconda.org/).
 
-#### Prepare environment
+### Prepare environment
 
 
 Create a `conda` environment with 
@@ -59,7 +83,7 @@ Install dependencies
 conda install -c conda-forge gfortran openmpi-mpifort scalapack fftw hdf5 
 ```
 
-#### Install
+### Install
 
 Copy `important_settings.conda` to `important_settings` and adjust the `PREFIX`, i.e.,
 
@@ -79,9 +103,9 @@ Run
 
 This should be it.
 
-## Troubleshooting
+# Troubleshooting
 
-### "libary not found for -lm"
+## "libary not found for -lm"
 
 If you see the error
 
