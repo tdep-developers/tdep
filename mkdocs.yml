@@ -21,7 +21,7 @@ nav:
   # - Tutorial:
   #   - Overview: manual/index.md
   - Currently trying to fix programs:
-    - Extract forceconstants: program/extract_forceconstants.md
+    - Extract forceconstants: program/extract_forceconstants/README.md
   - Catastrophic programs:
     - Lineshape: program/lineshape.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
