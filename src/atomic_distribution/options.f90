@@ -41,17 +41,17 @@ subroutine parse(opts)
 
     call cli%add(switch='--cutoff', switch_ab='-r', &
                  help='Consider pairs up to this distance, in A.', &
-                 required=.false., act='store', def='5.0', error=lo_status)
+                 required=.false., act='store', def='8.0', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--nbins', switch_ab='-n', &
+    call cli%add(switch='--nbins', switch_ab='-n', hidden=.true., &
                  help='Number of bins in each dimension.', &
                  required=.false., act='store', def='300', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--notransform', hidden=.false., &
+    call cli%add(switch='--notransform', hidden=.true., &
                  help='Do no rotate the coordinate systems of the vector distribution. By default, the coordinate system is aligned with the positive x-direction in the direction of the bond.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--bintype', hidden=.false., &
+    call cli%add(switch='--bintype', hidden=.true., &
                  help='Select the binning type for the vector distribution. 1 is straight binning (fastest), 2 is binning with a Gaussian, 3 is binning with a gaussian, but without the subpixel resolution.', &
                  required=.false., act='store', def='1', choices='1,2,3', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -59,7 +59,7 @@ subroutine parse(opts)
                  help='Use every N configuration instead of all.', &
                  required=.false., act='store', def='1', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--nodiffusion', hidden=.false., &
+    call cli%add(switch='--nodiffusion', hidden=.true., &
                  help='Treat the system as though it is crystalline and not diffusing, not matter what.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
