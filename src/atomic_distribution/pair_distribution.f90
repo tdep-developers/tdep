@@ -163,6 +163,7 @@ subroutine bin(pdf, uc, ss, pm, sim, nbin, nodiffusion, mw, mem, verbosity)
     ! Do a second sweep
     secondpass: block
         real(r8), dimension(:, :), allocatable :: dr0
+        real(r8), dimension(:), allocatable :: y
         real(r8) :: f0, f1, f2, f3, invf
         integer :: ish, ctr, ipair, t, ctrtot
         integer :: i, j, k, l, ilo, ihi
@@ -173,6 +174,7 @@ subroutine bin(pdf, uc, ss, pm, sim, nbin, nodiffusion, mw, mem, verbosity)
         end do
 
         call mem%allocate(dr0, [3, sim%nt], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(y,pdf%nbin, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         dr0 = 0.0_r8
 
         if (verbosity .gt. 0) call lo_progressbar_init()
@@ -184,6 +186,7 @@ subroutine bin(pdf, uc, ss, pm, sim, nbin, nodiffusion, mw, mem, verbosity)
                 if (mod(ctr, mw%n) .ne. mw%r) cycle
                 ! fetch the trajectory?
                 call extract_trajectory(pm, ish, ipair, sim, dr0)
+                y=0.0_r8
                 do t = 1, sim%nt
                     f0 = norm2(dr0(:, t))  ! pair distance
                     f1 = (f0 - pdf%sh(ish)%rmin - 4*pdf%sigma)*invf
@@ -192,14 +195,19 @@ subroutine bin(pdf, uc, ss, pm, sim, nbin, nodiffusion, mw, mem, verbosity)
                     ihi = ceiling(f2) + 1
                     do i = ilo, ihi
                         f3 = lo_gauss(pdf%sh(ish)%x(i), f0, pdf%sigma)
-                        pdf%sh(ish)%y(i) = pdf%sh(ish)%y(i) + f3
+                        y(i)=y(i) + f3
                     end do
                 end do
+                ! Get the prefactor correct
+                !y=y/pdf%sh(ish)%x**2
+
+                pdf%sh(ish)%y = pdf%sh(ish)%y + y
 
                 if (verbosity .gt. 0 .and. ctr .lt. ctrtot - 1) then
                     call lo_progressbar(' ... binning', ctr, ctrtot, walltime() - t0)
                 end if
             end do
+            ! Fix it so that it becomes g(r)?
         end do
 
         ! sync and build axis
@@ -214,6 +222,7 @@ subroutine bin(pdf, uc, ss, pm, sim, nbin, nodiffusion, mw, mem, verbosity)
         end if
 
         call mem%deallocate(dr0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(y, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block secondpass
 
     ! Normalize so that it integrates to the correct number of atoms in spherical coordinates

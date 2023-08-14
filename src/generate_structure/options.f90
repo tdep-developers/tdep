@@ -47,7 +47,8 @@ subroutine parse(opts)
                   license=lo_licence, &
                   help='Usage: ', &
                   description='Builds supercells, diagonal and non-diagonal. Also has the capability to find the optimal supercells for a given lattice, very handy when you have complicated structures.', &
-                  examples=["generate_structure -dim 4 3 5"], &
+                  examples=["generate_structure -dim 4 3 5",&
+                            "generate_structure -na 200   "], &
                   epilog=new_line('a')//"...")
     !
     call cli%add(switch='--dimensions', switch_ab='-d', &

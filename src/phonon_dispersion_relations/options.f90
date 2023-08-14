@@ -99,11 +99,11 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
 
 ! Free energy things
-    call cli%add(switch='--temperature', &
+    call cli%add(switch='--temperature',hidden=.true., &
                  help='Evaluate thermodynamic phonon properties at a single temperature.', &
                  required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--temperature_range', &
+    call cli%add(switch='--temperature_range',hidden=.true., &
                  help='Evaluate thermodynamic phonon properties for a series of &
                       &temperatures, specify min, max and the number of points.', &
                  nargs='3', required=.false., act='store', def='-1 -1 -1', error=lo_status)
@@ -120,7 +120,7 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
 
     ! Printing options
-    call cli%add(switch='--pdf', switch_ab='-p', &
+    call cli%add(switch='--pdf', switch_ab='-p', hidden=.true., &
                  help='Produce gnuplot_pdf output file for printing to pdf.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop

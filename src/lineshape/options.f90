@@ -100,11 +100,11 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     cli_readpath
     cli_nq_on_path
-    call cli%add(switch='--dos', &
+    call cli%add(switch='--dos',hidden=.true., &
                  help='Calculate the broadened and shifted phonon DOS.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--dos_qpoint_grid', &
+    call cli%add(switch='--dos_qpoint_grid',hidden=.true., &
                  help='Interpolate to a (preferrably) denser q-mesh when calculating the DOS.', &
                  nargs='3', required=.false., act='store', def='-1 -1 -1', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -154,8 +154,8 @@ subroutine parse(opts)
                  help='Switch off the use of symmetry.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--qdirin', hidden=.true., &
-                 help='Incident wavevector (Cartesian coordinates).', &
+    call cli%add(switch='--qdirin', hidden=.false., &
+                 help='Incident wavevector (Cartesian coordinates). Determins the behaviour of the non-analytical components at the zone center.', &
                  nargs='3', required=.false., act='store', def='1 0 0', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--qdirout', hidden=.true., &
@@ -171,7 +171,7 @@ subroutine parse(opts)
                  help='Calculate somewhat self-consistent lineshapes and stuff.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--geninterp', &
+    call cli%add(switch='--geninterp',hidden=.true., &
                  help='First rule of interpolation is you do not talk about interpolation.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -179,7 +179,7 @@ subroutine parse(opts)
                  help='Cutoff for forceconstant interpolation.', &
                  required=.false., act='store', def='5.0', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--fancyinterp', &
+    call cli%add(switch='--fancyinterp',hidden=.true., &
                  help='Second rule of interpolation is you do not talk about interpolation.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop

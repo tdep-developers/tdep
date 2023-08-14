@@ -11,7 +11,7 @@ public :: lo_opts
 type lo_opts
     character(len=3) :: enhet
     integer, dimension(3) :: qgrid
-    integer, dimension(3) :: qgrid_support
+!    integer, dimension(3) :: qgrid_support
     integer :: trangenpts
     real(r8) :: temperature
     real(r8) :: trangemin
@@ -29,7 +29,6 @@ type lo_opts
     !
     logical :: fullgrid
     logical :: qpointpath
-    logical :: U0
     !
     real(r8) :: unitfactor
     character(len=4) :: unitname
@@ -60,7 +59,7 @@ subroutine parse(opts)
               epilog      = new_line('a')//"...")
 
     ! Specify some options
-    cli_unit
+    !cli_unit
     cli_temperature
     cli_qpoint_grid
     call cli%add(switch='--integrationtype',switch_ab='-it',&
@@ -68,34 +67,29 @@ subroutine parse(opts)
         required=.false.,act='store',def='2',choices='1,2,3',error=lo_status)
         if ( lo_status .ne. 0 ) stop
     cli_sigma
-    call cli%add(switch='--path',&
-        help='Calculate the anharmonic free energy on a path through the BZ.',&
-        required=.false.,act='store_true',def='.false.',error=lo_status)
-        if ( lo_status .ne. 0 ) stop
-    cli_readpath
-    cli_nq_on_path
-    call cli%add(switch='--support_qpoint_grid',switch_ab='-sqg',&
-        help='Interpolate to a (preferrably) denser q-mesh when calculating the DOS.',&
-        nargs='3',required=.false.,act='store',def='-1 -1 -1',error=lo_status)
-        if ( lo_status .ne. 0 ) stop
+    ! call cli%add(switch='--path',&
+    !     help='Calculate the anharmonic free energy on a path through the BZ.',&
+    !     required=.false.,act='store_true',def='.false.',error=lo_status)
+    !     if ( lo_status .ne. 0 ) stop
+    !cli_readpath
+    !cli_nq_on_path
+    ! call cli%add(switch='--support_qpoint_grid',switch_ab='-sqg',&
+    !     help='Interpolate to a (preferrably) denser q-mesh when calculating the DOS.',&
+    !     nargs='3',required=.false.,act='store',def='-1 -1 -1',error=lo_status)
+    !     if ( lo_status .ne. 0 ) stop
     call cli%add(switch='--temperature_range',&
         help='Evaluate thermodynamic phonon properties for a series of temperatures, specify min, max and the number of points.',&
-        nargs='3',required=.false.,act='store',def='-1 -1 -1',error=lo_status,exclude='--path')
+        nargs='3',required=.false.,act='store',def='-1 -1 -1',error=lo_status)
         if ( lo_status .ne. 0 ) stop
     cli_readiso
     cli_manpage
     cli_verbose
     cli_meshtype
     cli_readqmesh
-    call cli%add(switch='--potential_energy_difference',switch_ab='-U0',&
-            help='Calculate the difference in potential energy from the simulation and the forceconstants to determine U0.',&
-            help_markdown='As referenced in the thermodynamics section of [phonon dispersion relations](phonon_dispersion_relations.html) this is the renormalized baseline for the TDEP free energy: $$U_0= \left\langle U^{\textrm{BO}}(t)-\frac{1}{2} \sum_{ij}\sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} \mathbf{u}^{\alpha}_i(t) \mathbf{u}^{\beta}_j(t) \right\rangle$$ This number should be added to the appropriate phonon free energy.',&
-            required=.false.,act='store_true',def='.false.',error=lo_status)
-            if ( lo_status .ne. 0 ) stop
-    call cli%add(switch='--Uref',&
-        help='Baseline energy to be substracted when calculating U0',&
-        required=.false.,act='store',def='0',error=lo_status)
-        if ( lo_status .ne. 0 ) stop
+    !call cli%add(switch='--Uref',&
+    !    help='Baseline energy to be substracted when calculating U0',&
+    !    required=.false.,act='store',def='0',error=lo_status)
+    !    if ( lo_status .ne. 0 ) stop
 
     ! actually parse it
     errctr=0
@@ -113,12 +107,12 @@ subroutine parse(opts)
     call cli%get(switch='--verbose',val=dumlog,error=lo_status); errctr=errctr+lo_status; if ( dumlog ) opts%verbosity=2
 
     ! get real options
-    call cli%get(switch='--unit',               val=opts%enhet,            error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--nq_on_path',         val=opts%nq_on_path,       error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--path',               val=opts%qpointpath,       error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--readpath',           val=opts%readpathfromfile, error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='--unit',               val=opts%enhet,            error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='--nq_on_path',         val=opts%nq_on_path,       error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='--path',               val=opts%qpointpath,       error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='--readpath',           val=opts%readpathfromfile, error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--qpoint_grid',        val=opts%qgrid,            error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--support_qpoint_grid',val=opts%qgrid_support,    error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='--support_qpoint_grid',val=opts%qgrid_support,    error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--readqmesh',          val=opts%readqmesh,        error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--meshtype',           val=opts%meshtype,         error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--sigma',              val=opts%sigma,            error=lo_status); errctr=errctr+lo_status
@@ -126,7 +120,7 @@ subroutine parse(opts)
     call cli%get(switch='--readiso',            val=opts%readiso,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--temperature',        val=opts%temperature,      error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--temperature_range',  val=dumr8v,                error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='-U0',                  val=opts%U0,               error=lo_status); errctr=errctr+lo_status
+    !call cli%get(switch='-U0',                  val=opts%U0,               error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--Uref',               val=opts%reference_energy, error=lo_status); errctr=errctr+lo_status
 
     if ( errctr .ne. 0 ) call lo_stop_gracefully(['Failed parsing the command line options'],lo_exitcode_baddim)
@@ -146,11 +140,11 @@ subroutine parse(opts)
     if ( opts%qpointpath ) opts%fullgrid=.false.
 
     ! need a support grid if not explicitly specified
-    if ( opts%fullgrid ) then
-        if ( opts%qgrid_support(1) .eq. -1 ) then
-            opts%qgrid_support=opts%qgrid
-        endif
-    endif
+    ! if ( opts%fullgrid ) then
+    !     if ( opts%qgrid_support(1) .eq. -1 ) then
+    !         opts%qgrid_support=opts%qgrid
+    !     endif
+    ! endif
 
     ! can keep the unit factor here, quite convenient
     select case(opts%enhet)
