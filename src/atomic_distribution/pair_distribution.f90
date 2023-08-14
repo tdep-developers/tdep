@@ -246,7 +246,7 @@ subroutine write_to_hdf5(pdf, pm, uc, sim, filename)
     type(lo_hdf5_helper) :: h5
     real(r8), dimension(:), allocatable :: dr0,x,y0,y1,y2
     real(r8) :: xlo,xhi,sigma,f0
-    integer :: ish, i, nshell, ii, ctr
+    integer :: ish, i, nshell, ii, ctr, j
     character(len=2000) :: str
 
     call h5%init(__FILE__, __LINE__)
@@ -326,29 +326,27 @@ subroutine write_to_hdf5(pdf, pm, uc, sim, filename)
 
         y0=0.0_r8
         y1=0.0_r8
+
         ! Accumulate histograrms
         ctr=0
+        j=0
         do ish=1,pm%n_shell
             if ( pm%sh(ish)%index_species_pair .ne. i ) cycle
             if ( norm2(pm%sh(ish)%r) .lt. lo_tol ) cycle
             xhi=max(xhi,maxval(pdf%sh(ish)%x))
             xlo=min(xlo,minval(pdf%sh(ish)%x))
             ctr=ctr + pm%sh(ish)%n_ss_pair
-            ! First we create the ideal thingy!
-            f0=norm2(pm%sh(ish)%r)
-            y2=lo_gauss(x,f0,sigma)
-            f0=lo_trapezoid_integration(x,x*x*y2)*4*lo_pi
-            y2=y2*pm%sh(ish)%n_ss_pair/f0
-            y0=y0+y2*pm%sh(ish)%n_ss_pair
-            ! Then the non-ideal
+            ! Accumulate pdf
             call put_shape_on_new_mesh(pdf%sh(ish)%x,pdf%sh(ish)%y,x,y2)
             y1=y1+y2
-            ! Keep track of what we should normalize to?
+            ! Keep track of the ideal peak locations
+            j=j+1
+            y0(j)=norm2(pm%sh(ish)%r)
         enddo
 
         call h5%store_data(x*lo_bohr_to_A, h5%group_id, 'r', enhet='A')
-        call h5%store_data(y1/lo_bohr_to_A, h5%group_id, 'pdf', enhet='1/A')
-        call h5%store_data(y0/lo_bohr_to_A, h5%group_id, 'pdf_ideal', enhet='1/A')
+        call h5%store_data(y1/lo_bohr_to_A/4/lo_pi, h5%group_id, 'pdf', enhet='1/A')
+        call h5%store_data(y0(1:j)*lo_bohr_to_A, h5%group_id, 'ideal_peak_locations', enhet='A')
 
         call h5%close_group()
     enddo
