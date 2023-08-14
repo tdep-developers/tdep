@@ -33,6 +33,18 @@ bash build_things.sh --nthreads_make 4
 
 We advise to run the examples in `tdep/examples` to test your installation after compilation.
 
+## HDF5
+
+If you need to install HDF5 manually, it can be [downloaded here](https://www.hdfgroup.org/downloads/hdf5/). Installing it should go like
+
+```bash
+./configure FC=FC CC=CC --with-fortran --with-fortran2003 --prefix=XX
+make
+make install
+```
+
+where `FC` and `CC` should point to the same Fortran/C compilers you are using to install TDEP.
+
 # Instructions for specific platforms
 
 - [macOS](#macOS)
