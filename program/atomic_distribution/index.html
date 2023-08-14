@@ -1,0 +1,1110 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+        <link rel="next" href="../lineshape/">
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
+    
+    
+      
+        <title>Atomic distribution - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.eebd395e.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Open Sans";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="Teal" data-md-color-accent="Blue-Grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Atomic distribution
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../.." class="md-tabs__link">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="./" class="md-tabs__link md-tabs__link--active">
+        Currently trying to fix programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lineshape/" class="md-tabs__link">
+        Catastrophic programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../extract_forceconstants/" class="md-tabs__link">
+        Decent programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../files/" class="md-tabs__link">
+      Files
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    TDEP
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Currently trying to fix programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Currently trying to fix programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Atomic distribution
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Atomic distribution
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-this-code-produce" class="md-nav__link">
+    What can this code produce
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-description" class="md-nav__link">
+    Long description
+  </a>
+  
+    <nav class="md-nav" aria-label="Long description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#some-background" class="md-nav__link">
+    Some background
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    Input files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    Output files
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilemean_square_displacementhdf5" class="md-nav__link">
+    outfile.mean_square_displacement.hdf5
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilepair_distribution_functionhdf5" class="md-nav__link">
+    outfile.pair_distribution_function.hdf5
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilevector_distributionhdf5" class="md-nav__link">
+    outfile.vector_distribution.hdf5
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Catastrophic programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Catastrophic programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lineshape/" class="md-nav__link">
+        Lineshape
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity/" class="md-nav__link">
+        Thermal conductivity
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        Anharmonic free energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        Phonon dispersion relations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Decent programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Decent programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_forceconstants/" class="md-nav__link">
+        Extract forceconstants
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        Pack simulation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        Generate structure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        Crystal structure info
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical_configuration/" class="md-nav__link">
+        Canonical configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        Samples from MD
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        Refine structure
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        Files
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-this-code-produce" class="md-nav__link">
+    What can this code produce
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-description" class="md-nav__link">
+    Long description
+  </a>
+  
+    <nav class="md-nav" aria-label="Long description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#some-background" class="md-nav__link">
+    Some background
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    Input files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    Output files
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilemean_square_displacementhdf5" class="md-nav__link">
+    outfile.mean_square_displacement.hdf5
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilepair_distribution_functionhdf5" class="md-nav__link">
+    outfile.pair_distribution_function.hdf5
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilevector_distributionhdf5" class="md-nav__link">
+    outfile.vector_distribution.hdf5
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Atomic distribution</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>Calculates properties of the atomic distribution from molecular dynamics, such as mean square displacement, pair distribution function, vector distribution functions and probability densities. Useful for analysing simulations close to instabilities/phase transitions to have some idea where the atoms are.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--cutoff value</code>, <code>-r value</code><br />
+    default value 5.0<br />
+    Consider pairs up to this distance, in A.</p>
+</li>
+<li>
+<p><code>--nbins value</code>, <code>-n value</code><br />
+    default value 300<br />
+    Number of bins in each dimension.</p>
+</li>
+<li>
+<p><code>--notransform</code><br />
+    default value .false.<br />
+    Do no rotate the coordinate systems of the vector distribution. By default, the coordinate system is aligned with the positive x-direction in the direction of the bond.</p>
+</li>
+<li>
+<p><code>--bintype value</code>, value in: <code>1,2,3</code><br />
+    default value 1<br />
+    Select the binning type for the vector distribution. 1 is straight binning (fastest), 2 is binning with a Gaussian, 3 is binning with a gaussian, but without the subpixel resolution.</p>
+</li>
+<li>
+<p><code>--stride value</code>, <code>-s value</code><br />
+    default value 1<br />
+    Use every N configuration instead of all.</p>
+</li>
+<li>
+<p><code>--nodiffusion</code><br />
+    default value .false.<br />
+    Treat the system as though it is crystalline and not diffusing, not matter what.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>atomic_distribution --cutoff 4.3</code> </p>
+<p><code>atomic_distribution --cutoff 4.3 --notransform</code> </p>
+<h3 id="what-can-this-code-produce">What can this code produce</h3>
+<p>@todo Add example plots</p>
+<h3 id="long-description">Long description</h3>
+<p>When using molecular dynamics, there are several ways to analyse the trajectories. This code implements a few of them. The TDEP method was originally meant to deal with dynamically unstable systems. It turns out the the most common problem for users was that the atoms did something during the simulation: what they thought was bcc Ti was no longer bcc Ti, but some halfway phase on it's way to transition to something.</p>
+<p>So, before trying to get phonons and free energies and other things, it it useful to make sure that what is in your simulation box actually is what you think it is. A number of diagnostics is provided here.</p>
+<h4 id="some-background">Some background</h4>
+<p>The easiest measure is the mean square displacement:</p>
+<div class="arithmatex">\[
+\textrm{msd}(t) = \frac{1}{N} \sum_i \left| \mathbf{r}_i(t)-\mathbf{r}_i(0) \right|^2
+\]</div>
+<p>where <span class="arithmatex">\(\mathbf{r}_i(t)\)</span> is the position of atom <span class="arithmatex">\(i\)</span> at time <span class="arithmatex">\(t\)</span>. To be able to use the rest of the methods in this package the system needs to be solid. In a solid the mean square displacement fluctuates with time, but does not grow. If you find strange results, the mean square displacement is the first thing to check.</p>
+<p>Having established that the system is at least still a solid we can look at the radial distribution function (or pair correlation function), defined as</p>
+<div class="arithmatex">\[
+g(r) = \frac{ n(r) }{\rho 4 \pi r^2 dr}
+\]</div>
+<p>where <span class="arithmatex">\(\rho\)</span> is the mean particle density, and <span class="arithmatex">\(n(r)\)</span> the number of particles in an infinitesimal shell of width <span class="arithmatex">\(dr\)</span>. Usually, this is averaged over all atoms in the system. In this code, I project it onto symmetrically equivalent pairs, yielding a projected pair distribution:</p>
+<div class="arithmatex">\[
+g_i(r) = {\rho 4 \pi r^2 dr} \sum_i \delta\left( \left|r_i\right|-r \right)
+\]</div>
+<p>where the index <span class="arithmatex">\(i\)</span> corresponds to a coordination shell. The coordination shell is defined from the ideal lattice as set of pairs that can transform to each other via a spacegroup operation. Naturally, the sum over all projected PDFs yield the total.</p>
+<p>@todo Update this picture to something valid.</p>
+<p><center>
+<img src="../media/scf_pdf.png" width="500" />
+</center></p>
+<p>Above is an example for ScF<sub>3</sub>. The peaks are well defined per pair, indicating that the system is still crystalline. In the projected picture, each coordination shell contributes one peak. Should on peak deviate strongly from a gaussian, it probably means that the system has undergone some internal shifts of the coordinates, altering the symmetry.</p>
+<p>This code also calculates the vector distribution function, essentially three-dimensionsonal histograms of pair vectors. Schematically, it works like this: first I identify the symmetry inequivalent pair coordination shells (turqoise and blue arrows below). Each pair in the simulation cell gets a transformation associated with it (dashed lines) that takes them to the prototype vectors (connecting the dark blue atoms)</p>
+<p><center>
+<img src="../media/vectordist_ex_1.png" width="500" />
+</center></p>
+<p>With these transformation rules, every pair from every timestep gets transformed, and binned in a histogram. The histogram is attached to the ideal bond, so that the origin coincides with the equilibrium pair vector. The coordinate system is also rotated such that the positive <span class="arithmatex">\(z\)</span>-direction coincides with the pair vector, see the sketch below. The blue dots represent samples from pairs associated with blue vectors above, same for the green dots.</p>
+<p><center>
+<img src="../media/vectordist_ex_2.png" width="500" />
+</center></p>
+<p>This results in three-dimensional distributions of pair vectors, one for each symmetry-distinct pair. This is a measure related to the pair correlation functions, but spatially resolved. If the distribution is given by <span class="arithmatex">\(n(\mathbf{r})\)</span>, integrating this over spherical shells gives the pair correlation function described above. Using the same example as above, ScF<sub>3</sub>, isosurfaces of the distribution look like this for the nearest neighbour Sc-F pair:</p>
+<p><center>
+<img src="../media/vectordist_ex_3.png" width="500" />
+</center></p>
+<p>@todo Explain relation between radial distribution function and stochastic sampling, link to mine and Bin's paper.</p>
+<h3 id="input-files">Input files</h3>
+<ul>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../../files/#infile.ssposcar">infile.ssposcar</a></li>
+<li><a href="../../files/#infile.meta">infile.meta</a></li>
+<li><a href="../../files/#infile.stat">infile.stat</a></li>
+<li><a href="../../files/#infile.positions">infile.positions</a></li>
+<li><a href="../../files/#infile.forces">infile.forces</a></li>
+</ul>
+<h3 id="output-files">Output files</h3>
+<h4 id="outfilemean_square_displacementhdf5"><code>outfile.mean_square_displacement.hdf5</code></h4>
+<p>The hdf file is self-explainatory. In addition, a plain-text <code>outfile.mean_square_displacement</code> is written with</p>
+<table class='table table-striped'>
+<thead><tr>
+    <th>Row</th>
+    <th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+    <td>1</td>
+    <td>
+    \( t_1 \qquad \textrm{msd}(t_1) \qquad \textrm{msd}_1(t_1) \qquad \ldots \qquad \textrm{msd}_{N_a}(t_1) \)
+    </td>
+</tr>
+<tr>
+    <td>2</td>
+    <td>
+    \( t_2 \qquad \textrm{msd}(t_2) \qquad \textrm{msd}_1(t_2) \qquad \ldots \qquad \textrm{msd}_{N_a}(t_2) \)
+    </td>
+</tr>
+<tr>
+    <td>...</td>
+    <td>...</td>
+</tr>
+</tbody>
+</table>
+
+<p>Where the columns are time (in fs), mean square displacement (in Å<sup>2</sup>), followed by the partial mean square displacement per unique atom.</p>
+<h4 id="outfilepair_distribution_functionhdf5"><code>outfile.pair_distribution_function.hdf5</code></h4>
+<p>The hdf file is self-explainatory. Below is a matlab snippet that produces the plot above</p>
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">clear</span><span class="w"> </span><span class="nb">all</span><span class="p">;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c">% filename</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">fn</span><span class="p">=</span><span class="s">&#39;outfile.pair_distribution_function.hdf5&#39;</span><span class="p">;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c">% number of unique atoms</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">na</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/&#39;</span><span class="p">,</span><span class="s">&#39;number_unique_atoms&#39;</span><span class="p">);</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c">% the total</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/r_axis&#39;</span><span class="p">);</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/radial_pair_distribution_function&#39;</span><span class="p">);</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c">% the projected</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="n">na</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">xx</span><span class="p">{</span><span class="nb">i</span><span class="p">}=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/projected_r_axis_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="nb">i</span><span class="p">)]);</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="n">yy</span><span class="p">{</span><span class="nb">i</span><span class="p">}=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/projected_pair_distribution_function_atom_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="nb">i</span><span class="p">)]);</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="k">end</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c">% plot the total</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c">% plot the projected</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="n">na</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="k">for</span><span class="w"> </span><span class="nb">j</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">xx</span><span class="p">{</span><span class="nb">i</span><span class="p">},</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">{</span><span class="nb">i</span><span class="p">}(</span><span class="nb">j</span><span class="p">,:),</span><span class="n">yy</span><span class="p">{</span><span class="nb">i</span><span class="p">}(</span><span class="nb">j</span><span class="p">,:))</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="k">end</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="k">end</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Distance (A)&#39;</span><span class="p">)</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;g(r)&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>and an equivalent snippet using matplotlib:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">h5</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># open the sqe file</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">f</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;outfile.pair_distribution_function.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># the total</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;r_axis&#39;</span><span class="p">))</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;radial_pair_distribution_function&#39;</span><span class="p">))</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># the projected</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">na</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;number_unique_atoms&#39;</span><span class="p">)</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">na</span><span class="p">):</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;projected_r_axis_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;projected_pair_distribution_function_atom_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span><span class="n">j</span><span class="p">],</span><span class="n">y</span><span class="p">[:,</span><span class="n">j</span><span class="p">])</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Distance (A)&quot;</span><span class="p">)</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;g(r)&quot;</span><span class="p">)</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<h4 id="outfilevector_distributionhdf5"><code>outfile.vector_distribution.hdf5</code></h4>
+<p>This file contains all the vector distribution histograms, the prototype vectors, the transformations to the correct coordinate systems and so on. The file is self-documented. The following is the matlab snippet used to create the plot above:</p>
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c">% file</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">fn</span><span class="p">=</span><span class="s">&#39;outfile.vector_distribution.hdf5&#39;</span><span class="p">;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c">% focus on one distribution, get the histogram</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">gv</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/distribution_atom_1_shell_2&#39;</span><span class="p">);</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c">% and the coordinates for the bin-centers</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">x</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/distribution_atom_1_shell_2&#39;</span><span class="p">,</span><span class="s">&#39;bincenters&#39;</span><span class="p">);</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c">% grids for plotting (always uniform)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">[</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="n">gz</span><span class="p">]=</span><span class="nb">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">);</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c">% number of isosurfaces</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">niv</span><span class="p">=</span><span class="mi">6</span><span class="p">;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c">% values for the isosurfaces</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="n">iv</span><span class="p">=</span><span class="nb">exp</span><span class="p">(</span><span class="w"> </span><span class="nb">linspace</span><span class="p">(</span><span class="nb">log</span><span class="p">(</span><span class="mf">0.01</span><span class="p">),</span><span class="nb">log</span><span class="p">(</span><span class="mf">1.5</span><span class="p">),</span><span class="n">niv</span><span class="p">)</span><span class="w"> </span><span class="p">);</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="n">niv</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">       </span><span class="n">p</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">patch</span><span class="p">(</span><span class="nb">isosurface</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="n">gz</span><span class="p">,</span><span class="n">gv</span><span class="p">,</span><span class="n">iv</span><span class="p">(</span><span class="nb">i</span><span class="p">)));</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">       </span><span class="nb">isonormals</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="n">gz</span><span class="p">,</span><span class="n">gv</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">)</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">FaceColor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.7</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="mf">0.1</span><span class="p">];</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">EdgeColor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;none&#39;</span><span class="p">;</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">       </span><span class="nb">alpha</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="mf">0.25</span><span class="p">);</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">    </span><span class="nb">daspect</span><span class="p">([</span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="nb">view</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">    </span><span class="nb">camlight</span><span class="p">;</span><span class="w"> </span><span class="n">lighting</span><span class="w"> </span><span class="s">phong</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">    </span><span class="nb">zlabel</span><span class="p">(</span><span class="s">&#39;z&#39;</span><span class="p">)</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">length</span><span class="p">(</span><span class="n">iv</span><span class="p">)</span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">       </span><span class="n">p</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">patch</span><span class="p">(</span><span class="nb">isosurface</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="n">gz</span><span class="p">,</span><span class="n">gv</span><span class="p">,</span><span class="n">iv</span><span class="p">(</span><span class="nb">i</span><span class="p">)));</span>
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="w">       </span><span class="nb">isonormals</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="n">gz</span><span class="p">,</span><span class="n">gv</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">)</span>
+</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">FaceColor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.7</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="mf">0.1</span><span class="p">];</span>
+</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">EdgeColor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;none&#39;</span><span class="p">;</span>
+</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="w">       </span><span class="nb">alpha</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="mf">0.25</span><span class="p">);</span>
+</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-2-44"><a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>
+</span><span id="__span-2-45"><a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="w">    </span><span class="nb">daspect</span><span class="p">([</span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-2-46"><a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="w">    </span><span class="nb">view</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-2-47"><a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="w">    </span><span class="nb">camlight</span><span class="p">;</span><span class="w"> </span><span class="n">lighting</span><span class="w"> </span><span class="s">phong</span>
+</span><span id="__span-2-48"><a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+</span><span id="__span-2-49"><a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+</span><span id="__span-2-50"><a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="w">    </span><span class="nb">zlabel</span><span class="p">(</span><span class="s">&#39;z&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>@note I could not figure out an easy way to get decent-looking isosurfaces in matplotlib. Please tell me if you manage.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.instant"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+        
+          <script src="../../javascripts/mathjax.js"></script>
+        
+      
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+      
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+      
+    
+  </body>
+</html>

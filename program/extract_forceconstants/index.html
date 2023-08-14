@@ -1,0 +1,1606 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../phonon_dispersion_relations/">
+      
+      
+        <link rel="next" href="../pack_simulation/">
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
+    
+    
+      
+        <title>Extract forceconstants - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.eebd395e.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Open Sans";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="Teal" data-md-color-accent="Blue-Grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Extract forceconstants
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../.." class="md-tabs__link">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../atomic_distribution/" class="md-tabs__link">
+        Currently trying to fix programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lineshape/" class="md-tabs__link">
+        Catastrophic programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="./" class="md-tabs__link md-tabs__link--active">
+        Decent programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../files/" class="md-tabs__link">
+      Files
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    TDEP
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Currently trying to fix programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Currently trying to fix programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atomic_distribution/" class="md-nav__link">
+        Atomic distribution
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Catastrophic programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Catastrophic programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lineshape/" class="md-nav__link">
+        Lineshape
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity/" class="md-nav__link">
+        Thermal conductivity
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        Anharmonic free energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        Phonon dispersion relations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Decent programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Decent programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Extract forceconstants
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Extract forceconstants
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    Longer summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-outline" class="md-nav__link">
+    New outline
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-force-constant-model" class="md-nav__link">
+    What is a force constant model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#motivation-for-least-squares-fitting-procedure" class="md-nav__link">
+    Motivation for least squares fitting procedure
+  </a>
+  
+    <nav class="md-nav" aria-label="Motivation for least squares fitting procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#work" class="md-nav__link">
+    Work
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-along-alchemical-path" class="md-nav__link">
+    Expand along alchemical path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constraining-the-free-energy" class="md-nav__link">
+    Constraining the free energy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-procedure" class="md-nav__link">
+    Practical procedure
+  </a>
+  
+    <nav class="md-nav" aria-label="Practical procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#force-constant-symmetries" class="md-nav__link">
+    Force constant symmetries
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#practical-use-of-symmetries" class="md-nav__link">
+    Practical use of symmetries
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#practical-use-in-real-systems" class="md-nav__link">
+    Practical use in real systems
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-dynamical-stability-and-stochastic-sampling" class="md-nav__link">
+    On dynamical stability and stochastic sampling
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-test-if-things-are-converged" class="md-nav__link">
+    How to test if things are converged
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    Input files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    Output files
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfileforceconstant" class="md-nav__link">
+    outfile.forceconstant
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfileforceconstant_thirdorder" class="md-nav__link">
+    outfile.forceconstant_thirdorder
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        Pack simulation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        Generate structure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        Crystal structure info
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical_configuration/" class="md-nav__link">
+        Canonical configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        Samples from MD
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        Refine structure
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        Files
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    Longer summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-outline" class="md-nav__link">
+    New outline
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-force-constant-model" class="md-nav__link">
+    What is a force constant model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#motivation-for-least-squares-fitting-procedure" class="md-nav__link">
+    Motivation for least squares fitting procedure
+  </a>
+  
+    <nav class="md-nav" aria-label="Motivation for least squares fitting procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#work" class="md-nav__link">
+    Work
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-along-alchemical-path" class="md-nav__link">
+    Expand along alchemical path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constraining-the-free-energy" class="md-nav__link">
+    Constraining the free energy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-procedure" class="md-nav__link">
+    Practical procedure
+  </a>
+  
+    <nav class="md-nav" aria-label="Practical procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#force-constant-symmetries" class="md-nav__link">
+    Force constant symmetries
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#practical-use-of-symmetries" class="md-nav__link">
+    Practical use of symmetries
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#practical-use-in-real-systems" class="md-nav__link">
+    Practical use in real systems
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-dynamical-stability-and-stochastic-sampling" class="md-nav__link">
+    On dynamical stability and stochastic sampling
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-test-if-things-are-converged" class="md-nav__link">
+    How to test if things are converged
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    Input files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    Output files
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfileforceconstant" class="md-nav__link">
+    outfile.forceconstant
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfileforceconstant_thirdorder" class="md-nav__link">
+    outfile.forceconstant_thirdorder
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Extract forceconstants</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>The main algorithm of the TDEP method. Starting with a symmetry analysis, this code finds the irreducible representation of interatomic forceconstants and extracts them from position and force data.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--secondorder_cutoff value</code>, <code>-rc2 value</code><br />
+    default value 5.0<br />
+    Cutoff for the second order force constants</p>
+</li>
+<li>
+<p><code>--thirdorder_cutoff value</code>, <code>-rc3 value</code><br />
+    default value -1
+    mutually exclude "--thirdorder_njump"<br />
+    Cutoff for the third order force constants</p>
+</li>
+<li>
+<p><code>--fourthorder_cutoff value</code>, <code>-rc4 value</code><br />
+    default value -1
+    mutually exclude "--fourthorder_njump"<br />
+    Cutoff for the fourth order force constants</p>
+</li>
+<li>
+<p><code>--polar</code><br />
+    default value .false.<br />
+    Add dipole-dipole corrections for polar materials.</p>
+</li>
+<li>
+<p><code>--stride value</code>, <code>-s value</code><br />
+    default value 1<br />
+    Use every N configuration instead of all. Useful for long MD simulations with linearly dependent configurations.</p>
+</li>
+<li>
+<p><code>--firstorder</code><br />
+    default value .false.<br />
+    Include the first order force constants. These can be used to find the finite temperature equilibrium structure.</p>
+</li>
+<li>
+<p><code>--temperature value</code><br />
+    default value -1<br />
+    Temperature for self-consistent solver.</p>
+</li>
+<li>
+<p><code>--norotational</code><br />
+    default value .false.<br />
+    Turn off imposing rotational invariance. Needed for 2D systems.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>extract_forceconstants -rc2 5.1</code> </p>
+<p><code>extract_forceconstants -rc2 4.5 -rc3 3.21</code> </p>
+<h3 id="longer-summary">Longer summary</h3>
+<p>Calculations of the interatomic force constants are the most important part of any lattice dynamics calculation as they are used to calculate many micro and macroscopic properties of the system, e.g. phonon, thermodynamic, and transport properties, etc. This codes takes sets of displacements and forces, and uses these to fit the coefficients in an effective lattice dynamical Hamiltonian. This is by no means a new idea.<sup id="fnref:Klein1972"><a class="footnote-ref" href="#fn:Klein1972">5</a></sup> The main advantage of the TDEP method is in the implementation: it is numerically robust, well tested and general. It is not limited in order, nor limited to simple ordered systems.</p>
+<div class="admonition todo">
+<p class="admonition-title">Todo</p>
+<p>Convergence plots</p>
+</div>
+<div class="admonition todo">
+<p class="admonition-title">Todo</p>
+<p>Explain graph-based representation of tensors</p>
+</div>
+<div class="admonition todo">
+<p class="admonition-title">Todo</p>
+<p>Explain residual fit</p>
+</div>
+<h3 id="new-outline">New outline</h3>
+<ul>
+<li>How do you turn symmetries into something useful</li>
+<li>How do you write the least squares problem?<ul>
+<li>note on solver = 2</li>
+</ul>
+</li>
+</ul>
+<h3 id="what-is-a-force-constant-model">What is a force constant model</h3>
+<p>Interatomic force constants are a central quantity in the TDEP model. The idea is to express the Born-Oppenheimer potential energy surface as a low-order polynomial around some configuration of interest. A quick recap of lattice dynamical theory:<sup id="fnref:Born1998"><a class="footnote-ref" href="#fn:Born1998">6</a></sup> a displacement <span class="arithmatex">\(\mathbf{u}\)</span> of an atom <span class="arithmatex">\(i\)</span> from its ideal lattice position changes the potential energy of the lattice. Temperature disorders the lattice, causing all atoms to be displaced from their equilibrium positions; this effect can be modeled as a Taylor expansion of the potential energy contribution of the instantaneous positions of the atoms in the system, i.e. <span class="arithmatex">\(U=U(\{ \mathbf{r} \})\)</span>. It is convenient to define the atomic positions as displacements <span class="arithmatex">\(\mathbf{u}\)</span> from their equilibrium positions <span class="arithmatex">\(\mathbf{R}_i+\boldsymbol{\tau}_i\)</span>.</p>
+<div class="arithmatex">\[
+\begin{equation}
+\textbf{r}_i=\mathbf{R}_i+\boldsymbol{\tau}_i+\mathbf{u}_i.
+\end{equation}
+\]</div>
+<p><span class="arithmatex">\(\mathbf{R}_i\)</span> is a lattice vector and <span class="arithmatex">\(\boldsymbol{\tau}_i\)</span> is the position in the unit cell. We can then expand the potential energy in terms of displacements as:</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+U(\{\textbf{u}\})=&amp; U_0+
+\sum_{i}\sum_\alpha
+\Phi^\alpha_{i} u^\alpha_{i} +
+\frac{1}{2!} \sum_{ij} \sum_{\alpha\beta} \Phi^{\alpha\beta}_{ij} u^\alpha_{i} u^\beta_{j} + \\
+ + &amp; \frac{1}{3!} \sum_{ijk} \sum_{\alpha\beta\gamma} \Phi^{\alpha\beta\gamma}_{ijk} u^\alpha_{i} u^\beta_{j} u^\gamma_{k}+
+\frac{1}{4!} \sum_{ijkl} \sum_{\alpha\beta\gamma\delta} \Phi^{\alpha\beta\gamma\delta}_{ijkl} u^\alpha_{i} u^\beta_{j} u^\gamma_{k} u^\delta_{l} + \ldots
+ \end{split}
+\end{equation}
+\]</div>
+<p>Here, <span class="arithmatex">\(\alpha\beta\gamma\delta\)</span> are Cartesian indices and <span class="arithmatex">\(U_0\)</span> is the potential energy of the static lattice. The coefficients of the Taylor expansion are the derivatives of the potential energy with respect to displacement and are called the Born-von Kàrmàn force constants, which can be expressed as tensors of increasing rank:</p>
+<div class="arithmatex">\[
+\begin{align}
+\Phi^\alpha_i &amp; = \left. \frac{\partial U}{\partial u_i^\alpha} \right|_{u=0} = 0 \\
+\Phi^{\alpha\beta}_{ij} &amp; = \left. \frac{\partial^2 U}{\partial u_i^\alpha \partial u_j^\beta} \right|_{u=0} \\
+\Phi^{\alpha\beta\gamma}_{ijk} &amp; = \left. \frac{\partial^3 U}{\partial u_i^\alpha \partial u_j^\beta \partial u_k^\gamma} \right|_{u=0} \\
+\Phi^{\alpha\beta\gamma\delta}_{ijkl} &amp; = \left. \frac{\partial^4 U}{\partial u_i^\alpha \partial u_j^\beta \partial u_k^\gamma \partial u_l^\delta} \right|_{u=0}
+\end{align}
+\]</div>
+<p>By increasing rank, the force constants of rank <span class="arithmatex">\(n\)</span> represent <span class="arithmatex">\(n\)</span>-body interactions, as illustrated in the diagram below:</p>
+<p><center>
+<img src="/media/illustration_of_forceconstants.png" width="500" />
+</center></p>
+<p>What differs in the TDEP method and the textbook definitions is that we do not consider the interaction tensors as a Taylor expansion, instead they are free parameters designed to best describe the system at elevated temperature. This is done via a fitting procedure that will be explained below, and prefaced with a short formal motivation. The main advantage of a force constant model over the raw Born-Oppenheimer potential energy surface is that once it is established a host of quantities can be determined -- detailed in all the other sections of this manual.</p>
+<h3 id="motivation-for-least-squares-fitting-procedure">Motivation for least squares fitting procedure</h3>
+<p>Let's take a few steps back. Suppose we have the correct Hamiltonian <span class="arithmatex">\(H_1\)</span> then we can evaluate, but it involves a substantial computational effort. It is then beneficial to create a model Hamiltonian <span class="arithmatex">\(H_0\)</span> that is as close as possible to <span class="arithmatex">\(H_1\)</span>, but is several orders of magnitude cheaper to deal with computationally.</p>
+<p>For now, I will call <span class="arithmatex">\(H_1\)</span> the true Hamiltonian, and <span class="arithmatex">\(H_0\)</span> the reference Hamiltonian. I assume we have the means to numerically evaluate <span class="arithmatex">\(H_1\)</span>, but doing so is expensive. In this context, any numerical evaluation of <span class="arithmatex">\(H_0\)</span> is considered to have negligible cost. The task is to evaluate the best criteria to use for determining <span class="arithmatex">\(H_0\)</span>, using information from <span class="arithmatex">\(H_1\)</span>, such that <span class="arithmatex">\(H_0\)</span> can be used to evaluate physical properties of the system in question. This idea has been around since forever, and this secontion is a short recap of all the historical efforts to do so.</p>
+<h4 id="work">Work</h4>
+<p>Not the kind you are supposed to be doing, but the kind you were supposed to pay attention to in class. I have already defined our two Hamiltonians, <span class="arithmatex">\(H_0\)</span> and <span class="arithmatex">\(H_1\)</span>. We start by defining an alchemical coupling path between the two Hamiltonians:</p>
+<div class="arithmatex">\[\label{eq:kirkwood}
+    H(\lambda) = (1-\lambda) H_0 + \lambda H_1
+\]</div>
+<p>as a quantity to work with. The parameter <span class="arithmatex">\(0&lt;\lambda&lt;1\)</span> allows us to alchemically switch between the Hamiltonians, or viewed differently, apply work to/measure work done by the systemfrom <span class="arithmatex">\(H_1\)</span> to <span class="arithmatex">\(H_0\)</span> and vice versa. Per some textbook we know that</p>
+<div class="arithmatex">\[
+\begin{equation}\label{eq:workandstuff}
+    \Delta F \le W
+\end{equation}
+\]</div>
+<p>the free energy difference is smaller than the work done by the system. Think this is where the term free energy comes from, the energy free to do work. The equality holds in the quasistatic limit, where the system is kept in equilibrium the whole time. This leads is to one way to determine the free energy, Kirkwood coupling:</p>
+<div class="arithmatex">\[\label{eq:termoint}
+    F_1-F_0 =
+    \int_0^1 \frac{\partial F(\lambda)}{\partial \lambda} d{\lambda} =
+    \int_0^1 \left\langle H_1-H_0 \right\rangle_{\lambda} d{\lambda}
+\]</div>
+<p>This is the same as <span class="arithmatex">\(\ref{eq:workandstuff}\)</span>. Here I introduced a new notation:</p>
+<div class="arithmatex">\[
+    \left\langle X \right\rangle_y = \int X e^{ -\beta H_y} d{\vec{p}}d{\vec{r}}
+\]</div>
+<p>That is, the angled brackets means configuration average with respect to Hamiltonian <span class="arithmatex">\(y\)</span>. Works quantum mechical as well, just replace the integral with <span class="arithmatex">\(\textrm{ln} \textrm{tr}\)</span>. Good homework exercise to show (just write down the classical partition function for <span class="arithmatex">\(H(\lambda)\)</span> and take the derivative w.r.t <span class="arithmatex">\(\lambda\)</span>, and it falls out by itself, remembering that <span class="arithmatex">\(F=-k_B T \ln Z\)</span>).</p>
+<p>At this point we are not interested in performing the integration over <span class="arithmatex">\(\lambda\)</span>, although it certainly is practically possible if one wants to. Rather we will use this  expression backwards, i.e. figure out a way to make <span class="arithmatex">\(H_1-H_0\)</span> as small as possible, since then the difference in free energy should disappear. And we can do this in a rather neat way. Several ways actually, but they all lead to the same result.</p>
+<h4 id="expand-along-alchemical-path">Expand along alchemical path</h4>
+<p>First, we can expand <span class="arithmatex">\(F(\lambda)\)</span> around <span class="arithmatex">\(\lambda=0\)</span></p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+    F(\lambda) = &amp; F_0 +
+    \left\langle H_1-H_0 \right\rangle_0\lambda + \\
+    &amp; \beta
+    \left(
+    \left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+    \right)\lambda^2 + \sum_{n=3}^{\infty} \frac{1}{n!} C_0^n \lambda^n
+\end{split}
+\end{equation}
+\]</div>
+<p>And integrate this from <span class="arithmatex">\(\lambda=0\)</span> to <span class="arithmatex">\(\lambda=1\)</span> and arrive at</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+    F_1 = &amp; F_0 +
+    \left\langle H_1-H_0 \right\rangle_0 + \\
+    &amp; \frac{\beta}{2}
+    \left(
+    \left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+    \right) + \sum_{n=3}^{\infty} C_0^n
+\end{split}
+\end{equation}
+\]</div>
+<p>We can also expand around <span class="arithmatex">\(\lambda=1\)</span>, and arrive at</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+    F_0 = &amp; F_1 +
+    \left\langle H_1-H_0 \right\rangle_1 + \\
+    &amp; \frac{\beta}{2}
+    \left(
+    \left\langle(H_1-H_0)^2 \right\rangle_1-\left\langle H_1-H_0 \right\rangle^2_{1}
+    \right) + \sum_{n=3}^{\infty} C_1^n
+\end{split}
+\end{equation}
+\]</div>
+<p>Here the sum of <span class="arithmatex">\(C_0^n\)</span> runs of all the cumulants of order 3 and higher, with measure <span class="arithmatex">\(H_0\)</span> and <span class="arithmatex">\(H_1\)</span>, respectively. Alternatively, one could start from an alternative exact expression:</p>
+<div class="arithmatex">\[
+F_A = F_B - k_B T \ln \left\langle \exp(-\beta(H_A-H_B)) \right\rangle
+\]</div>
+<p>And do a cumulant expansion and arrive at exactly the same expressions. This is by no means a new idea,<sup id="fnref:Ursell1927"><a class="footnote-ref" href="#fn:Ursell1927">4</a></sup><sup id="fnref:Isihara1968"><a class="footnote-ref" href="#fn:Isihara1968">2</a></sup><sup id="fnref:Gibbs1902"><a class="footnote-ref" href="#fn:Gibbs1902">3</a></sup> and by tracing references backwards I ended up at Thiele semiinvariants from 1800-something but could not find the actual papers. Suffice to say that is established.</p>
+<h4 id="constraining-the-free-energy">Constraining the free energy</h4>
+<p>We then make use of the Gibbs-Bogoliubov inequality (unfairly named since that also seems to trace much further back in time) that states</p>
+<div class="arithmatex">\[
+F_1 \le F_0 + \left\langle H_1-H_0 \right\rangle_0
+\]</div>
+<p>or</p>
+<div class="arithmatex">\[
+F_0 \ge F_1 + \left\langle H_1-H_0 \right\rangle_1
+\]</div>
+<p>by simple relabelling of terms. If we now insert or expansion expressions into the inequalities we end up with</p>
+<div class="arithmatex">\[
+0 \le \frac{2}{\beta} \sum_{n=3}^{\infty} C_1^n \le \left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+\]</div>
+<p>and</p>
+<div class="arithmatex">\[
+0 \le \frac{2}{\beta} \sum_{n=3}^{\infty} C_1^n \le \left\langle(H_1-H_0)^2 \right\rangle_1-\left\langle H_1-H_0 \right\rangle^2_{1}
+\]</div>
+<p>What this means is that the second term in the expansion is larger than the sum of all higher order terms. So, to minimize the difference in free energy between <span class="arithmatex">\(H_0\)</span> and <span class="arithmatex">\(H_1\)</span>, we need to minimize the variance of the energy, either samples with the proper dynamics <span class="arithmatex">\(\langle\rangle_1\)</span> or via approximate dynamics <span class="arithmatex">\(\langle\rangle_0\)</span>.</p>
+<h4 id="conclusion">Conclusion</h4>
+<p>What I sketched above is that the Gibbs-Bogoliubov inequality can be recast into the problem of minimizing variance between a model Hamiltonian and the exact Hamiltonian, and that you are free to choose which statistical measure to use -- the result will be variational with respect to the free energy. This serves as the formal motivation behind TDEP. One option is to run ab inito (path integral) molecular dynamics to sample the potential energy surface, that would correspond to using measure <span class="arithmatex">\(\langle\rangle_1\)</span>. The other option is to use self-consistent stochastic sampling, this corresponds to <span class="arithmatex">\(\langle\rangle_1\)</span> and is equivalent to self-consistent phonons.</p>
+<p>The main benefit of the above is that instead of minimizing an expression that involves three free energy, we minimize an expression that only involves the internal energy which is a lot easier. And since it is a variance we are to minimize a least squares solution is the natural choice, the least squares solution is the minimum variance solution. The variance is the square you minimize.</p>
+<p>Admittedly, this is a rather rough sketch of a motivation, a far more rigorous treatment is given by Alois, Jose and Matt, but the conclusions are the same.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Fix reference to mode coupling paper as soon as it's published properly.</p>
+</div>
+<h3 id="practical-procedure">Practical procedure</h3>
+<p>Now that we have established that a least squares fit of a model Hamiltonian is in general a good idea we have to do it in practice. The first step is to simplify the problem using symmetry.</p>
+<h4 id="force-constant-symmetries">Force constant symmetries</h4>
+<p>Symmetry analysis allows us to greatly reduce the number of values needed to express the force constants and is therefore crucial for generalizing the TDEP to include higher order terms in the potential energy surface. The symmetries of the force constants are deduced from rotational and translational invariance of the system, in addition to the symmetries of the crystal itself. We start with the transposition symmetries, which is an invariance under the permutation of the indices:<sup id="fnref:Leibfried1961"><a class="footnote-ref" href="#fn:Leibfried1961">9</a></sup><sup id="fnref:Maradudin1968"><a class="footnote-ref" href="#fn:Maradudin1968">8</a></sup></p>
+<div class="arithmatex">\[
+\begin{align}
+\Phi_{ij}^{\alpha\beta} &amp; = \Phi_{ji}^{\beta\alpha} \\
+\Phi_{ijk}^{\alpha\beta\gamma} &amp; = \Phi_{jik}^{\beta\alpha\gamma} = \ldots \\
+\Phi_{ijkl}^{\alpha\beta\gamma\delta} &amp; = \Phi_{jikl}^{\alpha\beta\gamma\delta} = \ldots
+\end{align}
+\]</div>
+<p>All lattices belong to one of the 230 lattice space groups. The force constants should be invariant under these symmetry operations. If two tensors are related by symmetry operation <span class="arithmatex">\(S\)</span> their components are related as follows:</p>
+<div class="arithmatex">\[
+\begin{align}
+\Phi_{ij}^{\alpha\beta} &amp;=
+\sum_{\mu\nu}\Phi_{kl}^{\mu\nu}
+S^{\mu\alpha}S^{\nu\beta}  \\
+\Phi_{ijk}^{\alpha\beta\gamma} &amp;=
+\sum_{\mu\nu\xi}\Phi_{mno}^{\mu\nu\xi}
+S^{\mu\alpha} S^{\nu\beta} S^{\xi\gamma}\\
+\Phi_{ijkl}^{\alpha\beta\gamma\delta} &amp;=
+\sum_{\mu\nu\xi\kappa}\Phi_{mnop}^{\mu\nu\xi\kappa}
+S^{\mu\alpha} S^{\nu\beta} S^{\xi\gamma} S^{\kappa\delta} \,.\\
+\end{align}
+\]</div>
+<p>where <span class="arithmatex">\(S^{\alpha\beta}\)</span> is the proper or improper rotation matrix of the symmetry operation <span class="arithmatex">\(S\)</span>. Naturally, this will also enforce the periodic nature of the lattice. Force constants also obey the translational invariance (acoustic sum rules):</p>
+<div class="arithmatex">\[
+\begin{align}
+\sum_j \mathbf{\Phi}_{ij} &amp; =0 \quad \forall\, i \\
+\sum_k \mathbf{\Phi}_{ijk} &amp; =0 \quad \forall\, i,j \\
+\sum_l \mathbf{\Phi}_{ijkl} &amp; =0 \quad \forall\, i,j,k
+\end{align}
+\]</div>
+<p>The rotational invariance gives</p>
+<div class="arithmatex">\[
+\begin{align}
+\sum_i \Phi_i^\alpha r_i^\beta &amp; = \sum_i \Phi_i^\beta r_i^\alpha \quad \forall \, \alpha,\beta \\
+\sum_j \Phi_{ij}^{\alpha\beta} r_j^\gamma + \Phi_i^\beta \delta_{\alpha\gamma} &amp; =
+\sum_j \Phi_{ij}^{\alpha\gamma} r_j^\beta + \Phi_i^\gamma \delta_{\alpha\beta}
+\quad \forall \, \alpha,\beta,\gamma \\
+\sum_k \Phi_{ijk}^{\alpha\beta\gamma}r_k^\lambda +  \Phi_{ij}^{\gamma\beta} \delta_{\alpha\lambda} + \Phi_{ij}^{\alpha\gamma} \delta_{\beta\lambda} &amp;=
+\sum_k \Phi_{ijk}^{\alpha\beta\lambda}r_k^\gamma +  \Phi_{ij}^{\lambda\beta} \delta_{\alpha\gamma} + \Phi_{ij}^{\alpha\lambda} \delta_{\beta\gamma}
+\quad \forall \, \alpha,\beta,\gamma,\lambda \\
+\end{align}
+\]</div>
+<p>And finally, the Huang invariances</p>
+<div class="arithmatex">\[
+\begin{align}
+[\alpha\beta,\gamma\lambda] &amp; = \sum_{ij} \Phi_{ij}^{\alpha\beta} r_{ij}^\gamma r_{ij}^\lambda \\
+[\alpha\beta,\gamma\lambda] &amp; = [\gamma\lambda,\alpha\beta]
+\end{align}
+\]</div>
+<p>ensure that the second order forceconstants, when taken to the long-wavelength limit, result in the correct number of elastic constants. For low-symmetry crystals the Hermitian character of the dynamical matrix is enforced:<sup id="fnref:Martin1971"><a class="footnote-ref" href="#fn:Martin1971">14</a></sup><sup id="fnref:Scheringer1974"><a class="footnote-ref" href="#fn:Scheringer1974">13</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+    \sum_{j \ne i} \Phi^{\alpha\beta}_{ij} = \sum_{j \ne i} \Phi^{\beta\alpha}_{ij} \quad \forall\, i
+\end{equation}
+\]</div>
+<p>All the symmetry relations above are naturally satisfied by the force constants produced by this code. In particular, the rotational, Huang and Hermitian invariances are rarely enforced in the literature, but are crucial for a correct behavior.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A word of caution for low-dimensional systems: the Huang invariances do not apply there. Consider graphene, it is difficult to define an elastic constant that corresponds to compression along the z-axis in a meaningful way. The short term solution is to temporarily switch them off via  the option <code>--nohuang</code>. The long term solution is to derive the proper invariances for a two-dimensional material, something I have not had the time to do.</p>
+</div>
+<h4 id="practical-use-of-symmetries">Practical use of symmetries</h4>
+<p>The symmetry relations needs to be transformed to linear algebra to be of practical use. I will use the second order force constants as an example, but the procedure is general. First step is to flatten each <span class="arithmatex">\(3 \times 3\)</span> tensor into a <span class="arithmatex">\(9 \times 1\)</span> vector, and express each component of the tensor as a linear combination of some coefficients <span class="arithmatex">\(x\)</span>:</p>
+<div class="arithmatex">\[
+\underbrace{\mathbf{\Phi}}_{9 \times 1}
+=
+\underbrace{\mathbf{C}}_{9 \times 1} \underbrace{\mathbf{x}}_{9 \times 1}
+\]</div>
+<p>Suppose some (point) symmetry operators leave the tensor invariant, this can be expressed as</p>
+<div class="arithmatex">\[
+\left(\sum_i \mathbf{S}_i \otimes \mathbf{S}_i - \mathbf{I}\right) \mathbf{\Phi} = 0
+\]</div>
+<p>There is also transposition symmetry, which can be expressed as a permutation matrix <span class="arithmatex">\(T\)</span>:</p>
+<div class="arithmatex">\[
+\left(\mathbf{T} - \mathbf{I}\right) \mathbf{\Phi} = 0
+\]</div>
+<p>In total, this can be expressed as</p>
+<div class="arithmatex">\[
+\mathbf{A} = \left(\mathbf{T} - \mathbf{I}\right) + \left(\sum_i \mathbf{S}_i \otimes \mathbf{S}_i - \mathbf{I}\right)
+\]</div>
+<div class="arithmatex">\[
+\mathbf{A} \mathbf{C} \mathbf{x} = 0
+\]</div>
+<p>the problem is now reduced to finding <span class="arithmatex">\(\mathbf{C}\)</span>. We are not interested in the trivial solution <span class="arithmatex">\(\mathbf{C}=0\)</span>, instead we seek a matrix <span class="arithmatex">\(\mathbf{C}\)</span> in the null space of <span class="arithmatex">\(\mathbf{A}\)</span>. We find that by constructing</p>
+<div class="arithmatex">\[
+\mathbf{U}\mathbf{\Sigma}\mathbf{V} = A
+\]</div>
+<div class="arithmatex">\[
+\mathbf{C} = \sum_{\Sigma_i = 0} \mathbf{U}^T \mathbf{V}
+\]</div>
+<p>The rank of <span class="arithmatex">\(\mathbf{C}\)</span> is the number of zero singular values of <span class="arithmatex">\(\mathbf{A}\)</span>, i.e. the number of irreducible variables <span class="arithmatex">\(\mathbf{x}\)</span>, resulting in</p>
+<div class="arithmatex">\[
+\underbrace{\mathbf{\Phi}}_{9 \times 1}
+=
+\underbrace{\mathbf{C}}_{9 \times N_x} \underbrace{\mathbf{x}}_{N_x \times 1}
+\]</div>
+<p>where <span class="arithmatex">\(N_x \le 9\)</span>.</p>
+<h4 id="practical-use-in-real-systems">Practical use in real systems</h4>
+<p>We use a procedure near identical to what is described above. The starting point is a set of displacements <span class="arithmatex">\(\vec{u}\)</span> and forces <span class="arithmatex">\(\vec{f}\)</span> from a set of <span class="arithmatex">\(N_c\)</span> supercells sampled from a canonical ensemble at temperature <span class="arithmatex">\(T\)</span>. Although omitted in the notation, all interaction tensors depend on temperature as well as the volume (or more generally strain). The interatomic force constants are determined as follows: consider a supercell with <span class="arithmatex">\(N_a\)</span> atoms and forces and displacements given by the <span class="arithmatex">\(3N_{a} \times 1\)</span> vectors <span class="arithmatex">\(\vec{u}\)</span> and <span class="arithmatex">\(\vec{f}\)</span> (for clarity we will make note of the dimensions of the matrices in each step):</p>
+<div class="arithmatex">\[
+    \underbrace{\vec{f}}_{3N_a \times 1}
+    = -
+    \underbrace{\vec{\Phi}}_{3N_a \times 3 N_a}
+    \underbrace{\vec{u}}_{3N_a \times 1}
+\]</div>
+<p>we can arrange this on a form with flattened tensors as</p>
+<div class="arithmatex">\[
+    \underbrace{\vec{f}}_{3N_a \times 1}
+    = -
+    \underbrace{(\vec{I} \otimes \vec{u}^T)}_{3N_a \times (3N_a)^2}
+    \underbrace{\vec{\Phi}_v}_{ (3N_a)^2 \times 1}
+\]</div>
+<p>with the Kronecker product <span class="arithmatex">\(\otimes\)</span>. To express the forces from <span class="arithmatex">\(N_c\)</span> supercells the matrices are stacked on top of each other:</p>
+<div class="arithmatex">\[
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+    = -
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^2}
+    \underbrace{\vec{\Phi}_v}_{ (3N_a)^2 \times 1}
+\]</div>
+<p>We then express the force constants via the irreducible components</p>
+<div class="arithmatex">\[
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+    = -
+    \underbrace{
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^2}
+    \underbrace{
+    \vec{C}^{\Phi\textrm{II}}
+    }_{(3N_a)^2 \times N_x}
+    }_{=\vec{A}^{\Phi\textrm{II}}\,, 3N_a N_c \times N_x }
+    \underbrace{\vec{x}^{\Phi\textrm{II}}}_{ N_x \times 1}
+\]</div>
+<p>The set of symmetry relations and invariances determines <span class="arithmatex">\(\vec{C}\)</span> and <span class="arithmatex">\(N_x\)</span>,~\cite{Leibfried1961,Maradudin1968,Born1998} and in general <span class="arithmatex">\(N_x \ll (3N_a)^2\)</span> which considerably simplifies the problem of numerically determining <span class="arithmatex">\(\vec{\Phi}\)</span>. In practice, only the matrix <span class="arithmatex">\(\vec{A}\)</span> is determined and stored. The nominally very large matrices that go into the construction of <span class="arithmatex">\(\vec{A}\)</span> are quite sparse and construction presents negligible computational cost. The second order force constants imply matrices that could possibly be treated naively, but the generalization to higher order quickly becomes intractable with dense matrix storage. The third order force constants, for example, comes down to</p>
+<div class="arithmatex">\[
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+     = -
+    \underbrace{
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \otimes \vec{u}_1^T\\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^3}
+    \underbrace{
+    \vec{C}^{\Phi\textrm{III}}
+    }_{(3N_a)^3 \times N_x}
+    }_{=\vec{A}^{\Phi\textrm{III}}\,, 3N_a N_c \times N_x }
+    \underbrace{\vec{x}^{\Phi\textrm{III}}}_{ N_x \times 1}
+\]</div>
+<p>where the contracted matrix <span class="arithmatex">\(\vec{A}\)</span> is many orders of magnitude smaller than the matrices it is built from.</p>
+<p>The interatomic force constants are determined in succession:</p>
+<div class="arithmatex">\[
+\begin{align}
+\label{eq:f2}
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}} &amp; = \vec{f}
+%
+\\
+%
+\label{eq:f3}
+    \vec{A}^{\Phi\textrm{III}}
+    \vec{x}^{\Phi\textrm{III}} &amp; =
+    \vec{f}-
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}}
+%
+\\
+%
+\label{eq:f4}
+    \vec{A}^{\Phi\textrm{IV}}
+    \vec{x}^{\Phi\textrm{IV}} &amp; =
+    \vec{f}
+    -
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}}
+    -
+    \vec{A}^{\Phi\textrm{III}}
+    \vec{x}^{\Phi\textrm{III}}
+\end{align}
+\]</div>
+<p>Where <span class="arithmatex">\(\vec{f}\)</span> denotes the reference forces to be reproduced. Equations <span class="arithmatex">\(\ref{eq:f2}-\ref{eq:f4}\)</span> are overdetermined and solved as a least squares problem. This ensures that the baseline harmonic part becomes as large as possible, and that the higher order terms become smaller and smaller. Some of the symmetry constraints are cumbersome to implement as linear operators, they are instead implemented as linear constraints. So for a low symmetry crystal the least squares problem is stated as</p>
+<div class="arithmatex">\[
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}} = \vec{f} \quad \textrm{subject to} \quad \vec{B}\vec{x}^{\Phi\textrm{II}}=0
+\]</div>
+<h4 id="on-dynamical-stability-and-stochastic-sampling">On dynamical stability and stochastic sampling</h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>add link to stochastic sampling tutorial once it is prepared</p>
+</div>
+<p>As we established above we can either sample the potential energy surface via some variant of molecular dynamics/Monte Carlo simulations per the true Hamiltonian, or sample using the force constant model. Sampling with the force constant model collapses in case any eigenvalue of the dynamical matrix is negative - in that case no free energy is defined. One generally states self-consistent phonon theory as minimization of <span class="arithmatex">\(F_0 + \left\langle H_1 -H_0 \right\rangle_0\)</span> with respect to the parameters in the model Hamiltonian. This is a slight simplification, since the symmetry constraints from the space group imply a reduced search space, some symmetry constraints imply additional equality constraints and on top of that we have the requirement of positive semi-definite eigenvalues.</p>
+<p>Let's start from the naive least squares problem:</p>
+<div class="arithmatex">\[
+    \min_{\phi} \left\| F - U \Phi  \right\|^2
+\]</div>
+<p>We use the same flattening technique as previously and can rewrite the least squares problem (by expanding the square) as</p>
+<div class="arithmatex">\[
+    \min_{\phi} \vec{\Phi_v}^T \left[\tilde{\vec{U}}^T\otimes\tilde{\vec{U}}\right] \vec{\Phi_v}
+    -
+    \vec{\Phi_v}^T \left[\vec{I}\otimes\tilde{\vec{U}}\right]^T \vec{F}_v \,.
+\]</div>
+<p>The next step is to again express the force constants in terms of their irreducible components, and remember that we have some linear constraints:</p>
+<div class="arithmatex">\[
+\begin{align}
+    \vec{x} &amp; = \min_{\vec{x}}\,
+    \vec{x}^T \vec{D} \vec{x}
+    -
+    \vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0
+\\
+    \vec{D} &amp; = \vec{C}^T \left[\tilde{\vec{U}}^T\otimes\tilde{\vec{U}}\right] \vec{C} = \vec{A^T}\vec{A} \\
+    \vec{d} &amp; = \vec{C}^T \left[\vec{I}\otimes\tilde{\vec{U}}\right]^T \vec{F}_v = \vec{A}^T \vec{F}
+\end{align}
+\]</div>
+<p>The main difficulty lies in the constraint that the dynamical matrix needs to be positive semi-definite. This constraint can be states as</p>
+<div class="arithmatex">\[
+    \vec{s}^T \Phi \vec{s} &gt; 0
+\]</div>
+<p>for any vector <span class="arithmatex">\(\vec{s}\)</span>, i.e. there is no combination of displacements that lower the energy below the baseline. In our flattened and irreducible form this becomes</p>
+<div class="arithmatex">\[
+    \vec{s} \otimes \vec{s} \vec{C} \vec{x} &gt; 0
+\]</div>
+<p>Luckily, this is a solved problem.<sup id="fnref:Hu1995"><a class="footnote-ref" href="#fn:Hu1995">7</a></sup> The algorithm progresses as follows: first we solve</p>
+<div class="arithmatex">\[
+    \vec{x} = \min_{\vec{x}}\,
+    \vec{x}^T \vec{D} \vec{x}
+    -
+    \vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0 \,
+\]</div>
+<p>and construct <span class="arithmatex">\(\Phi\)</span>, and examine the eigenvalues. If all eigenvalues are positive, we are done. If not, all the eigenvectors corresponding to negative eigenvalues are added as inequality constraints:</p>
+<div class="arithmatex">\[
+    \vec{E} = \left( \epsilon_1 \otimes \epsilon_1 \cdots \epsilon_N \otimes \epsilon_N  \right)\vec{C}
+\]</div>
+<p>and we get a new quadratic program</p>
+<div class="arithmatex">\[
+    \vec{x} = \min_{\vec{x}}\,
+    \vec{x}^T \vec{D} \vec{x}
+    -
+    \vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0 \quad \textrm{and} \quad \vec{E}\vec{x} &gt; \alpha
+\]</div>
+<p>where <span class="arithmatex">\(\alpha\)</span> is a small positive number. We again calculate the eigenvalues of <span class="arithmatex">\(\Phi\)</span>, and if any new negative eigenvalues emerge the matrix <span class="arithmatex">\(\vec{E}\)</span> gets appended and the process is repeated until all eigenvalues are positive. The sequence of quadratic programs are solved with an interior method.[CITE]</p>
+<p>This is a numerically robust formulation of self-consistent phonons, but it must be mentioned that it is rarely needed. If you are simulating materials that are known to exist, they rarely show negative eigenvalues if the numerics are well-converged. The option to use the positive definite solver is available (<code>--solver 2</code>), but if you need to use it odds are high that it is in fact the numerics/convergence that is the actual issue. Which is why the option is this deep in the documentation, if you bothered to read this far you probably took the time to understand how to get the numerics correct as well.</p>
+<h4 id="how-to-test-if-things-are-converged">How to test if things are converged</h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Add link to tutorial, better covered there.</p>
+</div>
+<h3 id="input-files">Input files</h3>
+<ul>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../../files/#infile.ssposcar">infile.ssposcar</a></li>
+<li><a href="../../files/#infile.meta">infile.meta</a></li>
+<li><a href="../../files/#infile.stat">infile.stat</a></li>
+<li><a href="../../files/#infile.positions">infile.positions</a></li>
+<li><a href="../../files/#infile.forces">infile.forces</a></li>
+</ul>
+<h3 id="output-files">Output files</h3>
+<p><a name="outfile.forceconstant"></a></p>
+<h4 id="outfileforceconstant"><code>outfile.forceconstant</code></h4>
+<p>This is the second order force constant, in a plain text format. Schematically, it contains a list of pairs originating from each atom in the unit cell. Once generated, any association with a specific simulation supercell is lost. The file looks something like this:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>          2               How many atoms per unit cell
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    4.107441758929446     Realspace cutoff (A)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>         19               How many neighbours does atom   1 have
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>          2               In the unit cell, what is the index of neighbour  1 of atom  1
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  -1.0000000000000000       -1.0000000000000000        0.0000000000000000
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a> -0.22399077464508912        0.0000000000000000        0.0000000000000000
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>   0.0000000000000000      -0.22399077464508918        0.0000000000000000
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>   0.0000000000000000        0.0000000000000000       -1.3582546804397253
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>          2               In the unit cell, what is the index of neighbour  2 of atom  1
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  -1.0000000000000000        0.0000000000000000       -1.0000000000000000
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a> -0.22399077464508912        0.0000000000000000        0.0000000000000000
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>   0.0000000000000000       -1.3582546804397253        0.0000000000000000
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>   0.0000000000000000        0.0000000000000000      -0.22399077464508918
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>          1               In the unit cell, what is the index of neighbour  3 of atom  1
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  -1.0000000000000000        0.0000000000000000        0.0000000000000000
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>   6.5363921282622556E-002   0.0000000000000000        0.0000000000000000
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>   0.0000000000000000      -0.14683417732241597      -0.62709958702233359
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>   0.0000000000000000      -0.62709958702233382      -0.14683417732241599
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>          2               In the unit cell, what is the index of neighbour  4 of atom  1
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>...
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>...
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>...
+</span></code></pre></div>
+<p>The content of the file is pretty straightforward. The header is two lines, the number of atoms in the unit cell and the realspace cutoff (in Å). Next we have repeating units for each pair of atoms. We start from atom 1, with a note how many pairs are included for atom 1. Then for each of those pairs we note what is the index of the other atom in the pair, what is the lattice vector (in fractional coordinates) that locate the unit cell of that atom, followed by the <span class="arithmatex">\(3 \times 3\)</span> tensor (in Carteisian coordinates, eV/Å^2). This is repeated for neighbours of atom one, and then on to the next atom and so on.</p>
+<h4 id="outfileforceconstant_thirdorder"><code>outfile.forceconstant_thirdorder</code><a name="outfile.forceconstant_thirdorder"></a></h4>
+<p>The format for this file is similar to the second order:</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:Kirkwood1935">
+<p>J. G. Kirkwood (1935), The Journal of Chemical Physics 3, 300&#160;<a class="footnote-backref" href="#fnref:Kirkwood1935" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Isihara1968">
+<p>A. Isihara (1968), Journal of Physics A: General Physics 1, 305&#160;<a class="footnote-backref" href="#fnref:Isihara1968" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Gibbs1902">
+<p>J. W. Gibbs (1902), Elementary Principles in Statistical Mechanics: Developed with Especial Reference to the Rational Foundations of Thermodynamics,  C. Scribner’s sons&#160;<a class="footnote-backref" href="#fnref:Gibbs1902" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Ursell1927">
+<p>H. D. Ursell (1927), Mathematical Proceedings of the Cambridge Philosophical Society 23, 685&#160;<a class="footnote-backref" href="#fnref:Ursell1927" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Klein1972">
+<p><a href="http://doi.org/10.1007/BF00654839">Klein, M. L., &amp; Horton, G. K. (1972). The rise of self-consistent phonon theory. Journal of Low Temperature Physics, 9(3-4), 151–166.</a>&#160;<a class="footnote-backref" href="#fnref:Klein1972" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Born1998">
+<p>Born, M., &amp; Huang, K. (1964). Dynamical theory of crystal lattices. Oxford: Oxford University Press.&#160;<a class="footnote-backref" href="#fnref:Born1998" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Hu1995">
+<p>H. Hu (1995), Linear Algebra and its Applications 229, 167&#160;<a class="footnote-backref" href="#fnref:Hu1995" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Maradudin1968">
+<p><a href="http://doi.org/10.1103/RevModPhys.40.1">Maradudin, A. A., &amp; Vosko, S. (1968). Symmetry Properties of the Normal Vibrations of a Crystal. Reviews of Modern Physics, 40(1), 1–37.</a>&#160;<a class="footnote-backref" href="#fnref:Maradudin1968" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Leibfried1961">
+<p><a href="http://doi.org/10.1016/S0081-1947(08)60656-6">Leibfried, G., &amp; Ludwig, W. (1961). Theory of Anharmonic Effects in Crystals. Solid State Physics - Advances in Research and Applications, 12(C), 275–444.</a>&#160;<a class="footnote-backref" href="#fnref:Leibfried1961" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Hellman2011">
+<p><a href="http://doi.org/10.1103/PhysRevB.84.180301">Hellman, O., Abrikosov, I. A., &amp; Simak, S. I. (2011). Lattice dynamics of anharmonic solids from first principles. Physical Review B, 84(18), 180301.</a>&#160;<a class="footnote-backref" href="#fnref:Hellman2011" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Hellman2013a">
+<p><a href="http://doi.org/10.1103/PhysRevB.88.144301">Hellman, O., &amp; Abrikosov, I. A. (2013). Temperature-dependent effective third-order interatomic force constants from first principles. Physical Review B, 88(14), 144301.</a>&#160;<a class="footnote-backref" href="#fnref:Hellman2013a" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Hellman2013">
+<p><a href="http://doi.org/10.1103/PhysRevB.87.104111">Hellman, O., Steneteg, P., Abrikosov, I. A., &amp; Simak, S. I. (2013). Temperature dependent effective potential method for accurate free energy calculations of solids. Physical Review B, 87(10), 104111.</a>&#160;<a class="footnote-backref" href="#fnref:Hellman2013" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Scheringer1974">
+<p><a href="http://scripts.iucr.org/cgi-bin/paper?S0567739474000611">Scheringer, C. The Hermiticity of the dynamical matrix. Acta Crystallogr. Sect. A 30, 295–295 (1974).</a>&#160;<a class="footnote-backref" href="#fnref:Scheringer1974" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Martin1971">
+<p><a href="http://linkinghub.elsevier.com/retrieve/pii/0038109871906466">Martin, R. M. Hermitian character of the dynamical matrix - a comment on ‘non-hermitian dynamical matrices in the dynamics of low symmetry crystals’. Solid State Commun. 9, 2269–2270 (1971).</a>&#160;<a class="footnote-backref" href="#fnref:Martin1971" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.instant"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+        
+          <script src="../../javascripts/mathjax.js"></script>
+        
+      
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+      
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+      
+    
+  </body>
+</html>

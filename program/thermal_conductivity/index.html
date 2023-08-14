@@ -1,0 +1,1765 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../lineshape/">
+      
+      
+        <link rel="next" href="../anharmonic_free_energy/">
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
+    
+    
+      
+        <title>Thermal conductivity - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.eebd395e.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Open Sans";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="Teal" data-md-color-accent="Blue-Grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Thermal conductivity
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../.." class="md-tabs__link">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../atomic_distribution/" class="md-tabs__link">
+        Currently trying to fix programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lineshape/" class="md-tabs__link md-tabs__link--active">
+        Catastrophic programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../extract_forceconstants/" class="md-tabs__link">
+        Decent programs
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../files/" class="md-tabs__link">
+      Files
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    TDEP
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Currently trying to fix programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Currently trying to fix programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atomic_distribution/" class="md-nav__link">
+        Atomic distribution
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Catastrophic programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Catastrophic programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lineshape/" class="md-nav__link">
+        Lineshape
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Thermal conductivity
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Thermal conductivity
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-this-code-produce" class="md-nav__link">
+    What can this code produce
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    Longer summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifetimes" class="md-nav__link">
+    Lifetimes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#beyond-the-relaxation-time-approximation" class="md-nav__link">
+    Beyond the relaxation time approximation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        Anharmonic free energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        Phonon dispersion relations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Decent programs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Decent programs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_forceconstants/" class="md-nav__link">
+        Extract forceconstants
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        Pack simulation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        Generate structure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        Crystal structure info
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical_configuration/" class="md-nav__link">
+        Canonical configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        Samples from MD
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        Refine structure
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        Files
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    Short description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    Command line options:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-this-code-produce" class="md-nav__link">
+    What can this code produce
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    Longer summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifetimes" class="md-nav__link">
+    Lifetimes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#beyond-the-relaxation-time-approximation" class="md-nav__link">
+    Beyond the relaxation time approximation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Thermal conductivity</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>Calculates the lattice thermal conductivity from the iterative solution of the phonon Boltzmann equation. In addition, cumulative plots and raw data dumps of intermediate values are available.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--readiso</code><br />
+    default value .false.<br />
+    Read the isotope distribution from <code>infile.isotopes</code>. The format is specified <a href="../page/files.html#infile.isotopes">here</a>.</p>
+</li>
+<li>
+<p><code>--qpoint_grid value#1 value#2 value#3</code>, <code>-qg value#1 value#2 value#3</code><br />
+    default value 26 26 26<br />
+    Density of q-point mesh for Brillouin zone integrations.</p>
+</li>
+<li>
+<p><code>--integrationtype value</code>, <code>-it value</code>, value in: <code>1,2,3</code><br />
+    default value 2<br />
+    Type of integration for the phonon DOS. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.</p>
+</li>
+<li>
+<p><code>--sigma value</code><br />
+    default value 1.0<br />
+    Global scaling factor for adaptive Gaussian smearing.</p>
+</li>
+<li>
+<p><code>--threshold value</code><br />
+    default value 4.0<br />
+    Consider a Gaussian distribution to be 0 after this many standard deviations.</p>
+</li>
+<li>
+<p><code>--readqmesh</code><br />
+    default value .false.<br />
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.</p>
+</li>
+<li>
+<p><code>--temperature value</code><br />
+    default value -1<br />
+    Evaluate thermal conductivity at a single temperature.</p>
+</li>
+<li>
+<p><code>--temperature_range value#1 value#2 value#3</code><br />
+    default value 100 300 5<br />
+    Series of temperatures for thermal conductivity. Specify min, max and the number of points.</p>
+</li>
+<li>
+<p><code>--logtempaxis</code><br />
+    default value .false.<br />
+    Space the temperature points logarithmically instead of linearly.</p>
+</li>
+<li>
+<p><code>--max_mfp value</code><br />
+    default value -1<br />
+    Add a limit on the mean free path as an approximation of domain size.</p>
+</li>
+<li>
+<p><code>--dumpgrid</code><br />
+    default value .false.<br />
+    Write files with q-vectors, frequencies, eigenvectors and group velocities for a grid.</p>
+</li>
+<li>
+<p><code>--noisotope</code><br />
+    default value .false.<br />
+    Do not consider isotope scattering.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>mpirun thermal_conductivity --temperature 300</code> </p>
+<p><code>mpirun thermal_conductivity -qg 15 15 15 --temperature_range 200 600 50</code> </p>
+<p><code>mpirun thermal_conductivity --integrationtype 2 -qg 30 30 30 --max_mfp 1E-6</code> 
+author: Olle Hellman
+display: none
+graph: none
+propname: thermal conductivity
+propnamelink: <a href="../program/thermal_conductivity.html">thermal conductivity</a>
+{!man/thermal_conductivity.md!}</p>
+<h3 id="what-can-this-code-produce">What can this code produce</h3>
+<p>@todo Add plot of kappa vs temperature</p>
+<p>@todo Add plot with kappa vs boundary scattering?</p>
+<p>@todo Add plot with spectral kappa</p>
+<p>@todo Add plot with scattering rates</p>
+<h3 id="longer-summary">Longer summary</h3>
+<p>@todo Revise, rather confusing at the moment.</p>
+<p>@todo Start from the proper Boltzmann equation.</p>
+<p>Heat transport can be determined by solving the inelastic phonon Boltzmann equation. By applying a temperature gradient <span class="arithmatex">\(\nabla T_\alpha\)</span> in direction <span class="arithmatex">\(\alpha\)</span>, the heat current is given by the group velocities of phonon mode <span class="arithmatex">\(\lambda\)</span> and non-equilibrium phonon distribution function <span class="arithmatex">\(\tilde{n}_\lambda\)</span>:[^peierls1955quantum]</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha}=\frac{1}{V}\sum_\lambda
+\hbar \omega_\lambda v_{\lambda\alpha} \tilde{n}_{\lambda\alpha}.
+\end{equation}
+\]</div>
+<p>Assuming the thermal gradient is small, the non-equilibrium distribution function can be linearised as,</p>
+<div class="arithmatex">\[
+\tilde{n}_{\lambda\alpha} \approx n_{\lambda}-
+v_{\lambda\alpha}
+\tau_{\lambda\alpha}
+\frac{d n_{\lambda}}{d T}
+\frac{d T}{d \alpha} \, ,
+\]</div>
+<p>That is a linear deviation from the equilibrium distribution function <span class="arithmatex">\(n_{\lambda}\)</span>. Inserting this into the equation 1, and exploiting the fact that the equilibrium occupation carries no heat, we arrive at,</p>
+<div class="arithmatex">\[
+J_{\alpha}=\frac{1}{V}\sum_{\lambda}
+\hbar \omega_{\lambda}
+\frac{d n_{\lambda}}{d T}
+v_{\lambda\alpha}
+v_{\lambda\alpha}
+\tau_{\lambda\alpha}
+\frac{d T}{d \alpha}.
+\]</div>
+<p>Utilizing Fourier's law, <span class="arithmatex">\(J=\kappa \nabla T\)</span>, and identifying the phonon heat capacity,</p>
+<div class="arithmatex">\[
+c_{\lambda}=
+\hbar \omega_\lambda
+\frac{d n_{\lambda}}{d T},
+\]</div>
+<p>we arrive at,</p>
+<div class="arithmatex">\[
+\kappa_{\alpha\beta}=\frac{1}{V} \sum_{\lambda}
+c_{\lambda}
+v_{\alpha \lambda}v_{\beta \lambda} \tau_{\beta \lambda},
+\]</div>
+<p>which can be interpreted as follows: the heat transported by each phonon will depend on how much heat it carries, how fast it travels, and how long it lives. The phonon-phonon induced lifetime can be determined from the self-energy <span class="arithmatex">\(\Gamma_{\lambda}\)</span>. In addition, one must consider the scattering with mass impurities (isotopes), and the boundaries of the sample.</p>
+<h3 id="lifetimes">Lifetimes</h3>
+<p>With the third order force constants we can calculate the phonon lifetimes needed as input to the thermal conductivity calculations. The lifetime due to phonon-phonon scattering is related to the imaginary part of the phonon self energy ( <span class="arithmatex">\(\Sigma=\Delta+i\Gamma\)</span> ).</p>
+<div class="arithmatex">\[
+\frac{1}{\tau_{\lambda}}=2 \Gamma_{\lambda},
+\]</div>
+<p>where <span class="arithmatex">\(\tau_{\lambda}\)</span> is the lifetime phonon mode <span class="arithmatex">\(\lambda\)</span>, and</p>
+<div class="arithmatex">\[
+\begin{split}
+\Gamma_{\lambda}=&amp; \frac{\hbar \pi}{16} % _{\lambda'}
+\sum_{\lambda'\lambda''}
+\left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\bigl[(n_{\lambda'}+n_{\lambda''}+1)
+\delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''}) \\
++ &amp; 2(n_{\lambda'}-n_{\lambda''})
+\delta(\omega_{\lambda}-\omega_{\lambda'}+\omega_{\lambda''}) \bigr]
+\end{split}
+\]</div>
+<p><span class="arithmatex">\(n_{\lambda}\)</span> is the equilibrium occupation number. The sum is over momentum conserving three-phonon processes, <span class="arithmatex">\(\textbf{q}+\textbf{q}'+\textbf{q}''=\textbf{G}\)</span>, and the deltafunctions in frequency ensure energy conservation. The three-phonon matrix elements are given by</p>
+<div class="arithmatex">\[
+\Phi_{\lambda\lambda'\lambda''} =
+\sum_{ijk}
+\sum_{\alpha\beta\gamma}
+\frac{
+\epsilon_{\lambda}^{i \alpha}
+\epsilon_{\lambda'}^{j \beta}
+\epsilon_{\lambda''}^{k \gamma}
+}{
+\sqrt{m_{i}m_{j}m_{j}}
+\sqrt{
+    \omega_{\lambda}
+    \omega_{\lambda'}
+    \omega_{\lambda''}}
+}
+\Phi^{\alpha\beta\gamma}_{ijk}
+e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k}
+\]</div>
+<p>where <span class="arithmatex">\(m_i\)</span> is the mass of atom <span class="arithmatex">\(i\)</span>, <span class="arithmatex">\(\epsilon_{\lambda}^{\alpha i}\)</span> is component <span class="arithmatex">\(\alpha\)</span> of the eigenvector for mode <span class="arithmatex">\(\lambda\)</span> and atom <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(\textbf{r}_i\)</span> is the lattice vector associated with atom <span class="arithmatex">\(i\)</span>.</p>
+<p>Mass disorder, in the form of natural isotope distributions also cause thermal resistance. According to Tamura[^Tamura1983], if the isotopes are randomly distributed on the lattice sites then the strength of the isotope scattering can be given by a mass variance parameter <span class="arithmatex">\(g\)</span>:</p>
+<div class="arithmatex">\[
+g_i=\sum_j c_{i}^j \left(\frac{m_i^j-\bar{m_i}}{\bar{m_i}}\right)^2
+\]</div>
+<p>where <span class="arithmatex">\(\bar{m_i}\)</span> is the average isotopic mass( <span class="arithmatex">\(\bar{m_i}=\sum_j c_i^j m_i^j\)</span> ), <span class="arithmatex">\(m^j_i\)</span> is the mass of isotope <span class="arithmatex">\(j\)</span> of atom <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(c^j_i\)</span> is its concentration. The contribution to the imaginary part of the self-energy is</p>
+<div class="arithmatex">\[
+\Gamma^{\textrm{iso}}_{\lambda}=
+\frac{\pi}{4} \sum_{\lambda'}
+\underbrace{\omega_{\lambda}\omega_{\lambda'} \sum_i g_i \left| \epsilon_{\lambda}^{i \dagger} \epsilon_{\lambda'}^{i} \right|^2}_{\Lambda_{\lambda\lambda'}}
+\delta(\omega_{\lambda}-\omega_{\lambda'})
+\]</div>
+<p>Per default, the isotope distribution will be the natural distribution. In case some other distribution is desired, this can be specified.</p>
+<p>Scattering by domain boundaries is implemented as</p>
+<div class="arithmatex">\[
+\Gamma^{\textrm{boundary}}_{\lambda} = \frac{ v_{\lambda} }{2d}
+\]</div>
+<p>Where <span class="arithmatex">\(d\)</span> is a characteristic domain size.</p>
+<h3 id="beyond-the-relaxation-time-approximation">Beyond the relaxation time approximation</h3>
+<p>So far we have have considered the phonon heat conduction as an elastic process, whereas it is inelastic. This can be treated by iteratively solving the phonon boltzmann equation, formulated in terms of the (linear) deviations from equilibrium occupation numbers.[^peierls1929]<sup>,</sup>[^Omini1996]<sup>,</sup>[^Omini]<sup>,</sup>[^Broido2007]<sup>,</sup>[^Broido2005]</p>
+<p></div>
+</div>
+</div></p>
+<div class="jumbotron jumbotron-explain">
+<div class="container-fluid">
+<div class="row">
+<div class="col-md-offset-2 col-md-10 " id='text'>
+
+<h4>Phonon scattering rates and the phonon Boltzmann equation</h4>
+
+</div>
+</div>
+<div class="row">
+<div class="col-md-offset-2 col-md-8 " id='text'>
+
+I always found it confusing how you arrived at most of these things. This is something I put together for myself, to clear it up a bit. Please bear in mind that this is not an attempt at a formal derivation whatsoever, just to make it a bit easier to interpret the different terms. There might be an arbitrary number of plusses and minuses and other things missing. Recall the transformation we introduced [earlier](../program/phonon_dispersion_relations.html):
+
+$$
+\begin{equation}\label{eq:normalmodetransformation}
+\hat{u}_{i\alpha} = \sqrt{ \frac{\hbar}{2N m_\alpha} }
+\sum_\lambda \frac{\epsilon_\lambda^{i\alpha}}{ \sqrt{ \omega_\lambda} }
+e^{i\mathbf{q}\cdot\mathbf{r}_i}
+\left( \hat{a}^{\mathstrut}_\lambda + \hat{a}^\dagger_\lambda \right)
+\end{equation}
+$$
+
+and consider the three-phonon process where two phonons combine into one:
+
+$$
+\begin{equation*}
+\begin{split}
+\mathbf{q} + \mathbf{q}' + \mathbf{q}'' & = \mathbf{G} \\
+\omega + \omega' & = \omega''
+\end{split}
+\end{equation*}
+$$
+
+This process changes the state of the system:
+
+$$
+\begin{equation}
+\underbrace{\left| \ldots , n_{\lambda},n_{\lambda'},n_{\lambda''} , \ldots \right\rangle}_{\left\vert i \right\rangle}
+\rightarrow
+\underbrace{\left| \ldots , n_{\lambda}-1,n_{\lambda'}-1,n_{\lambda''}+1, \ldots \right\rangle}_{\left\vert f \right\rangle}
+\end{equation}
+$$
+
+that is, we lost one phonon at $\lambda$ and one at $\lambda'$, and created a phonon at $\lambda''$.
+Mostly out of habit, we sandwich the Hamiltonian between the initial and final states:
+
+$$
+\begin{equation}\label{eq:sandwich}
+{\left\langle f \middle\vert \hat{H} \middle\vert i \right\rangle} =
+{\left\langle f \middle\vert \sum_i \frac{p^2_i}{2m}  +
+\frac{1}{2!}\sum_{ij} \sum_{\alpha\beta}\Phi_{ij}^{\alpha\beta}
+u_i^\alpha u_j^\beta +\frac{1}{3!}
+\sum_{ijk} \sum_{\alpha\beta\gamma}\Phi_{ijk}^{\alpha\beta\gamma}
+u_i^\alpha u_j^\beta u_k^\gamma \ldots
+\middle\vert i \right\rangle}
+\end{equation}
+$$
+
+and remember the rules for ladder operators, and that the eigenstates to the quantum harmonic oscillator are orthogonal:
+
+$$
+\begin{equation*}
+\begin{split}
+\hat{a}^\dagger \left\vert n \right\rangle & = \sqrt{n+1} \left\vert n + 1 \right\rangle \\
+\hat{a} \left\vert n \right\rangle & = \sqrt{n} \left\vert n -1 \right\rangle \\
+\left\langle i \middle\vert j \right\rangle & = \delta_{ij}
+\end{split}
+\end{equation*}
+$$
+
+Inserting eq \ref{eq:normalmodetransformation} into \ref{eq:sandwich} (and realising that the kinetic energy part and the second order part disappears), we end up with a pretty large expression, that we will deal with in steps, first identify
+
+$$
+\begin{equation}\label{eq:uprod}
+\begin{split}
+u^\alpha_{i}u^\beta_{j}u^\gamma_{k} & =
+%
+\left(\frac{\hbar}{2N}\right)^{3/2} \frac{1}{\sqrt{m_{i}m_{j}m_{k}}}
+\sum_{\lambda\lambda'\lambda''}
+\frac{
+\epsilon_{\lambda}^{i \alpha}
+\epsilon_{\lambda'}^{j \beta}
+\epsilon_{\lambda''}^{k \gamma}
+}{
+\sqrt{
+    \omega_{\lambda}
+    \omega_{\lambda'}
+    \omega_{\lambda''}}
+}
+e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k}
+ \left(a_{\lambda}+a_{\lambda}^\dagger \right)
+\left(a_{\lambda'}+a_{\lambda'}^\dagger \right)
+\left(a_{\lambda''}+a_{\lambda''}^\dagger \right)
+\end{split}
+\end{equation}
+$$
+
+as well as
+
+$$
+\begin{equation}
+\begin{split}
+& \sum_{\lambda\lambda'\lambda''}
+\left\langle f \middle\vert  
+\left(a_{\lambda}+a_{\lambda}^\dagger \right)
+\left(a_{\lambda'}+a_{\lambda'}^\dagger \right)
+\left(a_{\lambda''}+a_{\lambda''}^\dagger \right)
+\middle\vert i \right\rangle = \\
+= & \sum_{\lambda\lambda'\lambda''} \left\langle f \middle\vert
+\hat{a}_{\lambda}   \hat{a}_{\lambda'}   \hat{a}_{\lambda''} + \hat{a}_{\lambda}   \hat{a}_{\lambda'}   \hat{a}^{\dagger}_{\lambda''} + \hat{a}_{\lambda}   \hat{a}^{\dagger}_{\lambda'}   \hat{a}_{\lambda''} + \hat{a}_{\lambda}   \hat{a}^{\dagger}_{\lambda'}   \hat{a}^{\dagger}_{\lambda''} + \hat{a}^{\dagger}_{\lambda}   \hat{a}_{\lambda'}   \hat{a}_{\lambda''} + \hat{a}^{\dagger}_{\lambda}   \hat{a}_{\lambda'}   \hat{a}^{\dagger}_{\lambda''} + \hat{a}^{\dagger}_{\lambda}   \hat{a}^{\dagger}_{\lambda'}   \hat{a}_{\lambda''} + \hat{a}^{\dagger}_{\lambda}   \hat{a}^{\dagger}_{\lambda'}   \hat{a}^{\dagger}_{\lambda''}
+\middle\vert i \right\rangle = \\
+= & \sum_{\lambda\lambda'\lambda''} \left\langle f \middle\vert
+a_{\lambda}a_{\lambda'}a^\dagger_{\lambda''}
+\middle\vert i \right\rangle
+ = 3 \sqrt{n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)}
+\end{split}
+\end{equation}
+$$
+
+where the factor 3 comes from the multiplicity, to get at
+
+$$
+\begin{equation}
+{\left\langle f \middle\vert \hat{H}_3 \middle\vert i \right\rangle} =
+\frac{1}{2}
+\sum_{ijk} \sum_{\alpha\beta\gamma}\Phi_{ijk}^{\alpha\beta\gamma}
+\sqrt{n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)}
+%
+\left(\frac{\hbar}{2N}\right)^{3/2}
+\frac{
+\epsilon_{\lambda}^{i \alpha}
+\epsilon_{\lambda'}^{j \beta}
+\epsilon_{\lambda''}^{k \gamma}
+}{
+\sqrt{m_{i}m_{j}m_{j}}
+\sqrt{
+    \omega_{\lambda}
+    \omega_{\lambda'}
+    \omega_{\lambda''}}
+}
+e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k}
+\end{equation}
+$$
+
+The initial factor 1/2 is the multiplicity cancelled by the 3! from the Hamiltonian. Here, as it happens, we can identify the three-phonon matrix elements and simplify a little bit more
+
+$$
+\begin{equation}
+{\left\langle f \middle\vert \hat{H}_3 \middle\vert i \right\rangle} =
+\frac{1}{2}
+\sqrt{n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)}
+\left(\frac{\hbar}{2N}\right)^{3/2}
+\Phi_{\lambda\lambda'\lambda''}
+\end{equation}
+$$
+
+The probability of this particular three-phonon process can be estimated via the Fermi golden rule:
+
+$$
+\begin{equation}
+\begin{split}
+P_{\lambda\lambda'\rightarrow\lambda''} & =\frac{2\pi}{\hbar}
+\left|{\left\langle f \middle\vert \hat{H}_3 \middle\vert i \right\rangle}\right|^2
+\delta(E_f-E_i) =
+\frac{\hbar^2\pi}{16N}
+n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)
+\left| \Phi_{\lambda\lambda'\lambda''} \right|^2
+\delta(E_f-E_i)
+\end{split}
+\end{equation}
+$$
+
+With near identical reasoning, we can also arrive at
+
+$$
+\begin{equation}\label{pplus}
+P_{\lambda\rightarrow\lambda'\lambda''} =
+\frac{\hbar^2\pi}{16N}
+n_{\lambda}(n_{\lambda'}+1)(n_{\lambda''}+1)
+\left| \Phi_{\lambda\lambda'\lambda''} \right|^2
+\delta(E_f-E_i)
+\end{equation}
+$$
+
+for the other kind of three-phonon processes, and
+
+$$
+\begin{equation}\label{pminus}
+P_{\lambda\rightarrow\lambda'} =\frac{2\pi}{\hbar}\left|\langle f | H^{\textrm{iso}} | i \rangle \right|^2\delta(E_f-E_i) =
+\frac{\pi\hbar}{2N}  n_{\lambda}(n_{\lambda'}+1) \Lambda_{\lambda\lambda'}\delta(E_f-E_i)
+\end{equation}
+$$
+
+for the isotope scattering. I leave those derivations as an exercise. The phonon Boltzmann equation is stated as:
+
+$$
+\begin{equation}\label{eq:pbe}
+\frac{\partial \tilde{n}_\lambda}{\partial T} \mathbf{v}_\lambda \cdot \nabla T =
+\left. \frac{\partial \tilde{n}_\lambda }{\partial t} \right|_{\mathrm{coll}}
+\end{equation}
+$$
+
+Where $\tilde{n}$ is the non-equilibrium occupation number. This is ridiculously complicated. To make life easier, we only consider the terms we outlined above as possible collisions. Gathering all possible events that involve mode $\lambda$ we get
+
+$$
+\begin{equation}\label{manyprob}
+\begin{split}
+\left. \frac{\partial n_{\lambda}}{ \partial t} \right|_{\mathrm{coll}}
+= &  \sum_{\lambda'}
+\left( P_{\lambda\rightarrow\lambda'}-P_{\lambda'\rightarrow\lambda } \right) +
+\sum_{\lambda'\lambda''}
+- P_{\lambda  \rightarrow \lambda' \lambda'' }
+- P_{\lambda  \rightarrow \lambda''\lambda'  }
++ P_{\lambda' \rightarrow \lambda  \lambda'' }
++ P_{\lambda' \rightarrow \lambda''\lambda   }
++ P_{\lambda''\rightarrow \lambda  \lambda'  }
++ P_{\lambda''\rightarrow \lambda' \lambda   } \\
+& - P_{\lambda   \lambda' \rightarrow \lambda'' }
+- P_{\lambda   \lambda'' \rightarrow \lambda'  }
+- P_{\lambda'  \lambda   \rightarrow \lambda'' }
++ P_{\lambda'  \lambda'' \rightarrow \lambda   }
+- P_{\lambda'' \lambda   \rightarrow \lambda'  }
++ P_{\lambda'' \lambda'  \rightarrow \lambda   }
+\end{split}
+\end{equation}
+$$
+
+Which does not seem to make life easier. To make it slightly worse, we insert \ref{pplus} and \ref{pminus} into this, and at the same time say that the non-equilibrium distribution functions are the equilibrium distributions, plus a (small) deviation:
+
+$$
+\begin{equation}
+\tilde{n}_{\lambda}\approx n_{\lambda}+\epsilon_{\lambda}
+\end{equation}
+$$
+
+After some [hard work](https://reference.wolfram.com/language/ref/FullSimplify.html), and discarding terms of $\epsilon^2$ and higher, we get
+
+$$
+\begin{equation}
+\begin{split}
+\left. \frac{\partial n_{\lambda}}{ \partial t} \right|_{\mathrm{coll}}
+= & \sum_{\lambda'\lambda''}
+\frac{\hbar\pi}{8N}
+\left| \Phi_{\lambda\lambda'\lambda''} \right|^2 \Big(
+\left[
+-n_{\lambda} \epsilon_{\lambda'} + n_{\lambda''} (\epsilon_{\lambda} + \epsilon_{\lambda'}) + \epsilon_{\lambda''} + n_{\lambda} \epsilon_{\lambda''} + n_{\lambda'} (-\epsilon_{\lambda} + \epsilon_{\lambda''})
+\right]\delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''}) + \\
+& \left[
+\epsilon_{\lambda'} + n_{\lambda} \epsilon_{\lambda'} + n_{\lambda''} (-\epsilon_{\lambda} + \epsilon_{\lambda'}) - n_{\lambda} \epsilon_{\lambda''} +
+  n_{\lambda'} (\epsilon_{\lambda} + \epsilon_{\lambda''} )
+\right]\delta(\omega_{\lambda}-\omega_{\lambda'}+\omega_{\lambda''}) - \\
+& \left[(1 + n_{\lambda'} + n_{\lambda''})\epsilon_{\lambda} - n_{\lambda''}\epsilon_{\lambda''} - n_{\lambda'} \epsilon_{\lambda''} + n_{\lambda} (\epsilon_{\lambda'} + \epsilon_{\lambda''} )\right]
+\delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''}) \Big)
+\end{split}
+\end{equation}
+$$
+
+Which does not seem like a lot of help. If we make another substitution, and say that the deviation from equilibrium behaves sort of like the equilibrium (with no loss of generality, just to make life easier):
+
+$$
+\begin{equation}
+\epsilon_{\lambda} =
+\frac{\partial n_{\lambda} }{\partial \omega_\lambda}
+\frac{k_B T}{\hbar} \zeta_{\lambda}=-n_{\lambda}(n_{\lambda}+1) \zeta_{\lambda}
+\end{equation}
+$$
+
+Inserting this, and more tedious algebra, we get
+
+$$
+\begin{equation}
+\begin{split}
+\left. \frac{\partial n_{\lambda}}{ \partial t} \right|_{\mathrm{coll}}
+=& \frac{\hbar\pi}{4N}
+\sum_{\lambda'\lambda''}
+\left| \Phi_{\lambda\lambda'\lambda''} \right|^2 \Big(
+n_{\lambda} n_{\lambda'} (n_{\lambda''}+1) \delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''} )
+\left( \zeta_{\lambda} + \zeta_{\lambda'} - \zeta_{\lambda''} \right) + \\
+& \frac{1}{2} n_{\lambda} (n_{\lambda'}+1) (n_{\lambda''}+1) \delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''})
+\left( \zeta_{\lambda} - \zeta_{\lambda'} -\zeta_{\lambda''} \right) \Big)
+\end{split}
+\end{equation}
+$$
+
+If we add the isotope term again, that I forgot at some point between the beginning and here, we can rearrange this in terms of scattering rates that should look familiar (using strange relations for occupation numbers that only hold when the deltafunctions in energy are satisfied):
+
+$$
+\begin{equation}
+\left. \frac{\partial n_{\lambda}}{ \partial t} \right|_{\mathrm{coll}} =
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}
+\left( \zeta_{\lambda}+\zeta_{\lambda'}-\zeta_{\lambda''} \right)
++\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\left( \zeta_{\lambda}-\zeta_{\lambda'}-\zeta_{\lambda''} \right)+
+\sum_{\lambda'}
+\tilde{P}^\textrm{iso}_{\lambda\lambda'} \left( \zeta_{\lambda}-\zeta_{\lambda'} \right)
+\end{equation}
+$$
+
+where
+
+$$
+\begin{align}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}&=
+\frac{\hbar \pi}{4 N}
+n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)\left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''})
+\\
+\tilde{P}^{-}_{\lambda\lambda'\lambda''}&=
+\frac{\hbar \pi}{4 N}
+n_{\lambda}(n_{\lambda'}+1)(n_{\lambda''}+1)\left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''})
+\\
+\tilde{P}^\textrm{iso}_{\lambda\lambda'} &=
+\frac{\pi}{2N} n_{\lambda}(n_{\lambda'}+1) \Lambda_{\lambda\lambda'}
+\delta(\omega_{\lambda}-\omega_{\lambda})
+\end{align}
+$$
+
+What we have done here is to rearrange the transition propabilities to scattering rates. If we let
+
+$$
+\begin{equation}
+\zeta_{\lambda}=\frac{\hbar}{k_B T} \mathbf{F}_{\lambda} \cdot \nabla T
+\end{equation}
+$$
+
+and combine everything we end up with
+
+$$
+\begin{equation}
+\begin{split}
+-\frac{\omega_{\lambda}}{T}n_{\lambda}(n_{\lambda}+1)\mathbf{v}_{\lambda} \cdot \nabla T = &
+ \sum_{\lambda'}
+\tilde{P}^\textrm{iso}_{\lambda\lambda'}
+\left(\mathbf{F}_{\lambda}-\mathbf{F}_{\lambda'}\right)\cdot\nabla T +
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}
+\left(\mathbf{F}_{\lambda}+\mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''}\right)\cdot\nabla T+
+\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\left(\mathbf{F}_{\lambda}-\mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''}\right)\cdot\nabla T =
+\\ = &
+\mathbf{F}_{\lambda}\cdot\nabla T
+\left(
+\sum_{\lambda'}
+\tilde{P}^\textrm{iso}_{\lambda\lambda'}
++
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}+
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\right)- \\
+& - \sum_{\lambda'}
+\tilde{P}^\textrm{iso}_{\lambda\lambda'}\mathbf{F}_{\lambda'}\cdot\nabla T +
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}
+\left(\mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''}\right)\cdot\nabla T-
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\left(\mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''}\right)\cdot\nabla T
+\end{split}
+\end{equation}
+$$
+
+Where we can identify
+
+$$
+\begin{equation}
+Q_{\lambda}=\sum_{\lambda'}
+\tilde{P}^\textrm{iso}_{\lambda\lambda'}
++
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}+
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\end{equation}
+$$
+
+And rearrange terms
+
+$$
+\begin{equation}
+\mathbf{F}_{\lambda}=
+\frac{\omega_{\lambda} \bar{n}_{\lambda}(\bar{n}_{\lambda}+1)\mathbf{v}_{\lambda} }{T Q_{\lambda}}
++
+\frac{1}{Q_{\lambda}}\left[
+\sum_{\mathbf{q}'\mathbf{q}''}\sum_{s's''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}
+\left( \mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''} \right)-
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\left( \mathbf{F}_{\lambda'}-\mathbf{F}_{\lambda''} \right)
+\right]
+\end{equation}
+$$
+
+And we have a set of equations for $F$ that we can solve self-consistently. Previously, we used the imaginary part of the self-energy to get a phonon lifetime. What we got here, from Fermi golden rule, is related:
+
+$$
+\sum_{\lambda'} \tilde{P}^\textrm{iso}_{\lambda\lambda'} =
+\frac{\pi}{2N} n_{\lambda}(n_{\lambda}+1) \sum_{\lambda'}  \Lambda_{\lambda\lambda'}
+\delta(\omega_{\lambda}-\omega_{\lambda}) = 2 n_{\lambda}(n_{\lambda}+1) \Gamma^{\textrm{iso}}_{\lambda}
+$$
+
+This can also be done for the three-phonon terms:
+
+$$
+\begin{equation}
+\begin{split}
+\sum_{\lambda'\lambda''} \tilde{P}^{+}_{\lambda\lambda'\lambda''}+
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''} & =
+\frac{\hbar \pi}{8 N}
+\sum_{\lambda'\lambda''} \left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\left[
+n_{\lambda}(n_{\lambda'}+1)(n_{\lambda''}+1) \delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''})+
+2n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)\delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''})
+\right] \\
+& = n_{\lambda}(n_{\lambda}+1) \frac{\hbar \pi}{8 N}
+\sum_{\lambda'\lambda''} \left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\left[
+\frac{n_{\lambda}(n_{\lambda'}+1)(n_{\lambda''}+1)}{n_{\lambda}(n_{\lambda}+1)}
+\delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''})
++
+\frac{2n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)}{n_{\lambda}(n_{\lambda}+1)}
+\delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''})
+\right] \\
+& =
+n_{\lambda}(n_{\lambda}+1) \frac{\hbar \pi}{8 N}
+\sum_{\lambda'\lambda''} \left|\Phi_{\lambda\lambda'\lambda''}\right|^2
+\left[
+(n_{\lambda'}+n_{\lambda''}+1)
+\delta(\omega_{\lambda}-\omega_{\lambda'}-\omega_{\lambda''})
++
+(n_{\lambda'}-n_{\lambda''})
+\delta(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''})
+\right] \\
+& = 2 n_{\lambda}(n_{\lambda}+1) \Gamma_{\lambda}
+\end{split}
+\end{equation}
+$$
+
+Where the second to last step seems a little impossible, but with $\hbar\omega/k_BT = x$, you get
+
+$$
+\begin{equation}
+\frac{  n_{\lambda}(n_{\lambda'}+1)(n_{\lambda''}+1)  }{ n_{\lambda}(n_{\lambda}+1) } -
+\left( n_{\lambda'} + n_{\lambda''} + 1 \right)
+=
+\frac{
+1-\exp[x'+x''-x]
+}{
+\left( \exp[x'] -1 \right) \left( \exp[x''] -1 \right)
+}
+\end{equation}
+$$
+
+which comes out to 0 when $x=x'+x''$, which the deltafunction ensures. In the same way
+
+$$
+\begin{equation}
+\frac{  n_{\lambda}n_{\lambda'}(n_{\lambda''}+1)  }{ n_{\lambda}(n_{\lambda}+1) } -
+\left( n_{\lambda'} - n_{\lambda''} \right)
+=
+\frac{
+\exp[-x]\left(\exp[x+x']-\exp[x''] \right)
+}{
+\left( \exp[x'] -1 \right) \left( \exp[x''] -1 \right)
+}
+\end{equation}
+$$
+
+comes out to 0 when $x''=x+x'$. We can directly relate the relaxation time lifetime
+
+$$
+\begin{equation}
+\tau_{\lambda} = \frac{1}{2\Gamma_{\lambda}} = \frac{ n_{\lambda}(n_{\lambda}+1) }{Q_{\lambda}}
+\end{equation}
+$$
+
+to an initial guess
+
+$$
+\mathbf{F}^0_{\lambda} =
+\frac{\tau_{\lambda} \omega_{\lambda} \mathbf{v}_{\lambda} }{T}
+$$
+
+and iteratively solve
+
+$$
+\begin{equation}
+\mathbf{F}^{i+1}_{\lambda}=
+\mathbf{F}^0_{\lambda}
++
+\frac{1}{Q_{\lambda}}\left[
+\sum_{\lambda'\lambda''}
+\tilde{P}^{+}_{\lambda\lambda'\lambda''}
+\left( \mathbf{F}^{i}_{\lambda'}-\mathbf{F}^{i}_{\lambda''} \right)-
+\frac{1}{2}\tilde{P}^{-}_{\lambda\lambda'\lambda''}
+\left( \mathbf{F}^{i}_{\lambda'}-\mathbf{F}^{i}_{\lambda''} \right)
+\right]
+\end{equation}
+$$
+
+to arrive at the non-equilibrium distributions. The thermal conductivity tensor is then given as
+
+$$
+\begin{equation}
+\kappa_{\alpha\beta} =
+\frac{1}{V}
+\sum_{\lambda}
+\frac{T c_{\lambda} v_{\lambda}^\alpha F_{\lambda}^\beta}{\omega_{\lambda}}
+\end{equation}
+$$
+
+</div>
+
+</div>
+</div>
+</div>
+</div>
+<div class="container-fluid">
+<div class="row" id="text">
+<div class="col-md-offset-2 col-md-7 col-md-offset-3">
+
+
+### Cumulative kappa
+
+@todo Check code snippets
+
+@todo Spectral kappa, links to things.
+
+Experimentally, the cumulative thermal conductivity with respect to phonon mean free path,
+
+$$
+l_{\lambda} = \left| v_{\lambda} \right| \tau_{\lambda} \,,
+$$
+
+can be measured.[^Minnich2012] The cumulative thermal conductivity can then be computed as a sum of the fraction of heat that is carried by phonons with mean free paths smaller than $l$:
+
+$$
+\kappa_{\alpha\beta}^{\textrm{acc}}(l)=
+\frac{1}{V} \sum_{\lambda}
+C_{\lambda} v^{\alpha}_{\lambda} v^{\beta}_{\lambda} \tau_{\lambda} \Theta(l- l_{\lambda} ) \,,
+$$
+
+where $\Theta$ is the Heaviside step function.
+
+One can also define a spectral thermal conductivity as
+
+$$
+\kappa_{\alpha\beta}(\omega)=
+\frac{1}{V} \sum_{\lambda}
+C_{\lambda} v^{\alpha}_{\lambda} v^{\beta}_{\lambda} \tau_{\lambda} \delta(\omega- \omega_{\lambda} )
+$$
+
+which is a measure which frequencies contribute most to thermal transport.
+
+### Thin film scattering
+
+Constrained geometries will incur additional scattering from domain boundaries. For a thin film (thin, but thick enough that the interior of the film is accurately described by bulk phonons) one can estimate the suppression due to film thinkness.[^Minnich2015] Assyming the cross-plane direction of the film is in the $y$-direction, and the thermal gradient is applied in the $z$-direction, the in-plane thermal conductivity $\kappa_{zz}$ is supressed as:
+
+$$
+\kappa_{zz}(d)=A+B+C,
+$$
+
+where
+
+$$
+\begin{split}
+x_{\lambda} = & \frac{\hbar\omega_{\lambda}}{V}
+\frac{\partial n_{\lambda}} {\partial T}
+v_{\lambda}^z l_{\lambda}^z
+  \\
+A = & -\frac{1}{d} \sum_{v_y>0}  
+x_{\lambda}
+\left(  -l^{y}_{\lambda} \exp\left[\frac{d}{l^{y}_{\lambda}}\right]+l^{y}_{\lambda}-d  \right) \\
+B = & -\frac{1}{d} \sum_{v_y<0}  
+x_{\lambda}
+\left(
+l^{y}_{\lambda}
+\exp\left[  -\frac{d}{l^{y}_{\lambda}}  \right]
+-l^{y}_{\lambda}-d
+\right) \\
+C = & \sum_{v_y=0} x_{\lambda}
+\end{split}
+$$
+
+where $v_y$ and $v_z$ are the components of the phonon group velocity along the $y$ and $z$ directions, $\tau_{\lambda}$ is the phonon relaxation time. $l^{y}_{\lambda}$ is the $y$ component of the MFP and $d$ is the thickness of the film in $y$-direction.
+
+### Input files
+
+These files are necesarry:
+
+* [infile.ucposcar](../page/files.html#infile.ucposcar)
+* [infile.forceconstant](extract_forceconstants.html#infile.forceconstant)
+* [infile.forceconstant_thirdorder](extract_forceconstants.html#infile.forceconstant_thirdorder)
+
+and these are optional:
+
+* [infile.isotopes](../page/files.html#infile.isotopes) (for non-natural isotope distribution)
+
+### Output files
+
+Depending on options, the set of output files may differ. We start with the basic files that are written after running this code.
+
+#### `outfile.thermal_conductivity`
+
+This file contains components of the thermal conductivity tensor $\kappa_{\alpha \beta}$ for each temperature.
+
+<table class='table table-striped'>
+<thead><tr>
+    <th>Row</th>
+    <th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+    <td>1</td>
+    <td>
+    \( T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad   \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx} \)
+    </td>
+</tr>
+<tr>
+    <td>2</td>
+    <td>
+    \( T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad   \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx} \)
+    </td>
+</tr>
+<tr>
+    <td>...</td>
+    <td>...</td>
+</tr>
+</tbody>
+</table>
+
+#### `outfile.cumulative_kappa.hdf5`
+
+This file is self-explainatory. It contains the different cumulative plots described above, at a series of temperatures. Below is a matlab snippet that plots part of the output.
+
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w">    </span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c">% filename</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">fn</span><span class="p">=</span><span class="s">&#39;outfile.cumulative_kappa.hdf5&#39;</span><span class="p">;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c">% which temperature?</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">t</span><span class="p">=</span><span class="mi">1</span><span class="p">;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w">    </span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="c">% read in cumulative kappa vs mean free path from file</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/mean_free_path_axis&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="n">xunit</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/mean_free_path_axis&#39;</span><span class="p">],</span><span class="s">&#39;unit&#39;</span><span class="p">);</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/cumulative_kappa_vs_mean_free_path_total&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="c">% projections to modes and/or atoms</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="n">z</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/cumulative_kappa_vs_mean_free_path_per_atom&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="c">%z=h5read(fn,[&#39;/temperature_&#39; num2str(t) &#39;/cumulative_kappa_vs_mean_free_path_per_mode&#39;]);</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="n">yunit</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/cumulative_kappa_vs_mean_free_path_total&#39;</span><span class="p">],</span><span class="s">&#39;unit&#39;</span><span class="p">);</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="c">% plot</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="c">% set a legend</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="n">lgd</span><span class="p">{</span><span class="mi">1</span><span class="p">}=</span><span class="s">&#39;Total&#39;</span><span class="p">;</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="n">lgd</span><span class="p">{</span><span class="nb">i</span><span class="o">+</span><span class="mi">1</span><span class="p">}=[</span><span class="s">&#39;Atom &#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="nb">i</span><span class="p">)];</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">    </span><span class="n">l</span><span class="p">=</span><span class="nb">legend</span><span class="p">(</span><span class="n">lgd</span><span class="p">);</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="n">l</span><span class="p">,</span><span class="s">&#39;edgecolor&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;location&#39;</span><span class="p">,</span><span class="s">&#39;northwest&#39;</span><span class="p">);</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">    </span><span class="c">% some titles</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Cumulative kappa vs mean free path&#39;</span><span class="p">);</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">([</span><span class="s">&#39;Cumulative \kappa (&#39;</span><span class="w"> </span><span class="n">yunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">([</span><span class="s">&#39;Mean free path (&#39;</span><span class="w"> </span><span class="n">xunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">    </span><span class="c">% get some reasonable ranges</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w">    </span><span class="n">minx</span><span class="p">=</span><span class="n">x</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">find</span><span class="p">(</span><span class="n">y</span><span class="o">&lt;</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="mf">1E-3</span><span class="p">))));</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="w">    </span><span class="n">maxx</span><span class="p">=</span><span class="n">x</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">find</span><span class="p">(</span><span class="n">y</span><span class="o">&gt;</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">))))</span><span class="o">*</span><span class="mi">2</span><span class="p">;</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">    </span><span class="nb">xlim</span><span class="p">([</span><span class="n">minx</span><span class="w"> </span><span class="n">maxx</span><span class="p">]);</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">);</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="w">    </span><span class="c">% read in spectral kappa vs frequency</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/frequency_axis&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/spectral_kappa_vs_frequency_total&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="w">    </span><span class="n">z</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/spectral_kappa_vs_frequency_per_mode&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="w">    </span><span class="c">%z=h5read(fn,[&#39;/temperature_&#39; num2str(t) &#39;/spectral_kappa_vs_frequency_per_atom&#39;]);</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Spectral \kappa (W/m/K/THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Spectral kappa vs frequency&#39;</span><span class="p">)</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a><span class="w">    </span><span class="c">% read in cumulative kappa vs mean free path from file</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/boundary_scattering_lengths&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,[</span><span class="s">&#39;/temperature_&#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;/boundary_scattering_kappa&#39;</span><span class="p">]);</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a><span class="w">    </span><span class="c">% grab only kxx</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">squeeze</span><span class="p">(</span><span class="n">y</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,:));</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Domain size (m)&#39;</span><span class="p">)</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Kappa (W/mK)&#39;</span><span class="p">)</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Kappa vs boundary scattering&#39;</span><span class="p">)</span>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a>
+</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a><span class="w">    </span><span class="c">% get a reasonable range in x</span>
+</span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a><span class="w">    </span><span class="n">minx</span><span class="p">=</span><span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">find</span><span class="p">(</span><span class="n">y</span><span class="o">&lt;</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="mf">1E-2</span><span class="p">))))</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a><span class="w">    </span><span class="n">maxx</span><span class="p">=</span><span class="n">x</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">find</span><span class="p">(</span><span class="n">y</span><span class="o">&gt;</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">))))</span><span class="o">*</span><span class="mi">2</span>
+</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a><span class="w">    </span><span class="nb">xlim</span><span class="p">([</span><span class="n">minx</span><span class="w"> </span><span class="n">maxx</span><span class="p">])</span>
+</span></code></pre></div>
+
+#### `outfile.grid_thermal_conductivity.hdf5`
+
+Option `--dumpgrid` produces this self-explainatory file. It will not get written if you use more than one temperature, the reason is that this file can get uncomfortably large, nearly all quantities on the full q-grid are written. Below is a matlab snippet that plots a subset:
+
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c">% file to read from</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">fn</span><span class="p">=</span><span class="s">&#39;outfile.grid_thermal_conductivity.hdf5&#39;</span><span class="p">;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c">% convert units to THz from Hz?</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">toTHz</span><span class="p">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1E12</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="nb">pi</span><span class="p">;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/linewidths&#39;</span><span class="p">);</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Linewidth (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/lifetimes&#39;</span><span class="p">);</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:),</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;yscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Lifetime (s)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/mean_free_paths&#39;</span><span class="p">);</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:),</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;yscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-41"><a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-42"><a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Mean free paths (m)&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+[^peierls1929]: Peierls, R. E. (1929). Annalen der Physik, 3, 1055
+
+[^peierls1955quantum]: [Peierls, R. E. (1955). Quantum Theory of Solids. Clarendon Press.](https://books.google.com/books?id=WvPcBUsSJBAC)
+
+[^Minnich2012]: [Minnich, A. J. (2012). Determining phonon mean free paths from observations of quasiballistic thermal transport. Physical Review Letters, 109(20), 1–5.](http://doi.org/10.1103/PhysRevLett.109.205901)
+
+[^Minnich2015]: [Minnich, A. J. (2015). Thermal phonon boundary scattering in anisotropic thin films. Applied Physics Letters, 107(18), 8–11.](http://doi.org/10.1063/1.4935160)
+
+[^Tamura1983]: [Tamura, S. (1983). Isotope scattering of dispersive phonons in Ge. Physical Review B, 27(2), 858–866.](http://doi.org/10.1103/PhysRevB.27.858)
+
+[^Omini1996]: [Omini, M., & Sparavigna, A. (1996). Beyond the isotropic-model approximation in the theory of thermal conductivity. Physical Review B, 53(14), 9064–9073.](http://doi.org/10.1103/PhysRevB.53.9064)
+
+[^Omini]: [Omini, M., & Sparavigna, A. (1997). Heat transport in dielectric solids with diamond structure. Nuovo Cimento Della Societa Italiana Di Fisica D, 19D, 1537–63.](http://www.sif.it/riviste/ncd/econtents/1997/019/10/article/5)
+
+[^Broido2007]: [Broido, D. A., Malorny, M., Birner, G., Mingo, N., & Stewart, D. A. (2007). Intrinsic lattice thermal conductivity of semiconductors from first principles. Applied Physics Letters, 91(23), 231922.](http://doi.org/10.1063/1.2822891)
+
+[^Broido2005]: [Broido, D. A., Ward, A., & Mingo, N. (2005). Lattice thermal conductivity of silicon from empirical interatomic potentials. Physical Review B, 72(1), 1–8.](http://doi.org/10.1103/PhysRevB.72.014308)
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.instant"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+        
+          <script src="../../javascripts/mathjax.js"></script>
+        
+      
+        
+          <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        
+      
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+      
+    
+  </body>
+</html>
