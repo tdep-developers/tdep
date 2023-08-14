@@ -3,57 +3,7 @@
 
 The main algorithm of the TDEP method. Starting with a symmetry analysis, this code finds the irreducible representation of interatomic forceconstants and extracts them from position and force data.
 
-### Command line options:
-
-
-
-
-Optional switches:
-
-* `--secondorder_cutoff value`, `-rc2 value`  
-    default value 5.0  
-    Cutoff for the second order force constants
-
-* `--thirdorder_cutoff value`, `-rc3 value`  
-    default value -1
-    mutually exclude "--thirdorder_njump"  
-    Cutoff for the third order force constants
-
-* `--fourthorder_cutoff value`, `-rc4 value`  
-    default value -1
-    mutually exclude "--fourthorder_njump"  
-    Cutoff for the fourth order force constants
-
-* `--polar`  
-    default value .false.  
-    Add dipole-dipole corrections for polar materials.
-
-* `--stride value`, `-s value`  
-    default value 1  
-    Use every N configuration instead of all. Useful for long MD simulations with linearly dependent configurations.
-
-* `--firstorder`  
-    default value .false.  
-    Include the first order force constants. These can be used to find the finite temperature equilibrium structure.
-
-* `--temperature value`  
-    default value -1  
-    Temperature for self-consistent solver.
-
-* `--norotational`  
-    default value .false.  
-    Turn off imposing rotational invariance. Needed for 2D systems.
-
-* `--help`, `-h`  
-    Print this help message
-
-* `--version`, `-v`  
-    Print version
-### Examples
-
-`extract_forceconstants -rc2 5.1` 
-
-`extract_forceconstants -rc2 4.5 -rc3 3.21` 
+[Command line options](./extract_forceconstants.md)
 
 ### Longer summary
 
