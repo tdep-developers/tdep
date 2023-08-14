@@ -38,5 +38,4 @@ This software is distributed under the MIT license. If you use it, please cite t
 
 ## Other things to look at
 
-* Tutorials can be found here: https://github.com/tdep-developers/tdep-tutorials
 * `tdeptools` a package to facilitate working with TDEP and perform additional postprocessing can be found here: https://github.com/flokno/tools.tdep
