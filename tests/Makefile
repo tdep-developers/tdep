@@ -7,4 +7,5 @@ clean:
 	rm -rf *.pytest_cache/
 	rm -f */contcar*
 	rm -f */*.dat
+	rm -f */*.log
 
