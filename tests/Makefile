@@ -1,5 +1,8 @@
 testfiles:
 	bash make_all_testfiles.sh
+
+pytest: clean testfiles
+	pytest
 	
 clean:
 	rm -f */outfile*
