@@ -29,6 +29,23 @@ Then run the build script via
 bash build_things.sh --nthreads_make 4
 ```
 
+If everything works find, the last lines of the output should be something like:
+
+```bash
+...
+
+Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely
+MANPATH=$MANPATH:/path/to/tdep/man
+PATH=$PATH:/path/to/tdep/bin
+export MANPATH
+export PATH
+alias gnuplot='gnuplot -persist'
+
+Everything should be set up and good to go!
+```
+
+i.e., add the respective lines to your `.bashrc` and you are all set up!
+
 ## Check your installation
 
 We advise to run the tests in [`./tests`](./tests)  to check your installation.
