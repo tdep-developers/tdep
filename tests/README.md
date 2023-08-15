@@ -17,7 +17,7 @@ To check the files that were created against reference data, please run
 make test
 ```
 
-This will run python scripts in each folder to check the produced output. **Please note that this requires 3 python dependencies which you find in `requirements.txt`**
+This will run python scripts in each folder to check the produced output. **Please note that this requires some python dependencies which you find in `requirements.txt` and install via `pip install -r requirements.txt`**.
 
 Run
 
