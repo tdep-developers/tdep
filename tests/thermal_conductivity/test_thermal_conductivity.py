@@ -10,7 +10,7 @@ files_hdf5 = [
 ]
 
 
-def test_mean_square_displacement(file="outfile.thermal_conductivity"):
+def test_thermal_conductivity(file="outfile.thermal_conductivity"):
     file_ref = folder / file
     file_new = parent / file
 
@@ -35,5 +35,5 @@ def test_hdf5(files=files_hdf5):
 
 
 if __name__ == "__main__":
-    test_mean_square_displacement()
+    test_thermal_conductivity()
     test_hdf5()
