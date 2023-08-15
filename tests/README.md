@@ -11,7 +11,7 @@ will run the TDEP binaries **from your current PATH** and create their output.
 
 ## Run tests
 
-Each folder has a `test_binary_name.py` file, either run this directly with `python test_binary_name.py` or use `pytest` to run them. This also works from the root folder.
+Each folder has a `test_binary_name.py` file, either run this directly with `python test_binary_name.py` or use `pytest` to run them. This also works from the root folder. `pytest` has to be installed in order to use it.
 
 ## Clean up
 
