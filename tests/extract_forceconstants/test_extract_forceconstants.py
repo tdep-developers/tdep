@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 from pathlib import Path
 
 parent = Path(__file__).parent
@@ -35,14 +34,14 @@ def test_fc2(file="outfile.forceconstant"):
     data_ref = _read_fc2(folder / file)
     data_new = _read_fc2(parent / file)
 
-    assert np.allclose(data_ref, data_new), (parent / file).absolute()
+    np.testing.assert_allclose(data_ref, data_new, err_msg=(parent / file).absolute())
 
 
 def test_fc3(file="outfile.forceconstant_thirdorder"):
     data_ref = _read_fc3(folder / file)
     data_new = _read_fc3(parent / file)
 
-    assert np.allclose(data_ref, data_new), (parent / file).absolute()
+    np.testing.assert_allclose(data_ref, data_new, err_msg=(parent / file).absolute())
 
 
 if __name__ == "__main__":

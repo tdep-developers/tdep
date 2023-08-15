@@ -12,7 +12,7 @@ def test_dispersion(file="outfile.dispersion_relations"):
     data_ref = np.loadtxt(file_ref)
     data_new = np.loadtxt(file_new)
 
-    assert np.allclose(data_ref, data_new), file_new.absolute()
+    np.testing.assert_allclose(data_ref, data_new, err_msg=file_new.absolute())
 
 
 if __name__ == "__main__":

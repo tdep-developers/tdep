@@ -21,7 +21,7 @@ def test_hdf5(files=files_hdf5):
         for var in ds_ref.data_vars:
             x = ds_ref[var]
             y = ds_new[var]
-            assert np.allclose(x, y), file_new
+            np.testing.assert_allclose(x, y, err_msg=var)
 
 
 if __name__ == "__main__":

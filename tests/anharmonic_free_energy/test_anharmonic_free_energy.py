@@ -22,7 +22,7 @@ def test_output(file="outfile.anharmonic_free_energy"):
     data_ref = _read_file(folder / file)
     data_new = _read_file(parent / file)
 
-    assert np.allclose(data_ref, data_new), (parent / file).absolute()
+    np.testing.assert_allclose(data_ref, data_new, err_msg=(parent / file).absolute())
 
 
 if __name__ == "__main__":
