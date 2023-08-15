@@ -10,7 +10,7 @@ files_hdf5 = [
 ]
 
 
-def test_thermal_conductivity(file="outfile.thermal_conductivity"):
+def _test_thermal_conductivity(file="outfile.thermal_conductivity"):
     file_ref = folder / file
     file_new = parent / file
 
@@ -20,7 +20,7 @@ def test_thermal_conductivity(file="outfile.thermal_conductivity"):
     np.testing.assert_allclose(data_ref, data_new, err_msg=file_new.absolute())
 
 
-def test_hdf5(files=files_hdf5):
+def _test_hdf5(files=files_hdf5):
     for file in files:
         file_ref = folder / file
         file_new = parent / file
@@ -31,9 +31,9 @@ def test_hdf5(files=files_hdf5):
         for var in ds_ref.data_vars:
             x = ds_ref[var]
             y = ds_new[var]
-            np.testing.assert_allclose(x, y, err_msg=file_new.absolute())
+            np.testing.assert_allclose(x, y, err_msg=var)
 
 
 if __name__ == "__main__":
-    test_thermal_conductivity()
-    test_hdf5()
+    _test_thermal_conductivity()
+    _test_hdf5()

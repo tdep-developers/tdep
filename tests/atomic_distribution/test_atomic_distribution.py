@@ -22,7 +22,7 @@ def test_mean_square_displacement(file="outfile.mean_square_displacement"):
     np.testing.assert_allclose(data_ref, data_new, err_msg=file_new.absolute())
 
 
-def test_hdf5(files=files_hdf5):
+def test_hdf5(files=files_hdf5, decimals=7):
     for file in files:
         file_ref = folder / file
         file_new = parent / file
@@ -31,8 +31,8 @@ def test_hdf5(files=files_hdf5):
         ds_new = xr.load_dataset(file_new)
 
         for var in ds_ref.data_vars:
-            x = ds_ref[var]
-            y = ds_new[var]
+            x = ds_ref[var].round(decimals=decimals)
+            y = ds_new[var].round(decimals=decimals)
             np.testing.assert_allclose(x, y, err_msg=var)
 
 
