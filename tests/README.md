@@ -11,7 +11,21 @@ will run the TDEP binaries **from your current PATH** and create their output.
 
 ## Run tests
 
-Each folder has a `test_binary_name.py` file, either run this directly with `python test_binary_name.py` or use `pytest` to run them. This also works from the root folder. `pytest` has to be installed in order to use it.
+To check the files that were created against reference data, please run
+
+```bash
+make test
+```
+
+This will run python scripts in each folder to check the produced output. **Please note that this requires 3 python dependencies which you find in `requirements.txt`**
+
+Run
+
+```bash
+make all
+```
+
+to run everything.
 
 ## Clean up
 

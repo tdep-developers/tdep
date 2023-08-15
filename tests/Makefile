@@ -1,7 +1,10 @@
 testfiles:
 	bash make_all_testfiles.sh
 
-pytest: clean testfiles
+test:
+	pytest
+
+all: clean testfiles
 	pytest
 	
 clean:
