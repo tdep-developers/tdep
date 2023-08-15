@@ -1,4 +1,3 @@
 numpy
-xarray
-netCDF4
+xarray[io]
 pytest
