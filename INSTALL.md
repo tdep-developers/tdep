@@ -31,7 +31,7 @@ bash build_things.sh --nthreads_make 4
 
 ## Check your installation
 
-We advise to run the examples in `tdep/examples` to test your installation after compilation.
+We advise to run the tests in [`./tests`](./tests)  to check your installation.
 
 ## HDF5
 

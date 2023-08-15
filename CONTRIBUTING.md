@@ -23,4 +23,4 @@ In order to contribute code to `TDEP`, please follow the usual steps for [prepar
 
   This will format the code with an indent (`-i`) of 4 characters, without enforcing line breaks (`-l 500` allows up to 500 characters per line - please use less.)
 
-- Please _document_ and _test_ your changes by providing an example in the `examples` folder. 
+- Please _document_ and _test_ your changes by providing an example in the [`./examples`](./examples) or [`./tests`](./tests) folder.
