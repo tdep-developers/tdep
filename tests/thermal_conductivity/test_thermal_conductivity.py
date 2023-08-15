@@ -17,7 +17,7 @@ def test_thermal_conductivity(file="outfile.thermal_conductivity"):
     data_ref = np.loadtxt(file_ref)
     data_new = np.loadtxt(file_new)
 
-    assert np.allclose(data_ref, data_new), f"CHECK {file_new.absolut()}"
+    assert np.allclose(data_ref, data_new), f"CHECK {file_new.absolute()}"
 
 
 def test_hdf5(files=files_hdf5):
