@@ -7,8 +7,6 @@ generate_structure/
 lineshape/
 pack_simulation/
 phonon_dispersion_relations/
-refine_structure/
-samples_from_md/
 thermal_conductivity/
 "
 
