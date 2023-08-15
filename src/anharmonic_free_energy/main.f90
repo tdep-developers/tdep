@@ -1,6 +1,6 @@
 program anharmonic_free_energy
 !!{!src/anharmonic_free_energy/manual.md!}
-use konstanter, only: r8,lo_Hartree_to_eV
+use konstanter, only: r8,lo_Hartree_to_eV,lo_kb_Hartree
 use gottochblandat, only: open_file,walltime,lo_linspace,lo_progressbar_init,lo_progressbar,tochar,&
     lo_does_file_exist,lo_mean,lo_stddev
 use mpi_wrappers, only: lo_mpi_helper
@@ -32,10 +32,11 @@ class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr
+type(lo_mdsim) :: sim
 
-real(r8), dimension(:), allocatable :: temperatures
+real(r8), dimension(:), allocatable :: upper_bound,mean_energy
 real(r8) :: timer_init,timer_total
-real(r8) :: U0,U1
+real(r8) :: U0,U1,energy_unit_factor
 logical :: havehighorder
 
 ! Init MPI, timers and options
@@ -90,29 +91,24 @@ init: block
     if ( dr%omega_min .lt. 0.0_r8 ) then
         ! Dump the free energies
         if ( mw%talk ) then
-            allocate(temperatures(opts%trangenpts))
-            call lo_linspace(opts%trangemin,opts%trangemax,temperatures)
-            u=open_file('out','outfile.anharmonic_free_energy')
-                do t=1,opts%trangenpts
-                    write(u,"(4(1X,E18.12))") temperatures(t),1E9_r8,1E9_r8,1E9_r8
-                    write(*,"(4(1X,E18.12))") temperatures(t),1E9_r8,1E9_r8,1E9_r8
-                enddo
-            close(u)
-            write(*,*) 'Found negative eigenvalues. Stopping prematurely.'
+             write(*,*) 'Found negative eigenvalues. Stopping prematurely since no free energy can be defined.'
         endif
         call mw%destroy()
+        stop
     endif
     timer_init=walltime()-timer_init
+
 end block init
 
 ! We start with the potential energy terms since those are much faster
 epotthings: block
     type(lo_energy_differences) :: pot
     type(lo_crystalstructure) :: ss
-    type(lo_mdsim) :: sim
+
     real(r8), dimension(:,:), allocatable :: f2,f3,f4,fp
     real(r8), dimension(:,:), allocatable :: ediff
-    real(r8) :: e2,e3,e4,ep
+
+    real(r8) :: e2,e3,e4,ep,inverse_kbt
     integer :: i
 
     call ss%readfromfile('infile.ssposcar')
@@ -146,32 +142,61 @@ epotthings: block
         ediff(i,5)=sim%stat%total_energy(i)-e2-ep-e3-e4
     enddo
     call mw%allreduce('sum',ediff)
-    ! Make sure it is energy per unit cell
-    ediff=ediff*real(uc%na,r8)/real(ss%na,r8)
+
+    ! need an inverse kbt to estimate upper bound on free energy
+    ! error.
+
+    if ( sim%temperature_thermostat .gt. 1E-5_r8 ) then
+        inverse_kbt=1.0_r8/lo_kb_Hartree/sim%temperature_thermostat
+    else
+        inverse_kbt=0.0_r8
+    endif
+
+    ! Get the upper bound of the error of the free energy
+    allocate(upper_bound(5))
+    allocate(mean_energy(5))
+    do i=1,5
+        mean_energy(i)=lo_mean(ediff(:,i))
+        upper_bound(i)=sum( (ediff(:,i)-mean_energy(i))**2 )/real(sim%nt,r8)
+        upper_bound(i)=upper_bound(i)*inverse_kbt*0.5_r8
+    enddo
+    mean_energy=mean_energy*real(uc%na,r8)/real(ss%na,r8)
+    upper_bound=upper_bound*real(uc%na,r8)/real(ss%na,r8)
+
 
     if ( mw%talk ) then
+        write(*,*) 'Temperature (K) (from infile.meta): ',sim%temperature_thermostat
+        !write(*,*) 'Temperature (K): ',sim%temperature
         write(*,*) 'Potential energy:'
-        write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',lo_mean(ediff(:,1)),' stddev:',lo_stddev(ediff(:,1))
-        write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',lo_mean(ediff(:,2)),' stddev:',lo_stddev(ediff(:,2))
-        write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',lo_mean(ediff(:,3)),' stddev:',lo_stddev(ediff(:,3))
-        write(*,"(1X,A,E21.14,1X,A,F21.14)") '        E-fc2-polar-fc3: ',lo_mean(ediff(:,4)),' stddev:',lo_stddev(ediff(:,4))
-        write(*,"(1X,A,E21.14,1X,A,F21.14)") '    E-fc2-polar-fc3-fc4: ',lo_mean(ediff(:,5)),' stddev:',lo_stddev(ediff(:,5))
+        if ( havehighorder ) then
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',mean_energy(1)*lo_Hartree_to_eV,' upper bound:',upper_bound(1)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',mean_energy(2)*lo_Hartree_to_eV,' upper bound:',upper_bound(2)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',mean_energy(3)*lo_Hartree_to_eV,' upper bound:',upper_bound(3)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '        E-fc2-polar-fc3: ',mean_energy(4)*lo_Hartree_to_eV,' upper bound:',upper_bound(4)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '    E-fc2-polar-fc3-fc4: ',mean_energy(5)*lo_Hartree_to_eV,' upper bound:',upper_bound(5)*lo_Hartree_to_eV
+        else
+            write(*,*) '(no third and fourth order force constants present, reverting to lowest order free energy)'
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',mean_energy(1)*lo_Hartree_to_eV,' upper bound:',upper_bound(1)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',mean_energy(2)*lo_Hartree_to_eV,' upper bound:',upper_bound(2)*lo_Hartree_to_eV
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',mean_energy(3)*lo_Hartree_to_eV,' upper bound:',upper_bound(3)*lo_Hartree_to_eV
+        endif
     endif
     ! Make a note of the baseline energy
-    U0=lo_mean( ediff(:,5) )
-    U1=lo_mean( ediff(:,3) )
+    U0=mean_energy(5)
+    U1=mean_energy(3)
 end block epotthings
 
 ! Calculate the actual free energy
 getenergy: block
     real(r8) :: f_ph,ah3,ah4
+    integer :: u
 
-    ! First we get the phonon free energy
-    f_ph=dr%phonon_free_energy(opts%temperature)
+    ! Some heuristics to figure out what the temperature is.
+    f_ph=dr%phonon_free_energy(sim%temperature_thermostat)
 
     if ( havehighorder ) then
         select type(qp); type is(lo_fft_mesh)
-            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,opts%temperature,ah3,ah4,mw,mem,opts%verbosity+1)
+            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,mw,mem,opts%verbosity+1)
         end select
     else
         ah3=0.0_r8
@@ -180,23 +205,54 @@ getenergy: block
 
     if ( mw%talk ) then
         write(*,*) ''
-        write(*,*) 'Lowest order approximation to the free energy: (eV/atom)'
+        write(*,*) 'Lowest order approximation to the free energy: (eV/cell)'
         write(*,*) 'Calculated as <U - U_second - U_polar> + F_phonon'
         write(*,*) 'F (eV/atom) = ',(U1 + f_ph)*lo_Hartree_to_eV
+        write(*,*) 'Absolute bound on error (meV):',upper_bound(3)*lo_Hartree_to_eV*1000
 
         if ( havehighorder ) then
             write(*,*) ''
-            write(*,*) 'Free energy with anharmonic corrections: (eV/atom)'
+            write(*,*) 'Free energy with anharmonic corrections: (eV/cell)'
             write(*,*) 'Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
             write(*,*) 'F (eV/atom) = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
+            write(*,*) 'Absolute bound on error (meV):',upper_bound(5)*lo_Hartree_to_eV*1000
         endif
         write(*,*) ''
+    endif
+
+    if ( mw%talk ) then
+        u=open_file('out','outfile.anharmonic_free_energy')
+            if ( havehighorder ) then
+                write(u,*) '# Free energy with anharmonic corrections: (eV/cell)'
+                write(u,*) '# Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
+                write(u,*) 'F        = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(5)*lo_Hartree_to_eV
+
+                write(u,*) '# Lowest order approximation to the free energy: (eV/cell)'
+                write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
+                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
+
+                write(u,*) '# Components of the Free energy'
+                write(u,*) 'U0       = ',U0*lo_Hartree_to_eV
+                write(u,*) 'F_phonon = ',f_ph*lo_Hartree_to_eV
+                write(u,*) 'F_3      = ',ah3*lo_Hartree_to_eV
+                write(u,*) 'F_4      = ',ah4*lo_Hartree_to_eV
+            else
+                write(u,*) '# Lowest order approximation to the free energy: (eV/cell)'
+                write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
+                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
+                write(u,*) '# Components of the Free energy'
+                write(u,*) 'U0       =',U1*lo_Hartree_to_eV
+                write(u,*) 'F_phonon =',f_ph*lo_Hartree_to_eV
+            endif
+        close(u)
     endif
 
 end block getenergy
 
 ! Kill MPI
-
 call mw%destroy()
 
 end program
