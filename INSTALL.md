@@ -1,7 +1,7 @@
 Installation
 ===
 
-`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.
+`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.j
 
 ## Requirements
 
@@ -12,6 +12,8 @@ Installation
 - HDF5 needs to be installed
 - python should be installed
 - gnuplot should be installed
+
+**Note: The `build_things.sh` script assumes that TDEP was cloned and lives in a git repository. If you wish obtain TDEP in another you have to adjust the script.**
 
 ## Example
 
@@ -134,3 +136,14 @@ FCFLAGS_EXTRA="-L/Library/Developer/CommandLineTools//SDKs/MacOSX13.3.sdk/usr/li
 ```
 
 where the given path should point to you MacOS xcode installation `lib` path.
+
+## "not a git repository"
+
+If you see the error
+
+```
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+it means you did not clone TDEP from github. In that case, either clone it or adjust the `build_things.sh` script.
+
