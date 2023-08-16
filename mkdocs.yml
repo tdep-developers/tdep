@@ -2,8 +2,9 @@ site_name: TDEP
 
 theme:
     name: 'material'
+
     palette:
-        primary: 'Teal'
+        primary: 'Orange'
         accent: 'Blue Grey'
     # logo: images/FV.svg
     favicon: 'media/matematico_favicon.png'
@@ -20,19 +21,17 @@ nav:
   - Home: README.md
   # - Tutorial:
   #   - Overview: manual/index.md
-  - Currently trying to fix programs:
+  - Programs:
     - Extract forceconstants: program/extract_forceconstants.md
-  - Catastrophic programs:
-    - Lineshape: program/lineshape.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
-    - Atomic distribution: program/atomic_distribution.md
-    - Thermal conductivity: program/thermal_conductivity.md
+    - Canonical configuration: program/canonical_configuration.md
     - Anharmonic free energy: program/anharmonic_free_energy.md
-  - Decent programs:
+    - Thermal conductivity: program/thermal_conductivity.md
+    - Lineshape: program/lineshape.md
+    - Atomic distribution: program/atomic_distribution.md
     - Pack simulation: program/pack_simulation.md
     - Generate structure: program/generate_structure.md
     - Crystal structure info: program/crystal_structure_info.md
-    - Canonical configuration: program/canonical_configuration.md
     - Samples from MD: program/samples_from_md.md
     - Refine structure: program/refine_structure.md
   - Files: files.md

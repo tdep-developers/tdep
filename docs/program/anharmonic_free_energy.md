@@ -26,18 +26,8 @@ Optional switches:
     default value 1.0  
     Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.
 
-* `--path`  
-    default value .false.
-    mutually exclude "--temperature_range"  
-    Calculate the anharmonic free energy on a path through the BZ.
-
-* `--support_qpoint_grid value#1 value#2 value#3`, `-sqg value#1 value#2 value#3`  
-    default value -1 -1 -1  
-    Interpolate to a (preferrably) denser q-mesh when calculating the DOS.
-
 * `--temperature_range value#1 value#2 value#3`  
-    default value -1 -1 -1
-    mutually exclude "--path"  
+    default value -1 -1 -1  
     Evaluate thermodynamic phonon properties for a series of temperatures, specify min, max and the number of points.
 
 * `--readiso`  
@@ -63,299 +53,107 @@ Optional switches:
 
 This code calculates the anharmonic Helmholtz free energy. It includes the contributions from baseline shifts, renormalized phonons and higher order terms.
 
-### Free energy
+### Longer summary
 
-@todo Explain the basics of free energy, entropies and so on.
-
-## Second order terms
-
-The details an notation how to calculate phonon can be found [phonon_dispersion_relations](phonon_dispersion_relations.md), and I follow the same notation here. In the previous section, we treated the vibrations of atoms classically, by solving Newton's equations of motion. Quantum-mechanically, vibrational normal modes can be represented as quasi-particles called phonons, quanta of thermal energy. We note that our normal mode transformation is a sum over eigenfunctions of independent harmonic oscillators. This allows us to write the position and momentum operators in terms of creation and annihilation operators (without loss of generality, we can contract the notation for phonon mode $s$ at wave vector $\mathbf{q}$ to a single index $\lambda$):
+Per the (quasi)harmonic approximation the free energy is determined as
 
 $$
-\begin{align}
-\hat{u}_{i\alpha} = & \sqrt{ \frac{\hbar}{2N m_\alpha} }
-\sum_\lambda \frac{\epsilon_\lambda^{i\alpha}}{ \sqrt{ \omega_\lambda} }
-e^{i\mathbf{q}\cdot\mathbf{r}_i}
-\left( \hat{a}^{\mathstrut}_\lambda + \hat{a}^\dagger_\lambda \right) \\
-%
-\hat{p}_{i\alpha} = & \sqrt{ \frac{\hbar m_\alpha}{2N} }
-\sum_\lambda \sqrt{ \omega_\lambda } \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i-\pi/2}
-\left( \hat{a}^{\mathstrut}_\lambda - \hat{a}^\dagger_\lambda \right)
-%
-\end{align}
+F(T,V) = U(V)+F_{ph}(T,V)
 $$
 
-and their inverse
+where $U$ is the energy of the static lattice, and $F_{ph}$ is the free energy of the phonons. The only temperature dependence enters as occupation numbers in the phonon free energy expression. In the TDEP formalism it is only slightly more involved.
+
+As established in [extract_forceconstants.md](extract forceconstants) the TDEP free energy, to lowest order is given by
 
 $$
-\begin{align}
-\hat{a}^{\mathstrut}_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{-i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right) \\
-%
-\hat{a}^\dagger_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right)
-\end{align}
+F(T,V) = U_0(T,V)+F_{ph}(T,V)
 $$
 
-In terms of these operators, the vibrational Hamiltonian can be written as
+where $F_{ph}(T,V)$ is the free energy of the (effective) phonons, and $U_0$ is a renormalized baseline energy, given by
+
+$$
+U_0 = \left\langle
+	U - \frac{1}{2}\sum_{ij} u_i\Phi_{ij}u_j -
+	\frac{1}{2}\sum_{ij} u_i \Phi^{\text{polar}}_{ij}u_j
+	\right\rangle
+$$
+
+that is, the potential energy from the molecular dynamics/stochastic sampling minus the potential energy of the force constant model. It's important to remember to also subtract the electrostatic energy since it is included in $F_{ph}$.
+
+#### Higher order corrections
+
+The free energy can be improved by explicitly including the contribution from the higher order terms in the Hamiltonian. The free energy then reads
 
 $$
 \begin{equation}
-\hat{H}=\sum_{\lambda}\hbar\omega_\lambda \left( \hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda + \frac{1}{2}\right)\,.
+    F = U_0 + F_{\textrm{ph}} + \Delta F^{3\textrm{ph}} + \Delta F^{4\textrm{ph}}
 \end{equation}
 $$
 
-Since $\hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda$ are commutative operators, the Hamiltonian is that of a sum of uncoupled harmonic quantum oscillators, each having the partition function
+where $F_{\textrm{ph}}$ is the usual phonon free energy and $U_0$ the renormalized baseline free energy given by
 
 $$
 \begin{equation}
-Z_{\lambda}=\sum_{n=0}^{\infty}e^{-\beta (n +\frac{1}{2})\hbar\omega_{\lambda} } =
-\frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}
+    U_0 = \left\langle U -
+    \frac{1}{2!}\sum_{\substack{ ij\\ \alpha\beta } }\overset{\textrm{lr}}{\Phi}_{ij}^{\alpha\beta}
+u_i^\alpha u_j^\beta -
+    \frac{1}{2!}\sum_{\substack{ ij\\ \alpha\beta } }\Phi_{ij}^{\alpha\beta}
+u_i^\alpha u_j^\beta -
+ \frac{1}{3!}
+\sum_{\substack{ijk\\ \alpha\beta\gamma}}\Phi_{ijk}^{\alpha\beta\gamma}
+u_i^\alpha u_j^\beta u_k^\gamma -
+\frac{1}{4!}
+	\sum_{\substack{
+	ijkl\\
+	\alpha\beta\gamma\delta
+	}}
+\Phi_{ijkl}^{\alpha\beta\gamma\delta}
+u_i^\alpha u_j^\beta u_k^\gamma u_l^\delta
+    \right\rangle
 \end{equation}
 $$
 
-that gives the total partition function
+Here it is important to note that we have to subtract the long-ranged polar interactions to avoid double-counting them. The explicit anharmonic contributions are given via[^Leibfried1961][^Cowley1963][^wallace1998thermodynamics]
 
 $$
-\begin{equation}
-Z=\prod_{\lambda} \frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}.
+\begin{equation}%\label{eq:deltaF3}
+	\Delta F^{3\textrm{ph}} =
+	-6
+	\sum_{\lambda\lambda'\lambda''}
+	\left|
+		\Phi_{\lambda\lambda'\lambda''}
+	\right|^2
+	%
+	\left(
+	%\Bigg{\{}
+	\frac{3n_{\lambda} n_{\lambda'} + 3n_{\lambda} + 1}
+	{(\omega_{\lambda}+\omega_{\lambda'}+\omega_{\lambda''})_p}
+	+
+	\frac{ 6n_{\lambda} n_{\lambda''} - 3 n_{\lambda} n_{\lambda'} + 3n_{\lambda''}}
+	{(\omega_{\lambda}+\omega_{\lambda'}-\omega_{\lambda''})_p}
+	\right)
+	%\Bigg{\}}
+	%
+	+9\Phi_{\lambda\bar{\lambda}\lambda''}\Phi_{\lambda'\bar{\lambda}'\bar{\lambda}''}
+	\frac{4 n_{\lambda}( n_{\lambda'}+1)+1}
+	{(\omega_{\lambda''})_p}\,,
 \end{equation}
 $$
 
-From this we can get the Helmholtz (phonon) free energy:
+and
 
 $$
-\begin{equation}
-F_{\textrm{ph}}= -k_B T \ln Z = \sum_{\lambda} \frac{\hbar \omega_{\lambda}}{2}+k_B T%
-\ln \left( 1- \exp \left( -\frac{\hbar \omega_{\lambda}}{k_B T} \right) \right)
+\begin{equation}%\label{eq:deltaF4}
+	\Delta F^{4\textrm{ph}} =
+	3\sum_{\lambda\lambda'}
+	\Phi_{\lambda\bar{\lambda}\lambda'\bar{\lambda}'}(2n_{\lambda}+1)(2n_{\lambda'}+1)
 \end{equation}
 $$
 
-@todo copy-paste from thesis or something
 
-## Higher order terms
+[^Leibfried1961]: Leibfried, G. & Ludwig, W. (1961) Theory of Anharmonic Effects in Crystals. Solid State Phys 12, 275–444.
 
-@todo copy-paste from paper
+[^Cowley1963]: Cowley, R. A. (1963) The lattice dynamics of an anharmonic crystal. Adv Phys 12, 421–480.
 
-## Baseline renormalization
+[^wallace1998thermodynamics]: Wallace, D.C. Thermodynamics of Crystals. (Dover Publications).
 
-In the conventional quasiharmonic approximation, the total free energy of the system (not considering any terms pertaining to magnetic or configurational degrees of freedom) can be expressed as
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}}\,.
-\end{equation}
-$$
-
-In the TDEP formalism it is not quite that simple.
-
-#### <a name="sec_tdepthermo"></a> Determining the free energy with TDEP
-
-In the TDEP formalism,[^Hellman2013]<sup>,</sup>[^Hellman2013a]<sup>,</sup>[^Hellman2011] with effective force constants, the phonon quasiparticles are different at each temperature. At fix temperature, they behave just like normal bosons, obeying Bose-Einstein statistics and so on. But changing the temperature will change both the occupation numbers and the states that are occupied. Moreover, in the harmonic approximation the baseline energy (with all atoms at their equilibrium positions) is that of the static lattice. With an effective Hamiltonian this baseline is a free parameter. The baseline shift is illustrated in the diagram below:
-
-<center><img src="../media/explain_U0.png" width="600" /></center>
-
-The density depicts the phase space samples used to fit the effective Hamiltonian. The reference energy, or baseline, has been shifted with respect to zero temperature. This baseline is determined by matching the potential energies of the samples of the Born-Oppenheimer surface, $U_{BO}$, and the potential energy of the TDEP model Hamiltonian:
-
-$$
-\begin{equation}
-\begin{split}
-	\left\langle U_{\textrm{BO}} - U_{\textrm{TDEP}} \right\rangle & =
-	\left\langle U_{\textrm{BO}} - U_0 -\frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j  \right\rangle = 0 \\
-	U_0 & = \left\langle U_{\textrm{BO}} - \frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j \right\rangle
-\end{split}
-\end{equation}
-$$
-
-Intuitively, this can be interpreted as that the TDEP force constants are determined by matching forces between the real and model system, in a similar manner we match the energies as well. The new baseline is conveniently expressed as a shift:
-
-$$
-\begin{equation}
-	\Delta U = U_0-U_{\textrm{stat}}
-\end{equation}
-$$
-
-Where $U_{\textrm{stat}}$ is the energy of the perfect lattice at 0K. The free energy is then (excluding configurational entropy, magnetic entropy etc.)
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}} + \Delta U_0\,.
-\end{equation}
-$$
-
-### Why does this code not output entropy?
-
-@todo Refer to Cowley
-
-@todo Simple explanation with partial derivatives
-
-@todo Plot with heat capacity
-
-### Harmonic thermodynamics
-
-In the previous section, we treated the vibrations of atoms classically, by solving Newton's equations of motion. Quantum-mechanically, vibrational normal modes can be represented as quasi-particles called phonons, quanta of thermal energy. We note that our normal mode transformation is a sum over eigenfunctions of independent harmonic oscillators. This allows us to write the position and momentum operators in terms of creation and annihilation operators (without loss of generality, we can contract the notation for phonon mode $s$ at wave vector $\mathbf{q}$ to a single index $\lambda$):
-
-$$
-\begin{align}
-\hat{u}_{i\alpha} = & \sqrt{ \frac{\hbar}{2N m_\alpha} }
-\sum_\lambda \frac{\epsilon_\lambda^{i\alpha}}{ \sqrt{ \omega_\lambda} }
-e^{i\mathbf{q}\cdot\mathbf{r}_i}
-\left( \hat{a}^{\mathstrut}_\lambda + \hat{a}^\dagger_\lambda \right) \\
-%
-\hat{p}_{i\alpha} = & \sqrt{ \frac{\hbar m_\alpha}{2N} }
-\sum_\lambda \sqrt{ \omega_\lambda } \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i-\pi/2}
-\left( \hat{a}^{\mathstrut}_\lambda - \hat{a}^\dagger_\lambda \right)
-%
-\end{align}
-$$
-
-and their inverse
-
-$$
-\begin{align}
-\hat{a}^{\mathstrut}_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{-i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right) \\
-%
-\hat{a}^\dagger_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right)
-\end{align}
-$$
-
-In terms of these operators, the vibrational Hamiltonian can be written as
-
-$$
-\begin{equation}
-\hat{H}=\sum_{\lambda}\hbar\omega_\lambda \left( \hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda + \frac{1}{2}\right)\,.
-\end{equation}
-$$
-
-Since $\hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda$ are commutative operators, the Hamiltonian is that of a sum of uncoupled harmonic quantum oscillators, each having the partition function
-
-$$
-\begin{equation}
-Z_{\lambda}=\sum_{n=0}^{\infty}e^{-\beta (n +\frac{1}{2})\hbar\omega_{\lambda} } =
-\frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}
-\end{equation}
-$$
-
-that gives the total
-
-$$
-\begin{equation}
-Z=\prod_{\lambda} \frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}.
-\end{equation}
-$$
-
-From this we can get the Helmholtz (phonon) free energy:
-
-$$
-\begin{equation}
-F_{\textrm{ph}}= -k_B T \ln Z = \sum_{\lambda} \frac{\hbar \omega_{\lambda}}{2}+k_B T%
-\ln \left( 1- \exp \left( -\frac{\hbar \omega_{\lambda}}{k_B T} \right) \right)
-\end{equation}
-$$
-
-In the conventional quasiharmonic approximation, the total free energy of the system (not considering any terms pertaining to magnetic or configurational degrees of freedom) can be expressed as
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}}\,.
-\end{equation}
-$$
-
-In the TDEP formalism it is not quite that simple.
-
-#### <a name="sec_tdepthermo"></a> Determining the free energy with TDEP
-
-In the TDEP formalism,[^Hellman2013]<sup>,</sup>[^Hellman2013a]<sup>,</sup>[^Hellman2011] with effective force constants, the phonon quasiparticles are different at each temperature. At fix temperature, they behave just like normal bosons, obeying Bose-Einstein statistics and so on. But changing the temperature will change both the occupation numbers and the states that are occupied. Moreover, in the harmonic approximation the baseline energy (with all atoms at their equilibrium positions) is that of the static lattice. With an effective Hamiltonian this baseline is a free parameter. The baseline shift is illustrated in the diagram below:
-
-<center><img src="../media/explain_U0.png" width="600" /></center>
-
-The density depicts the phase space samples used to fit the effective Hamiltonian. The reference energy, or baseline, has been shifted with respect to zero temperature. This baseline is determined by matching the potential energies of the samples of the Born-Oppenheimer surface, $U_{BO}$, and the potential energy of the TDEP model Hamiltonian:
-
-$$
-\begin{equation}
-\begin{split}
-	\left\langle U_{\textrm{BO}} - U_{\textrm{TDEP}} \right\rangle & =
-	\left\langle U_{\textrm{BO}} - U_0 -\frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j  \right\rangle = 0 \\
-	U_0 & = \left\langle U_{\textrm{BO}} - \frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j \right\rangle
-\end{split}
-\end{equation}
-$$
-
-Intuitively, this can be interpreted as that the TDEP force constants are determined by matching forces between the real and model system, in a similar manner we match the energies as well. The new baseline is conveniently expressed as a shift:
-
-$$
-\begin{equation}
-	\Delta U = U_0-U_{\textrm{stat}}
-\end{equation}
-$$
-
-Where $U_{\textrm{stat}}$ is the energy of the perfect lattice at 0K. The free energy is then (excluding configurational entropy, magnetic entropy etc.)
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}} + \Delta U_0\,.
-\end{equation}
-$$
-
-The entropy and heat capacity is not accessible from a single simulation. Since both the phonon free energy and baseline shift have non-trivial temperature dependencies, a series of calculations for different temperatures are needed, so that the entropy can be calculated via
-
-$$
-\begin{equation}
-	S = -\left.\frac{dF}{dT}\right|_{V}
-\end{equation}
-$$
-
-A series of calculations on a volume-temperature grid is required to calculate Gibbs free energy, with pressure explicitly calculated as
-
-$$
-\begin{equation}
-	P = -\left.\frac{dF}{dV}\right|_T
-\end{equation}
-$$
-
-### Harmonic thermodynamics
-
-
-The entropy and heat capacity is not accessible from a single simulation. Since both the phonon free energy and baseline shift have non-trivial temperature dependencies, a series of calculations for different temperatures are needed, so that the entropy can be calculated via
-
-$$
-\begin{equation}
-	S = -\left._{}\frac{dF}{dT}\right|_{V}
-\end{equation}
-$$
-
-A series of calculations on a volume-temperature grid is required to calculate Gibbs free energy, with pressure explicitly calculated as
-
-$$
-\begin{equation}
-	P = -\left._{}\frac{dF}{dV}\right|_{T}
-\end{equation}
-$$
-
-Or something.
-
-### Output files
-
-
-
-Using option `--dumpgrid` writes all phonon properties for a grid in the BZ to an hdf5 file, that is self-documented.
-
-[^Born1998]: Born, M., & Huang, K. (1964). Dynamical theory of crystal lattices. Oxford: Oxford University Press.
-
-[^Hellman2011]: [Hellman, O., Abrikosov, I. A., & Simak, S. I. (2011). Lattice dynamics of anharmonic solids from first principles. Physical Review B, 84(18), 180301.](http://doi.org/10.1103/PhysRevB.84.180301)
-
-[^Hellman2013a]: [Hellman, O., & Abrikosov, I. A. (2013). Temperature-dependent effective third-order interatomic force constants from first principles. Physical Review B, 88(14), 144301.](http://doi.org/10.1103/PhysRevB.88.144301)
-
-[^Hellman2013]: [Hellman, O., Steneteg, P., Abrikosov, I. A., & Simak, S. I. (2013). Temperature dependent effective potential method for accurate free energy calculations of solids. Physical Review B, 87(10), 104111.](http://doi.org/10.1103/PhysRevB.87.104111)
-
-[^Gonze1994]: [Gonze, X., Charlier, J.-C., Allan, D. C. & Teter, M. P. Interatomic force constants from first principles: The case of α-quartz. Phys. Rev. B 50, 13035–13038 (1994).](https://link.aps.org/doi/10.1103/PhysRevB.50.13035)
-
-[^Gonze1997]: [Gonze, X. & Lee, C. Dynamical matrices, Born effective charges, dielectric permittivity tensors, and interatomic force constants from density-functional perturbation theory. Phys. Rev. B 55, 10355–10368 (1997).](http://link.aps.org/doi/10.1103/PhysRevB.55.10355)

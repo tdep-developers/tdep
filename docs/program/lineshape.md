@@ -50,14 +50,6 @@ Optional switches:
     default value 100  
     Number of q-points between each high symmetry point
 
-* `--dos`  
-    default value .false.  
-    Calculate the broadened and shifted phonon DOS.
-
-* `--dos_qpoint_grid value#1 value#2 value#3`  
-    default value -1 -1 -1  
-    Interpolate to a (preferrably) denser q-mesh when calculating the DOS.
-
 * `--qpoint value#1 value#2 value#3`  
     default value 0 0 0  
     Calculate the self-energy at a single q-point, input in fractional coordinates.
@@ -78,13 +70,9 @@ Optional switches:
     default value .false.  
     Switch of three-phonon scattering
 
-* `--geninterp`  
-    default value .false.  
-    First rule of interpolation is you do not talk about interpolation.
-
-* `--fancyinterp`  
-    default value .false.  
-    Second rule of interpolation is you do not talk about interpolation.
+* `--qdirin value#1 value#2 value#3`  
+    default value 1 0 0  
+    Incident wavevector (Cartesian coordinates). Determins the behaviour of the non-analytical components at the zone center.
 
 * `--grid`  
     default value .false.  
@@ -115,7 +103,7 @@ Optional switches:
 
 This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:
 
-<center><img src="../media/lineshape_sqe.png" width="500" /></center>
+<center><img src="/media/lineshape_sqe.png" width="500" /></center>
 
 ### Background
 
@@ -254,7 +242,7 @@ There are three possible modes for this code: the lineshape at a single q-point 
 
 This file is self-documented. You can produce plots like this:
 
-<center><img src="../media/lineshapes.png" width="600" /></center>
+<center><img src="/media/lineshapes.png" width="600" /></center>
 
 For this plot, I used the following matlab snippet:
 

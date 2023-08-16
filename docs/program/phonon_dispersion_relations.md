@@ -50,14 +50,6 @@ Optional switches:
     default value 400  
     Number of points on the frequency axis of the phonon dos.
 
-* `--temperature value`  
-    default value -1  
-    Evaluate thermodynamic phonon properties at a single temperature.
-
-* `--temperature_range value#1 value#2 value#3`  
-    default value -1 -1 -1  
-    Evaluate thermodynamic phonon properties for a series of temperatures, specify min, max and the number of points.
-
 * `--gruneisen`  
     default value .false.  
     Use third order force constants to calculate mode Gruneisen parameters.
@@ -65,10 +57,6 @@ Optional switches:
 * `--dumpgrid`  
     default value .false.  
     Write files with q-vectors, frequencies, eigenvectors and group velocities for a grid.
-
-* `--pdf`, `-p`  
-    default value .false.  
-    Produce gnuplot_pdf output file for printing to pdf.
 
 * `--help`, `-h`  
     Print this help message
@@ -423,8 +411,6 @@ $$
 \widetilde{\boldsymbol{\epsilon}}
 $$
 
-@todo Add the Hessian w.r.t q here. It is so long.
-
 This expression is invariant for any $\Lambda>0$, which is chosen to make the real and reciprocal sums converge with as few terms as possible. Note that the Born charges are factored out from $\widetilde{\mathbf{\Phi}}$, and have to by multiplied in as described above. The derivatives with respect to $q$ are reproduced because they are useful when calculating the gradient of the dynamical matrix, needed when determining group velocities. In the long-wavelength limit, $\mathbf{q}\rightarrow 0$, the dipole-dipole dynamical matrix reduces to the familiar non-analytical term:
 
 $$
@@ -435,42 +421,7 @@ $$
 }{\mathbf{q}^T\boldsymbol{\epsilon}\mathbf{q}}
 $$
 
-This package implements three different ways of dealing with these long-ranged interactions. For historical reasons, the so-called mixed-space approach is available, but it should not be used except as an example of what not to do.
-
-The technical issue is that the forces from a DFT calculation are not separated cleanly into "electrostatic longrange" and "everything else" components. The TDEP approach allows for two variants to separate this:
-
-##### Separation approach 1
-
-This is the approach proposed by Gonze & Lee[^Gonze1997], only slightly adjusted since they assumed you start with reciprocal space dynamical matrices, whereas I start with realspace forceconstants. Algorithmically, it works like this:
-
-* Define a $N_a \times N_b \times N_c$ suprecell, large enough that it snugly fits your realspace forceconstants.
-* Calculate the electrostatic dynamical matrices on a $N_a \times N_b \times N_c$ $q$-mesh.
-* Inverse fourier transform the electrostatic dynamical matrices to realspace forceconstants:
-$$
-\mathbf{\Phi}^{\textrm{dd}}_{ij}(\mathbf{R}) =\frac{ \sqrt{m_i m_j} }{N_a N_b N_c} \sum_{\mathbf{q}}  \Phi^{\textrm{dd}}_{ij}(\mathbf{q}) e^{-i\mathbf{q} \cdot \mathbf{R}}
-$$
-* Subtract these from the realspace forceconstants:
-$$
-\hat{\mathbf{\Phi}}_{ij}(\mathbf{R})=
-\mathbf{\Phi}_{ij}(\mathbf{R})-
-\mathbf{\Phi}^{\textrm{dd}}_{ij}(\mathbf{R})
-$$
-* Calculate the dynamical matrix as a sum of the short- and long-ranged contributions:
-$$
-\mathbf{\Phi}_{ij}(\mathbf{q}) = \hat{\mathbf{\Phi}}_{ij}(\mathbf{R}) + \Phi^{\textrm{dd}}_{ij}(\mathbf{q})
-$$
-
-At $\mathbf{q}=0$ the non-analytical contribution has to be added as well. This approach is reasonably robust, and works well in most materials. However, there are some aliasing contributions added since the realspace forceconstants are truncated by distance, and I propose a slight variation of this scheme:
-
-##### Separation approach 2
-
-This idea is similar in spirit, but does the separation into long- and short-ranged interactions at an earlier stage.
-
-@todo Fill this in once published.
-
-##### Mixed-space approach
-
-This is implemented for historical reasons and for comparison, but disabled by default. It should not be used for anything, it is incorrect, and doing it right cost nothing.
+### Separation into short- and long-range interactions
 
 
 
