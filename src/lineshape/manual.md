@@ -1,18 +1,13 @@
-author: Olle Hellman
-display: none
-graph: none
-secret: <center><img src="../media/small_lineshape.png" width="250" /></center>
-{!man/lineshape.md!}
 
 ### Long summary
 
 This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:
 
-<center><img src="../media/lineshape_sqe.png" width="500" /></center>
+<center><img src="/media/lineshape_sqe.png" width="500" /></center>
 
 ### Background
 
-It is nowadays routine to calculate e.g. [lattice thermal conductivity](thermal_conductivity.html) using perturbation theory. At that level of approximation, you calculate the phonon lifetime via the imaginary part of the phonon self-energy at the harmonic frequencies. In general, however, the picture with a well defined phonon, shifted by a small energy $\Delta$ and broadened by $\Gamma$ is not enough. In general, the phonon self-energy is energy-dependent,[^Maradudin1962]<sup>,</sup>[^RACowley1968]
+It is nowadays routine to calculate e.g. [lattice thermal conductivity](thermal_conductivity.md) using perturbation theory. At that level of approximation, you calculate the phonon lifetime via the imaginary part of the phonon self-energy at the harmonic frequencies. In general, however, the picture with a well defined phonon, shifted by a small energy $\Delta$ and broadened by $\Gamma$ is not enough. In general, the phonon self-energy is energy-dependent,[^Maradudin1962]<sup>,</sup>[^RACowley1968]
 
 $$
 \begin{equation}
@@ -128,14 +123,14 @@ Per default, the isotope distribution will be the natural distribution. In case 
 
 Required files:
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
-* [infile.forceconstant](extract_forceconstants.html)
-* [infile.forceconstant_thirdorder](extract_forceconstants.html)
+* [infile.ucposcar](../files.md#infile.ucposcar)
+* [infile.forceconstant](extract_forceconstants.md)
+* [infile.forceconstant_thirdorder](extract_forceconstants.md)
 
 Optional files:
 
-* [infile.qpoints_dispersion](../page/files.html#infile.qpoints_dispersion) (to specify the q-point path)
-* [infile.isotopes](../page/files.html#infile.isotopes) (for non-natural isotope distribution)
+* [infile.qpoints_dispersion](../files.md#infile.qpoints_dispersion) (to specify the q-point path)
+* [infile.isotopes](../files.md#infile.isotopes) (for non-natural isotope distribution)
 
 ### Output files
 
@@ -147,7 +142,7 @@ There are three possible modes for this code: the lineshape at a single q-point 
 
 This file is self-documented. You can produce plots like this:
 
-<center><img src="../media/lineshapes.png" width="600" /></center>
+<center><img src="/media/lineshapes.png" width="600" /></center>
 
 For this plot, I used the following matlab snippet:
 
@@ -310,14 +305,14 @@ plt.show()
 
 #### `outfile.phonon_dos_lineshape.hdf5`
 
-Is identical to [this](../program/phonon_dispersion_relations.html#outfile.phonon_dos.hdf5).
+Is identical to [this](../program/phonon_dispersion_relations.md#outfile.phonon_dos.hdf5).
 
-[^Maradudin1962]: [Maradudin, A. A., & Fein, A. (1962). Scattering of Neutrons by an Anharmonic Crystal. Physical Review, 128(6), 2589–2608.](http://doi.org/10.1103/PhysRev.128.2589)
+[^Maradudin1962]: [Maradudin, A. A., & Fein, A. (1962). Scattering of Neutrons by an Anharmonic Crystal. Physical Review, 128(6), 2589–2608.](http:/doi.org/10.1103/PhysRev.128.2589)
 
-[^RACowley1968]: [Cowley, R. A. (1968). Anharmonic crystals. Reports on Progress in Physics, 31(1), 123–166.](http://doi.org/10.1088/0034-4885/31/1/303)
+[^RACowley1968]: [Cowley, R. A. (1968). Anharmonic crystals. Reports on Progress in Physics, 31(1), 123–166.](http:/doi.org/10.1088/0034-4885/31/1/303)
 
-[^Leibfried1961]: [Leibfried, G., & Ludwig, W. (1961). Theory of Anharmonic Effects in Crystals. Solid State Physics - Advances in Research and Applications, 12(C), 275–444.](http://doi.org/10.1016/S0081-1947(08)60656-6)
+[^Leibfried1961]: [Leibfried, G., & Ludwig, W. (1961). Theory of Anharmonic Effects in Crystals. Solid State Physics - Advances in Research and Applications, 12(C), 275–444.](http:/doi.org/10.1016/S0081-1947(08)60656-6)
 
-[^wallace1998thermodynamics]: [Wallace, D. C. (1998). Thermodynamics of crystals. Dover Publications, Incorporated.](http://books.google.se/books?id=qLzOmwSgMIsC)
+[^wallace1998thermodynamics]: [Wallace, D. C. (1998). Thermodynamics of crystals. Dover Publications, Incorporated.](http:/books.google.se/books?id=qLzOmwSgMIsC)
 
-[^Tamura1983]: [Tamura, S. (1983). Isotope scattering of dispersive phonons in Ge. Physical Review B, 27(2), 858–866.](http://doi.org/10.1103/PhysRevB.27.858)
+[^Tamura1983]: [Tamura, S. (1983). Isotope scattering of dispersive phonons in Ge. Physical Review B, 27(2), 858–866.](http:/doi.org/10.1103/PhysRevB.27.858)

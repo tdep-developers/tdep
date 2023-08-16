@@ -1,26 +1,19 @@
-author: Olle Hellman
-display: none
-graph: none
-secret: <center><img src="../media/small_phonon_dispersion_relations.png" width="250" /></center>
-propname: phonon dispersion relations
-propnamelink: <a href="../program/phonon_dispersion_relations.html">phonon dispersion relations</a>
-{!man/phonon_dispersion_relations.md!}
 
 ### What does this code produce?
 
 This code calculates phonon dispersion relations, usually presented like this:
 
-<center><img src="../media/pbte_phonon_dispersions.png" width="600" /></center>
+<center><img src="/media/pbte_phonon_dispersions.png" width="600" /></center>
 
 Where the color of the line indicates the projection onto species. The same data can also be presented as a density of states, like this:
 
-<center><img src="../media/pbte_phonon_dos.png" width="500" /></center>
+<center><img src="/media/pbte_phonon_dos.png" width="500" /></center>
 
 By default, minimal input is needed, but many options to tailor the output exist.
 
 ### Equations of motion in a harmonic crystal
 
-As detailed in [extract forceconstants](extract_forceconstants.html) we have mapped the Born-Oppenheimer to an effective potential. A model Hamiltonian truncated at the second order (a harmonic Hamiltonian) is given by[^Born1998]
+As detailed in [extract forceconstants](extract_forceconstants.md) we have mapped the Born-Oppenheimer to an effective potential. A model Hamiltonian truncated at the second order (a harmonic Hamiltonian) is given by[^Born1998]
 
 $$
 \begin{equation}
@@ -132,7 +125,7 @@ $$
 \begin{equation}
 \mathbf{\Phi}_{ij}(\mathbf{q})=
 \sum_{\mathbf{R}}
-\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}  
+\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}
 e^{i\mathbf{q}\cdot \mathbf{R}} \,.
 \end{equation}
 $$
@@ -145,22 +138,22 @@ $$
  & =
 \sum_{\mathbf{R}}
 iR_\alpha
-\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}  
+\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}
 e^{i\mathbf{q}\cdot \mathbf{R}}. \\
 \frac{\partial^2 \mathbf{\Phi}_{ij}(\mathbf{q})}{\partial q_\alpha \partial q_{\beta}}
  & =
 -\sum_{\mathbf{R}}
 R_{\alpha} R_{\beta}
-\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}  
+\frac{ \mathbf{\Phi}_{ij}(\mathbf{R}) }{\sqrt{m_i m_j}}
 e^{i\mathbf{q}\cdot \mathbf{R}}.
 \end{align}
 $$
 
-By calculating the eigenvalues and eigenvectors of the dynamical matrix over the Brillouin zone, all thermodynamic quantities involving the atomic motions can be determined, as far as the harmonic approximation is valid. If you are curious where the amplitudes of the normal modes disappeared, see [canonical configuration](canonical_configuration.html).
+By calculating the eigenvalues and eigenvectors of the dynamical matrix over the Brillouin zone, all thermodynamic quantities involving the atomic motions can be determined, as far as the harmonic approximation is valid. If you are curious where the amplitudes of the normal modes disappeared, see [canonical configuration](canonical_configuration.md).
 
 ### Long-ranged interactions in polar materials
 
-When determining the dynamical matrix, the sum over lattice vectors $\mathbf{R}$ should in principle be carried out over all pairs. In practice, we assume that the interactions are zero beyond some cutoff (see [extract forceconstants](extract_forceconstants.html) option `-rc2`), and truncate the sum. This is not a valid approach when dealing with polar material where the induced dipole-dipole interactions are essentially infinite-ranged. See for example Gonze & Lee.[^Gonze1994] [^Gonze1997] When dealing with these long-ranged electrostatics we start by defining the Born effective charge tensor:
+When determining the dynamical matrix, the sum over lattice vectors $\mathbf{R}$ should in principle be carried out over all pairs. In practice, we assume that the interactions are zero beyond some cutoff (see [extract forceconstants](extract_forceconstants.md) option `-rc2`), and truncate the sum. This is not a valid approach when dealing with polar material where the induced dipole-dipole interactions are essentially infinite-ranged. See for example Gonze & Lee.[^Gonze1994] [^Gonze1997] When dealing with these long-ranged electrostatics we start by defining the Born effective charge tensor:
 
 $$
 Z_{i}^{\alpha\beta} = \frac{\partial^2 U}{\partial \varepsilon^{\alpha} \partial u_{i}^{\beta}}
@@ -348,8 +341,6 @@ $$
 \widetilde{\boldsymbol{\epsilon}}
 $$
 
-@todo Add the Hessian w.r.t q here. It is so long.
-
 This expression is invariant for any $\Lambda>0$, which is chosen to make the real and reciprocal sums converge with as few terms as possible. Note that the Born charges are factored out from $\widetilde{\mathbf{\Phi}}$, and have to by multiplied in as described above. The derivatives with respect to $q$ are reproduced because they are useful when calculating the gradient of the dynamical matrix, needed when determining group velocities. In the long-wavelength limit, $\mathbf{q}\rightarrow 0$, the dipole-dipole dynamical matrix reduces to the familiar non-analytical term:
 
 $$
@@ -360,169 +351,9 @@ $$
 }{\mathbf{q}^T\boldsymbol{\epsilon}\mathbf{q}}
 $$
 
-This package implements three different ways of dealing with these long-ranged interactions. For historical reasons, the so-called mixed-space approach is available, but it should not be used except as an example of what not to do.
+### Separation into short- and long-range interactions
 
-The technical issue is that the forces from a DFT calculation are not separated cleanly into "electrostatic longrange" and "everything else" components. The TDEP approach allows for two variants to separate this:
 
-##### Separation approach 1
-
-This is the approach proposed by Gonze & Lee[^Gonze1997], only slightly adjusted since they assumed you start with reciprocal space dynamical matrices, whereas I start with realspace forceconstants. Algorithmically, it works like this:
-
-* Define a $N_a \times N_b \times N_c$ suprecell, large enough that it snugly fits your realspace forceconstants.
-* Calculate the electrostatic dynamical matrices on a $N_a \times N_b \times N_c$ $q$-mesh.
-* Inverse fourier transform the electrostatic dynamical matrices to realspace forceconstants:
-$$
-\mathbf{\Phi}^{\textrm{dd}}_{ij}(\mathbf{R}) =\frac{ \sqrt{m_i m_j} }{N_a N_b N_c} \sum_{\mathbf{q}}  \Phi^{\textrm{dd}}_{ij}(\mathbf{q}) e^{-i\mathbf{q} \cdot \mathbf{R}}
-$$
-* Subtract these from the realspace forceconstants:
-$$
-\hat{\mathbf{\Phi}}_{ij}(\mathbf{R})=
-\mathbf{\Phi}_{ij}(\mathbf{R})-
-\mathbf{\Phi}^{\textrm{dd}}_{ij}(\mathbf{R})
-$$
-* Calculate the dynamical matrix as a sum of the short- and long-ranged contributions:
-$$
-\mathbf{\Phi}_{ij}(\mathbf{q}) = \hat{\mathbf{\Phi}}_{ij}(\mathbf{R}) + \Phi^{\textrm{dd}}_{ij}(\mathbf{q})
-$$
-
-At $\mathbf{q}=0$ the non-analytical contribution has to be added as well. This approach is reasonably robust, and works well in most materials. However, there are some aliasing contributions added since the realspace forceconstants are truncated by distance, and I propose a slight variation of this scheme:
-
-##### Separation approach 2
-
-This idea is similar in spirit, but does the separation into long- and short-ranged interactions at an earlier stage.
-
-@todo Fill this in once published.
-
-##### Mixed-space approach
-
-This is implemented for historical reasons and for comparison, but disabled by default. It should not be used for anything, it is incorrect, and doing it right cost nothing.
-
-### Harmonic thermodynamics
-
-In the previous section, we treated the vibrations of atoms classically, by solving Newton's equations of motion. Quantum-mechanically, vibrational normal modes can be represented as quasi-particles called phonons, quanta of thermal energy. We note that our normal mode transformation is a sum over eigenfunctions of independent harmonic oscillators. This allows us to write the position and momentum operators in terms of creation and annihilation operators (without loss of generality, we can contract the notation for phonon mode $s$ at wave vector $\mathbf{q}$ to a single index $\lambda$):
-
-$$
-\begin{align}
-\hat{u}_{i\alpha} = & \sqrt{ \frac{\hbar}{2N m_\alpha} }
-\sum_\lambda \frac{\epsilon_\lambda^{i\alpha}}{ \sqrt{ \omega_\lambda} }
-e^{i\mathbf{q}\cdot\mathbf{r}_i}
-\left( \hat{a}^{\mathstrut}_\lambda + \hat{a}^\dagger_\lambda \right) \\
-%
-\hat{p}_{i\alpha} = & \sqrt{ \frac{\hbar m_\alpha}{2N} }
-\sum_\lambda \sqrt{ \omega_\lambda } \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i-\pi/2}
-\left( \hat{a}^{\mathstrut}_\lambda - \hat{a}^\dagger_\lambda \right)
-%
-\end{align}
-$$
-
-and their inverse
-
-$$
-\begin{align}
-\hat{a}^{\mathstrut}_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{-i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right) \\
-%
-\hat{a}^\dagger_{\lambda} = & \frac{1}{\sqrt{2N\hbar}}
-\sum_{i\alpha} \epsilon_\lambda^{i\alpha}
-e^{i\mathbf{q}\cdot\mathbf{r}_i} \left( \sqrt{m_i \omega_\lambda} \hat{u}_{i\alpha}-i \frac{\hat{p}_{i\alpha}}{ \sqrt{ m_i \omega_\lambda }} \right)
-\end{align}
-$$
-
-In terms of these operators, the vibrational Hamiltonian can be written as
-
-$$
-\begin{equation}
-\hat{H}=\sum_{\lambda}\hbar\omega_\lambda \left( \hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda + \frac{1}{2}\right)\,.
-\end{equation}
-$$
-
-Since $\hat{a}^\dagger_\lambda \hat{a}^{\mathstrut}_\lambda$ are commutative operators, the Hamiltonian is that of a sum of uncoupled harmonic quantum oscillators, each having the partition function
-
-$$
-\begin{equation}
-Z_{\lambda}=\sum_{n=0}^{\infty}e^{-\beta (n +\frac{1}{2})\hbar\omega_{\lambda} } =
-\frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}
-\end{equation}
-$$
-
-that gives the total
-
-$$
-\begin{equation}
-Z=\prod_{\lambda} \frac{ e^{-\beta \hbar\omega_{\lambda}/2 } }{1-e^{-\beta \hbar\omega_{\lambda}}}.
-\end{equation}
-$$
-
-From this we can get the Helmholtz (phonon) free energy:
-
-$$
-\begin{equation}
-F_{\textrm{ph}}= -k_B T \ln Z = \sum_{\lambda} \frac{\hbar \omega_{\lambda}}{2}+k_B T%
-\ln \left( 1- \exp \left( -\frac{\hbar \omega_{\lambda}}{k_B T} \right) \right)
-\end{equation}
-$$
-
-In the conventional quasiharmonic approximation, the total free energy of the system (not considering any terms pertaining to magnetic or configurational degrees of freedom) can be expressed as
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}}\,.
-\end{equation}
-$$
-
-In the TDEP formalism it is not quite that simple.
-
-#### <a name="sec_tdepthermo"></a> Determining the free energy with TDEP
-
-In the TDEP formalism,[^Hellman2013]<sup>,</sup>[^Hellman2013a]<sup>,</sup>[^Hellman2011] with effective force constants, the phonon quasiparticles are different at each temperature. At fix temperature, they behave just like normal bosons, obeying Bose-Einstein statistics and so on. But changing the temperature will change both the occupation numbers and the states that are occupied. Moreover, in the harmonic approximation the baseline energy (with all atoms at their equilibrium positions) is that of the static lattice. With an effective Hamiltonian this baseline is a free parameter. The baseline shift is illustrated in the diagram below:
-
-<center><img src="../media/explain_U0.png" width="600" /></center>
-
-The density depicts the phase space samples used to fit the effective Hamiltonian. The reference energy, or baseline, has been shifted with respect to zero temperature. This baseline is determined by matching the potential energies of the samples of the Born-Oppenheimer surface, $U_{BO}$, and the potential energy of the TDEP model Hamiltonian:
-
-$$
-\begin{equation}
-\begin{split}
-	\left\langle U_{\textrm{BO}} - U_{\textrm{TDEP}} \right\rangle & =
-	\left\langle U_{\textrm{BO}} - U_0 -\frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j  \right\rangle = 0 \\
-	U_0 & = \left\langle U_{\textrm{BO}} - \frac{1}{2} \sum_{ij} \sum_{\alpha\beta} \Phi_{ij}^{\alpha\beta} u^{\alpha}_i u^{\beta}_j \right\rangle
-\end{split}
-\end{equation}
-$$
-
-Intuitively, this can be interpreted as that the TDEP force constants are determined by matching forces between the real and model system, in a similar manner we match the energies as well. The new baseline is conveniently expressed as a shift:
-
-$$
-\begin{equation}
-	\Delta U = U_0-U_{\textrm{stat}}
-\end{equation}
-$$
-
-Where $U_{\textrm{stat}}$ is the energy of the perfect lattice at 0K. The free energy is then (excluding configurational entropy, magnetic entropy etc.)
-
-$$
-\begin{equation}
-	F = F_{\textrm{el}} + F_{\textrm{ph}} + \Delta U_0\,.
-\end{equation}
-$$
-
-The entropy and heat capacity is not accessible from a single simulation. Since both the phonon free energy and baseline shift have non-trivial temperature dependencies, a series of calculations for different temperatures are needed, so that the entropy can be calculated via
-
-$$
-\begin{equation}
-	S = -\left.\frac{dF}{dT}\right|_{V}
-\end{equation}
-$$
-
-A series of calculations on a volume-temperature grid is required to calculate Gibbs free energy, with pressure explicitly calculated as
-
-$$
-\begin{equation}
-	P = -\left.\frac{dF}{dV}\right|_T
-\end{equation}
-$$
 
 #### Other dispersive properties
 
@@ -624,13 +455,13 @@ that, also sums to the total density of states.
 
 ### Input files
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
-* [infile.forceconstant](extract_forceconstants.html)
+* [infile.ucposcar](../files.md#infile.ucposcar)
+* [infile.forceconstant](extract_forceconstants.md)
 
 Optional files:
 
-* [infile.qpoints_dispersion](../page/files.html#infile.qpoints_dispersion) (to specify a path for the phonon dispersions)
-* [infile.forceconstant_thirdorder](extract_forceconstants.html) (for the Grüneisen parameter)
+* [infile.qpoints_dispersion](../files.md#infile.qpoints_dispersion) (to specify a path for the phonon dispersions)
+* [infile.forceconstant_thirdorder](extract_forceconstants.md) (for the Grüneisen parameter)
 
 ### Output files
 
@@ -662,55 +493,62 @@ xlim([0 max(x)])
 
 Contains the phonon density of states. The file is self-documented, below is a sample matlab snippet that plots it.
 
-```matlab
-fn=('outfile.phonon_dos.hdf5');
-unique_atom_labels=strsplit(h5readatt(fn,'/','unique_atom_labels'));
-energy_unit=h5readatt(fn,'/frequencies','unit');
-dos_unit=h5readatt(fn,'/dos','unit')
+=== "Python"
 
-omega=h5read(fn,'/frequencies');
-dos=h5read(fn,'/dos');
-dos_per_mode=h5read(fn,'/dos_per_mode');
-dos_per_site=h5read(fn,'/dos_per_site');
-dos_per_unique_atom=h5read(fn,'/dos_per_unique_atom');
+	```python
+	hej
+	```
 
-figure(1); clf;
+=== "Matlab"
+	```matlab
+	fn=('outfile.phonon_dos.hdf5');
+	unique_atom_labels=strsplit(h5readatt(fn,'/','unique_atom_labels'));
+	energy_unit=h5readatt(fn,'/frequencies','unit');
+	dos_unit=h5readatt(fn,'/dos','unit')
 
-subplot(1,3,1); hold on; box on;
+	omega=h5read(fn,'/frequencies');
+	dos=h5read(fn,'/dos');
+	dos_per_mode=h5read(fn,'/dos_per_mode');
+	dos_per_site=h5read(fn,'/dos_per_site');
+	dos_per_unique_atom=h5read(fn,'/dos_per_unique_atom');
 
-    title('Phonon density of states')
-    for i=1:size(dos_per_mode,2)
-        plot(omega,dos)
-    end
-    set(gca,'xminortick','on','yminortick','on')
-    ylabel(['Phonon density of states (' dos_unit ')'])
-    xlabel(['Frequency (' energy_unit ')'])
+	figure(1); clf;
 
-subplot(1,3,2); hold on; box on;
+	subplot(1,3,1); hold on; box on;
 
-    title('Phonon density of states per mode')
-    for i=1:size(dos_per_mode,2)
-        plot(omega,dos_per_mode(:,i))
-    end
-    set(gca,'xminortick','on','yminortick','on')
-    ylabel(['Phonon density of states (' dos_unit ')'])
-    xlabel(['Frequency (' energy_unit ')'])
+		title('Phonon density of states')
+		for i=1:size(dos_per_mode,2)
+			plot(omega,dos)
+		end
+		set(gca,'xminortick','on','yminortick','on')
+		ylabel(['Phonon density of states (' dos_unit ')'])
+		xlabel(['Frequency (' energy_unit ')'])
 
-subplot(1,3,3); hold on; box on;
+	subplot(1,3,2); hold on; box on;
 
-    title('Phonon density of states per unique atom')
-    y=zeros(size(omega));
-    for i=1:size(dos_per_unique_atom,2)
-        y=y+dos_per_unique_atom(:,i)
-        plot(omega,y)
-    end
+		title('Phonon density of states per mode')
+		for i=1:size(dos_per_mode,2)
+			plot(omega,dos_per_mode(:,i))
+		end
+		set(gca,'xminortick','on','yminortick','on')
+		ylabel(['Phonon density of states (' dos_unit ')'])
+		xlabel(['Frequency (' energy_unit ')'])
 
-    l=legend(unique_atom_labels);
-    set(l,'edgecolor','none','location','northwest')
-    set(gca,'xminortick','on','yminortick','on')
-    ylabel(['Phonon density of states (' dos_unit ')'])
-    xlabel(['Frequency (' energy_unit ')'])
-```
+	subplot(1,3,3); hold on; box on;
+
+		title('Phonon density of states per unique atom')
+		y=zeros(size(omega));
+		for i=1:size(dos_per_unique_atom,2)
+			y=y+dos_per_unique_atom(:,i)
+			plot(omega,y)
+		end
+
+		l=legend(unique_atom_labels);
+		set(l,'edgecolor','none','location','northwest')
+		set(gca,'xminortick','on','yminortick','on')
+		ylabel(['Phonon density of states (' dos_unit ')'])
+		xlabel(['Frequency (' energy_unit ')'])
+	```
 
 #### `outfile.dispersion_relations`
 

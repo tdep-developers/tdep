@@ -1,9 +1,3 @@
-author: Olle Hellman
-display: none
-graph: none
-propname: refine structure
-propnamelink: <a href="../program/refine_structure.html">refine structure</a>
-{!man/refine_structure.md!}
 
 ### Longer summary
 
@@ -39,6 +33,7 @@ Direct coordinates
   0.66666666666667   0.33333333333333   0.75000000000000  site 2 species 1: Fe
 ```
 
-@todo Explain that we can use a prototype structure to determine the spacegroup.
+!!! note
+    Explain that we can use a prototype structure to determine the spacegroup, as in pick spacegroup from a unit cell I know is ok, and impose that on the current cell.
 
-@todo Make sure that I can refine lattices as well, does not really work right now.
+

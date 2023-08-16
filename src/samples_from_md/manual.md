@@ -1,9 +1,3 @@
-author: Olle Hellman
-display: none
-graph: none
-propname: samples from md
-propnamelink: <a href="../program/samples_from_md.html">samples from md</a>
-{!man/samples_from_md.md!}
 
 ### Longer summary
 
@@ -23,13 +17,15 @@ This code selects a choice of uncorrelated samples from BOMD via a Monte-Carlo a
 
 ### Input files
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
-* [infile.ssposcar](../page/files.html#infile.ssposcar)
-* [infile.meta](../page/files.html#infile.meta)
-* [infile.stat](../page/files.html#infile.stat)
-* [infile.positions](../page/files.html#infile.positions)
-* [infile.forces](../page/files.html#infile.forces)
+* [infile.ucposcar](../files.md#infile.ucposcar)
+* [infile.ssposcar](../files.md#infile.ssposcar)
+* [infile.meta](../files.md#infile.meta)
+* [infile.stat](../files.md#infile.stat)
+* [infile.positions](../files.md#infile.positions)
+* [infile.forces](../files.md#infile.forces)
 
 ### Output files
 
-This code will generate a series of structures given in VASP POSCAR [format](../page/files.html#infile.ucposcar) with positions in fractional coordinates and velocities in Å/fs.
+This code will generate a series of structures in the specified output format.
+
+
