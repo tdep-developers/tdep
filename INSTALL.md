@@ -9,7 +9,7 @@ Installation
 - BLAS and LAPACK need to be installed
 - FFTW needs to be installed
 - MPI needs to be installed
-- HDF5 needs to be installed
+- HDF5 needs to be installed **with Fortran support**.
 - python should be installed
 - gnuplot should be installed
 
@@ -42,7 +42,7 @@ We advise to run the examples in `tdep/examples` to test your installation after
 If you need to install HDF5 manually, it can be [downloaded here](https://www.hdfgroup.org/downloads/hdf5/). Installing it should go like
 
 ```bash
-./configure FC=FC CC=CC --with-fortran --with-fortran2003 --prefix=XX
+./configure FC=FC CC=CC --enable-fortran --prefix=XX
 make
 make install
 ```
