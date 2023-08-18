@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../files/" class="md-tabs__link">
+    <a href="../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -595,7 +595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -921,7 +921,7 @@ g_i=\sum_j c_{i}^j \left(\frac{m_i^j-\bar{m_i}}{\bar{m_i}}\right)^2
 <h3 id="beyond-the-relaxation-time-approximation">Beyond the relaxation time approximation</h3>
 <p>So far we have have considered the phonon heat conduction as an elastic process, whereas it is inelastic. This can be treated by iteratively solving the phonon boltzmann equation, formulated in terms of the (linear) deviations from equilibrium occupation numbers.<sup id="fnref:peierls1929"><a class="footnote-ref" href="#fn:peierls1929">1</a></sup><sup>,</sup><sup id="fnref:Omini1996"><a class="footnote-ref" href="#fn:Omini1996">6</a></sup><sup>,</sup><sup id="fnref:Omini"><a class="footnote-ref" href="#fn:Omini">7</a></sup><sup>,</sup><sup id="fnref:Broido2007"><a class="footnote-ref" href="#fn:Broido2007">8</a></sup><sup>,</sup><sup id="fnref:Broido2005"><a class="footnote-ref" href="#fn:Broido2005">9</a></sup></p>
 <h3 id="phonon-scattering-rates-and-the-phonon-boltzmann-equation">Phonon scattering rates and the phonon Boltzmann equation</h3>
-<p>I always found it confusing how you arrived at most of these things. This is something I put together for myself, to clear it up a bit. Please bear in mind that this is not an attempt at a formal derivation whatsoever, just to make it a bit easier to interpret the different terms. There might be an arbitrary number of plusses and minuses and other things missing. Recall the transformation we introduced <a href="../phonon_dispersion_relations/">earlier</a>:</p>
+<p>I always found it confusing how you arrived at most of these things. This is something I put together for myself, to clear it up a bit. Please bear in mind that this is not an attempt at a formal derivation whatsoever, just to make it a bit easier to interpret the different terms. There might be an arbitrary number of plusses and minuses and other things missing. Recall the transformation we introduced <a href="phonon_dispersion_relations.md">earlier</a>:</p>
 <div class="arithmatex">\[
 \begin{equation}\label{eq:normalmodetransformation}
 \hat{u}_{i\alpha} = \sqrt{ \frac{\hbar}{2N m_\alpha} }
@@ -1406,13 +1406,13 @@ C = &amp; \sum_{v_y=0} x_{\lambda}
 <h3 id="input-files">Input files</h3>
 <p>These files are necesarry:</p>
 <ul>
-<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="../extract_forceconstants/#infile.forceconstant">infile.forceconstant</a></li>
-<li><a href="../extract_forceconstants/#infile.forceconstant_thirdorder">infile.forceconstant_thirdorder</a></li>
+<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="extract_forceconstants.md#infile.forceconstant">infile.forceconstant</a></li>
+<li><a href="extract_forceconstants.md#infile.forceconstant_thirdorder">infile.forceconstant_thirdorder</a></li>
 </ul>
 <p>and these are optional:</p>
 <ul>
-<li><a href="../../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
+<li><a href="../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
 </ul>
 <h3 id="output-files">Output files</h3>
 <p>Depending on options, the set of output files may differ. We start with the basic files that are written after running this code.</p>

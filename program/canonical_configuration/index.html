@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../files/" class="md-tabs__link">
+    <a href="../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -560,7 +560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -731,11 +731,11 @@
 <p><code>canonical_configuration -n 300 -t 0 --quantum</code> </p>
 <p><code>canonical_configuration -n 20 -t 10 --quantum --debye_temperature 400</code> </p>
 <h3 id="longer-summary">Longer summary</h3>
-<p>This code takes a second order <a href="../extract_forceconstants/">forceconstant</a> and generates a supercell with the atoms displaced corresponding to a harmonic canonical ensemble. These configurations can be used directly, to generate force-displacement statistics to determine force constants and other thermal properties, or as the starting point for molecular dynamics.</p>
+<p>This code takes a second order <a href="extract_forceconstants.md">forceconstant</a> and generates a supercell with the atoms displaced corresponding to a harmonic canonical ensemble. These configurations can be used directly, to generate force-displacement statistics to determine force constants and other thermal properties, or as the starting point for molecular dynamics.</p>
 <h3 id="background">Background</h3>
 <p>Born-Oppenheimer molecular dynamics can be expensive for many reasons. Firstly, it requires supercells with more than 100 atoms. Secondly, computation of the electronic ground state at every time step is time consuming. Thirdly, the cell must be fully equilibrated. The precision of the calculations is statistically linked to the number of configurations used: any property <span class="arithmatex">\(A\)</span> for which we want to calculate the ensemble average <span class="arithmatex">\(\langle A \rangle\)</span> must be converged with respect to the number of uncorrelated time steps.</p>
 <p>To minimize the equilibration time, the simulation cell can be initialized to a thermally excited state by selecting initial atomic velocities and displacement amplitudes according to the Maxwell-Boltzmann<sup id="fnref:West2006"><a class="footnote-ref" href="#fn:West2006">1</a></sup> or Bose - Einstein distributions.</p>
-<p>Starting with the equations of motion for the supercell (given harmonic <a href="../extract_forceconstants/">force constants</a>)</p>
+<p>Starting with the equations of motion for the supercell (given harmonic <a href="../program/extract_forceconstants.md">force constants</a>)</p>
 <div class="arithmatex">\[
 \begin{equation}
 \begin{pmatrix}
@@ -765,7 +765,7 @@ u_i = &amp; \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \sin( \omega_s t+\delta_s ) \
 \dot{u}_i = &amp; \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \omega_s \cos( \omega_s t+\delta_s)
 \end{align}
 \]</div>
-<p>This is identical to the transformation introduced in <a href="../phonon_dispersion_relations/">phonon dispersion relations</a>, except that the masses are incorporated in the normal mode amplitudes. We also omit the choice of <span class="arithmatex">\(\mathbf{q}\)</span>-vector, since we are only interested in the modes that are commensurate with the supercell. This leads to the dynamical matrix being a real symmetric matrix, with real eigenvalues and real eigenvectors.</p>
+<p>This is identical to the transformation introduced in <a href="phonon_dispersion_relations.md">phonon dispersion relations</a>, except that the masses are incorporated in the normal mode amplitudes. We also omit the choice of <span class="arithmatex">\(\mathbf{q}\)</span>-vector, since we are only interested in the modes that are commensurate with the supercell. This leads to the dynamical matrix being a real symmetric matrix, with real eigenvalues and real eigenvectors.</p>
 <p>The normal mode amplitudes <span class="arithmatex">\(A_s\)</span> and the phase <span class="arithmatex">\(\delta_s\)</span> will be determined by the following boundary conditions: we require a set of positions and velocities that correspond to a canonical ensemble. We choose <span class="arithmatex">\(A_s\)</span> so that they are normally distributed around their mean value and that each mode <span class="arithmatex">\(s\)</span> should contribute, on average, <span class="arithmatex">\(k_B T/2\)</span> to the internal energy. Then</p>
 <div class="arithmatex">\[
 \begin{equation}
@@ -788,11 +788,11 @@ u_i &amp; = \sum_{s=1}^{3N_a}
 <p>Choosing the mean amplitudes in the classical limit gives us a snapshot in time from a canonical Maxwell-Boltzmann ensemble (within the harmonic approximation), which results in a starting point that reduces the time until equilibration by orders of magnitude. Choosing a Bose-Einstein distribution of mean amplitudes and velocities instead allows us to sample phase space while including quantum thermal disorder at low temperatures.</p>
 <p>For applications where one does not need consecutive timesteps, the starting configurations generated by this can be used  by run several simultaneous instances of Born-Oppenheimer molecular dynamics with different random starting configurations, rather than running a single long instance. This strategy allows for parallelization of Born-Oppenheimer molecular dynamics with near perfect linear scaling, since the overhead of equilibration time is almost completely eliminated.</p>
 <p><center>
-<img src="/media/phase_space_spanning.png" width="500" />
+<img src="../../media/phase_space_spanning.png" width="500" />
 </center></p>
 <p>This is illustrated in the plot above. This is the singular value decomposition of molecular dynamics trajectories. A single colored field corresponds to data from a single random initial starting configuration. The dimensions spanned per unit time is greatly increased by stitching together calculations from different initial configurations. That is, 10 MD runs of 1000 time steps explores phase space better than a single MD run of 10x1000 time steps.</p>
 <h4 id="matching-with-a-debye-temperature">Matching with a Debye temperature</h4>
-<p>Up until this point we have assumed you have <a href="../extract_forceconstants/">forceconstants</a> to generate the normal mode displacements. If you don't, it's possible to guess them. The following procedure is used: assume a pair potential <span class="arithmatex">\(U(r)\)</span> which obeys</p>
+<p>Up until this point we have assumed you have <a href="extract_forceconstants.md">forceconstants</a> to generate the normal mode displacements. If you don't, it's possible to guess them. The following procedure is used: assume a pair potential <span class="arithmatex">\(U(r)\)</span> which obeys</p>
 <div class="arithmatex">\[
 \begin{equation}
 \frac{ \partial U(r)}{\partial r_{ij} }=0
@@ -830,19 +830,19 @@ r_x r_z &amp; r_y r_z &amp; r_z^2
 </div>
 <h3 id="input-files">Input files</h3>
 <ul>
-<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="../../files/#infile.ucposcar">infile.ssposcar</a> (use <a href="../generate_structure/">generate structure</a> to create one)</li>
-<li><a href="../../files/#infile.forceconstant">infile.forceconstant</a> (or use <code>--debye_temperature</code> as described above)</li>
+<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../files/#infile.ucposcar">infile.ssposcar</a> (use <a href="generate_structure.md">generate structure</a> to create one)</li>
+<li><a href="../files/#infile.forceconstant">infile.forceconstant</a> (or use <code>--debye_temperature</code> as described above)</li>
 </ul>
 <h3 id="output-files">Output files</h3>
-<p>The desired number of configurations are printed in VASP POSCAR <a href="../../files/#infile.ucposcar">format</a> by default, but the <code>--output_format</code> option can provide output in a variety of formats.</p>
+<p>The desired number of configurations are printed in VASP POSCAR <a href="../files/#infile.ucposcar">format</a> by default, but the <code>--output_format</code> option can provide output in a variety of formats.</p>
 <ul>
 <li>contcar_conf0001</li>
 <li>contcar_conf0002</li>
 <li>contcar_conf0003</li>
 <li>...</li>
 </ul>
-<p>In case you used a Debye temperature to generate the configurations, <code>outfile.fakeforceconstant</code> will be written. Use <a href="../phonon_dispersion_relations/">phonon dispersion relations</a> to plot it and check that the frequencies are reasonable.</p>
+<p>In case you used a Debye temperature to generate the configurations, <code>outfile.fakeforceconstant</code> will be written. Use <a href="phonon_dispersion_relations.md">phonon dispersion relations</a> to plot it and check that the frequencies are reasonable.</p>
 <div class="footnote">
 <hr />
 <ol>

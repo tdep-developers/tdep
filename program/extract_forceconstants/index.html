@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../files/" class="md-tabs__link">
+    <a href="../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -642,7 +642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -942,7 +942,7 @@ U(\{\textbf{u}\})=&amp; U_0+
 \]</div>
 <p>By increasing rank, the force constants of rank <span class="arithmatex">\(n\)</span> represent <span class="arithmatex">\(n\)</span>-body interactions, as illustrated in the diagram below:</p>
 <p><center>
-<img src="/media/illustration_of_forceconstants.png" width="500" />
+<img src="../../media/illustration_of_forceconstants.png" width="500" />
 </center></p>
 <p>What differs in the TDEP method and the textbook definitions is that we do not consider the interaction tensors as a Taylor expansion, instead they are free parameters designed to best describe the system at elevated temperature. This is done via a fitting procedure that will be explained below, and prefaced with a short formal motivation. The main advantage of a force constant model over the raw Born-Oppenheimer potential energy surface is that once it is established a host of quantities can be determined -- detailed in all the other sections of this manual.</p>
 <h3 id="motivation-for-least-squares-fitting-procedure">Motivation for least squares fitting procedure</h3>
@@ -1317,12 +1317,12 @@ S^{\mu\alpha} S^{\nu\beta} S^{\xi\gamma} S^{\kappa\delta} \,.\\
 <p>This is a numerically robust formulation of self-consistent phonons, but it must be mentioned that it is rarely needed. If you are simulating materials that are known to exist, they rarely show negative eigenvalues if the numerics are well-converged. The option to use the positive definite solver is available (<code>--solver 2</code>), but if you need to use it odds are high that it is in fact the numerics/convergence that is the actual issue. Which is why the option is this deep in the documentation, if you bothered to read this far you probably took the time to understand how to get the numerics correct as well.</p>
 <h3 id="input-files">Input files</h3>
 <ul>
-<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="../../files/#infile.ssposcar">infile.ssposcar</a></li>
-<li><a href="../../files/#infile.meta">infile.meta</a></li>
-<li><a href="../../files/#infile.stat">infile.stat</a></li>
-<li><a href="../../files/#infile.positions">infile.positions</a></li>
-<li><a href="../../files/#infile.forces">infile.forces</a></li>
+<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../files/#infile.ssposcar">infile.ssposcar</a></li>
+<li><a href="../files/#infile.meta">infile.meta</a></li>
+<li><a href="../files/#infile.stat">infile.stat</a></li>
+<li><a href="../files/#infile.positions">infile.positions</a></li>
+<li><a href="../files/#infile.forces">infile.forces</a></li>
 </ul>
 <h3 id="output-files">Output files</h3>
 <p><a name="outfile.forceconstant"></a></p>
