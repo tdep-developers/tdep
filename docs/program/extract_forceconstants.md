@@ -106,7 +106,7 @@ $$
 By increasing rank, the force constants of rank $n$ represent $n$-body interactions, as illustrated in the diagram below:
 
 <center>
-<img src="/media/illustration_of_forceconstants.png" width="500" />
+<img src="../../media/illustration_of_forceconstants.png" width="500" />
 </center>
 
 What differs in the TDEP method and the textbook definitions is that we do not consider the interaction tensors as a Taylor expansion, instead they are free parameters designed to best describe the system at elevated temperature. This is done via a fitting procedure that will be explained below, and prefaced with a short formal motivation. The main advantage of a force constant model over the raw Born-Oppenheimer potential energy surface is that once it is established a host of quantities can be determined -- detailed in all the other sections of this manual.

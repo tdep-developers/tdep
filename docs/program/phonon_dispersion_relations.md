@@ -73,11 +73,11 @@ Optional switches:
 
 This code calculates phonon dispersion relations, usually presented like this:
 
-<center><img src="/media/pbte_phonon_dispersions.png" width="600" /></center>
+<center><img src="../../media/pbte_phonon_dispersions.png" width="600" /></center>
 
 Where the color of the line indicates the projection onto species. The same data can also be presented as a density of states, like this:
 
-<center><img src="/media/pbte_phonon_dos.png" width="500" /></center>
+<center><img src="../../media/pbte_phonon_dos.png" width="500" /></center>
 
 By default, minimal input is needed, but many options to tailor the output exist.
 

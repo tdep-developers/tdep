@@ -12,7 +12,7 @@ Optional switches:
 
 * `--readiso`  
     default value .false.  
-    Read the isotope distribution from `infile.isotopes`. The format is specified [here](../page/files.html#infile.isotopes).
+    Read the isotope distribution from `infile.isotopes`. The format is specified [here](../files.md#infile.isotopes).
 
 * `--qpoint_grid value#1 value#2 value#3`, `-qg value#1 value#2 value#3`  
     default value 26 26 26  

@@ -60,7 +60,7 @@ $$
 where the index $i$ corresponds to a coordination shell. The coordination shell is defined from the ideal lattice as set of pairs that can transform to each other via a spacegroup operation. Naturally, the sum over all projected PDFs yield the total.
 
 <center>
-<img src="/media/gan_pair_distribution.png" width="500" />
+<img src="../../media/gan_pair_distribution.png" width="500" />
 </center>
 
 

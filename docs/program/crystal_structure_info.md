@@ -30,7 +30,7 @@ Optional switches:
 This is mainly a diagnostic tool, to make sure that my heuristics are working as they should. For example, if you want to calculate fcc Al, and things look strange, run this code to make sure that the symmetry detection actually identifies it as fcc. As a bonus, the Brillouin zone and the irreducible wedge is printed to file, so that you can make figures like the one below.
 
 <center>
-<img src="/media/fcc_al_brillouin_zone.png" width="500" />
+<img src="../../media/fcc_al_brillouin_zone.png" width="500" />
 </center>
 
 ### Input files

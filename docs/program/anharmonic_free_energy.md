@@ -63,7 +63,7 @@ $$
 
 where $U$ is the energy of the static lattice, and $F_{ph}$ is the free energy of the phonons. The only temperature dependence enters as occupation numbers in the phonon free energy expression. In the TDEP formalism it is only slightly more involved.
 
-As established in [extract_forceconstants.md](extract forceconstants) the TDEP free energy, to lowest order is given by
+As established in [extract_forceconstants](extract_forceconstants.md) the TDEP free energy, to lowest order is given by
 
 $$
 F(T,V) = U_0(T,V)+F_{ph}(T,V)

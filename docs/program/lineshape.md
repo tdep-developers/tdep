@@ -103,7 +103,7 @@ Optional switches:
 
 This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:
 
-<center><img src="/media/lineshape_sqe.png" width="500" /></center>
+<center><img src="../../media/lineshape_sqe.png" width="500" /></center>
 
 ### Background
 
@@ -242,7 +242,7 @@ There are three possible modes for this code: the lineshape at a single q-point 
 
 This file is self-documented. You can produce plots like this:
 
-<center><img src="/media/lineshapes.png" width="600" /></center>
+<center><img src="../../media/lineshapes.png" width="600" /></center>
 
 For this plot, I used the following matlab snippet:
 
