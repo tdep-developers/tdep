@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../files/" class="md-tabs__link">
+    <a href="../../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -636,7 +636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../files/" class="md-nav__link">
+      <a href="../../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -847,7 +847,7 @@
 <li>
 <p><code>--readpath</code>, <code>-rp</code><br />
     default value .false.<br />
-    Read the q-point path from <code>infile.qpoints_dispersion</code>. Use <a href="crystal_structure_info.md">crystal structure into</a> to generate an example.</p>
+    Read the q-point path from <code>infile.qpoints_dispersion</code>. Use <a href="../crystal_structure_info/">crystal structure into</a> to generate an example.</p>
 </li>
 <li>
 <p><code>--dos</code><br />
@@ -913,7 +913,7 @@
 <p><center><img src="../../media/pbte_phonon_dos.png" width="500" /></center></p>
 <p>By default, minimal input is needed, but many options to tailor the output exist.</p>
 <h3 id="equations-of-motion-in-a-harmonic-crystal">Equations of motion in a harmonic crystal</h3>
-<p>As detailed in <a href="extract_forceconstants.md">extract forceconstants</a> we have mapped the Born-Oppenheimer to an effective potential. A model Hamiltonian truncated at the second order (a harmonic Hamiltonian) is given by<sup id="fnref:Born1998"><a class="footnote-ref" href="#fn:Born1998">1</a></sup></p>
+<p>As detailed in <a href="../extract_forceconstants/">extract forceconstants</a> we have mapped the Born-Oppenheimer to an effective potential. A model Hamiltonian truncated at the second order (a harmonic Hamiltonian) is given by<sup id="fnref:Born1998"><a class="footnote-ref" href="#fn:Born1998">1</a></sup></p>
 <div class="arithmatex">\[
 \begin{equation}
 \hat H=\sum_{\kappa} \frac{\mathbf{p}_{\kappa}^2}{2m_{\kappa}} + \frac{1}{2} \sum_{\kappa\lambda}\sum_{\alpha\beta}  \Phi_{\kappa\lambda}^{\alpha\beta} u^{\alpha}_{\kappa} u^{\beta}_{\lambda}\,
@@ -1029,9 +1029,9 @@ R_{\alpha} R_{\beta}
 e^{i\mathbf{q}\cdot \mathbf{R}}.
 \end{align}
 \]</div>
-<p>By calculating the eigenvalues and eigenvectors of the dynamical matrix over the Brillouin zone, all thermodynamic quantities involving the atomic motions can be determined, as far as the harmonic approximation is valid. If you are curious where the amplitudes of the normal modes disappeared, see <a href="canonical_configuration.md">canonical configuration</a>.</p>
+<p>By calculating the eigenvalues and eigenvectors of the dynamical matrix over the Brillouin zone, all thermodynamic quantities involving the atomic motions can be determined, as far as the harmonic approximation is valid. If you are curious where the amplitudes of the normal modes disappeared, see <a href="../canonical_configuration/">canonical configuration</a>.</p>
 <h3 id="long-ranged-interactions-in-polar-materials">Long-ranged interactions in polar materials</h3>
-<p>When determining the dynamical matrix, the sum over lattice vectors <span class="arithmatex">\(\mathbf{R}\)</span> should in principle be carried out over all pairs. In practice, we assume that the interactions are zero beyond some cutoff (see <a href="extract_forceconstants.md">extract forceconstants</a> option <code>-rc2</code>), and truncate the sum. This is not a valid approach when dealing with polar material where the induced dipole-dipole interactions are essentially infinite-ranged. See for example Gonze &amp; Lee.<sup id="fnref:Gonze1994"><a class="footnote-ref" href="#fn:Gonze1994">5</a></sup> <sup id="fnref:Gonze1997"><a class="footnote-ref" href="#fn:Gonze1997">6</a></sup> When dealing with these long-ranged electrostatics we start by defining the Born effective charge tensor:</p>
+<p>When determining the dynamical matrix, the sum over lattice vectors <span class="arithmatex">\(\mathbf{R}\)</span> should in principle be carried out over all pairs. In practice, we assume that the interactions are zero beyond some cutoff (see <a href="../extract_forceconstants/">extract forceconstants</a> option <code>-rc2</code>), and truncate the sum. This is not a valid approach when dealing with polar material where the induced dipole-dipole interactions are essentially infinite-ranged. See for example Gonze &amp; Lee.<sup id="fnref:Gonze1994"><a class="footnote-ref" href="#fn:Gonze1994">5</a></sup> <sup id="fnref:Gonze1997"><a class="footnote-ref" href="#fn:Gonze1997">6</a></sup> When dealing with these long-ranged electrostatics we start by defining the Born effective charge tensor:</p>
 <div class="arithmatex">\[
 Z_{i}^{\alpha\beta} = \frac{\partial^2 U}{\partial \varepsilon^{\alpha} \partial u_{i}^{\beta}}
 \]</div>
@@ -1285,13 +1285,13 @@ g_i(\omega) = \frac{(2\pi)^3}{V} \sum_{s} \int_{\mathrm{BZ}} \left|\epsilon^i_{\
 <p>that, also sums to the total density of states.</p>
 <h3 id="input-files">Input files</h3>
 <ul>
-<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="extract_forceconstants.md">infile.forceconstant</a></li>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../extract_forceconstants/">infile.forceconstant</a></li>
 </ul>
 <p>Optional files:</p>
 <ul>
-<li><a href="../files/#infile.qpoints_dispersion">infile.qpoints_dispersion</a> (to specify a path for the phonon dispersions)</li>
-<li><a href="extract_forceconstants.md">infile.forceconstant_thirdorder</a> (for the Grüneisen parameter)</li>
+<li><a href="../../files/#infile.qpoints_dispersion">infile.qpoints_dispersion</a> (to specify a path for the phonon dispersions)</li>
+<li><a href="../extract_forceconstants/">infile.forceconstant_thirdorder</a> (for the Grüneisen parameter)</li>
 </ul>
 <h3 id="output-files">Output files</h3>
 <p>Depending on options, the set of output files may differ. We start with the basic files that are written.</p>

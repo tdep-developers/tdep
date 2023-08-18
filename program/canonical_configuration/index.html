@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../files/" class="md-tabs__link">
+    <a href="../../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -560,7 +560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../files/" class="md-nav__link">
+      <a href="../../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -792,7 +792,7 @@ u_i &amp; = \sum_{s=1}^{3N_a}
 </center></p>
 <p>This is illustrated in the plot above. This is the singular value decomposition of molecular dynamics trajectories. A single colored field corresponds to data from a single random initial starting configuration. The dimensions spanned per unit time is greatly increased by stitching together calculations from different initial configurations. That is, 10 MD runs of 1000 time steps explores phase space better than a single MD run of 10x1000 time steps.</p>
 <h4 id="matching-with-a-debye-temperature">Matching with a Debye temperature</h4>
-<p>Up until this point we have assumed you have <a href="extract_forceconstants.md">forceconstants</a> to generate the normal mode displacements. If you don't, it's possible to guess them. The following procedure is used: assume a pair potential <span class="arithmatex">\(U(r)\)</span> which obeys</p>
+<p>Up until this point we have assumed you have <a href="../extract_forceconstants/">forceconstants</a> to generate the normal mode displacements. If you don't, it's possible to guess them. The following procedure is used: assume a pair potential <span class="arithmatex">\(U(r)\)</span> which obeys</p>
 <div class="arithmatex">\[
 \begin{equation}
 \frac{ \partial U(r)}{\partial r_{ij} }=0
@@ -830,19 +830,19 @@ r_x r_z &amp; r_y r_z &amp; r_z^2
 </div>
 <h3 id="input-files">Input files</h3>
 <ul>
-<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="../files/#infile.ucposcar">infile.ssposcar</a> (use <a href="generate_structure.md">generate structure</a> to create one)</li>
-<li><a href="../files/#infile.forceconstant">infile.forceconstant</a> (or use <code>--debye_temperature</code> as described above)</li>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../../files/#infile.ucposcar">infile.ssposcar</a> (use <a href="../generate_structure/">generate structure</a> to create one)</li>
+<li><a href="../../files/#infile.forceconstant">infile.forceconstant</a> (or use <code>--debye_temperature</code> as described above)</li>
 </ul>
 <h3 id="output-files">Output files</h3>
-<p>The desired number of configurations are printed in VASP POSCAR <a href="../files/#infile.ucposcar">format</a> by default, but the <code>--output_format</code> option can provide output in a variety of formats.</p>
+<p>The desired number of configurations are printed in VASP POSCAR <a href="../../files/#infile.ucposcar">format</a> by default, but the <code>--output_format</code> option can provide output in a variety of formats.</p>
 <ul>
 <li>contcar_conf0001</li>
 <li>contcar_conf0002</li>
 <li>contcar_conf0003</li>
 <li>...</li>
 </ul>
-<p>In case you used a Debye temperature to generate the configurations, <code>outfile.fakeforceconstant</code> will be written. Use <a href="phonon_dispersion_relations/README.md">phonon dispersion relations</a> to plot it and check that the frequencies are reasonable.</p>
+<p>In case you used a Debye temperature to generate the configurations, <code>outfile.fakeforceconstant</code> will be written. Use <a href="../phonon_dispersion_relations/">phonon dispersion relations</a> to plot it and check that the frequencies are reasonable.</p>
 <div class="footnote">
 <hr />
 <ol>

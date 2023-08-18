@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../files/" class="md-tabs__link">
+    <a href="../../files/" class="md-tabs__link">
       Files
     </a>
   </li>
@@ -580,7 +580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../files/" class="md-nav__link">
+      <a href="../../files/" class="md-nav__link">
         Files
       </a>
     </li>
@@ -765,7 +765,7 @@
 <li>
 <p><code>--readpath</code>, <code>-rp</code><br />
     default value .false.<br />
-    Read the q-point path from <code>infile.qpoints_dispersion</code>. Use <a href="crystal_structure_info.md">crystal structure into</a> to generate an example.</p>
+    Read the q-point path from <code>infile.qpoints_dispersion</code>. Use <a href="../crystal_structure_info/">crystal structure into</a> to generate an example.</p>
 </li>
 <li>
 <p><code>--nq_on_path value</code>, <code>-nq value</code><br />
@@ -834,7 +834,7 @@
 <p>This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:</p>
 <p><center><img src="../../media/lineshape_sqe.png" width="500" /></center></p>
 <h3 id="background">Background</h3>
-<p>It is nowadays routine to calculate e.g. <a href="thermal_conductivity.md">lattice thermal conductivity</a> using perturbation theory. At that level of approximation, you calculate the phonon lifetime via the imaginary part of the phonon self-energy at the harmonic frequencies. In general, however, the picture with a well defined phonon, shifted by a small energy <span class="arithmatex">\(\Delta\)</span> and broadened by <span class="arithmatex">\(\Gamma\)</span> is not enough. In general, the phonon self-energy is energy-dependent,<sup id="fnref:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup></p>
+<p>It is nowadays routine to calculate e.g. <a href="../thermal_conductivity/">lattice thermal conductivity</a> using perturbation theory. At that level of approximation, you calculate the phonon lifetime via the imaginary part of the phonon self-energy at the harmonic frequencies. In general, however, the picture with a well defined phonon, shifted by a small energy <span class="arithmatex">\(\Delta\)</span> and broadened by <span class="arithmatex">\(\Gamma\)</span> is not enough. In general, the phonon self-energy is energy-dependent,<sup id="fnref:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup></p>
 <div class="arithmatex">\[
 \begin{equation}
 \Sigma(\Omega) = \Delta(\Omega) + i\Gamma(\Omega) \,,
@@ -928,14 +928,14 @@ g_i=\sum_j c_{i}^j \left(\frac{m_i^j-\bar{m_i}}{\bar{m_i}}\right)^2
 <h3 id="input-files">Input files</h3>
 <p>Required files:</p>
 <ul>
-<li><a href="../files/#infile.ucposcar">infile.ucposcar</a></li>
-<li><a href="extract_forceconstants.md">infile.forceconstant</a></li>
-<li><a href="extract_forceconstants.md">infile.forceconstant_thirdorder</a></li>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../extract_forceconstants/">infile.forceconstant</a></li>
+<li><a href="../extract_forceconstants/">infile.forceconstant_thirdorder</a></li>
 </ul>
 <p>Optional files:</p>
 <ul>
-<li><a href="../files/#infile.qpoints_dispersion">infile.qpoints_dispersion</a> (to specify the q-point path)</li>
-<li><a href="../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
+<li><a href="../../files/#infile.qpoints_dispersion">infile.qpoints_dispersion</a> (to specify the q-point path)</li>
+<li><a href="../../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
 </ul>
 <h3 id="output-files">Output files</h3>
 <p>There are three possible modes for this code: the lineshape at a single q-point (default), along a path in the BZ (<code>--path</code>) or over the full BZ as a phonon DOS (<code>--dos</code>). The output files will differ. For lineshape at a single q, you get</p>
