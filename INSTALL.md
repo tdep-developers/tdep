@@ -31,6 +31,8 @@ Then run the build script via
 bash build_things.sh --nthreads_make 4
 ```
 
+**If problems occur, please look at the [Troubleshooting section below](#Troubleshooting). If you cannot fix the error, please reach out, e.g., via the [issue tracker](https://github.com/tdep-developers/tdep/issues).**
+
 ## Check your installation
 
 We advise to run the examples in `tdep/examples` to test your installation after compilation.
@@ -147,3 +149,12 @@ fatal: not a git repository (or any of the parent directories): .git
 
 it means you did not clone TDEP from github. In that case, either clone it or adjust the `build_things.sh` script.
 
+## "error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?"
+
+If you see the error
+
+```
+... error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?
+```
+
+it likely means that you are using an older Fortran version, and should replace `-fallow-argument-mismatch` with `-Wno-argument-mismatch` in your `important_settings` as suggested.
