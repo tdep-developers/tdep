@@ -31,11 +31,28 @@ Then run the build script via
 bash build_things.sh --nthreads_make 4
 ```
 
+If everything works find, the last lines of the output should be something like:
+
+```bash
+...
+
+Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely
+MANPATH=$MANPATH:/path/to/tdep/man
+PATH=$PATH:/path/to/tdep/bin
+export MANPATH
+export PATH
+alias gnuplot='gnuplot -persist'
+
+Everything should be set up and good to go!
+```
+
+i.e., add the respective lines to your `.bashrc` and you are all set up!
+
 **If problems occur, please look at the [Troubleshooting section below](#Troubleshooting). If you cannot fix the error, please reach out, e.g., via the [issue tracker](https://github.com/tdep-developers/tdep/issues).**
 
 ## Check your installation
 
-We advise to run the examples in `tdep/examples` to test your installation after compilation.
+We advise to run the tests in [`./tests`](./tests)  to check your installation.
 
 ## HDF5
 

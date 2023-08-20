@@ -1,0 +1,7 @@
+FCC                         ! Bravais lattice type
+  100                       ! Number of points on each path
+    4                       ! Number paths between special points
+GM  X                       ! Starting and ending special point
+X   U                       !
+K   GM                      !
+GM  L                       !
