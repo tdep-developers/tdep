@@ -595,8 +595,8 @@ getU0: block
 
         write (*, *) ''
         write (*, "(1X,A)") 'FORCES (eV/A):'
-        write (*, "(21X,A,10X,A,5X,A,5X,A,11X,A)") 'rms', 'rms(res)', 'std(res)', 'R2', 'normalized std(res)'
-        write (*, '(1X,A15,1X,F12.6,5X,A,8X,F12.6,5X,A,12X,A)') 'input:', mf0, '-', sf0, '-', '-'
+        write (*, "(21X,A,10X,A,5X,A,5X,A,5X,A)") 'rms', 'rms(res)', 'std(res)', 'R^2(res)', 'normalized std(res)'
+        write (*, '(1X,A15,3(1X,F12.6),5X,A,12X,A)') 'input:', mf0, mf0, sf0, '-', '-'
         if (map%polar .gt. 0) write (*, '(1X,A15,5(1X,F12.6))') 'polar:', mfp, dfp, sfp, 1 - (sfp/sf0)**2, sfp/sf0
         if (map%have_fc_pair) write (*, '(1X,A15,5(1X,F12.6),13X,A)') 'second order:', mf2, df2, sf2, 1 - (sf2/sf0)**2, sf2/sf0, '<-- anharmonicity measure'
         if (map%have_fc_triplet) write (*, '(1X,A15,4(1X,F12.6))') 'third order:', mf3, df3, sf3, sf3/sf0
