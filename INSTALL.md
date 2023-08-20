@@ -15,15 +15,41 @@ Installation
 
 **Note: The `build_things.sh` script assumes that TDEP was cloned and lives in a git repository. If you wish obtain TDEP in another you have to adjust the script.**
 
-## Example
+**If you have a package manager, `homebrew`, `apt-get`, `yay`, `pacman`, you name it, getting these dependencies should be straightforward.**
 
-For example on Macbook with `gfortran-12`, you would pick `important_settings.apple_silicon_gfortran12`,
+For example, you would run
 
 ```bash
-cp important_settings.apple_silicon_gfortran12 important_settings
+sudo apt-get install lapack blas hdf5
 ```
 
-and adjust in particular the `PATH_TO_HDF5_LIB` and `PATH_TO_HDF5_INC`.
+and confirm that libraries and include files add up at a place where you find them, e.g., `/usr/lib` or `/usr/local/lib`. **This will be the paths you specify in the important settings.**
+
+## Example
+
+- Pick e.g. the `important_settings.gfortran` and copy it to `important_settings`:
+
+```bash
+cp important_settings.gfortran important_settings
+```
+
+- adjust:
+
+  - `FORTRAN_COMPILER`: your fortran compiler
+
+  - `FCFLAGS`: compiler settings to make `gfortran` (or whatever other compiler you are using) work
+
+  - `PATH_TO_BLASLAPACK_LIB`: Path to your BLAS and LAPACK installation. Probably `/usr/local` or similar – when in doubt find it via
+
+    ```bash
+    find /usr | grep lapack
+    ```
+
+    and see where your LAPACK library is actually located on your computer
+
+  - `PATH_TO_BLASLAPACK_INC`: Same but for the INCLUDE files.
+
+  - `PATH_TO_FFTW_LIB`, `PATH_TO_MPI_LIB`, `PATH_TO_HDF5_LIB` same for FFTW, MPI, HDF5
 
 Then run the build script via 
 
