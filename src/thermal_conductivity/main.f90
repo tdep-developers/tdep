@@ -67,7 +67,7 @@ initharmonic: block
     if (mw%talk) write (*, *) '... read unitcell poscar'
 
     ! Perhaps non-natural isotope distribution
-    write (*, *) 'FIXME OUTPUT UNITS'
+    ! write (*, *) 'FIXME OUTPUT UNITS'
     if (opts%readiso) then
         if (mw%talk) write (*, *) '... reading isotope distribution from file'
         call uc%readisotopefromfile()

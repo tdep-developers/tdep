@@ -22,20 +22,20 @@ This software is distributed under the MIT license. If you use it, please cite t
 
 ## Manual
 
-[The manual has its own page, including example workflows and theoretical background.](http://ollehellman.github.io)
+[The manual has its own page, including example workflows and theoretical background.](https://tdep-developers.github.io/tdep/)
 
 ## Installation
 
-[Please find instructions here.](./INSTALL.md)
+[Please find installation instructions in the TDEP repository.](https://github.com/tdep-developers/tdep/blob/main/INSTALL.md)
 
 ## Report bugs
 
-[Please use our issue tracker to report any problems.](https://github.com/tdep-developers/tdep/issues)
+[Please use our github issue tracker to report any problems.](https://github.com/tdep-developers/tdep/issues)
 
 ## Contribute
 
-[Please find instructions here.](./CONTRIBUTING.md)
+[Please find instructions in the repository.](https://github.com/tdep-developers/tdep/blob/main/CONTRIBUTING.md)
 
 ## Other things to look at
 
-* `tdeptools` a package to facilitate working with TDEP and perform additional postprocessing can be found here: https://github.com/flokno/tools.tdep
+* `tdeptools` a package to facilitate working with TDEP and perform additional postprocessing can be found here: [https://github.com/flokno/tools.tdep](https://github.com/flokno/tools.tdep)

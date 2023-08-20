@@ -1,9 +1,3 @@
-author: Olle Hellman
-display: none
-graph: none
-propname: generate structure
-propnamelink: <a href="../program/generate_structure.html">generate structure</a>
-{!man/generate_structure.md!}
 
 ### Longer summary
 
@@ -133,7 +127,7 @@ $$
 \left|\frac{ \mathbf{b} \times \mathbf{c} }{\left| \mathbf{b} \times \mathbf{c} \right|}\cdot \mathbf{a}\right| \,,\quad
 \left|\frac{ \mathbf{a} \times \mathbf{b} }{\left| \mathbf{a} \times \mathbf{b} \right|}\cdot \mathbf{c}\right| \,,\quad
 \left|\frac{ \mathbf{a} \times \mathbf{c} }{\left| \mathbf{a} \times \mathbf{c} \right|}\cdot \mathbf{b}\right|
-\right\}  
+\right\}
 $$
 
 I define the ratio
@@ -185,8 +179,8 @@ This cell has a filling ratio corresponding to 98.4% of the ideal cube.
 
 ### Input files
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
+* [infile.ucposcar](../files.md#infile.ucposcar)
 
 ### Output files
 
-* [outfile.ssposcar](../page/files.html#infile.ssposcar)
+* [outfile.ssposcar](../files.md#infile.ssposcar)

@@ -1,25 +1,5 @@
-author: Olle Hellman
-display: none
-graph: none
-propname: thermal conductivity
-propnamelink: <a href="../program/thermal_conductivity.html">thermal conductivity</a>
-{!man/thermal_conductivity.md!}
-
-### What can this code produce
-
-@todo Add plot of kappa vs temperature
-
-@todo Add plot with kappa vs boundary scattering?
-
-@todo Add plot with spectral kappa
-
-@todo Add plot with scattering rates
 
 ### Longer summary
-
-@todo Revise, rather confusing at the moment.
-
-@todo Start from the proper Boltzmann equation.
 
 Heat transport can be determined by solving the inelastic phonon Boltzmann equation. By applying a temperature gradient $\nabla T_\alpha$ in direction $\alpha$, the heat current is given by the group velocities of phonon mode $\lambda$ and non-equilibrium phonon distribution function $\tilde{n}_\lambda$:[^peierls1955quantum]
 
@@ -144,22 +124,9 @@ Where $d$ is a characteristic domain size.
 
 So far we have have considered the phonon heat conduction as an elastic process, whereas it is inelastic. This can be treated by iteratively solving the phonon boltzmann equation, formulated in terms of the (linear) deviations from equilibrium occupation numbers.[^peierls1929]<sup>,</sup>[^Omini1996]<sup>,</sup>[^Omini]<sup>,</sup>[^Broido2007]<sup>,</sup>[^Broido2005]
 
-</div>
-</div>
-</div>
-<div class="jumbotron jumbotron-explain">
-<div class="container-fluid">
-<div class="row">
-<div class="col-md-offset-2 col-md-10 " id='text'>
+### Phonon scattering rates and the phonon Boltzmann equation
 
-<h4>Phonon scattering rates and the phonon Boltzmann equation</h4>
-
-</div>
-</div>
-<div class="row">
-<div class="col-md-offset-2 col-md-8 " id='text'>
-
-I always found it confusing how you arrived at most of these things. This is something I put together for myself, to clear it up a bit. Please bear in mind that this is not an attempt at a formal derivation whatsoever, just to make it a bit easier to interpret the different terms. There might be an arbitrary number of plusses and minuses and other things missing. Recall the transformation we introduced [earlier](../program/phonon_dispersion_relations.html):
+I always found it confusing how you arrived at most of these things. This is something I put together for myself, to clear it up a bit. Please bear in mind that this is not an attempt at a formal derivation whatsoever, just to make it a bit easier to interpret the different terms. There might be an arbitrary number of plusses and minuses and other things missing. Recall the transformation we introduced [earlier](phonon_dispersion_relations.md):
 
 $$
 \begin{equation}\label{eq:normalmodetransformation}
@@ -251,7 +218,7 @@ $$
 \begin{equation}
 \begin{split}
 & \sum_{\lambda\lambda'\lambda''}
-\left\langle f \middle\vert  
+\left\langle f \middle\vert
 \left(a_{\lambda}+a_{\lambda}^\dagger \right)
 \left(a_{\lambda'}+a_{\lambda'}^\dagger \right)
 \left(a_{\lambda''}+a_{\lambda''}^\dagger \right)
@@ -658,17 +625,6 @@ $$
 \end{equation}
 $$
 
-</div>
-
-</div>
-</div>
-</div>
-</div>
-<div class="container-fluid">
-<div class="row" id="text">
-<div class="col-md-offset-2 col-md-7 col-md-offset-3">
-
-
 ### Cumulative kappa
 
 @todo Check code snippets
@@ -686,7 +642,8 @@ can be measured.[^Minnich2012] The cumulative thermal conductivity can then be c
 $$
 \kappa_{\alpha\beta}^{\textrm{acc}}(l)=
 \frac{1}{V} \sum_{\lambda}
-C_{\lambda} v^{\alpha}_{\lambda} v^{\beta}_{\lambda} \tau_{\lambda} \Theta(l- l_{\lambda} ) \,,$$
+C_{\lambda} v^{\alpha}_{\lambda} v^{\beta}_{\lambda} \tau_{\lambda} \Theta(l- l_{\lambda} ) \,,
+$$
 
 where $\Theta$ is the Heaviside step function.
 
@@ -716,10 +673,10 @@ x_{\lambda} = & \frac{\hbar\omega_{\lambda}}{V}
 \frac{\partial n_{\lambda}} {\partial T}
 v_{\lambda}^z l_{\lambda}^z
   \\
-A = & -\frac{1}{d} \sum_{v_y>0}  
+A = & -\frac{1}{d} \sum_{v_y>0}
 x_{\lambda}
 \left(  -l^{y}_{\lambda} \exp\left[\frac{d}{l^{y}_{\lambda}}\right]+l^{y}_{\lambda}-d  \right) \\
-B = & -\frac{1}{d} \sum_{v_y<0}  
+B = & -\frac{1}{d} \sum_{v_y<0}
 x_{\lambda}
 \left(
 l^{y}_{\lambda}
@@ -736,13 +693,13 @@ where $v_y$ and $v_z$ are the components of the phonon group velocity along the 
 
 These files are necesarry:
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
-* [infile.forceconstant](extract_forceconstants.html#infile.forceconstant)
-* [infile.forceconstant_thirdorder](extract_forceconstants.html#infile.forceconstant_thirdorder)
+* [infile.ucposcar](../files.md#infile.ucposcar)
+* [infile.forceconstant](extract_forceconstants.md#infile.forceconstant)
+* [infile.forceconstant_thirdorder](extract_forceconstants.md#infile.forceconstant_thirdorder)
 
 and these are optional:
 
-* [infile.isotopes](../page/files.html#infile.isotopes) (for non-natural isotope distribution)
+* [infile.isotopes](../files.md#infile.isotopes) (for non-natural isotope distribution)
 
 ### Output files
 
@@ -782,14 +739,14 @@ This file contains components of the thermal conductivity tensor $\kappa_{\alpha
 This file is self-explainatory. It contains the different cumulative plots described above, at a series of temperatures. Below is a matlab snippet that plots part of the output.
 
 ```matlab
-figure(1); clf; hold on; box on;    
+figure(1); clf; hold on; box on;
 
 % filename
 fn='outfile.cumulative_kappa.hdf5';
 % which temperature?
 t=1;
 
-subplot(1,3,1); hold on; box on;    
+subplot(1,3,1); hold on; box on;
 
     % read in cumulative kappa vs mean free path from file
     x=h5read(fn,['/temperature_' num2str(t) '/mean_free_path_axis']);

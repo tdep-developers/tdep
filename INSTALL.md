@@ -1,7 +1,7 @@
 Installation
 ===
 
-`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.
+`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.j
 
 ## Requirements
 
@@ -9,9 +9,11 @@ Installation
 - BLAS and LAPACK need to be installed
 - FFTW needs to be installed
 - MPI needs to be installed
-- HDF5 needs to be installed
+- HDF5 needs to be installed **with Fortran support**.
 - python should be installed
 - gnuplot should be installed
+
+**Note: The `build_things.sh` script assumes that TDEP was cloned and lives in a git repository. If you wish obtain TDEP in another you have to adjust the script.**
 
 ## Example
 
@@ -46,6 +48,8 @@ Everything should be set up and good to go!
 
 i.e., add the respective lines to your `.bashrc` and you are all set up!
 
+**If problems occur, please look at the [Troubleshooting section below](#Troubleshooting). If you cannot fix the error, please reach out, e.g., via the [issue tracker](https://github.com/tdep-developers/tdep/issues).**
+
 ## Check your installation
 
 We advise to run the tests in [`./tests`](./tests)  to check your installation.
@@ -55,7 +59,7 @@ We advise to run the tests in [`./tests`](./tests)  to check your installation.
 If you need to install HDF5 manually, it can be [downloaded here](https://www.hdfgroup.org/downloads/hdf5/). Installing it should go like
 
 ```bash
-./configure FC=FC CC=CC --with-fortran --with-fortran2003 --prefix=XX
+./configure FC=FC CC=CC --enable-fortran --prefix=XX
 make
 make install
 ```
@@ -151,3 +155,23 @@ FCFLAGS_EXTRA="-L/Library/Developer/CommandLineTools//SDKs/MacOSX13.3.sdk/usr/li
 ```
 
 where the given path should point to you MacOS xcode installation `lib` path.
+
+## "not a git repository"
+
+If you see the error
+
+```
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+it means you did not clone TDEP from github. In that case, either clone it or adjust the `build_things.sh` script.
+
+## "error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?"
+
+If you see the error
+
+```
+... error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?
+```
+
+it likely means that you are using an older Fortran version, and should replace `-fallow-argument-mismatch` with `-Wno-argument-mismatch` in your `important_settings` as suggested.
