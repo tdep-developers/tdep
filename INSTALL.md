@@ -9,21 +9,47 @@ Installation
 - BLAS and LAPACK need to be installed
 - FFTW needs to be installed
 - MPI needs to be installed
-- HDF5 needs to be installed
+- HDF5 needs to be installed **with Fortran support**.
 - python should be installed
 - gnuplot should be installed
 
 **Note: The `build_things.sh` script assumes that TDEP was cloned and lives in a git repository. If you wish obtain TDEP in another you have to adjust the script.**
 
-## Example
+**If you have a package manager, `homebrew`, `apt-get`, `yay`, `pacman`, you name it, getting these dependencies should be straightforward.**
 
-For example on Macbook with `gfortran-12`, you would pick `important_settings.apple_silicon_gfortran12`,
+For example, you would run
 
 ```bash
-cp important_settings.apple_silicon_gfortran12 important_settings
+sudo apt-get install lapack blas hdf5
 ```
 
-and adjust in particular the `PATH_TO_HDF5_LIB` and `PATH_TO_HDF5_INC`.
+and confirm that libraries and include files add up at a place where you find them, e.g., `/usr/lib` or `/usr/local/lib`. **This will be the paths you specify in the important settings.**
+
+## Example
+
+- Pick e.g. the `important_settings.gfortran` and copy it to `important_settings`:
+
+```bash
+cp important_settings.gfortran important_settings
+```
+
+- adjust:
+
+  - `FORTRAN_COMPILER`: your fortran compiler
+
+  - `FCFLAGS`: compiler settings to make `gfortran` (or whatever other compiler you are using) work
+
+  - `PATH_TO_BLASLAPACK_LIB`: Path to your BLAS and LAPACK installation. Probably `/usr/local` or similar – when in doubt find it via
+
+    ```bash
+    find /usr | grep lapack
+    ```
+
+    and see where your LAPACK library is actually located on your computer
+
+  - `PATH_TO_BLASLAPACK_INC`: Same but for the INCLUDE files.
+
+  - `PATH_TO_FFTW_LIB`, `PATH_TO_MPI_LIB`, `PATH_TO_HDF5_LIB` same for FFTW, MPI, HDF5
 
 Then run the build script via 
 
@@ -31,16 +57,35 @@ Then run the build script via
 bash build_things.sh --nthreads_make 4
 ```
 
+If everything works find, the last lines of the output should be something like:
+
+```bash
+...
+
+Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely
+MANPATH=$MANPATH:/path/to/tdep/man
+PATH=$PATH:/path/to/tdep/bin
+export MANPATH
+export PATH
+alias gnuplot='gnuplot -persist'
+
+Everything should be set up and good to go!
+```
+
+i.e., add the respective lines to your `.bashrc` and you are all set up!
+
+**If problems occur, please look at the [Troubleshooting section below](#Troubleshooting). If you cannot fix the error, please reach out, e.g., via the [issue tracker](https://github.com/tdep-developers/tdep/issues).**
+
 ## Check your installation
 
-We advise to run the examples in `tdep/examples` to test your installation after compilation.
+We advise to run the tests in [`./tests`](./tests)  to check your installation.
 
 ## HDF5
 
 If you need to install HDF5 manually, it can be [downloaded here](https://www.hdfgroup.org/downloads/hdf5/). Installing it should go like
 
 ```bash
-./configure FC=FC CC=CC --with-fortran --with-fortran2003 --prefix=XX
+./configure FC=FC CC=CC --enable-fortran --prefix=XX
 make
 make install
 ```
@@ -147,3 +192,12 @@ fatal: not a git repository (or any of the parent directories): .git
 
 it means you did not clone TDEP from github. In that case, either clone it or adjust the `build_things.sh` script.
 
+## "error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?"
+
+If you see the error
+
+```
+... error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?
+```
+
+it likely means that you are using an older Fortran version, and should replace `-fallow-argument-mismatch` with `-Wno-argument-mismatch` in your `important_settings` as suggested.

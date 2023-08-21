@@ -1,0 +1,2 @@
+testfiles:
+	phonon_dispersion_relations

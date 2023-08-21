@@ -81,3 +81,5 @@ documentation_carousel.md
 # Annoying OSX files
 .DS_Store
 fortls_debug.log
+
+__pycache__
