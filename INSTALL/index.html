@@ -537,26 +537,69 @@
 <li>BLAS and LAPACK need to be installed</li>
 <li>FFTW needs to be installed</li>
 <li>MPI needs to be installed</li>
-<li>HDF5 needs to be installed</li>
+<li>HDF5 needs to be installed <strong>with Fortran support</strong>.</li>
 <li>python should be installed</li>
 <li>gnuplot should be installed</li>
 </ul>
 <p><strong>Note: The <code>build_things.sh</code> script assumes that TDEP was cloned and lives in a git repository. If you wish obtain TDEP in another you have to adjust the script.</strong></p>
+<p><strong>If you have a package manager, <code>homebrew</code>, <code>apt-get</code>, <code>yay</code>, <code>pacman</code>, you name it, getting these dependencies should be straightforward.</strong></p>
+<p>For example, you would run</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>lapack<span class="w"> </span>blas<span class="w"> </span>hdf5
+</span></code></pre></div>
+<p>and confirm that libraries and include files add up at a place where you find them, e.g., <code>/usr/lib</code> or <code>/usr/local/lib</code>. <strong>This will be the paths you specify in the important settings.</strong></p>
 <h2 id="example">Example</h2>
-<p>For example on Macbook with <code>gfortran-12</code>, you would pick <code>important_settings.apple_silicon_gfortran12</code>,</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cp<span class="w"> </span>important_settings.apple_silicon_gfortran12<span class="w"> </span>important_settings
+<ul>
+<li>Pick e.g. the <code>important_settings.gfortran</code> and copy it to <code>important_settings</code>:</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cp<span class="w"> </span>important_settings.gfortran<span class="w"> </span>important_settings
 </span></code></pre></div>
-<p>and adjust in particular the <code>PATH_TO_HDF5_LIB</code> and <code>PATH_TO_HDF5_INC</code>.</p>
+<ul>
+<li>
+<p>adjust:</p>
+</li>
+<li>
+<p><code>FORTRAN_COMPILER</code>: your fortran compiler</p>
+</li>
+<li>
+<p><code>FCFLAGS</code>: compiler settings to make <code>gfortran</code> (or whatever other compiler you are using) work</p>
+</li>
+<li>
+<p><code>PATH_TO_BLASLAPACK_LIB</code>: Path to your BLAS and LAPACK installation. Probably <code>/usr/local</code> or similar – when in doubt find it via</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>find<span class="w"> </span>/usr<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>lapack
+</span></code></pre></div>
+<p>and see where your LAPACK library is actually located on your computer</p>
+</li>
+<li>
+<p><code>PATH_TO_BLASLAPACK_INC</code>: Same but for the INCLUDE files.</p>
+</li>
+<li>
+<p><code>PATH_TO_FFTW_LIB</code>, <code>PATH_TO_MPI_LIB</code>, <code>PATH_TO_HDF5_LIB</code> same for FFTW, MPI, HDF5</p>
+</li>
+</ul>
 <p>Then run the build script via </p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bash<span class="w"> </span>build_things.sh<span class="w"> </span>--nthreads_make<span class="w"> </span><span class="m">4</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bash<span class="w"> </span>build_things.sh<span class="w"> </span>--nthreads_make<span class="w"> </span><span class="m">4</span>
 </span></code></pre></div>
+<p>If everything works find, the last lines of the output should be something like:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>...
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Printing<span class="w"> </span>bashrc_tdep,<span class="w"> </span>append<span class="w"> </span>these<span class="w"> </span>lines<span class="w"> </span>to<span class="w"> </span>your<span class="w"> </span>.bashrc<span class="w"> </span><span class="k">for</span><span class="w"> </span>stuff<span class="w"> </span>to<span class="w"> </span>work<span class="w"> </span>nicely
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nv">MANPATH</span><span class="o">=</span><span class="nv">$MANPATH</span>:/path/to/tdep/man
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:/path/to/tdep/bin
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">export</span><span class="w"> </span>MANPATH
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nb">export</span><span class="w"> </span>PATH
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="nb">alias</span><span class="w"> </span><span class="nv">gnuplot</span><span class="o">=</span><span class="s1">&#39;gnuplot -persist&#39;</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Everything<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span><span class="nb">set</span><span class="w"> </span>up<span class="w"> </span>and<span class="w"> </span>good<span class="w"> </span>to<span class="w"> </span>go!
+</span></code></pre></div>
+<p>i.e., add the respective lines to your <code>.bashrc</code> and you are all set up!</p>
+<p><strong>If problems occur, please look at the <a href="#Troubleshooting">Troubleshooting section below</a>. If you cannot fix the error, please reach out, e.g., via the <a href="https://github.com/tdep-developers/tdep/issues">issue tracker</a>.</strong></p>
 <h2 id="check-your-installation">Check your installation</h2>
-<p>We advise to run the examples in <code>tdep/examples</code> to test your installation after compilation.</p>
+<p>We advise to run the tests in <a href="./tests"><code>./tests</code></a>  to check your installation.</p>
 <h2 id="hdf5">HDF5</h2>
 <p>If you need to install HDF5 manually, it can be <a href="https://www.hdfgroup.org/downloads/hdf5/">downloaded here</a>. Installing it should go like</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./configure<span class="w"> </span><span class="nv">FC</span><span class="o">=</span>FC<span class="w"> </span><span class="nv">CC</span><span class="o">=</span>CC<span class="w"> </span>--with-fortran<span class="w"> </span>--with-fortran2003<span class="w"> </span>--prefix<span class="o">=</span>XX
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>make
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>make<span class="w"> </span>install
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./configure<span class="w"> </span><span class="nv">FC</span><span class="o">=</span>FC<span class="w"> </span><span class="nv">CC</span><span class="o">=</span>CC<span class="w"> </span>--enable-fortran<span class="w"> </span>--prefix<span class="o">=</span>XX
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>make
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>make<span class="w"> </span>install
 </span></code></pre></div>
 <p>where <code>FC</code> and <code>CC</code> should point to the same Fortran/C compilers you are using to install TDEP.</p>
 <h1 id="instructions-for-specific-platforms">Instructions for specific platforms</h1>
@@ -567,7 +610,7 @@
 </ul>
 <h2 id="macos">macOS</h2>
 <p>If you are using <a href="https://brew.sh/"><code>Homebrew</code></a>, you can install all dependencies via <code>brew install</code>, e.g., something like</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>brew<span class="w"> </span>install<span class="w"> </span>gcc<span class="w"> </span>openmpi<span class="w"> </span>gnuplot<span class="w"> </span>hdf5
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>brew<span class="w"> </span>install<span class="w"> </span>gcc<span class="w"> </span>openmpi<span class="w"> </span>gnuplot<span class="w"> </span>hdf5
 </span></code></pre></div>
 <p>Then proceed as <a href="#Example">in the example above</a>. Check out the <a href="./important_settings.osx_gfortran_accelerate"><code>important_settings.osx_gfortran_accelerate</code></a> file as well for reference.</p>
 <h2 id="supercomputers">Supercomputers</h2>
@@ -581,41 +624,46 @@
 <p>One convenient, (mostly) platform-agnostic way to install TDEP is to use <a href="https://anaconda.org/">Anaconda</a>.</p>
 <h3 id="prepare-environment">Prepare environment</h3>
 <p>Create a <code>conda</code> environment with </p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>conda<span class="w"> </span>create<span class="w"> </span>--prefix<span class="w"> </span>/path/to/where/you/want/to/create/the/conda_env<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>conda<span class="w"> </span>create<span class="w"> </span>--prefix<span class="w"> </span>/path/to/where/you/want/to/create/the/conda_env<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
 </span></code></pre></div>
 <p>Activate:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>conda<span class="w"> </span>activate<span class="w"> </span>/path/to/where/you/want/to/create/the/conda_env/
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>conda<span class="w"> </span>activate<span class="w"> </span>/path/to/where/you/want/to/create/the/conda_env/
 </span></code></pre></div>
 <p>Install dependencies</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>gfortran<span class="w"> </span>openmpi-mpifort<span class="w"> </span>scalapack<span class="w"> </span>fftw<span class="w"> </span>hdf5<span class="w"> </span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>gfortran<span class="w"> </span>openmpi-mpifort<span class="w"> </span>scalapack<span class="w"> </span>fftw<span class="w"> </span>hdf5<span class="w"> </span>
 </span></code></pre></div>
 <h3 id="install">Install</h3>
 <p>Copy <code>important_settings.conda</code> to <code>important_settings</code> and adjust the <code>PREFIX</code>, i.e.,</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>...
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>PREFIX=/path/to/where/you/want/to/create/the/conda_env
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>...
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>PREFIX=/path/to/where/you/want/to/create/the/conda_env
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>...
 </span></code></pre></div>
 <p><strong>Note: On some apple-silicon devices you need to point to the <code>libm</code> library in <code>/Library/Developer/CommandLineTools</code>, see <a href="#libary-not-found-for--lm">troubleshooting section below</a>.</strong></p>
 <p>Run</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./build_things.sh<span class="w"> </span>--nthreads_make<span class="w"> </span><span class="m">4</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./build_things.sh<span class="w"> </span>--nthreads_make<span class="w"> </span><span class="m">4</span>
 </span></code></pre></div>
 <p>This should be it.</p>
 <h1 id="troubleshooting">Troubleshooting</h1>
 <h2 id="libary-not-found-for-lm">"libary not found for -lm"</h2>
 <p>If you see the error</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>...
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>ld: library not found for -lm
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>collect2: error: ld returned 1 exit status
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>...
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>ld: library not found for -lm
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>collect2: error: ld returned 1 exit status
 </span></code></pre></div>
 <p>on an Apple device with silicon chip (M1, M2, etc.), try adding the following to your <code>important_settings</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>FCFLAGS_EXTRA=&quot;-L/Library/Developer/CommandLineTools//SDKs/MacOSX13.3.sdk/usr/lib/&quot;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>FCFLAGS_EXTRA=&quot;-L/Library/Developer/CommandLineTools//SDKs/MacOSX13.3.sdk/usr/lib/&quot;
 </span></code></pre></div>
 <p>where the given path should point to you MacOS xcode installation <code>lib</code> path.</p>
 <h2 id="not-a-git-repository">"not a git repository"</h2>
 <p>If you see the error</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>fatal: not a git repository (or any of the parent directories): .git
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>fatal: not a git repository (or any of the parent directories): .git
 </span></code></pre></div>
 <p>it means you did not clone TDEP from github. In that case, either clone it or adjust the <code>build_things.sh</code> script.</p>
+<h2 id="error-unrecognized-command-line-option-fallow-argument-mismatch-did-you-mean-wno-argument-mismatch">"error: unrecognized command line option '-fallow-argument-mismatch'; did you mean '-Wno-argument-mismatch'?"</h2>
+<p>If you see the error</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>... error: unrecognized command line option &#39;-fallow-argument-mismatch&#39;; did you mean &#39;-Wno-argument-mismatch&#39;?
+</span></code></pre></div>
+<p>it likely means that you are using an older Fortran version, and should replace <code>-fallow-argument-mismatch</code> with <code>-Wno-argument-mismatch</code> in your <code>important_settings</code> as suggested.</p>
 
 
 
