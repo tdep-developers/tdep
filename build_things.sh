@@ -81,7 +81,7 @@ cat>gitinformation<<EOF
 EOF
 
 # will I use cgal?
-if [ ${USECGAL} == "yes" ]
+if [ "${USECGAL}" == "yes" ]
 then
     echo "Ok, will try to include the CGAL stuff"
     PRECOMPILER_FLAGS="${PRECOMPILER_FLAGS} -Dusecgal"
@@ -124,7 +124,7 @@ bindir = ../../bin
 libdir = ../../lib
 EOF
 # add the extra CGAL stuff
-if [ ${USECGAL} == "yes" ]
+if [ "${USECGAL}" == "yes" ]
 then
 cat>>Makefile.inc<<EOF
 # CGAL stuff
