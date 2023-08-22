@@ -23,8 +23,27 @@ MODULE_FLAG="-J"
 # the header to put in python scripts.
 PYTHONHEADER="#!/usr/bin/env python"
 
-# Which gnuplot terminal to use by default.
-GNUPLOTTERMINAL="aqua"  # nice on OSX, needs aquaterm installed and gnuplot compiled with support for it.
+# Set GNUPLOTTERMINAL
+TERMS=$(echo 'set terminal' | gnuplot 2>&1 | awk '/Available terminal types:/,0' | awk 'NF && !/Available
+    terminal types:/ {print $1}')
+
+# Ordered list of preferred terms
+PREFERRED_TERMS="qt xterm wxt x11 aqua windows"
+
+# Find the first preferred terminal available
+for term in $PREFERRED_TERMS; do
+▏ ▏ if [[ $TERMS =~ $term ]]; then
+▏ ▏ ▏ ▏ GNUPLOTTERMINAL=$term
+▏ ▏ ▏ ▏ break
+▏ ▏ fi
+done
+
+# Default to 'dumb' if none found (ascii only)
+GNUPLOTTERMINAL=${GNUPLOTTERMINAL:-dumb}
+
+echo "Selected terminal: $GNUPLOTTERMINAL"
+
+#GNUPLOTTERMINAL="aqua"  # nice on OSX, needs aquaterm installed and gnuplot compiled with support for it.
 
 # Precompiler flags. Selecting default gnuplot terminal, and make the progressbars work.
 PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar -DAGRESSIVE_SANITY"
@@ -47,6 +66,7 @@ MPI_LIBS="-lmpi_mpifh -lmpi"
 
 # I also use HDF5 every now and then
 PATH_TO_HDF5_LIB="-L/path/to/your/local/hdf5-1.XX/build/lib"
+#Hint (on apple silicon): check /opt/homebrew/Cellar/hdf5/1.XX.X/lib
 PATH_TO_HDF5_INC="-I/path/to/your/local/hdf5-1.XX/build/include"
+#Hint (on apple silicon): check /opt/homebrew/Cellar/hdf5/1.XY.Z/include
 HDF5_LIBS="-lhdf5 -lhdf5_fortran"
-
