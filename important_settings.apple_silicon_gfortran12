@@ -23,27 +23,7 @@ MODULE_FLAG="-J"
 # the header to put in python scripts.
 PYTHONHEADER="#!/usr/bin/env python"
 
-# Set GNUPLOTTERMINAL
-TERMS=$(echo 'set terminal' | gnuplot 2>&1 | awk '/Available terminal types:/,0' | awk 'NF && !/Available
-    terminal types:/ {print $1}')
-
-# Ordered list of preferred terms
-PREFERRED_TERMS="qt xterm wxt x11 aqua windows"
-
-# Find the first preferred terminal available
-for term in $PREFERRED_TERMS; do
-▏ ▏ if [[ $TERMS =~ $term ]]; then
-▏ ▏ ▏ ▏ GNUPLOTTERMINAL=$term
-▏ ▏ ▏ ▏ break
-▏ ▏ fi
-done
-
-# Default to 'dumb' if none found (ascii only)
-GNUPLOTTERMINAL=${GNUPLOTTERMINAL:-dumb}
-
-echo "Selected terminal: $GNUPLOTTERMINAL"
-
-#GNUPLOTTERMINAL="aqua"  # nice on OSX, needs aquaterm installed and gnuplot compiled with support for it.
+GNUPLOTTERMINAL="aqua"  # nice on OSX, needs aquaterm installed and gnuplot compiled with support for it.
 
 # Precompiler flags. Selecting default gnuplot terminal, and make the progressbars work.
 PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar -DAGRESSIVE_SANITY"

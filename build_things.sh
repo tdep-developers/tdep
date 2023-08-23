@@ -68,6 +68,35 @@ do
 done
 
 # read the machine-specific settings
+
+#set the term for plots w. gnuplot
+TERMS=$(echo 'set terminal' | gnuplot 2>&1 | awk '/Available terminal types:/,0' | awk 'NF && !/Available terminal types:/ {print $1}')
+
+# Ordered list of preferred terms
+preferred_terms="qt xterm x11 wxt aqua windows"
+GNUPLOTTERMINAL="dumb"  # default
+
+for term in $preferred_terms; do
+    if echo "$TERMS" | grep -q -w "$term"; then
+        GNUPLOTTERMINAL="$term"
+        break
+    fi
+done
+
+# Check if GNUPLOTTERMINAL exists in important_settings
+if grep -qE "^\s*GNUPLOTTERMINAL\s*=" important_settings; then
+    # replace it if so
+    sed -i.bak -E "s/^\s*(GNUPLOTTERMINAL\s*=).*/\1\"$GNUPLOTTERMINAL\"/" important_settings
+else
+    # append it if not
+    echo "GNUPLOTTERMINAL=\"$GNUPLOTTERMINAL\"" >> important_settings
+fi
+
+echo "Selected GNUPLOTTERMINAL: $GNUPLOTTERMINAL"
+if [ "$GNUPLOTTERMINAL" == "dumb" ]; then
+    echo "WARNING: GNUPLOTTERMINAL is set to 'dumb'. Plots will be ASCII."
+fi
+
 source important_settings
 echo "parsed the important settings"
 
