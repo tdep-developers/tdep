@@ -1,21 +1,15 @@
-author: Olle Hellman
-display: none
-graph: none
-propname: crystal structure info
-propnamelink: <a href="../program/crystal_structure_info.html">crystal structure info</a>
-{!man/crystal_structure_info.md!}
 
 ## Long summary
 
 This is mainly a diagnostic tool, to make sure that my heuristics are working as they should. For example, if you want to calculate fcc Al, and things look strange, run this code to make sure that the symmetry detection actually identifies it as fcc. As a bonus, the Brillouin zone and the irreducible wedge is printed to file, so that you can make figures like the one below.
 
 <center>
-<img src="../media/fcc_al_brillouin_zone.png" width="500" />
+<img src="/media/fcc_al_brillouin_zone.png" width="500" />
 </center>
 
 ### Input files
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
+* [infile.ucposcar](../files.md#infile.ucposcar)
 
 ### Output files
 
@@ -52,7 +46,7 @@ This requires the [Geom3D](http://www.mathworks.com/matlabcentral/fileexchange/2
 
 #### `outfile.qpoints_dispersion`
 
-This is a prototype version of [infile.qpoints_dispersion](../page/files.html#infile.qpoints_dispersion), so that you don't have to start from nothing when changin the path. It can look like this:
+This is a prototype version of [infile.qpoints_dispersion](../files.md#infile.qpoints_dispersion), so that you don't have to start from nothing when changin the path. It can look like this:
 
 ```
 FCC                         ! Bravais lattice type

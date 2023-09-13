@@ -338,7 +338,8 @@ getfc: block
         if (mw%talk) then
             call fc2%writetofile(uc, 'outfile.forceconstant')
             call fc2%get_elastic_constants(uc)
-            write (*, *) 'elastic constants (GPa):'
+            write (*, *) ''
+            write (*, *) 'ELASTIC CONSTANTS (GPa):'
             do i = 1, 6
                 write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
@@ -362,251 +363,260 @@ getfc: block
     ! endif
 end block getfc
 
-! And perhaps calculate U0
-if (opts%ediff) then
-    getU0: block
-        type(lo_forceconstant_secondorder) :: fc2_ss
-        type(lo_forceconstant_thirdorder) :: fc3_ss
-        type(lo_forceconstant_fourthorder) :: fc4_ss
-        real(r8), dimension(:, :, :, :), allocatable :: polarfc
-        real(r8), dimension(:, :, :), allocatable :: f0, fp, f2, f3, f4
-        real(r8), dimension(:), allocatable :: e0, ep, e2, e3, e4, ebuf
-        real(r8), dimension(3, 3, 3, 3) :: m4
-        real(r8), dimension(3, 3, 3) :: m3
-        real(r8), dimension(3, 3) :: m2
-        real(r8), dimension(3) :: v0, u2, u3, u4
-        real(r8) :: energy, baseline, tomev, toev
-        real(r8) :: mf0, mfp, mf2, mf3, mf4
-        real(r8) :: dfp, df2, df3, df4
-        integer :: t, i, a1, a2, a3, a4, i1, i2, i3, i4, u, ctr, ctrtot
+! And calculate U0
+getU0: block
+    type(lo_forceconstant_secondorder) :: fc2_ss
+    type(lo_forceconstant_thirdorder) :: fc3_ss
+    type(lo_forceconstant_fourthorder) :: fc4_ss
+    real(r8), dimension(:, :, :, :), allocatable :: polarfc
+    real(r8), dimension(:, :, :), allocatable :: f0, fp, f2, f3, f4
+    real(r8), dimension(:), allocatable :: e0, ep, e2, e3, e4, ebuf
+    real(r8), dimension(3, 3, 3, 3) :: m4
+    real(r8), dimension(3, 3, 3) :: m3
+    real(r8), dimension(3, 3) :: m2
+    real(r8), dimension(3) :: v0, u2, u3, u4
+    real(r8) :: energy, baseline, tomev, toev
+    real(r8) :: mf0, mfp, mf2, mf3, mf4
+    real(r8) :: sf0, sfp, sf2, sf3, sf4
+    real(r8) :: dfp, df2, df3, df4
+    integer :: t, i, a1, a2, a3, a4, i1, i2, i3, i4, u, ctr, ctrtot
 
-        ! Make sure we have the supercell and MD data
-        if (ss%na .lt. 0) then
-            call ss%readfromfile('infile.ssposcar')
-            call ss%classify('supercell', uc)
-        end if
-        if (sim%na .lt. 0) then
-            call sim%read_from_file(verbosity=2, stride=opts%stride)
-            call sim%remove_force_and_center_of_mass_drift()
-        end if
+    ! Make sure we have the supercell and MD data
+    if (ss%na .lt. 0) then
+        call ss%readfromfile('infile.ssposcar')
+        call ss%classify('supercell', uc)
+    end if
+    if (sim%na .lt. 0) then
+        call sim%read_from_file(verbosity=2, stride=opts%stride)
+        call sim%remove_force_and_center_of_mass_drift()
+    end if
 
-        ! Remap the forceconstants to the supercell
-        if (map%have_fc_pair) call fc2%remap(uc, ss, fc2_ss)
-        if (map%have_fc_triplet) call fc3%remap(uc, ss, fc3_ss)
-        if (map%have_fc_quartet) call fc4%remap(uc, ss, fc4_ss)
-        if (map%polar .gt. 0) then
-            allocate (polarfc(3, 3, ss%na, ss%na))
-            polarfc = 0.0_r8
-            call fc2%supercell_longrange_dynamical_matrix_at_gamma(ss, polarfc, 1E-15_r8)
-        end if
+    ! Remap the forceconstants to the supercell
+    if (map%have_fc_pair) call fc2%remap(uc, ss, fc2_ss)
+    if (map%have_fc_triplet) call fc3%remap(uc, ss, fc3_ss)
+    if (map%have_fc_quartet) call fc4%remap(uc, ss, fc4_ss)
+    if (map%polar .gt. 0) then
+        allocate (polarfc(3, 3, ss%na, ss%na))
+        polarfc = 0.0_r8
+        call fc2%supercell_longrange_dynamical_matrix_at_gamma(ss, polarfc, 1E-15_r8)
+    end if
 
-        ! Calculate all the different energies and forces for report and diagnostics.
-        allocate (f0(3, ss%na, sim%nt))
-        allocate (fp(3, ss%na, sim%nt))
-        allocate (f2(3, ss%na, sim%nt))
-        allocate (f3(3, ss%na, sim%nt))
-        allocate (f4(3, ss%na, sim%nt))
-        allocate (e0(sim%nt))
-        allocate (ep(sim%nt))
-        allocate (e2(sim%nt))
-        allocate (e3(sim%nt))
-        allocate (e4(sim%nt))
-        allocate (ebuf(sim%nt))
-        f0 = 0.0_r8
-        fp = 0.0_r8
-        f2 = 0.0_r8
-        f3 = 0.0_r8
-        f4 = 0.0_r8
-        e0 = 0.0_r8
-        ep = 0.0_r8
-        e2 = 0.0_r8
-        e3 = 0.0_r8
-        e4 = 0.0_r8
-        ebuf = 0.0_r8
+    ! Calculate all the different energies and forces for report and diagnostics.
+    allocate (f0(3, ss%na, sim%nt))
+    allocate (fp(3, ss%na, sim%nt))
+    allocate (f2(3, ss%na, sim%nt))
+    allocate (f3(3, ss%na, sim%nt))
+    allocate (f4(3, ss%na, sim%nt))
+    allocate (e0(sim%nt))
+    allocate (ep(sim%nt))
+    allocate (e2(sim%nt))
+    allocate (e3(sim%nt))
+    allocate (e4(sim%nt))
+    allocate (ebuf(sim%nt))
+    f0 = 0.0_r8
+    fp = 0.0_r8
+    f2 = 0.0_r8
+    f3 = 0.0_r8
+    f4 = 0.0_r8
+    e0 = 0.0_r8
+    ep = 0.0_r8
+    e2 = 0.0_r8
+    e3 = 0.0_r8
+    e4 = 0.0_r8
+    ebuf = 0.0_r8
 
-        ! Some unit conversion
-        tomev = lo_Hartree_to_eV*1000/ss%na
-        toev = lo_Hartree_to_eV/ss%na
+    ! Some unit conversion
+    tomev = lo_Hartree_to_eV*1000/ss%na
+    toev = lo_Hartree_to_eV/ss%na
 
-        if (mw%talk) then
-            write (*, *) ''
-            write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
-            write (*, '(A)') '   conf        Epot                  Epolar                &
-            &Epair                 Etriplet              Equartet'
-        end if
+    if ((mw%talk) .and. (opts%verbosity > 0)) then
+        write (*, *) ''
+        write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
+        write (*, '(A)') '   conf        Epot                  Epolar                &
+        &Epair                 Etriplet              Equartet'
+    end if
 
-        ctr = 0
-        ctrtot = 0
-        do t = 1, sim%nt
-            if (mod(t, mw%n) .ne. mw%r) cycle
-            ctrtot = ctrtot + 1
-        end do
+    ctr = 0
+    ctrtot = 0
+    do t = 1, sim%nt
+        if (mod(t, mw%n) .ne. mw%r) cycle
+        ctrtot = ctrtot + 1
+    end do
 
-        ! Calculate energies and stuff
-        do t = 1, sim%nt
-            ! make it parallel to not confuse anyone
-            if (mod(t, mw%n) .ne. mw%r) cycle
-            ! Copy of DFT force and energy
-            e0(t) = sim%stat%potential_energy(t)
-            f0(:, :, t) = sim%f(:, :, t)
-            ! then the pair term
-            if (map%have_fc_pair) then
-                energy = 0.0_r8
-                do a1 = 1, ss%na
-                    v0 = 0.0_r8
-                    do i1 = 1, fc2_ss%atom(a1)%n
-                        a2 = fc2_ss%atom(a1)%pair(i1)%i2
-                        m2 = fc2_ss%atom(a1)%pair(i1)%m
-                        v0 = v0 - matmul(m2, sim%u(:, a2, t))
-                    end do
-                    energy = energy - dot_product(sim%u(:, a1, t), v0)*0.5_r8
-                    f2(:, a1, t) = v0
+    ! Calculate energies and stuff
+    do t = 1, sim%nt
+        ! make it parallel to not confuse anyone
+        if (mod(t, mw%n) .ne. mw%r) cycle
+        ! Copy of DFT force and energy
+        e0(t) = sim%stat%potential_energy(t)
+        f0(:, :, t) = sim%f(:, :, t)
+        ! then the pair term
+        if (map%have_fc_pair) then
+            energy = 0.0_r8
+            do a1 = 1, ss%na
+                v0 = 0.0_r8
+                do i1 = 1, fc2_ss%atom(a1)%n
+                    a2 = fc2_ss%atom(a1)%pair(i1)%i2
+                    m2 = fc2_ss%atom(a1)%pair(i1)%m
+                    v0 = v0 - matmul(m2, sim%u(:, a2, t))
                 end do
-                e2(t) = energy
-            end if
-            ! Possible polar term?
-            if (fc2%polar) then
-                energy = 0.0_r8
-                do a1 = 1, ss%na
-                    v0 = 0.0_r8
-                    do a2 = 1, ss%na
-                        v0 = v0 - matmul(polarfc(:, :, a1, a2), sim%u(:, a2, t))
-                    end do
-                    energy = energy - dot_product(sim%u(:, a1, t), v0)*0.5_r8
-                    fp(:, a1, t) = v0
-                end do
-                ep(t) = energy
-            end if
-            ! triplet term
-            if (map%have_fc_triplet) then
-                energy = 0.0_r8
-                do a1 = 1, fc3_ss%na
-                    v0 = 0.0_r8
-                    do i = 1, fc3_ss%atom(a1)%n
-                        m3 = fc3_ss%atom(a1)%triplet(i)%m
-                        a2 = fc3_ss%atom(a1)%triplet(i)%i2
-                        a3 = fc3_ss%atom(a1)%triplet(i)%i3
-                        u2 = sim%u(:, a2, t)
-                        u3 = sim%u(:, a3, t)
-                        do i1 = 1, 3
-                        do i2 = 1, 3
-                        do i3 = 1, 3
-                            v0(i1) = v0(i1) - m3(i1, i2, i3)*u2(i2)*u3(i3)
-                        end do
-                        end do
-                        end do
-                    end do
-                    v0 = v0*0.5_r8
-                    f3(:, a1, t) = v0
-                    energy = energy - dot_product(v0, sim%u(:, a1, t))/3.0_r8
-                end do
-                e3(t) = energy
-            end if
-            ! quartet term
-            if (map%have_fc_quartet) then
-                energy = 0.0_r8
-                do a1 = 1, fc4_ss%na
-                    v0 = 0.0_r8
-                    do i = 1, fc4_ss%atom(a1)%n
-                        m4 = fc4_ss%atom(a1)%quartet(i)%m
-                        a2 = fc4_ss%atom(a1)%quartet(i)%i2
-                        a3 = fc4_ss%atom(a1)%quartet(i)%i3
-                        a4 = fc4_ss%atom(a1)%quartet(i)%i4
-                        u2 = sim%u(:, a2, t)
-                        u3 = sim%u(:, a3, t)
-                        u4 = sim%u(:, a4, t)
-                        do i1 = 1, 3
-                        do i2 = 1, 3
-                        do i3 = 1, 3
-                        do i4 = 1, 3
-                            v0(i1) = v0(i1) - m4(i1, i2, i3, i4)*u2(i2)*u3(i3)*u4(i4)
-                        end do
-                        end do
-                        end do
-                        end do
-                    end do
-                    v0 = v0/6.0_r8
-                    f4(:, a1, t) = v0
-                    energy = energy - dot_product(v0, sim%u(:, a1, t))/4.0_r8
-                end do
-                e4(t) = energy
-            end if
-            if (mw%talk) then
-                ctr = ctr + 1
-                if (lo_trueNtimes(ctr, 20, ctrtot)) then
-                    write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
-                end if
-            end if
-        end do
-
-        ! sync across ranks
-        call mw%allreduce('sum', f0)
-        call mw%allreduce('sum', fp)
-        call mw%allreduce('sum', f2)
-        call mw%allreduce('sum', f3)
-        call mw%allreduce('sum', f4)
-        call mw%allreduce('sum', e0)
-        call mw%allreduce('sum', ep)
-        call mw%allreduce('sum', e2)
-        call mw%allreduce('sum', e3)
-        call mw%allreduce('sum', e4)
-
-        ! Subtract a baseline to get sensible numbers to work with
-        ebuf = e0 - e2 - e3 - e4 - ep
-        baseline = lo_mean(ebuf)
-        e0 = e0 - baseline
-
-        ! Now I can report a little?
-        if (mw%talk) then
-
-            write (*, *) ''
-            write (*, "(1X,A,11X,A,10X,A,7X,A)") 'ENERGIES:', 'rms', 'stddev', 'stddev(residual) (meV/atom)'
-            write (*, '(1X,A15,2(1X,F12.6),5X,A)') 'input:', sqrt(lo_mean(e0**2))*tomev, lo_stddev(e0)*tomev, '-'
-            if (map%polar .gt. 0) write (*, '(1X,A15,3(1X,F12.6))') 'polar', &
-                sqrt(lo_mean(ep**2))*tomev, lo_stddev(ep)*tomev, lo_stddev(e0 - ep)*tomev
-            if (map%have_fc_pair) write (*, '(1X,A15,3(1X,F12.6))') 'second order:', &
-                sqrt(lo_mean(e2**2))*tomev, lo_stddev(e2)*tomev, lo_stddev(e0 - ep - e2)*tomev
-            if (map%have_fc_triplet) write (*, '(1X,A15,3(1X,F12.6))') 'third order:', &
-                sqrt(lo_mean(e3**2))*tomev, lo_stddev(e3)*tomev, lo_stddev(e0 - ep - e2 - e3)*tomev
-            if (map%have_fc_quartet) write (*, '(1X,A15,3(1X,F12.6))') 'fourth order:', &
-                sqrt(lo_mean(e4**2))*tomev, lo_stddev(e4)*tomev, lo_stddev(e0 - ep - e2 - e3 - e4)*tomev
-
-            ! some things on the forces?
-            !real(r8) :: mf0,mfp,mf2,mf3,mf4
-            mf0 = sqrt(sum(f0**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            mfp = sqrt(sum(fp**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            mf2 = sqrt(sum(f2**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            mf3 = sqrt(sum(f3**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            mf4 = sqrt(sum(f4**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-
-            dfp = sqrt(sum((f0 - fp)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            df2 = sqrt(sum((f0 - fp - f2)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            df3 = sqrt(sum((f0 - fp - f2 - f3)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-            df4 = sqrt(sum((f0 - fp - f2 - f3 - f4)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
-
-            write (*, *) ''
-            write (*, "(1X,A,13X,A,10X,A)") 'FORCES:', 'rms', 'rms(residual) (eV/Å)'
-            write (*, '(1X,A15,1X,F12.6,5X,A)') 'input:', mf0, '-'
-            if (map%polar .gt. 0) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'polar:', mfp, dfp
-            if (map%have_fc_pair) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'second order:', mf2, df2
-            if (map%have_fc_triplet) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'third order:', mf3, df3
-            if (map%have_fc_quartet) write (*, '(1X,A15,1X,F12.6,1X,F12.6)') 'fourth order:', mf4, df4
-
-            write (*, *) ''
-            write (*, *) 'Baseline energy, U0:', baseline, 'eV/atom'
-
-            ! Dump it to file
-            u = open_file('out', 'outfile.U0')
-            write (u, "(4(1X,E19.12))") &
-                (baseline + lo_mean(e0))*toev, &
-                (baseline + lo_mean(e0 - ep - e2))*toev, &
-                (baseline + lo_mean(e0 - ep - e2 - e3))*toev, &
-                (baseline + lo_mean(e0 - ep - e2 - e3 - e4))*toev
-            close (u)
+                energy = energy - dot_product(sim%u(:, a1, t), v0)*0.5_r8
+                f2(:, a1, t) = v0
+            end do
+            e2(t) = energy
         end if
+        ! Possible polar term?
+        if (fc2%polar) then
+            energy = 0.0_r8
+            do a1 = 1, ss%na
+                v0 = 0.0_r8
+                do a2 = 1, ss%na
+                    v0 = v0 - matmul(polarfc(:, :, a1, a2), sim%u(:, a2, t))
+                end do
+                energy = energy - dot_product(sim%u(:, a1, t), v0)*0.5_r8
+                fp(:, a1, t) = v0
+            end do
+            ep(t) = energy
+        end if
+        ! triplet term
+        if (map%have_fc_triplet) then
+            energy = 0.0_r8
+            do a1 = 1, fc3_ss%na
+                v0 = 0.0_r8
+                do i = 1, fc3_ss%atom(a1)%n
+                    m3 = fc3_ss%atom(a1)%triplet(i)%m
+                    a2 = fc3_ss%atom(a1)%triplet(i)%i2
+                    a3 = fc3_ss%atom(a1)%triplet(i)%i3
+                    u2 = sim%u(:, a2, t)
+                    u3 = sim%u(:, a3, t)
+                    do i1 = 1, 3
+                    do i2 = 1, 3
+                    do i3 = 1, 3
+                        v0(i1) = v0(i1) - m3(i1, i2, i3)*u2(i2)*u3(i3)
+                    end do
+                    end do
+                    end do
+                end do
+                v0 = v0*0.5_r8
+                f3(:, a1, t) = v0
+                energy = energy - dot_product(v0, sim%u(:, a1, t))/3.0_r8
+            end do
+            e3(t) = energy
+        end if
+        ! quartet term
+        if (map%have_fc_quartet) then
+            energy = 0.0_r8
+            do a1 = 1, fc4_ss%na
+                v0 = 0.0_r8
+                do i = 1, fc4_ss%atom(a1)%n
+                    m4 = fc4_ss%atom(a1)%quartet(i)%m
+                    a2 = fc4_ss%atom(a1)%quartet(i)%i2
+                    a3 = fc4_ss%atom(a1)%quartet(i)%i3
+                    a4 = fc4_ss%atom(a1)%quartet(i)%i4
+                    u2 = sim%u(:, a2, t)
+                    u3 = sim%u(:, a3, t)
+                    u4 = sim%u(:, a4, t)
+                    do i1 = 1, 3
+                    do i2 = 1, 3
+                    do i3 = 1, 3
+                    do i4 = 1, 3
+                        v0(i1) = v0(i1) - m4(i1, i2, i3, i4)*u2(i2)*u3(i3)*u4(i4)
+                    end do
+                    end do
+                    end do
+                    end do
+                end do
+                v0 = v0/6.0_r8
+                f4(:, a1, t) = v0
+                energy = energy - dot_product(v0, sim%u(:, a1, t))/4.0_r8
+            end do
+            e4(t) = energy
+        end if
+        if ((mw%talk) .and. (opts%verbosity > 0)) then
+            ctr = ctr + 1
+            if (lo_trueNtimes(ctr, 20, ctrtot)) then
+                write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
+            end if
+        end if
+    end do
 
-    end block getU0
-end if
+    ! sync across ranks
+    call mw%allreduce('sum', f0)
+    call mw%allreduce('sum', fp)
+    call mw%allreduce('sum', f2)
+    call mw%allreduce('sum', f3)
+    call mw%allreduce('sum', f4)
+    call mw%allreduce('sum', e0)
+    call mw%allreduce('sum', ep)
+    call mw%allreduce('sum', e2)
+    call mw%allreduce('sum', e3)
+    call mw%allreduce('sum', e4)
+
+    ! Subtract a baseline to get sensible numbers to work with
+    ebuf = e0 - e2 - e3 - e4 - ep
+    baseline = lo_mean(ebuf)
+    e0 = e0 - baseline
+
+    ! Now I can report a little?
+    if (mw%talk) then
+
+        write (*, *) ''
+        write (*, "(1X,A)") 'ENERGIES (meV/atom):'
+        write (*, "(21X,A,10X,A,10X,A)") 'rms', 'std', 'std(res)'
+        write (*, '(1X,A15,2(1X,F12.6),5X,A)') 'input:', &
+            sqrt(lo_mean(e0**2))*tomev, lo_stddev(e0)*tomev, '-'
+        if (map%polar .gt. 0) write (*, '(1X,A15,3(1X,F12.6))') 'polar', &
+            sqrt(lo_mean(ep**2))*tomev, lo_stddev(ep)*tomev, lo_stddev(e0 - ep)*tomev
+        if (map%have_fc_pair) write (*, '(1X,A15,3(1X,F12.6))') 'second order:', &
+            sqrt(lo_mean(e2**2))*tomev, lo_stddev(e2)*tomev, lo_stddev(e0 - ep - e2)*tomev
+        if (map%have_fc_triplet) write (*, '(1X,A15,3(1X,F12.6))') 'third order:', &
+            sqrt(lo_mean(e3**2))*tomev, lo_stddev(e3)*tomev, lo_stddev(e0 - ep - e2 - e3)*tomev
+        if (map%have_fc_quartet) write (*, '(1X,A15,3(1X,F12.6))') 'fourth order:', &
+            sqrt(lo_mean(e4**2))*tomev, lo_stddev(e4)*tomev, lo_stddev(e0 - ep - e2 - e3 - e4)*tomev
+
+        ! some things on the forces?
+        mf0 = sqrt(sum(f0**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        mfp = sqrt(sum(fp**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        mf2 = sqrt(sum(f2**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        mf3 = sqrt(sum(f3**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        mf4 = sqrt(sum(f4**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+
+        ! flokno: stddev as well
+        sf0 = lo_stddev(f0)*lo_force_hartreebohr_to_eVa
+        sfp = lo_stddev(f0 - fp)*lo_force_hartreebohr_to_eVa
+        sf2 = lo_stddev(f0 - fp - f2)*lo_force_hartreebohr_to_eVa
+        sf3 = lo_stddev(f0 - fp - f2 - f3)*lo_force_hartreebohr_to_eVa
+        sf4 = lo_stddev(f0 - fp - f2 - f3 - f4)*lo_force_hartreebohr_to_eVa
+
+        dfp = sqrt(sum((f0 - fp)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        df2 = sqrt(sum((f0 - fp - f2)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        df3 = sqrt(sum((f0 - fp - f2 - f3)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+        df4 = sqrt(sum((f0 - fp - f2 - f3 - f4)**2)/sim%na/sim%nt)*lo_force_hartreebohr_to_eVa
+
+        write (*, *) ''
+        write (*, "(1X,A)") 'FORCES (eV/A):'
+        write (*, "(21X,A,10X,A,5X,A,5X,A,5X,A)") 'rms', 'rms(res)', 'std(res)', 'R^2(res)', 'normalized std(res)'
+        write (*, '(1X,A15,3(1X,F12.6),5X,A,12X,A)') 'input:', mf0, mf0, sf0, '-', '-'
+        if (map%polar .gt. 0) write (*, '(1X,A15,5(1X,F12.6))') 'polar:', mfp, dfp, sfp, 1 - (sfp/sf0)**2, sfp/sf0
+        if (map%have_fc_pair) write (*, '(1X,A15,5(1X,F12.6),13X,A)') 'second order:', mf2, df2, sf2, 1 - (sf2/sf0)**2, sf2/sf0, '<-- anharmonicity measure'
+        if (map%have_fc_triplet) write (*, '(1X,A15,4(1X,F12.6))') 'third order:', mf3, df3, sf3, sf3/sf0
+        if (map%have_fc_quartet) write (*, '(1X,A15,4(1X,F12.6))') 'fourth order:', mf4, df4, sf4, sf4/sf0
+
+        write (*, *) ''
+        write (*, *) 'BASELINE ENERGY (eV/atom):'
+        write (*, '(1X,A15,1X,F25.6)') '            U0:', baseline*toev
+
+        ! Dump it to file
+        u = open_file('out', 'outfile.U0')
+        write (u, "(4(1X,E19.12))") &
+            (baseline + lo_mean(e0))*toev, &
+            (baseline + lo_mean(e0 - ep - e2))*toev, &
+            (baseline + lo_mean(e0 - ep - e2 - e3))*toev, &
+            (baseline + lo_mean(e0 - ep - e2 - e3 - e4))*toev
+        close (u)
+    end if
+
+end block getU0
 
 ! predict new reference structure
 if (map%have_fc_singlet) then

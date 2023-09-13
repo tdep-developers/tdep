@@ -1,28 +1,11 @@
-author: Olle Hellman
-display: none
-graph: none
-secret: <center><img src="../media/small_extract_forceconstant.png" width="250" /></center>
-propnamelink: <a href="../program/extract_forceconstants.html">extract forceconstants</a>
-propname: extract forceconstants
-{!man/extract_forceconstants.md!}
 
 ### Longer summary
 
-Calculations of the interatomic force constants are the most important part of any lattice dynamics calculation as they are used to calculate many micro and macroscopic properties of the system, e.g. phonon, thermodynamic, and transport properties, etc. This codes takes sets of displacements and forces, and uses these to fit the coefficients in an effective lattice dynamical Hamiltonian. This is by no means a new idea.[^Klein1972] The main advantage of the TDEP method is in the implementation: it is numerically robust, well tested and general. It is not limited in order, nor limited to simple ordered systems.
+Calculations of the interatomic force constants are the most important part of any lattice dynamics calculation as they are used to calculate many micro and macroscopic properties of the system, e.g. phonon, thermodynamic, and transport properties, etc. This codes takes sets of displacements and forces, and uses these to fit the coefficients in an effective lattice dynamical Hamiltonian. This is by no means a new idea.[^Klein1972] The main advantage of the TDEP method is in the implementation: it is numerically robust, well tested and general.
 
-@todo Convergence plots
+### What is a force constant model
 
-@todo Explain graph-based storage
-
-@todo Explain residual fit
-
-### Model Hamiltonians
-
-@todo Show that the procedure of minimizing the difference in forces is equivalent to minimizing the difference in free energy.
-
-### Lattice dynamics and interatomic force constants
-
-A quick recap of lattice dynamical theory:[^Born1998] a displacement $\mathbf{u}$ of an atom $i$ from its ideal lattice position changes the potential energy of the lattice. Temperature disorders the lattice, causing all atoms to be displaced from their equilibrium positions; this effect can be modeled as a Taylor expansion of the potential energy contribution of the instantaneous positions of the atoms in the system, i.e. $U=U(\{ \mathbf{r} \})$. It is convenient to define the atomic positions as displacements $\mathbf{u}$ from their equilibrium positions $\mathbf{R}_i+\boldsymbol{\tau}_i$.
+Interatomic force constants are a central quantity in the TDEP model. The idea is to express the Born-Oppenheimer potential energy surface as a low-order polynomial around some configuration of interest. A quick recap of lattice dynamical theory:[^Born1998] a displacement $\mathbf{u}$ of an atom $i$ from its ideal lattice position changes the potential energy of the lattice. Temperature disorders the lattice, causing all atoms to be displaced from their equilibrium positions; this effect can be modeled as a Taylor expansion of the potential energy contribution of the instantaneous positions of the atoms in the system, i.e. $U=U(\{ \mathbf{r} \})$. It is convenient to define the atomic positions as displacements $\mathbf{u}$ from their equilibrium positions $\mathbf{R}_i+\boldsymbol{\tau}_i$.
 
 $$
 \begin{equation}
@@ -59,12 +42,151 @@ $$
 By increasing rank, the force constants of rank $n$ represent $n$-body interactions, as illustrated in the diagram below:
 
 <center>
-<img src="../media/illustration_of_forceconstants.png" width="500" />
+<img src="/media/illustration_of_forceconstants.png" width="500" />
 </center>
 
-### Force constant symmetries
+What differs in the TDEP method and the textbook definitions is that we do not consider the interaction tensors as a Taylor expansion, instead they are free parameters designed to best describe the system at elevated temperature. This is done via a fitting procedure that will be explained below, and prefaced with a short formal motivation. The main advantage of a force constant model over the raw Born-Oppenheimer potential energy surface is that once it is established a host of quantities can be determined -- detailed in all the other sections of this manual.
 
-Symmetry analysis allows us to greatly reduce the number of values needed to express the force constants (by multiple orders of magnitude, discussed more below) and is therefore crucial for generalizing the TDEP to include higher order terms in the potential energy surface. The symmetries of the force constants are deduced from rotational and translational invariance of the system, in addition to the symmetries of the crystal itself. We start with the transposition symmetries, which is an invariance under the permutation of the indices:[^Leibfried1961][^Maradudin1968]
+### Motivation for least squares fitting procedure
+
+Let's take a few steps back. Suppose we have the correct Hamiltonian $H_1$ then we can evaluate, but it involves a substantial computational effort. It is then beneficial to create a model Hamiltonian $H_0$ that is as close as possible to $H_1$, but is several orders of magnitude cheaper to deal with computationally.
+
+For now, I will call $H_1$ the true Hamiltonian, and $H_0$ the reference Hamiltonian. I assume we have the means to numerically evaluate $H_1$, but doing so is expensive. In this context, any numerical evaluation of $H_0$ is considered to have negligible cost. The task is to evaluate the best criteria to use for determining $H_0$, using information from $H_1$, such that $H_0$ can be used to evaluate physical properties of the system in question. This idea has been around since forever, and this secontion is a short recap of all the historical efforts to do so.
+
+#### Work
+
+Not the kind you are supposed to be doing, but the kind you were supposed to pay attention to in class. I have already defined our two Hamiltonians, $H_0$ and $H_1$. We start by defining an alchemical coupling path between the two Hamiltonians:
+
+$$\label{eq:kirkwood}
+	H(\lambda) = (1-\lambda) H_0 + \lambda H_1
+$$
+
+as a quantity to work with. The parameter $0<\lambda<1$ allows us to alchemically switch between the Hamiltonians, or viewed differently, apply work to/measure work done by the systemfrom $H_1$ to $H_0$ and vice versa. Per some textbook we know that
+
+$$
+\begin{equation}\label{eq:workandstuff}
+	\Delta F \le W
+\end{equation}
+$$
+
+the free energy difference is smaller than the work done by the system. Think this is where the term free energy comes from, the energy free to do work. The equality holds in the quasistatic limit, where the system is kept in equilibrium the whole time. This leads is to one way to determine the free energy, Kirkwood coupling:
+
+$$\label{eq:termoint}
+	F_1-F_0 =
+	\int_0^1 \frac{\partial F(\lambda)}{\partial \lambda} d{\lambda} =
+	\int_0^1 \left\langle H_1-H_0 \right\rangle_{\lambda} d{\lambda}
+$$
+
+This is the same as $\ref{eq:workandstuff}$. Here I introduced a new notation:
+
+$$
+	\left\langle X \right\rangle_y = \int X e^{ -\beta H_y} d{\vec{p}}d{\vec{r}}
+$$
+
+That is, the angled brackets means configuration average with respect to Hamiltonian $y$. Works quantum mechical as well, just replace the integral with $\textrm{ln} \textrm{tr}$. Good homework exercise to show (just write down the classical partition function for $H(\lambda)$ and take the derivative w.r.t $\lambda$, and it falls out by itself, remembering that $F=-k_B T \ln Z$).
+
+At this point we are not interested in performing the integration over $\lambda$, although it certainly is practically possible if one wants to. Rather we will use this  expression backwards, i.e. figure out a way to make $H_1-H_0$ as small as possible, since then the difference in free energy should disappear. And we can do this in a rather neat way. Several ways actually, but they all lead to the same result.
+
+#### Expand along alchemical path
+
+First, we can expand $F(\lambda)$ around $\lambda=0$
+
+$$
+\begin{equation}
+\begin{split}
+	F(\lambda) = & F_0 +
+	\left\langle H_1-H_0 \right\rangle_0\lambda + \\
+	& \beta
+	\left(
+	\left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+	\right)\lambda^2 + \sum_{n=3}^{\infty} \frac{1}{n!} C_0^n \lambda^n
+\end{split}
+\end{equation}
+$$
+
+And integrate this from $\lambda=0$ to $\lambda=1$ and arrive at
+
+$$
+\begin{equation}
+\begin{split}
+	F_1 = & F_0 +
+	\left\langle H_1-H_0 \right\rangle_0 + \\
+	& \frac{\beta}{2}
+	\left(
+	\left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+	\right) + \sum_{n=3}^{\infty} C_0^n
+\end{split}
+\end{equation}
+$$
+
+We can also expand around $\lambda=1$, and arrive at
+
+$$
+\begin{equation}
+\begin{split}
+	F_0 = & F_1 +
+	\left\langle H_1-H_0 \right\rangle_1 + \\
+	& \frac{\beta}{2}
+	\left(
+	\left\langle(H_1-H_0)^2 \right\rangle_1-\left\langle H_1-H_0 \right\rangle^2_{1}
+	\right) + \sum_{n=3}^{\infty} C_1^n
+\end{split}
+\end{equation}
+$$
+
+Here the sum of $C_0^n$ runs of all the cumulants of order 3 and higher, with measure $H_0$ and $H_1$, respectively. Alternatively, one could start from an alternative exact expression:
+
+$$
+F_A = F_B - k_B T \ln \left\langle \exp(-\beta(H_A-H_B)) \right\rangle
+$$
+
+And do a cumulant expansion and arrive at exactly the same expressions. This is by no means a new idea,[^Ursell1927][^Isihara1968][^Gibbs1902] and by tracing references backwards I ended up at Thiele semiinvariants from 1800-something but could not find the actual papers. Suffice to say that is established.
+
+#### Constraining the free energy
+
+We then make use of the Gibbs-Bogoliubov inequality (unfairly named since that also seems to trace much further back in time) that states
+
+$$
+F_1 \le F_0 + \left\langle H_1-H_0 \right\rangle_0
+$$
+
+or
+
+$$
+F_0 \ge F_1 + \left\langle H_1-H_0 \right\rangle_1
+$$
+
+by simple relabelling of terms. If we now insert or expansion expressions into the inequalities we end up with
+
+$$
+0 \le \frac{2}{\beta} \sum_{n=3}^{\infty} C_1^n \le \left\langle(H_1-H_0)^2 \right\rangle_0-\left\langle H_1-H_0 \right\rangle^2_{0}
+$$
+
+and
+
+$$
+0 \le \frac{2}{\beta} \sum_{n=3}^{\infty} C_1^n \le \left\langle(H_1-H_0)^2 \right\rangle_1-\left\langle H_1-H_0 \right\rangle^2_{1}
+$$
+
+What this means is that the second term in the expansion is larger than the sum of all higher order terms. So, to minimize the difference in free energy between $H_0$ and $H_1$, we need to minimize the variance of the energy, either samples with the proper dynamics $\langle\rangle_1$ or via approximate dynamics $\langle\rangle_0$.
+
+#### Conclusion
+
+What I sketched above is that the Gibbs-Bogoliubov inequality can be recast into the problem of minimizing variance between a model Hamiltonian and the exact Hamiltonian, and that you are free to choose which statistical measure to use -- the result will be variational with respect to the free energy. This serves as the formal motivation behind TDEP. One option is to run ab inito (path integral) molecular dynamics to sample the potential energy surface, that would correspond to using measure $\langle\rangle_1$. The other option is to use self-consistent stochastic sampling, this corresponds to $\langle\rangle_1$ and is equivalent to self-consistent phonons.
+
+The main benefit of the above is that instead of minimizing an expression that involves three free energy, we minimize an expression that only involves the internal energy which is a lot easier. And since it is a variance we are to minimize a least squares solution is the natural choice, the least squares solution is the minimum variance solution. The variance is the square you minimize.
+
+Admittedly, this is a rather rough sketch of a motivation, a far more rigorous treatment is given by Alois, Jose and Matt, but the conclusions are the same.
+!!! Note
+    Fix reference to mode coupling paper as soon as it's published properly.
+
+### Practical procedure
+
+Now that we have established that a least squares fit of a model Hamiltonian is in general a good idea we have to do it in practice. The first step is to simplify the problem using symmetry.
+
+#### Force constant symmetries
+
+Symmetry analysis allows us to greatly reduce the number of values needed to express the force constants and is therefore crucial for generalizing the TDEP to include higher order terms in the potential energy surface. The symmetries of the force constants are deduced from rotational and translational invariance of the system, in addition to the symmetries of the crystal itself. We start with the transposition symmetries, which is an invariance under the permutation of the indices:[^Leibfried1961][^Maradudin1968]
 
 $$
 \begin{align}
@@ -133,274 +255,278 @@ $$
 
 All the symmetry relations above are naturally satisfied by the force constants produced by this code. In particular, the rotational, Huang and Hermitian invariances are rarely enforced in the literature, but are crucial for a correct behavior.
 
-@note A word of caution for low-dimensional systems: the Huang invariances do not apply there. Consider graphene, it is difficult to define an elastic constant that corresponds to compression along the z-axis in a meaningful way. The short term solution is to temporarily switch them off via  the option `--nohuang`. The long term solution is to derive the proper invariances for a two-dimensional material, something I have not had the time to do.
+!!! note
+    A word of caution for low-dimensional systems: the Huang invariances do not apply there. Consider graphene, it is difficult to define an elastic constant that corresponds to compression along the z-axis in a meaningful way. The short term solution is to temporarily switch them off via  the option `--nohuang`. The long term solution is to derive the proper invariances for a two-dimensional material, something I have not had the time to do.
 
-### Effective Hamiltonian
+#### Practical use of symmetries
 
-The traditional lattice dynamical Hamiltonian described above has severe limitations, in that it's deduced from the derivatives of zero temperature configuration of the crystal. The form of the Hamiltonian is however beneficial: the second order forceconstants produce an exactly solvable Hamiltonian and with phonon quasiparticles, and the higher order terms can be treated as perturbations. To extend the usefulness of this Hamiltonian, we give up the constraint that the force constants are derivatives of the zero temperature configurations. Instead, the force constant tensors are just parameters in an effective Hamiltonian that are left to be determined.
-
-Schematically, self-consistent or effective phonon theories can be split into two parts: the first part is revolves around how to sample the Born-Oppenheimer surface, the second part around how to use that data to produce an effective Hamiltonian.
-
-
-#### Sampling phase space
-
-The most straightforward way to sample the Born-Oppenheimer surface is to use molecular dynamics. This can be costly, although I provided some tools to make it faster: parallelizing over different random seeds combined with selective upsampling certainly makes it feasible. For systems with significant nuclear quantum effects, path integral molecular dynamics is preferred. The cost of these can be quite significant, but similar acceleration techniques can be used.
-
-If you care predominantly about speed, stochastic sampling might be preferred. The way the Born-Oppenheimer surface is sampled does not influence the TDEP algorithms in any way. I even consider stochastic sampling using the zero-point the preferred way of calculating the true zero temperature force constants. The only thing required of the sampling is that it provides a set of forces, $\mathbf{f}^{\textrm{BO}}$, and displacements $\mathbf{u}$.
-
-#### Obtaining an effective Hamiltonian
-
-The basic premise is to use a model Hamiltonian (where orders beyond pair interactions are optional) given by
+The symmetry relations needs to be transformed to linear algebra to be of practical use. I will use the second order force constants as an example, but the procedure is general. First step is to flatten each $3 \times 3$ tensor into a $9 \times 1$ vector, and express each component of the tensor as a linear combination of some coefficients $x$:
 
 $$
-\begin{equation}\label{eq:hamiltonian}
-\hat{H}= U_0+\sum_i \frac{\textbf{p}_i^2}{2m_i}+
-\frac{1}{2!}\sum_{ij} \sum_{\alpha\beta}\Phi_{ij}^{\alpha\beta}
-u_i^\alpha u_j^\beta +\frac{1}{3!}
-\sum_{ijk} \sum_{\alpha\beta\gamma}\Phi_{ijk}^{\alpha\beta\gamma}
-u_i^\alpha u_j^\beta u_k^\gamma \ldots
-\end{equation}
+\underbrace{\mathbf{\Phi}}_{9 \times 1}
+=
+\underbrace{\mathbf{C}}_{9 \times 1} \underbrace{\mathbf{x}}_{9 \times 1}
 $$
 
-and match the forces of the model, $\mathbf{f}^{\textrm{M}}$ to $\mathbf{f}^{\textrm{BO}}$.[^Hellman2013]<sup>,</sup>[^Hellman2013a]<sup>,</sup>[^Hellman2011] A brute force minimization is certainly possible, but the current implementation is a bit more sophisticated. The forces of the model Hamiltonian are given by
+Suppose some (point) symmetry operators leave the tensor invariant, this can be expressed as
 
 $$
-\begin{equation}
-f^{\mathrm{M}}_{i\alpha}=
--\sum_{j\beta}\Phi_{ij}^{\alpha\beta}u_j^\beta
--\frac{1}{2}\sum_{jk\beta\gamma}\Phi_{ijk}^{\alpha\beta\gamma}u_j^\beta u_k^\gamma + \ldots
-\end{equation}
+\left(\sum_i \mathbf{S}_i \otimes \mathbf{S}_i - \mathbf{I}\right) \mathbf{\Phi} = 0
 $$
 
-To exploit the symmetry relations, we populate each tensor component with a symbolic variable, called $\theta$. The index $k$ runs from 1 to the total number of components in all tensors. We include all tensors within a cutoff radius $\textbf{r}_c$ (the maximum cutoff is determined by the simulation cell size). Using symmetries we figure out which tensor components are unique by accounting for those components that are either 0 or equal to another tensor component. This drastically reduces the number of values that have to be determined. With the symmetry irreducible representation at hand, we express the forces in the model Hamiltonian:
+There is also transposition symmetry, which can be expressed as a permutation matrix $T$:
 
 $$
-\begin{equation}
-f^{\mathrm{M}}_{i\alpha}=
-\sum_k \theta_k c_k^{i\alpha}(\mathbf{U}).
-\end{equation}
+\left(\mathbf{T} - \mathbf{I}\right) \mathbf{\Phi} = 0
 $$
 
-Here $c_k^{i\alpha}(\mathbf{U})$, the coefficient for each $\theta_k$ is a polynomial function of all displacements within $\textbf{R}_c$. The form of this function depends on the crystal at hand (see the minimal example below). For a given supercell, we can express the vector of all forces in the cell as a matrix product:
+In total, this can be expressed as
 
 $$
-\begin{equation}
-\underbrace{\mathbf{F}^{\mathrm{M}}}_{3N_a \times 1}=
-\underbrace{\mathbf{C}(\mathbf{u})}_{3N_a \times N_{\theta}}
-\underbrace{\mathbf{\Theta}}_{N_{\theta} \times 1}
-\end{equation}
+\mathbf{A} = \left(\mathbf{T} - \mathbf{I}\right) + \left(\sum_i \mathbf{S}_i \otimes \mathbf{S}_i - \mathbf{I}\right)
 $$
 
-where the underbraces denote size of the matrices. The coefficient matrix $\mathbf{C}$ is a function of all the displacements in the supercell. $\mathbf{\Theta}$ is a vector holding all the $\theta_k$. Then we seek the $\mathbf{\Theta}$ that minimizes the difference between the model system and the _ab initio_ one:
-
 $$
-\begin{equation}
-\begin{split}
-\min_{\Theta}\Delta \mathbf{F} & =
-\frac{1}{N_c} \sum_{c=1}^{N_c}  \left| \mathbf{F}_c^{\textrm{BO}}-\mathbf{F}_c^{\textrm{M}} \right|^2= \\
-& =\frac{1}{N_c} \sum_{c=1}^{N_c} \left| \mathbf{F}_c^{\textrm{BO}}-\mathbf{C}(\mathbf{u}_{c})\mathbf{\Theta} \right|^2 = \\
-& = \frac{1}{N_c} \left\Vert
-\begin{pmatrix} \mathbf{F}_1^{\textrm{BO}} \\  \vdots \\ \mathbf{F}_{N_c}^{\textrm{BO}} \end{pmatrix}-
-\begin{pmatrix} \mathbf{C}(\mathbf{u}_1) \\ \vdots \\ \mathbf{C}(\mathbf{u}_{N_c}) \end{pmatrix}
-\mathbf{\Theta}
-\right\Vert
-\end{split}
-\end{equation}
+\mathbf{A} \mathbf{C} \mathbf{x} = 0
 $$
 
-Here $N_c$ is the number of supercell configurations used to sample the Born-Oppenheimer surface. A least squares solution,
+the problem is now reduced to finding $\mathbf{C}$. We are not interested in the trivial solution $\mathbf{C}=0$, instead we seek a matrix $\mathbf{C}$ in the null space of $\mathbf{A}$. We find that by constructing
 
 $$
-\begin{equation}
-\mathbf{\Theta}=
-\begin{pmatrix}
-\mathbf{C}(\mathbf{u}_1) \\
-\vdots \\
-\mathbf{C}(\mathbf{u}_{N_c})
-\end{pmatrix}^{+}
-\begin{pmatrix}
-\mathbf{F}^{\textrm{BO}}_1 \\
-\vdots \\
-\mathbf{F}^{\textrm{BO}}_{N_c}
-\end{pmatrix}
-\end{equation}
+\mathbf{U}\mathbf{\Sigma}\mathbf{V} = A
 $$
 
-gives the $\mathbf{\Theta}$ that minimizes these forces. Then, with a simple substitution back into \(\mathbf{\Phi}_{ij}\) and $\mathbf{\Phi}_{ijk}$ we determine the quadratic and cubic force constants. Note all orders of force constants are extracted from the same set of displacements and forces, simultaneously.
-
-
-</div>
-</div>
-</div>
-<div class="jumbotron jumbotron-explain">
-<div class="container-fluid">
-<div class="row">
-<div class="col-md-offset-1 col-md-10 " id='text'>
-
-<h4>Illustration of the symmetry constrained solver</h4>
-
-</div>
-</div>
-<div class="row">
-<div class="col-md-offset-1 col-md-5 " id='text'>
-
-Even for a simple system, such as fcc Al, the matrix $\mathbf{C}$ is in general far too large to print in a meaningful way. I will try to explain the algorithm more schematically: suppose we want to determine the coefficients for a single second order force constant:
-
 $$
-\begin{equation*}
-\mathbf{\Phi}=
-\begin{pmatrix}
-\theta_1 & \theta_2 & \theta_3 \\
-\theta_4 & \theta_5 & \theta_6 \\
-\theta_7 & \theta_8 & \theta_9 \\
-\end{pmatrix}
-\end{equation*}
+\mathbf{C} = \sum_{\Sigma_i = 0} \mathbf{U}^T \mathbf{V}
 $$
 
-using a number of displacements and forces. The 9 unknown variables suggest we need at least 9 equations, preferrably more to make the equations overdetermined. With four samples, each providing a force and a displacement, we get
+The rank of $\mathbf{C}$ is the number of zero singular values of $\mathbf{A}$, i.e. the number of irreducible variables $\mathbf{x}$, resulting in
 
 $$
-\begin{equation*}
-\begin{pmatrix}
-f^1_x & f^1_y & f^1_z \\
-f^2_x & f^2_y & f^2_z \\
-f^3_x & f^3_y & f^3_z \\
-f^4_x & f^4_y & f^4_z
-\end{pmatrix} =
-\begin{pmatrix}
-u^1_x & u^1_y & u^1_z \\
-u^2_x & u^2_y & u^2_z \\
-u^3_x & u^3_y & u^3_z \\
-u^4_x & u^4_y & u^4_z
-\end{pmatrix}
-\begin{pmatrix}
-\theta_1 & \theta_2 & \theta_3 \\
-\theta_4 & \theta_5 & \theta_6 \\
-\theta_7 & \theta_8 & \theta_9 \\
-\end{pmatrix}
-\end{equation*}
+\underbrace{\mathbf{\Phi}}_{9 \times 1}
+=
+\underbrace{\mathbf{C}}_{9 \times N_x} \underbrace{\mathbf{x}}_{N_x \times 1}
 $$
 
-which can be solved with a pseudoinverse. However, using the symmetry relations we know that the force constants are not all independent, they could have the following form:
+where $N_x \le 9$.
+
+#### Practical use in real systems
+
+We use a procedure near identical to what is described above. The starting point is a set of displacements $\vec{u}$ and forces $\vec{f}$ from a set of $N_c$ supercells sampled from a canonical ensemble at temperature $T$. Although omitted in the notation, all interaction tensors depend on temperature as well as the volume (or more generally strain). The interatomic force constants are determined as follows: consider a supercell with $N_a$ atoms and forces and displacements given by the $3N_{a} \times 1$ vectors $\vec{u}$ and $\vec{f}$ (for clarity we will make note of the dimensions of the matrices in each step):
 
 $$
-\begin{equation*}
-\mathbf{\Phi}=
-\begin{pmatrix}
-\theta_1 & \theta_2 & 0\\
-\theta_2 & \theta_1 & 0 \\
-0 & 0 & \theta_1 \\
-\end{pmatrix}
-\end{equation*}
+    \underbrace{\vec{f}}_{3N_a \times 1}
+    = -
+    \underbrace{\vec{\Phi}}_{3N_a \times 3 N_a}
+    \underbrace{\vec{u}}_{3N_a \times 1}
 $$
 
-Taking the product of the displacement matrix and the force constant matrix yields
+we can arrange this on a form with flattened tensors as
 
 $$
-\begin{equation*}
-\begin{pmatrix}
-f^1_x & f^1_y & f^1_z \\
-f^2_x & f^2_y & f^2_z \\
-f^3_x & f^3_y & f^3_z \\
-f^4_x & f^4_y & f^4_z
-\end{pmatrix} =
-\begin{pmatrix}
-u^1_x\theta_1+u^1_y\theta_2 & u^1_y\theta_1+u^1_x\theta_2 & u^1_z\theta_1 \\
-u^2_x\theta_1+u^2_y\theta_2 & u^2_y\theta_1+u^2_x\theta_2 & u^2_z\theta_1 \\
-u^3_x\theta_1+u^3_y\theta_2 & u^3_y\theta_1+u^3_x\theta_2 & u^3_z\theta_1 \\
-u^4_x\theta_1+u^4_y\theta_2 & u^4_y\theta_1+u^4_x\theta_2 & u^4_z\theta_1
-\end{pmatrix}
-\end{equation*}
+    \underbrace{\vec{f}}_{3N_a \times 1}
+    = -
+    \underbrace{(\vec{I} \otimes \vec{u}^T)}_{3N_a \times (3N_a)^2}
+    \underbrace{\vec{\Phi}_v}_{ (3N_a)^2 \times 1}
 $$
 
-</div>
-<div class="col-md-5" id='text'>
-
-That can in turn be rewritten as
+with the Kronecker product $\otimes$. To express the forces from $N_c$ supercells the matrices are stacked on top of each other:
 
 $$
-\begin{equation*}
-\begin{pmatrix}
-f^1_x \\ f^1_y \\ f^1_z \\
-f^2_x \\ f^2_y \\ f^2_z \\
-f^3_x \\ f^3_y \\ f^3_z \\
-f^4_x \\ f^4_y \\ f^4_z
-\end{pmatrix}=
-\begin{pmatrix}
-u^1_x && u^1_y \\
-u^1_y && u^1_x \\
-u^1_z && 0 \\
-u^2_x && u^2_y \\
-u^2_y && u^2_x \\
-u^2_z && 0 \\
-u^3_x && u^3_y \\
-u^3_y && u^3_x \\
-u^3_z && 0 \\
-u^4_x && u^4_y \\
-u^4_y && u^4_x \\
-u^4_z && 0 \\
-\end{pmatrix}
-\begin{pmatrix}
-\theta_1 \\
-\theta_2
-\end{pmatrix}
-\end{equation*}
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+    = -
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^2}
+    \underbrace{\vec{\Phi}_v}_{ (3N_a)^2 \times 1}
 $$
 
-We now have an equation in only the independent components, expressed as a vector of forces, a coefficient matrix and a vector of irreducible forceconstants. In a real system, these equations are built exactly the same way, but for all forceconstants of all orders simultaneously. All the forceconstants are determined from a single set of equations.
+We then express the force constants via the irreducible components
 
-This numerical solver is remarkably stable. Other schemes determine the components one by one, and must later modify the values to comply with the symmetry of the lattice, lending some ambiguity to the results. With this scheme, there is no need to carefully displace atoms one by one, just displace all of them. This is numerically beneficient, numerical noise will be averaged out.
-</div>
+$$
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+    = -
+    \underbrace{
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^2}
+    \underbrace{
+    \vec{C}^{\Phi\textrm{II}}
+    }_{(3N_a)^2 \times N_x}
+    }_{=\vec{A}^{\Phi\textrm{II}}\,, 3N_a N_c \times N_x }
+    \underbrace{\vec{x}^{\Phi\textrm{II}}}_{ N_x \times 1}
+$$
 
-</div>
-</div>
-</div>
-</div>
-<div class="container-fluid">
-<div class="row" id="text">
-<div class="col-md-offset-2 col-md-7 col-md-offset-3">
+The set of symmetry relations and invariances determines $\vec{C}$ and $N_x$,~\cite{Leibfried1961,Maradudin1968,Born1998} and in general $N_x \ll (3N_a)^2$ which considerably simplifies the problem of numerically determining $\vec{\Phi}$. In practice, only the matrix $\vec{A}$ is determined and stored. The nominally very large matrices that go into the construction of $\vec{A}$ are quite sparse and construction presents negligible computational cost. The second order force constants imply matrices that could possibly be treated naively, but the generalization to higher order quickly becomes intractable with dense matrix storage. The third order force constants, for example, comes down to
 
+$$
+    \underbrace{
+    \begin{pmatrix}
+        \vec{f}_1 \\
+        \vdots \\
+        \vec{f}_{N_c}
+    \end{pmatrix}
+    }_{3N_a N_c \times 1}
+     = -
+    \underbrace{
+    \underbrace{
+    \begin{pmatrix}
+        \vec{I} \otimes \vec{u}_1^T \otimes \vec{u}_1^T\\
+        \vdots \\
+        \vec{I} \otimes \vec{u}_{N_c}^T \otimes \vec{u}_{N_c}^T \\
+    \end{pmatrix}
+    }_{3N_aN_c \times (3N_a)^3}
+    \underbrace{
+    \vec{C}^{\Phi\textrm{III}}
+    }_{(3N_a)^3 \times N_x}
+    }_{=\vec{A}^{\Phi\textrm{III}}\,, 3N_a N_c \times N_x }
+    \underbrace{\vec{x}^{\Phi\textrm{III}}}_{ N_x \times 1}
+$$
 
+where the contracted matrix $\vec{A}$ is many orders of magnitude smaller than the matrices it is built from.
 
-### Practical notes
+The interatomic force constants are determined in succession:
 
-#### Forcemaps
+$$
+\begin{align}
+\label{eq:f2}
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}} & = \vec{f}
+%
+\\
+%
+\label{eq:f3}
+    \vec{A}^{\Phi\textrm{III}}
+    \vec{x}^{\Phi\textrm{III}} & =
+    \vec{f}-
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}}
+%
+\\
+%
+\label{eq:f4}
+    \vec{A}^{\Phi\textrm{IV}}
+    \vec{x}^{\Phi\textrm{IV}} & =
+    \vec{f}
+    -
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}}
+    -
+    \vec{A}^{\Phi\textrm{III}}
+    \vec{x}^{\Phi\textrm{III}}
+\end{align}
+$$
 
-When running the code, you might notice that it produces a file called `outfile.forcemap.hdf5`. This file, not meant to be human readable, contains all the symmetry information about the unit- supercell pair. Basically, it contains the map that allows you to create the coefficient matrix $\mathbf{C}$, and the reverse map how to subsitute the values in $\mathbf{\Theta}$ into the forceconstants.
+Where $\vec{f}$ denotes the reference forces to be reproduced. Equations $\ref{eq:f2}-\ref{eq:f4}$ are overdetermined and solved as a least squares problem. This ensures that the baseline harmonic part becomes as large as possible, and that the higher order terms become smaller and smaller. Some of the symmetry constraints are cumbersome to implement as linear operators, they are instead implemented as linear constraints. So for a low symmetry crystal the least squares problem is stated as
 
-The reason it is stored on disk is that for complicated geometries, it can take a little while to generate (~5-10 minutes is the worst I have seen so far, for 1000's of atoms). For a set of calculations with varying volume, temperature or some other parameter, it is a good idea to generate this forcemap once, and use the `--readforcemap` option when running the code.
+$$
+    \vec{A}^{\Phi\textrm{II}}
+    \vec{x}^{\Phi\textrm{II}} = \vec{f} \quad \textrm{subject to} \quad \vec{B}\vec{x}^{\Phi\textrm{II}}=0
+$$
 
-#### Reading forceconstants from file
+#### On dynamical stability and stochastic sampling
 
-The option `--readirreducible` will make the code skip the solution phase, and instead use the values provided in `infile.irrifc_*` to generate the forceconstants. For a casual user, this has little benefit. For the more advanced users, this provides the means to interpolate forceconstants:
+!!! note
+	add link to stochastic sampling tutorial once it is prepared
 
-* Perform a set of calculations, varying parameter $\alpha$, where $\alpha$ could be volume, temperature or any external parameter that does not change the spacegroup of the system.
-* Get the forceconstants for each calculation, using the forcemap detailed above.
-* Gather all the irreducible forceconstants from `outfile.irrifc_*` and interpolate them as a function of $\alpha$. I do not yet know the best way to interpolate, it seems to be system dependent. Linear interpolation is always a safe bet.
-* Print `infile.irrifc_*` and use option `--readirreducible` to turn the interpolated values into useable forceconstants
+As we established above we can either sample the potential energy surface via some variant of molecular dynamics/Monte Carlo simulations per the true Hamiltonian, or sample using the force constant model. Sampling with the force constant model collapses in case any eigenvalue of the dynamical matrix is negative - in that case no free energy is defined. One generally states self-consistent phonon theory as minimization of $F_0 + \left\langle H_1 -H_0 \right\rangle_0$ with respect to the parameters in the model Hamiltonian. This is a slight simplification, since the symmetry constraints from the space group imply a reduced search space, some symmetry constraints imply additional equality constraints and on top of that we have the requirement of positive semi-definite eigenvalues.
 
-This is best done wrapped in python or equivalent. It is very powerful, if you have done calculations at 300,600 and 900K, you can use this procedure to get forceconstants at any temperature in between. In general, many quantities are difficult to interpolate, but forceconstants are well behaved!
+Let's start from the naive least squares problem:
 
-#### How to test if things are converged
+$$
+	\min_{\phi} \left\| F - U \Phi  \right\|^2
+$$
 
-The first parameter you want to check is the number of configurations used. This is straightforward, use `--stride` to reduce the number of calculations considered (or alternatively, temporarily change the number of timesteps in [infile.meta](../page/files.html#infile.meta) to a smaller number). Gradually increasing the number of configurations should tell you how converged your forceconstants are with respect to statistical sampling. A rough rule of thumb could be that you want at least 10 equations per irreducible forceconstant. One supercell calculation gives you 3N equations.
+We use the same flattening technique as previously and can rewrite the least squares problem (by expanding the square) as
 
-For supercell sizes, I personally never use less than 200 atoms for insulators/semiconductors, or 100 for metals. It sounds costly to use 200 atoms, but remember that the TDEP solver uses all the information in the supercell, so the larger the cell, the fewer configurations you need. For example, a single 250 atom supercell is enough to get decent second and third order forceconstants for bulk Si. You should never use just one cell, since you will have no idea if it is converged or not, but it is a neat observation.
+$$
+	\min_{\phi} \vec{\Phi_v}^T \left[\tilde{\vec{U}}^T\otimes\tilde{\vec{U}}\right] \vec{\Phi_v}
+	-
+	\vec{\Phi_v}^T \left[\vec{I}\otimes\tilde{\vec{U}}\right]^T \vec{F}_v \,.
+$$
+
+The next step is to again express the force constants in terms of their irreducible components, and remember that we have some linear constraints:
+
+$$
+\begin{align}
+	\vec{x} & = \min_{\vec{x}}\,
+	\vec{x}^T \vec{D} \vec{x}
+	-
+	\vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0
+\\
+	\vec{D} & = \vec{C}^T \left[\tilde{\vec{U}}^T\otimes\tilde{\vec{U}}\right] \vec{C} = \vec{A^T}\vec{A} \\
+	\vec{d} & = \vec{C}^T \left[\vec{I}\otimes\tilde{\vec{U}}\right]^T \vec{F}_v = \vec{A}^T \vec{F}
+\end{align}
+$$
+
+The main difficulty lies in the constraint that the dynamical matrix needs to be positive semi-definite. This constraint can be states as
+
+$$
+	\vec{s}^T \Phi \vec{s} > 0
+$$
+
+for any vector $\vec{s}$, i.e. there is no combination of displacements that lower the energy below the baseline. In our flattened and irreducible form this becomes
+
+$$
+	\vec{s} \otimes \vec{s} \vec{C} \vec{x} > 0
+$$
+
+Luckily, this is a solved problem.[^Hu1995] The algorithm progresses as follows: first we solve
+
+$$
+	\vec{x} = \min_{\vec{x}}\,
+	\vec{x}^T \vec{D} \vec{x}
+	-
+	\vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0 \,
+$$
+
+and construct $\Phi$, and examine the eigenvalues. If all eigenvalues are positive, we are done. If not, all the eigenvectors corresponding to negative eigenvalues are added as inequality constraints:
+
+$$
+	\vec{E} = \left( \epsilon_1 \otimes \epsilon_1 \cdots \epsilon_N \otimes \epsilon_N  \right)\vec{C}
+$$
+
+and we get a new quadratic program
+
+$$
+	\vec{x} = \min_{\vec{x}}\,
+	\vec{x}^T \vec{D} \vec{x}
+	-
+	\vec{x}^T \vec{d} \quad \textrm{s.t.} \quad \vec{B}\vec{x}=0 \quad \textrm{and} \quad \vec{E}\vec{x} > \alpha
+$$
+
+where $\alpha$ is a small positive number. We again calculate the eigenvalues of $\Phi$, and if any new negative eigenvalues emerge the matrix $\vec{E}$ gets appended and the process is repeated until all eigenvalues are positive. The sequence of quadratic programs are solved with an interior method.[CITE]
+
+This is a numerically robust formulation of self-consistent phonons, but it must be mentioned that it is rarely needed. If you are simulating materials that are known to exist, they rarely show negative eigenvalues if the numerics are well-converged. The option to use the positive definite solver is available (`--solver 2`), but if you need to use it odds are high that it is in fact the numerics/convergence that is the actual issue. Which is why the option is this deep in the documentation, if you bothered to read this far you probably took the time to understand how to get the numerics correct as well.
 
 ### Input files
 
-* [infile.ucposcar](../page/files.html#infile.ucposcar)
-* [infile.ssposcar](../page/files.html#infile.ssposcar)
-* [infile.meta](../page/files.html#infile.meta)
-* [infile.stat](../page/files.html#infile.stat)
-* [infile.positions](../page/files.html#infile.positions)
-* [infile.forces](../page/files.html#infile.forces)
-
-optional input files include
-
-* infile.forcemap.hdf5
-* infile.irrifc_secondorder
-* infile.irrifc_thirdorder
+* [infile.ucposcar](../files.md#infile.ucposcar)
+* [infile.ssposcar](../files.md#infile.ssposcar)
+* [infile.meta](../files.md#infile.meta)
+* [infile.stat](../files.md#infile.stat)
+* [infile.positions](../files.md#infile.positions)
+* [infile.forces](../files.md#infile.forces)
 
 ### Output files
 
@@ -435,222 +561,25 @@ This is the second order force constant, in a plain text format. Schematically, 
 
 ```
 
-The content of the file is pretty straightforward.
+The content of the file is pretty straightforward. The header is two lines, the number of atoms in the unit cell and the realspace cutoff (in Å). Next we have repeating units for each pair of atoms. We start from atom 1, with a note how many pairs are included for atom 1. Then for each of those pairs we note what is the index of the other atom in the pair, what is the lattice vector (in fractional coordinates) that locate the unit cell of that atom, followed by the $3 \times 3$ tensor (in Carteisian coordinates, eV/Å^2). This is repeated for neighbours of atom one, and then on to the next atom and so on.
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>1</td>
-	<td> \(N_a\), number of atoms in the unitcell </td>
-</tr>
-<tr>
-	<td>2</td>
-	<td> \(r_c\), the cutoff radius. </td>
-</tr>
-<tr>
-	<td>3</td>
-	<td> Number of neighbors that atom 1 in the unit cell has within \( r_c \), including itself </td>
-</tr>
-<tr>
-	<td>4</td>
-	<td> For pair 1 from atom 1, which kind of atom in the unit cell does the vector point to </td>
-</tr>
-<tr>
-	<td>5</td>
-	<td> \( \mathbf{R}_x \quad \mathbf{R}_y \quad \mathbf{R}_z \quad \) The lattice vector associated with this pair. </td>
-</tr>
-<tr>
-	<td>6</td>
-	<td> \( \mathbf{\Phi}_{xx} \quad \mathbf{\Phi}_{xy} \quad \mathbf{\Phi}_{xz} \quad \) The force constant associated with this pair. </td>
-</tr>
-<tr>
-	<td>7</td>
-	<td> \( \mathbf{\Phi}_{yx} \quad \mathbf{\Phi}_{yy} \quad \mathbf{\Phi}_{yz} \quad \)</td>
-</tr>
-<tr>
-	<td>8</td>
-	<td> \( \mathbf{\Phi}_{zx} \quad \mathbf{\Phi}_{zy} \quad \mathbf{\Phi}_{zz} \quad \)</td>
-</tr>
-<tr>
-	<td>9</td>
-	<td> For pair 2 from atom 1, which kind of atom in the unit cell does the vector point to </td>
-</tr>
-<tr>
-	<td>10</td>
-	<td> \( \mathbf{R}_x \quad \mathbf{R}_y \quad \mathbf{R}_z \quad \)</td>
-</tr>
-<tr>
-	<td>11</td>
-	<td> \( \mathbf{\Phi}_{xx} \quad \mathbf{\Phi}_{xy} \quad \mathbf{\Phi}_{xz} \quad \)</td>
-</tr>
-<tr>
-	<td>12</td>
-	<td> \( \mathbf{\Phi}_{yx} \quad \mathbf{\Phi}_{yy} \quad \mathbf{\Phi}_{yz} \quad \)</td>
-</tr>
-<tr>
-	<td>13</td>
-	<td> \( \mathbf{\Phi}_{zx} \quad \mathbf{\Phi}_{zy} \quad \mathbf{\Phi}_{zz} \quad \)</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>repeat for all pairs for atom 1, then the same thing for atom 2, and so on.</td>
-</tr>
-</tbody>
-</table>
-
-Note that the lattice vectors are given in fractional coordinates, but the force constants are in Cartesian coordinates, in eV/A^2.
-
-<a name="outfile.forceconstant_thirdorder"></a>
-#### `outfile.forceconstant_thirdorder`
+#### `outfile.forceconstant_thirdorder`<a name="outfile.forceconstant_thirdorder"></a>
 
 The format for this file is similar to the second order:
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>1</td>
-	<td> \(N_a\), number of atoms in the unitcell </td>
-</tr>
-<tr>
-	<td>2</td>
-	<td> \(r_c\), the cutoff radius. </td>
-</tr>
-<tr>
-	<td>3</td>
-	<td> Number of triplets that atom 1 in the unit cell has within \( r_c \) </td>
-</tr>
-<tr>
-	<td>4</td>
-	<td> For triplet 1 from atom 1, which kind of atom in the unit cell does first vector point to </td>
-</tr>
-<tr>
-	<td>5</td>
-	<td> For triplet 1 from atom 1, which kind of atom in the unit cell does second vector point to </td>
-</tr>
-<tr>
-	<td>6</td>
-	<td> For triplet 1 from atom 1, which kind of atom in the unit cell does third vector point to </td>
-</tr>
-<tr>
-	<td>7</td>
-	<td> \( \mathbf{R}_x \quad \mathbf{R}_y \quad \mathbf{R}_z \quad \) The first lattice vector for this triplet. </td>
-</tr>
-<tr>
-	<td>8</td>
-	<td> \( \mathbf{R}_x \quad \mathbf{R}_y \quad \mathbf{R}_z \quad \) The second lattice vector for this triplet. </td>
-</tr>
-<tr>
-	<td>9</td>
-	<td> \( \mathbf{R}_x \quad \mathbf{R}_y \quad \mathbf{R}_z \quad \) The third lattice vector for this triplet. </td>
-</tr>
+[^Kirkwood1935]: J. G. Kirkwood (1935), The Journal of Chemical Physics 3, 300
 
-<tr>
-	<td>10</td>
-	<td> \( \mathbf{\Phi}_{xxx} \quad \mathbf{\Phi}_{xxy} \quad \mathbf{\Phi}_{xxz} \quad \) The force constant associated with this triplet. </td>
-</tr>
-<tr>
-	<td>11</td>
-	<td> \( \mathbf{\Phi}_{xyx} \quad \mathbf{\Phi}_{xyy} \quad \mathbf{\Phi}_{xyz} \quad \)</td>
-</tr>
-<tr>
-	<td>12</td>
-	<td> \( \mathbf{\Phi}_{xzx} \quad \mathbf{\Phi}_{xzy} \quad \mathbf{\Phi}_{xzz} \quad \)</td>
-</tr>
-<tr>
-	<td>13</td>
-	<td> \( \mathbf{\Phi}_{yxx} \quad \mathbf{\Phi}_{yxy} \quad \mathbf{\Phi}_{yxz} \quad \)</td>
-</tr>
-<tr>
-	<td>14</td>
-	<td> \( \mathbf{\Phi}_{yyx} \quad \mathbf{\Phi}_{yyy} \quad \mathbf{\Phi}_{yyz} \quad \)</td>
-</tr>
-<tr>
-	<td>15</td>
-	<td> \( \mathbf{\Phi}_{yzx} \quad \mathbf{\Phi}_{yzy} \quad \mathbf{\Phi}_{yzz} \quad \)</td>
-</tr>
-<tr>
-	<td>16</td>
-	<td> \( \mathbf{\Phi}_{zxx} \quad \mathbf{\Phi}_{zxy} \quad \mathbf{\Phi}_{zxz} \quad \)</td>
-</tr>
-<tr>
-	<td>17</td>
-	<td> \( \mathbf{\Phi}_{zyx} \quad \mathbf{\Phi}_{zyy} \quad \mathbf{\Phi}_{zyz} \quad \)</td>
-</tr>
-<tr>
-	<td>18</td>
-	<td> \( \mathbf{\Phi}_{zzx} \quad \mathbf{\Phi}_{zzy} \quad \mathbf{\Phi}_{zzz} \quad \)</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>and so on, for all triplets and all atoms.</td>
-</tr>
-</tbody>
-</table>
+[^Isihara1968]: A. Isihara (1968), Journal of Physics A: General Physics 1, 305
 
-<a name="outfile.forcemap.hdf5"></a>
-#### `outfile.forcemap.hdf5`
+[^Gibbs1902]: J. W. Gibbs (1902), Elementary Principles in Statistical Mechanics: Developed with Especial Reference to the Rational Foundations of Thermodynamics,  C. Scribner’s sons
 
-This file contatains all the symmetry operations applied to the crystal structure and the mapping between the unitcell and supercell. Not meant to be human readable.
-
-<a name="outfile.irrifc_secondorder"></a>
-####  `outfile.irrifc_secondorder`
-
-These files contain a list of irreducible \(\theta_k\) for the second order force constants, one per row
-
-$$
-\theta_1 \\
-\theta_2 \\
-... \\
-\theta_n
-$$
-
-<a name="outfile.irrifc_thirdorder"></a>
-#### `outfile.irrifc_thirdorder`
-
-These files contain a list of irreducible \(\theta_k\) for the third order force constants, one per row
-
-$$
-\theta_1 \\
-\theta_2 \\
-... \\
-\theta_n
-$$
-
-<a name="outfile.U0"></a>
-#### `outfile.U0`
-
-Optional file (with `--potential_energy_differences`)
-
-```
-   -4.3457380376000003       -4.3577601020669636       -4.3577575914113229
-```
-
-Where the values are:
-
-$$
-\begin{align}
-\left\langle U \right\rangle \qquad
-\left\langle U - \frac{1}{2} \sum_{ij}\Phi_{ij}^{\alpha\beta} u_i^\alpha u_j^\beta \right\rangle \qquad
-\left\langle U
-- \frac{1}{2} \sum_{ij}\Phi_{ij}^{\alpha\beta} u_i^\alpha u_j^\beta
-- \frac{1}{6} \sum_{ijk}\Phi_{ijk}^{\alpha\beta\gamma} u_i^\alpha u_j^\beta u_k^\gamma
-\right\rangle
-\end{align}
-$$
-
-The first value is potential energy from simulations averaged over time in eV/atom, and the second value is the difference between the potential energy from MD and the potential energy calculated from second order force constants (eV/atom); the third value is the difference between the potential energy and the potential energy calculated using both the second and third order force constants term (eV/atom).
+[^Ursell1927]: H. D. Ursell (1927), Mathematical Proceedings of the Cambridge Philosophical Society 23, 685
 
 [^Klein1972]: [Klein, M. L., & Horton, G. K. (1972). The rise of self-consistent phonon theory. Journal of Low Temperature Physics, 9(3-4), 151–166.](http://doi.org/10.1007/BF00654839)
 
 [^Born1998]: Born, M., & Huang, K. (1964). Dynamical theory of crystal lattices. Oxford: Oxford University Press.
+
+[^Hu1995]: H. Hu (1995), Linear Algebra and its Applications 229, 167
 
 [^Maradudin1968]: [Maradudin, A. A., & Vosko, S. (1968). Symmetry Properties of the Normal Vibrations of a Crystal. Reviews of Modern Physics, 40(1), 1–37.](http://doi.org/10.1103/RevModPhys.40.1)
 
@@ -665,4 +594,5 @@ The first value is potential energy from simulations averaged over time in eV/at
 [^Scheringer1974]: [Scheringer, C. The Hermiticity of the dynamical matrix. Acta Crystallogr. Sect. A 30, 295–295 (1974).](http://scripts.iucr.org/cgi-bin/paper?S0567739474000611)
 
 [^Martin1971]: [Martin, R. M. Hermitian character of the dynamical matrix - a comment on ‘non-hermitian dynamical matrices in the dynamics of low symmetry crystals’. Solid State Commun. 9, 2269–2270 (1971).](http://linkinghub.elsevier.com/retrieve/pii/0038109871906466)
-s,
+
+

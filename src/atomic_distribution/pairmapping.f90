@@ -81,6 +81,8 @@ type lo_pairmapping_shell
     real(r8), dimension(:, :), allocatable :: pairvec
     !> pair operation
     integer, dimension(:), allocatable :: pairop
+    !> which species pair is this shell?
+    integer :: index_species_pair=-lo_hugeint
 end type
 
 !> structure that handles how all pairs are related by symmetry
@@ -104,6 +106,11 @@ type lo_pairmapping
     integer :: n_shell = -lo_hugeint
     !> coordination shell
     type(lo_pairmapping_shell), dimension(:), allocatable :: sh
+
+    !> number of species shells
+    integer :: n_species_pair =-lo_hugeint
+    !> labels for species pairs
+    character(len=100), dimension(:), allocatable :: species_pair_label
 contains
     !> Figure out the symmetry mapping
     procedure :: setup_symmetry
@@ -128,7 +135,8 @@ subroutine setup_symmetry(pm, sl, uc, ss, mw, mem, verbosity)
     !> talk a lot?
     integer, intent(in) :: verbosity
 
-    integer :: ish, ipair, iop, i, s1, s2
+    character(len=1000), dimension(:), allocatable :: shell_labels
+    integer :: ish, ipair, iop, i,j, s1, s2
 
     ! Start copying things somehow:
     pm%n_shell = sl%n_fc_pair_shell
@@ -196,6 +204,41 @@ subroutine setup_symmetry(pm, sl, uc, ss, mw, mem, verbosity)
             write (*, *) ish, norm2(pm%sh(ish)%r)*lo_bohr_to_A, pm%sh(ish)%label
         end do
     end if
+
+    ! We might want to bin things into pairs per pair of species, so to say. It makes
+    ! sense to say which species pair each symmetry unique pair is.
+    i=0
+    do s1=1,uc%nelements
+    do s2=s1,uc%nelements
+        i=i+1
+    enddo
+    enddo
+    pm%n_species_pair=i
+    allocate(pm%species_pair_label(pm%n_species_pair))
+    i=0
+    do s1=1,uc%nelements
+    do s2=s1,uc%nelements
+        i=i+1
+        pm%species_pair_label(i) = trim(uc%atomic_symbol(s1))//'-'//trim(uc%atomic_symbol(s2))
+    enddo
+    enddo
+
+    do ish=1,pm%n_shell
+        j=-1
+        do i=1,pm%n_species_pair
+            if ( trim(pm%sh(ish)%label) .eq. trim(pm%species_pair_label(i)) ) then
+                j=i
+                exit
+            endif
+        enddo
+        if ( j .gt. 0 ) then
+            pm%sh(ish)%index_species_pair=j
+        else
+            call lo_stop_gracefully(['Could not find pair'],lo_exitcode_symmetry,__FILE__,__LINE__)
+        endif
+    enddo
+
+
 
     ! type(lo_distancetable) :: dt
     ! real(r8), dimension(3,3) :: m0

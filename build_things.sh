@@ -190,13 +190,12 @@ extract_forceconstants
 atomic_distribution
 pack_simulation
 refine_structure
-convert_abinit_ddb_to_forceconstant
 thermal_conductivity
+anharmonic_free_energy
 "
 
 #some things that are not quite ok yet
 notdone="
-convert_phonopy_to_forceconstant
 generate_kpoints
 "
 
@@ -245,7 +244,6 @@ dump_dynamical_matrices
 # force_constant_md
 #
 dum="
-convert_abinit_ddb_to_forceconstant
 unstable_thermal_conductivity_do_not_use
 project_magnetic_moments
 spin_mc
