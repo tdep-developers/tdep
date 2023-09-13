@@ -27,7 +27,8 @@ MODULE_FLAG="-J"
 PYTHONHEADER="#!/usr/bin/env python"
 
 # Which gnuplot terminal to use by default.
-GNUPLOTTERMINAL="aqua"  # nice on OSX, needs aquaterm installed and gnuplot compiled with support for it.
+# Choices: aqua, qt, wxt
+GNUPLOTTERMINAL="qt"
 
 # Precompiler flags. Selecting default gnuplot terminal, and make the progressbars work.
 PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar -DAGRESSIVE_SANITY"
