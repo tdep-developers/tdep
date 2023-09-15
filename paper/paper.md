@@ -22,6 +22,9 @@ authors:
   - name: Matthieu J. Verstraete
     orcid: 0000-0001-6921-5163
     affiliation: 3
+  - name: Johan Klarbring
+    orcid: 0000-0002-6223-5812
+    affiliation: 1, 4
   - name: Igor Abrikosov
     orcid: 0000-0001-7551-4717
     affiliation: 1
@@ -38,6 +41,8 @@ affiliations:
     index: 2
   - name:  Nanomat group, QMAT center, CESAM research unit and European Theoretical Spectroscopy Facility, Université de Liège, allée du 6 août, 19, B-4000 Liège, Belgium
     index: 3
+  - name: Department of Materials, Imperial College London, South Kensington Campus, London SW7 2AZ, UK
+    index: 4
 date: August 2023
 bibliography: paper.bib
 ---
