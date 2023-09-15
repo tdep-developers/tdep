@@ -2,7 +2,7 @@ module type_forceconstant_thirdorder
 use konstanter, only: r8, i8, lo_huge, lo_hugeint, lo_tol, lo_sqtol, lo_freqtol, lo_status, lo_twopi, lo_exitcode_physical, &
                       lo_bohr_to_A, lo_forceconstant_3rd_HartreeBohr_to_eVA, lo_forceconstant_3rd_eVA_to_HartreeBohr, &
                       lo_exitcode_symmetry, lo_exitcode_param
-use gottochblandat, only: open_file, lo_chop, lo_sqnorm, lo_stop_gracefully
+use gottochblandat, only: open_file, lo_chop, lo_sqnorm, lo_stop_gracefully, tochar
 use type_crystalstructure, only: lo_crystalstructure
 use type_distancetable, only: lo_distancetable
 use type_qpointmesh, only: lo_qpoint
@@ -343,9 +343,9 @@ subroutine writetofile(fc, p, fn)
     do a1 = 1, fc%na
         write (u, "(1X,I10,15X,'How many triplets are atom ',I3,' part of')") fc%atom(a1)%n, a1
         do i = 1, fc%atom(a1)%n
-            write (u, "(1X,I10,15X,' atom 1 in triplet',I3)") fc%atom(a1)%triplet(i)%i1, i
-            write (u, "(1X,I10,15X,' atom 2 in triplet',I3)") fc%atom(a1)%triplet(i)%i2, i
-            write (u, "(1X,I10,15X,' atom 3 in triplet',I3)") fc%atom(a1)%triplet(i)%i3, i
+            write (u, "(1X,I10,15X,' atom 1 in triplet ',A)") fc%atom(a1)%triplet(i)%i1, tochar(i)
+            write (u, "(1X,I10,15X,' atom 2 in triplet ',A)") fc%atom(a1)%triplet(i)%i2, tochar(i)
+            write (u, "(1X,I10,15X,' atom 3 in triplet ',A)") fc%atom(a1)%triplet(i)%i3, tochar(i)
             v1 = matmul(p%inv_latticevectors, fc%atom(a1)%triplet(i)%lv1)
             v2 = matmul(p%inv_latticevectors, fc%atom(a1)%triplet(i)%lv2)
             v3 = matmul(p%inv_latticevectors, fc%atom(a1)%triplet(i)%lv3)
