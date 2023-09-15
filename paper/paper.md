@@ -11,6 +11,9 @@ authors:
   - name: Florian Knoop
     orcid: 0000-0002-7132-039X
     affiliation: 1
+  - name: Aloïs Castellano
+    orcid: 0000-0002-8783-490X
+    affiliation: 3
   - name: Igor Abrikosov
     orcid: 0000-0001-7551-4717
     affiliation: 1
@@ -21,10 +24,12 @@ authors:
     orcid: 0000-0002-3453-2975
     affiliation: 2
 affiliations:
-  - name: Linköping University, Linköping, Sweden
+  - name: Theoretical Physics Division, Department of Physics, Chemistry and Biology (IFM), Linköping University, SE-581 83 Linköping, Sweden
     index: 1
   - name:  Weizmann Institute of Science, Rehovot, Israel
     index: 2
+  - name:  Nanomat group, QMAT center, CESAM research unit and European Theoretical Spectroscopy Facility, Université de Liège, allée du 6 août, 19, B-4000 Liège, Belgium
+    index: 3
 date: August 2023
 bibliography: paper.bib
 ---
