@@ -14,6 +14,10 @@ authors:
   - name: Aloïs Castellano
     orcid: 0000-0002-8783-490X
     affiliation: 3
+  - name: J. P. Alvarinhas Batista
+    affiliation: 3
+  - name: Matthieu J. Verstraete
+    affiliation: 3
   - name: Igor Abrikosov
     orcid: 0000-0001-7551-4717
     affiliation: 1
