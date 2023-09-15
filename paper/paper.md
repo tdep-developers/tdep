@@ -11,12 +11,16 @@ authors:
   - name: Florian Knoop
     orcid: 0000-0002-7132-039X
     affiliation: 1
+  - name: Nina Shulumba
+    orcid: 0000-0002-2374-7487
   - name: Aloïs Castellano
     orcid: 0000-0002-8783-490X
     affiliation: 3
   - name: J. P. Alvarinhas Batista
+    orcid: 0000-0002-3314-249X
     affiliation: 3
   - name: Matthieu J. Verstraete
+    orcid: 0000-0001-6921-5163
     affiliation: 3
   - name: Igor Abrikosov
     orcid: 0000-0001-7551-4717
