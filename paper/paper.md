@@ -13,6 +13,7 @@ authors:
     affiliation: 1
   - name: Nina Shulumba
     orcid: 0000-0002-2374-7487
+    affiliation: 1
   - name: Aloïs Castellano
     orcid: 0000-0002-8783-490X
     affiliation: 3
@@ -22,6 +23,12 @@ authors:
   - name: Matthieu J. Verstraete
     orcid: 0000-0001-6921-5163
     affiliation: 3
+  - name: David Broido
+    orcid: 0000-0003-0182-4450
+    affiliation: 5
+  - name: Dennis S. Kim
+    orcid: 0000-0002-5707-2609
+    affiliation: 6
   - name: Johan Klarbring
     orcid: 0000-0002-6223-5812
     affiliation: 1, 4
@@ -43,13 +50,17 @@ affiliations:
     index: 3
   - name: Department of Materials, Imperial College London, South Kensington Campus, London SW7 2AZ, UK
     index: 4
+  - name:  Department of Physics, Boston College, Chestnut Hill, MA 02467, USA
+    index: 5
+  - name: College of Letters and Science, Department of Chemistry and Biochemistry, University of California, Los Angeles (UCLA), California 90025, USA
+    index: 6
 date: August 2023
 bibliography: paper.bib
 ---
 
 # Introduction
 
-Properties of materials change with temperature, i.e., the vibrational motion of electrons and nuclei. In a static thermal equilibrium, temperature determines the structural phase, the density, and many mechanical properties. Out of thermal equilibrium, when applying a thermal gradient or an external spectroscopic probe such as a light or neutron beam, temperature influences the response of the material to the perturbation, for example its ability to conduct heat through the sample, or the lineshape of the spectroscopic signal. Temperature is therefore at the core of materials properties both in applied and fundamental sciences.
+Properties of materials change with temperature, i.e., the vibrational motion of electrons and nuclei. In thermal equilibrium, temperature determines the structural phase, the density, and many mechanical properties. Out of thermal equilibrium when applying a thermal gradient or an external spectroscopic probe such as a light or neutron beam, temperature influences the response of the material to the perturbation, for example its ability to conduct heat through the sample, or the lineshape of the spectroscopic signal. Temperature is therefore at the core of materials properties both in applied and fundamental sciences.
 
 In _ab initio_ materials modeling, the electronic temperature contribution is straightforward to include through appropriate occupation of the electronic states, whereas the nuclear contribution needs to be accounted for explicitly: This can be done by performing _molecular dynamics_ (MD) simulations which aims at _numerically_ reproducing the thermal nuclear motion in an atomistic simulation, and obtain temperature-dependent observables in equilibrium through static thermal expectation values, or out of equilibrium from time-dependent correlation functions or by directly observing the thermal relaxation dynamics [cite Tuckerman].
 
