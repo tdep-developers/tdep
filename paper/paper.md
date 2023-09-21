@@ -23,6 +23,9 @@ authors:
   - name: Matthieu J. Verstraete
     orcid: 0000-0001-6921-5163
     affiliation: 3
+  - name: Matthew Heine
+    orcid: 0000-0002-4882-6712
+    affiliation: 5
   - name: David Broido
     orcid: 0000-0003-0182-4450
     affiliation: 5
