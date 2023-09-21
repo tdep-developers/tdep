@@ -22,6 +22,9 @@ authors:
   - name: J. P. Alvarinhas Batista
     orcid: 0000-0002-3314-249X
     affiliation: 3
+  - name: Roberta Farris
+    orcid: 0000-0001-6710-0100
+    affiliation: 7
   - name: Matthieu J. Verstraete
     orcid: 0000-0001-6921-5163
     affiliation: 3
@@ -59,6 +62,8 @@ affiliations:
     index: 5
   - name: College of Letters and Science, Department of Chemistry and Biochemistry, University of California, Los Angeles (UCLA), California 90025, USA
     index: 6
+  - name: Catalan Institute of Nanoscience and Nanotechnology - ICN2 (BIST and CSIC), Campus UAB, 08193 Bellaterra (Barcelona), Spain
+    index: 7
 date: August 2023
 bibliography: literature.bib
 ---
