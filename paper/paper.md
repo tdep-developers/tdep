@@ -100,7 +100,7 @@ Here we list the most important codes that are shipped with the TDEP code and ex
 - `canonical_configuration`: Create supercells with thermal displacements from the force constants via Monte Carlo sampling from a classical and quantum canonical distribution.
 - `generate_structure`: Generate supercells of target size that are as cubic as possible to maximize the largest possible real-space cutoff for the force constants.
 
-A separate python library for interfacing with different DFT and force field codes through the atomic simulation environment (ASE) [CITE Ask], as well as processing and further analysis of TDEP output files is available as well [CITE tdeptools].
+A separate python library for interfacing with different DFT and force field codes through the atomic simulation environment (ASE) [@Larsen.2017], as well as processing and further analysis of TDEP output files is available as well [@tdeptools].
 
 
 ## Overview of results
@@ -112,7 +112,7 @@ A separate python library for interfacing with different DFT and force field cod
 The TDEP method is a versatile and efficient approach to perform temperature-dependent materials simulations from first principles. This comprises thermodynamic properties in classical and quantum ensembles, and several response properties ranging from thermal transport to Neutron and Raman spectroscopy. A stable and fast reference implementation is given in the software package of the same name as described here. The underlying theoretical framework and foundation was briefly sketched with an emphasis on discerning the conceptual difference between bare and effective phonon theory in self-consistent and non-self-consistent formulations. References to a more in-depth discussion of the theory is given in the introduction.
 
 # Acknowledgements
-- SeRC
-- VR grants
+
+F.K. acknowledges support from the Swedish Research Council (VR) program 2020-04630, and the Swedish e-Science Research Centre (SeRC). Work at Boston College was supported by the U.S. Department of Energy (DOE), Office of Science, Basic Energy Sciences (BES) under Award #DE-SC0021071.
 
 # References
