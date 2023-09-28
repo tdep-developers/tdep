@@ -318,7 +318,9 @@ wrapup: block
             stop
         end if
         if (opts%gruneisen) then
-            !call dr%gruneisen(qp,fct,uc,opts%verbosity)
+            call dr%gruneisen(qp, fct, uc, opts%verbosity)
+            ! fkdev: this means we do the work twice, could be nicer
+            call dr%gruneisen_tensor(qp, fct, uc, opts%verbosity)
         end if
         ! actually write it
         if (mw%talk) then

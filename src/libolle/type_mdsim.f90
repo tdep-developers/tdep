@@ -7,7 +7,7 @@ use konstanter, only: r8, lo_pi, lo_huge, lo_hugeint, lo_sqtol, lo_status, lo_fo
                       lo_time_fs_to_au, lo_time_au_to_fs
 use gottochblandat, only: open_file, lo_clean_fractional_coordinates, lo_mean, tochar, lo_trueNtimes, walltime, lo_sqnorm, &
                           lo_progressbar_init, lo_progressbar, lo_find_rotation_that_makes_strain_diagonal, lo_trace, &
-                          lo_mass_from_Z
+                          lo_mass_from_Z, lo_stddev
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use hdf5_wrappers, only: lo_hdf5_helper, lo_h5_store_attribute, lo_h5_store_data, lo_h5_read_attribute, &
                          lo_h5_read_data, lo_h5_does_dataset_exist
@@ -1287,36 +1287,50 @@ subroutine read_from_file(sim, verbosity, stride, magnetic, dielectric, variable
 
     ! Calculate some things
     finalize: block
+        real(r8) :: n_samples
         real(r8), dimension(3, 3) :: m0
-        real(r8) :: avg_pressure, avg_temperature
+        real(r8) :: pressure_avg, pressure_std, pressure_err, temperature_avg
+        real(r8), dimension(3, 3) :: stress_avg, stress_err
 
         integer :: i, j
         character(len=1000) :: opf
-        ! get averages of stat things
-        avg_pressure = lo_mean(sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
-        avg_temperature = lo_mean(sim%stat%temperature)
+
+        ! number of samples as float
+        n_samples = 1.0_r8*sim%nt
+
+        ! get statistics including error
+        pressure_avg = lo_mean(-sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
+        pressure_std = lo_stddev(-sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
+        pressure_err = pressure_std/sqrt(n_samples)
+        temperature_avg = lo_mean(sim%stat%temperature)
         do i = 1, 3
         do j = 1, 3
-            m0(j, i) = lo_mean(sim%stat%stress(j, i, :))
+            associate (stress => sim%stat%stress(j, i, :))
+                stress_avg(j, i) = lo_mean(stress)
+                stress_err(j, i) = lo_stddev(stress)/sqrt((n_samples))
+            end associate
         end do
         end do
-        m0 = m0*lo_pressure_HartreeBohr_to_GPa
+        stress_avg = stress_avg*lo_pressure_HartreeBohr_to_GPa
+        stress_err = stress_err*lo_pressure_HartreeBohr_to_GPa
         ! all done, perhaps dump some info
         if (verbosity .gt. 0) then
-            write (*, *) '... short summary of simulation:'
+            write (*, *) '... statistics for DFT pressure with 1.96x standard error (95% confidence interval):'
             write (*, *) '                      number of atoms: ', tochar(sim%na)
             write (*, *) '             number of configurations: ', tochar(sim%nt)
-            write (*, *) '              average temperature (K): ', tochar(avg_temperature)
+            write (*, *) '     sqrt of number of configurations: ', tochar(sqrt(n_samples))
+            write (*, *) '              average temperature (K): ', tochar(temperature_avg)
             write (*, *) '                thermostat set to (K): ', tochar(sim%temperature_thermostat)
-            write (*, *) '               average pressure (GPa): ', tochar(avg_pressure)
-            opf = "(1X,'  average stresstensor xx xy xz (GPa): ',3(F12.4,' ') )"
-            write (*, opf) m0(:, 1)
-            opf = "(1X,'  average stresstensor yx yy yz (GPa): ',3(F12.4,' ') )"
-            write (*, opf) m0(:, 2)
-            opf = "(1X,'  average stresstensor zx zy zz (GPa): ',3(F12.4,' ') )"
-            write (*, opf) m0(:, 3)
+            write (*, *) '               average pressure (GPa): ', tochar(pressure_avg), ' +/- ', tochar(1.96*pressure_err)
+            opf = "(1X,'  average stresstensor xx xy xz (GPa): ',3(F12.5,' '),' +/- ',3(F12.5,' ') )"
+            write (*, opf) stress_avg(:, 1), 1.96*stress_err(:, 1)
+            opf = "(1X,'  average stresstensor yx yy yz (GPa): ',3(F12.5,' '),' +/- ',3(F12.5,' ') )"
+            write (*, opf) stress_avg(:, 2), 1.96*stress_err(:, 2)
+            opf = "(1X,'  average stresstensor zx zy zz (GPa): ',3(F12.5,' '),' +/- ',3(F12.5,' ') )"
+            write (*, opf) stress_avg(:, 3), 1.96*stress_err(:, 3)
             write (*, *) '... finished reading simulation (', tochar(walltime() - timer), 's)'
         end if
+
     end block finalize
 end subroutine
 
