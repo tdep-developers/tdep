@@ -248,23 +248,25 @@ subroutine lo_find_all_scattering_events(sc, qp, dr, p, mw, mem, sigma, thres, i
         end do
 
         ct_iso = 0
-        lqp = 0
-        do i = 1, qp%n_irr_point
-            ! Make it parallel
-            if (mod(i, mw%n) .ne. mw%r) cycle
-            ! Increment counter
-            lqp = lqp + 1
-            do b1 = 1, dr%n_mode
-            do b2 = 1, dr%n_mode
-                ct_iso = ct_iso + sc%iq(lqp)%band(b1, b2)%n
+        if (sc%isotopescattering) then
+            lqp = 0
+            do i = 1, qp%n_irr_point
+                ! Make it parallel
+                if (mod(i, mw%n) .ne. mw%r) cycle
+                ! Increment counter
+                lqp = lqp + 1
+                do b1 = 1, dr%n_mode
+                do b2 = 1, dr%n_mode
+                    ct_iso = ct_iso + sc%iq(lqp)%band(b1, b2)%n
+                end do
+                end do
             end do
-            end do
-        end do
+            call mw%allreduce('sum', ct_iso)
+        end if
 
         ! reduce it
         call mw%allreduce('sum', ct_plus)
         call mw%allreduce('sum', ct_minus)
-        call mw%allreduce('sum', ct_iso)
 
         ! dump some info
         if (mw%talk) then
