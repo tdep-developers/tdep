@@ -96,22 +96,18 @@ Additionally, TDEP provides tools to prepare and organize _ab initio_ supercell 
 
 ## Features
 
-Here we list the most important codes that are shipped with the TDEP code and explain their purpose. Are more detailed explanation of all features can be found in the online documentation.
+Here we list the most important codes that are shipped with the TDEP code, explain their purpose, and list the respective references in the literature. Are more detailed explanation of all features can be found in the online documentation.
 
-- `extract_forceconstants`: Obtain force constants up to fourths order from a set of snapshots with positions and forces.
+- `extract_forceconstants`: Obtain (effective) harmonic force constants from a set of snapshots with positions and forces [@Hellman.2013]. Optionally fit higher-order force constants [@Hellman.2013oi5], or dielectric tensor properties [@Benshalom.2022].
 
-- `phonon_dispersion_relations`: Calculate phonon dispersion relations and related harmonic thermodynamic properties from the second-order force constants.
+- `phonon_dispersion_relations`: Calculate phonon dispersion relations and related harmonic thermodynamic properties from the second-order force constants [@Hellman.2013], including Grüneisen parameters from third-order force constants [@Hellman.2013oi5].
 
-- `thermal_conductivity`: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity.
-- `lineshape`: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone.
-- `canonical_configuration`: Create supercells with thermal displacements from the force constants via Monte Carlo sampling from a classical and quantum canonical distribution.
-- `generate_structure`: Generate supercells of target size that are as cubic as possible to maximize the largest possible real-space cutoff for the force constants.
+- `thermal_conductivity`: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity [@Broido.2007; @Romero.2015].
+- `lineshape`: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone [@Romero.2015; @Shulumba.2017]. Grid mode computes spectral thermal transport properties [@Dangić.2021].
+- `canonical_configuration`: Create supercells with thermal displacements from the force constants via Monte Carlo sampling from a classical and quantum canonical distribution [@West.2006; @Shulumba.2017]. Using sTDEP to perform self-consistent sampling is explained in detail in [@Benshalom.2022].
+- `generate_structure`: Generate supercells of target size that are as cubic as possible to maximize the largest possible real-space cutoff for the force constants [@Hellman.2011].
 
 A separate python library for interfacing with different DFT and force field codes through the atomic simulation environment (ASE) [@Larsen.2017], as well as processing and further analysis of TDEP output files is available as well [@tdeptools].
-
-## Overview of results
-
-**Do we want to highlight some results here?**
 
 # Summary
 
