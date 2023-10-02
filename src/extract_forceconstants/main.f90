@@ -1102,8 +1102,8 @@ if (opts%pressure) then
 
         ! do everything else in GPa for digestive purposes
         s0t = s0t*lo_pressure_HartreeBohr_to_GPa
-        s2t = s2t*lo_pressure_HartreeBohr_to_GPa
         spt = spt*lo_pressure_HartreeBohr_to_GPa
+        s2t = s2t*lo_pressure_HartreeBohr_to_GPa
         s3t = s3t*lo_pressure_HartreeBohr_to_GPa
         s4t = s4t*lo_pressure_HartreeBohr_to_GPa
         srt = srt*lo_pressure_HartreeBohr_to_GPa
@@ -1123,9 +1123,9 @@ if (opts%pressure) then
             end do
             p0t = p0t - s0t(i, i, :)/3.0_r8
             p2t = p2t - s2t(i, i, :)/3.0_r8
-            ppt = ppt - spt(i, i, :)/3.0_r8
             p3t = p3t - s3t(i, i, :)/3.0_r8
             p4t = p4t - s4t(i, i, :)/3.0_r8
+            ppt = ppt - spt(i, i, :)/3.0_r8
             prt = prt - srt(i, i, :)/3.0_r8
         end do
 
@@ -1139,9 +1139,9 @@ if (opts%pressure) then
         ! pressure
         p0 = lo_mean(p0t)
         p2 = lo_mean(p2t)
-        pp = lo_mean(ppt)
         p3 = lo_mean(p3t)
         p4 = lo_mean(p4t)
+        pp = lo_mean(ppt)
         pr = lo_mean(prt)
         p0_std = lo_stddev(p0t)
         p2_std = lo_stddev(p2t)
@@ -1175,15 +1175,15 @@ if (opts%pressure) then
             write (*, *) ''
             write (*, "(1X,A,11X,A,10X,A,7X,A)") 'ENERGIES:', 'rms', 'stddev', 'stddev(residual) (meV/atom)'
             write (*, '(1X,A15,2(1X,F12.6),5X,A)') '       input:', sqrt(lo_mean(e0t**2))*tomev, lo_stddev(e0t)*tomev, '-'
-            write (*, '(1X,A15,3(1X,F12.6))') 'second order:', sqrt(lo_mean(e2t**2))*tomev, lo_stddev(e2t)*tomev, lo_stddev(e0t - e2t)*tomev
             write (*, '(1X,A15,3(1X,F12.6))') '       polar:', sqrt(lo_mean(ept**2))*tomev, lo_stddev(ept)*tomev, lo_stddev(e0t - ept - e2t)*tomev
+            write (*, '(1X,A15,3(1X,F12.6))') 'second order:', sqrt(lo_mean(e2t**2))*tomev, lo_stddev(e2t)*tomev, lo_stddev(e0t - e2t)*tomev
             write (*, '(1X,A15,3(1X,F12.6))') 'third  order:', sqrt(lo_mean(e3t**2))*tomev, lo_stddev(e3t)*tomev, lo_stddev(e0t - ept - e2t - e3t)*tomev
             write (*, '(1X,A15,3(1X,F12.6))') 'fourth order:', sqrt(lo_mean(e4t**2))*tomev, lo_stddev(e4t)*tomev, lo_stddev(e0t - ept - e2t - e3t - e4t)*tomev
 
             write (*, "(1X,A,11X,A,10X,A,5X,A)") 'PRESSURE: ', 'mean', 'stddev', 'stdev (residual) (GPa)'
             write (*, '(1X,A15,2(1X,F12.6),5X,A)') '    input:', p0, p0_std, '-'
-            write (*, '(1X,A15,3(1X,F12.6),5X,A)') '2nd order:', p2, p2_std, lo_stddev(p0t - p2t)
             write (*, '(1X,A15,3(1X,F12.6),5X,A)') '    polar:', pp, pp_std, lo_stddev(p0t - p2t - ppt)
+            write (*, '(1X,A15,3(1X,F12.6),5X,A)') '2nd order:', p2, p2_std, lo_stddev(p0t - p2t)
             write (*, '(1X,A15,3(1X,F12.6),5X,A)') '3rd order:', p3, p3_std, lo_stddev(p0t - p2t - ppt - p3t)
             write (*, '(1X,A15,3(1X,F12.6),5X,A)') '4th order:', p4, p4_std, lo_stddev(p0t - p2t - ppt - p3t - p4t)
             write (*, '(1X,A15,2(1X,F12.6),5X,A)') ' residual:', pr, pr_std, '-'
@@ -1191,14 +1191,14 @@ if (opts%pressure) then
             write (*, *)
             associate (prefactor => 2.0_r8/sim%na/lo_kb_Hartree/3.0_r8)
                 write (*, "(1X,A,F12.6,A,F12.6,A)") 'Harmonic temperature: ', &
-                    prefactor*lo_mean(e2t), ' +/- ', prefactor*lo_stddev(e2t)/sqrt(n_samples), ' K'
+                    prefactor*lo_mean(e2t + ept), ' +/- ', prefactor*lo_stddev(e2t + ept)/sqrt(n_samples), ' K'
             end associate
 
             write (*, *)
             associate (prefactor => 2.0_r8/3.0_r8/volume*lo_pressure_HartreeBohr_to_GPa)
                 write (*, "(1X,A)") 'Harmonic pressure from energy p = 2/3 E_pot / V: '
                 write (*, "(1X,F12.6,A,F12.6,A)") &
-                    prefactor*lo_mean(e2t), ' +/- ', prefactor*lo_stddev(e2t)/sqrt(n_samples), ' GPa'
+                    prefactor*lo_mean(e2t + ept), ' +/- ', prefactor*lo_stddev(e2t + ept)/sqrt(n_samples), ' GPa'
             end associate
             write (*, *)
 
