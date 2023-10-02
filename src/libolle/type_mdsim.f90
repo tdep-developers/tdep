@@ -1128,6 +1128,9 @@ subroutine read_from_file(sim, verbosity, stride, magnetic, dielectric, variable
                     sim%stat%stress(3, 2, i) = sigma(5)
                     sim%stat%stress(1, 3, i) = sigma(6)
                     sim%stat%stress(3, 1, i) = sigma(6)
+                    ! we do not trust the input file and make sure that
+                    ! p = - 1/3 Tr(stress)
+                    sim%stat%pressure(i) = -lo_trace(sim%stat%stress(:, :, i))/3.0_r8
                 else
                     read (u, *)
                 end if
@@ -1299,8 +1302,8 @@ subroutine read_from_file(sim, verbosity, stride, magnetic, dielectric, variable
         n_samples = 1.0_r8*sim%nt
 
         ! get statistics including error
-        pressure_avg = lo_mean(-sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
-        pressure_std = lo_stddev(-sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
+        pressure_avg = lo_mean(sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
+        pressure_std = lo_stddev(sim%stat%pressure)*lo_pressure_HartreeBohr_to_GPa
         pressure_err = pressure_std/sqrt(n_samples)
         temperature_avg = lo_mean(sim%stat%temperature)
         do i = 1, 3
