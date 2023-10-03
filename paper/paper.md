@@ -109,6 +109,8 @@ Here we list the most important codes that are shipped with the TDEP code, expla
 
 A separate python library for interfacing with different DFT and force field codes through the atomic simulation environment (ASE) [@Larsen.2017], as well as processing and further analysis of TDEP output files is available as well [@tdeptools].
 
+We note that parts of the TDEP method have been implemented in other code packages as well [@Bottin.2020rn5].
+
 # Summary
 
 The TDEP method is a versatile and efficient approach to perform temperature-dependent materials simulations from first principles. This comprises thermodynamic properties in classical and quantum ensembles, and several response properties ranging from thermal transport to Neutron and Raman spectroscopy. A stable and fast reference implementation is given in the software package of the same name described here. The underlying theoretical framework and foundation was briefly sketched with an emphasis on discerning the conceptual difference between bare and effective phonon theory in self-consistent and non-self-consistent formulations. References to numerous applications and more in-depth discussions of the theory are given.
