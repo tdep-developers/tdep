@@ -1,6 +1,6 @@
 module energy
 !! get the anharmonic free energy
-use konstanter, only: r8,i8,lo_twopi,lo_freqtol,lo_imag,lo_sqtol,lo_status
+use konstanter, only: r8,i8,lo_twopi,lo_freqtol,lo_imag,lo_sqtol,lo_status,lo_kb_Hartree
 use gottochblandat, only: lo_stop_gracefully,tochar,walltime,lo_chop,lo_trueNtimes,&
                    lo_progressbar_init,lo_progressbar,lo_planck,lo_trapezoid_integration,open_file,&
                    lo_flattentensor,lo_sqnorm,lo_linspace,lo_mean,lo_clean_fractional_coordinates
@@ -21,7 +21,7 @@ public :: perturbative_anharmonic_free_energy
 contains
 
 !> Calculates the anharmonic contributions to the free energy
-subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_energy_thirdorder,free_energy_fourthorder,mw,mem,verbosity)
+subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_energy_thirdorder,free_energy_fourthorder,classical,mw,mem,verbosity)
     !> crystal structure
     type(lo_crystalstructure), intent(in) :: p
     !> third order force constant
@@ -36,6 +36,8 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
     real(r8) :: temperature
     !> free energies
     real(r8), intent(out) :: free_energy_thirdorder,free_energy_fourthorder
+    !> use classical limit
+    logical, intent(in) :: classical
     !> mpi helper
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
@@ -200,23 +202,32 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
                         om1=dr%iq(q1)%omega(b1)
                         om2=dr%aq(q2)%omega(b2)
                         om3=dr%aq(q3)%omega(b3)
+                         if ( om1 .lt. lo_freqtol ) cycle
+                         if ( om2 .lt. lo_freqtol ) cycle
+                         if ( om3 .lt. lo_freqtol ) cycle
+                        ! Decide if we take the classical limit for the occupations
+                        if (classical) then
+                            n1=lo_kb_Hartree*temperature / om1
+                            n2=lo_kb_Hartree*temperature / om2
+                            n3=lo_kb_Hartree*temperature / om3
+                        else
+                            n1=lo_planck(temperature,om1)
+                            n2=lo_planck(temperature,om2)
+                            n3=lo_planck(temperature,om3)
 
-                        n1=lo_planck(temperature,om1)
-                        n2=lo_planck(temperature,om2)
-                        n3=lo_planck(temperature,om3)
+                            ! This is the Wallace expression
+                            ! f1=n1*n2+n1+onethird
+                            ! f1=3*f1*real(1.0_r8/( om1+om2+om3+lo_imag*sigma ))
+                            ! f2=2*n1*n3-n1*n2+n3
+                            ! f2=3*f2*real(1.0_r8/( om1+om2-om3+lo_imag*sigma ))
+                            ! en3(b1,q1)=en3(b1,q1)+( (f1+f2)*psisq )*prefactor
 
-                        ! This is the Wallace expression
-                        ! f1=n1*n2+n1+onethird
-                        ! f1=3*f1*real(1.0_r8/( om1+om2+om3+lo_imag*sigma ))
-                        ! f2=2*n1*n3-n1*n2+n3
-                        ! f2=3*f2*real(1.0_r8/( om1+om2-om3+lo_imag*sigma ))
-                        ! en3(b1,q1)=en3(b1,q1)+( (f1+f2)*psisq )*prefactor
-
-                        ! Try the Cowley expression instead?
-                        f1=(n1+1)*(n1+n3+1)+n2*n3
-                        f1=f1*real(1.0_r8/( om1+om2+om3+lo_imag*sigma ))
+                            ! Try the Cowley expression instead?
+                        end if
+                        f1=(n1+1)*(n2+n3+1)+n2*n3
                         f2=n1*n2+n1*n3-n2*n3+1
                         f2=3*f2*real(1.0_r8/( om1+om2-om3+lo_imag*sigma ))
+                        f1=f1*real(1.0_r8/( om1+om2+om3+lo_imag*sigma ))
                         en3(b1,q1)=en3(b1,q1)+( (f1+f2)*psisq )*prefactor
                     enddo
                 enddo
@@ -271,8 +282,14 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
                 om2=dr%aq(q2)%omega(b2)
                 if ( om1 .lt. lo_freqtol ) cycle
                 if ( om2 .lt. lo_freqtol ) cycle
-                n1=lo_planck(temperature,om1)
-                n2=lo_planck(temperature,om2)
+                ! Decide if we take the classical limit for the occupations
+                if (classical) then
+                    n1=lo_kb_Hartree*temperature / om1
+                    n2=lo_kb_Hartree*temperature / om2
+                else
+                    n1=lo_planck(temperature,om1)
+                    n2=lo_planck(temperature,om2)
+                end if
                 ! Now to get
                 evp1=0.0_r8
                 evp2=0.0_r8

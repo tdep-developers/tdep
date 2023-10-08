@@ -15,6 +15,7 @@ type lo_opts
     integer :: verbosity
     logical :: readqmesh
     integer :: meshtype
+    logical :: classical = .false.
     contains
         procedure :: parse
 end type
@@ -47,6 +48,10 @@ subroutine parse(opts)
         help='Type of integration. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.',&
         required=.false.,act='store',def='2',choices='1,2,3',error=lo_status)
         if ( lo_status .ne. 0 ) stop
+    call cli%add(switch='--classical', switch_ab='-cl', &
+        help='Use classical high temperature limit for the high order free energy', &
+        required=.false., act='store_true',def='.false',error=lo_status)
+        if ( lo_status .ne. 0 ) stop
     cli_readiso
     cli_manpage
     cli_verbose
@@ -74,6 +79,7 @@ subroutine parse(opts)
     call cli%get(switch='--meshtype',           val=opts%meshtype,         error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--integrationtype',    val=opts%integrationtype,  error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--readiso',            val=opts%readiso,          error=lo_status); errctr=errctr+lo_status
+    call cli%get(switch='--classical',          val=opts%classical,        error=lo_status); errctr=errctr+lo_status
 
     if ( errctr .ne. 0 ) call lo_stop_gracefully(['Failed parsing the command line options'],lo_exitcode_baddim)
 

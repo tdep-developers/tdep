@@ -195,11 +195,15 @@ getenergy: block
     toev = lo_Hartree_to_eV / uc%na
 
     ! Some heuristics to figure out what the temperature is.
-    f_ph=dr%phonon_free_energy(sim%temperature_thermostat)
+    if (opts%classical) then
+        f_ph=dr%phonon_free_energy_classical(sim%temperature_thermostat)
+    else
+        f_ph=dr%phonon_free_energy(sim%temperature_thermostat)
+    end if
 
     if ( havehighorder ) then
         select type(qp); type is(lo_fft_mesh)
-            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,mw,mem,opts%verbosity+1)
+            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,opts%classical,mw,mem,opts%verbosity+1)
         end select
     else
         ah3=0.0_r8
