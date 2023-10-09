@@ -1,6 +1,7 @@
 #include "precompilerdefinitions"
 submodule (type_symmetrylist) type_symmetrylist_unique
 use type_distancetable
+use type_symmetryoperation
 use type_voronoi_distancetable
 implicit none
 contains

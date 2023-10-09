@@ -378,6 +378,8 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             call writetofile_aims(p,filename,write_velocities)
         case(5) ! Siesta 
             call writetofile_siesta(p,filename,write_velocities)
+        case(6) ! QE 
+            call writetofile_qe(p,filename,write_velocities)
         case default
             call lo_stop_gracefully(['Unknown output format: '//tochar(output_format)],lo_exitcode_io,__FILE__,__LINE__)
     end select
@@ -819,6 +821,63 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         do i=1,p%na
             write(u,opf) p%species(i), symbol_to_z(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol), lo_chop(p%v(:,i),lo_sqtol)
         enddo
+    end subroutine
+
+    !> Writes a structure to QE output file or stdout
+    subroutine writetofile_qe(p, filename, write_velocities)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> the filename
+        character(len=*), intent(in) :: filename
+        !> if velocities should be written. Default false.
+        logical, intent(in), optional :: write_velocities
+
+        ! local
+        integer :: u, i
+        real(flyt) :: latpar, mass
+        character(len=1000) :: opf, symbol
+
+        ! It is quite neat to figure a 'lattice parameter' of sorts.
+        if ( p%info%unitcell_lattice_parameter .gt. 0.0_flyt ) then
+            latpar=p%info%unitcell_lattice_parameter
+        else
+            latpar=1.0_flyt
+        endif
+
+        ! Write to a file, or stdout.
+        if ( filename .eq. 'stdout' ) then
+            u=0
+        else
+            u=open_file('out',trim(filename))
+        endif
+
+        write(u,*) '# '//trim(p%info%title)
+        write(u,'(a)') "&SYSTEM"
+        write(u,'(2x, a)') "ibrav = 0"
+        write(u,'(2x, a12, F20.12)') "celldm(1) = ", latpar/lo_bohr_to_A
+        write(u,'(2x, a)') 'nat = '//tochar(p%na)
+        write(u,'(2x, a)') 'ntyp = '//tochar(p%nelements)
+        write(u,'(a)') "/"
+        opf="(2X,3(F20.14,1x))"
+        write(u,'(a)') "CELL_PARAMETERS {alat}"
+        write(u,opf) lo_chop(p%latticevectors(:,1)/latpar/lo_A_to_bohr,lo_sqtol)
+        write(u,opf) lo_chop(p%latticevectors(:,2)/latpar/lo_A_to_bohr,lo_sqtol)
+        write(u,opf) lo_chop(p%latticevectors(:,3)/latpar/lo_A_to_bohr,lo_sqtol)    
+        opf="(2X, a2, 2x, F20.14, 2x, a9)"
+        write(u,'(a)') "ATOMIC_SPECIES"
+        do i=1, p%nelements
+            symbol = p%atomic_symbol(i)
+            ! assume atoms belong to the same species have the same mass
+            mass = p%mass(sum( p%element_counter(1:i) ))/lo_amu_to_emu
+            write(u,opf) trim(symbol), mass, trim(symbol)//"_PSEUDO"
+        enddo
+        write(u,'(a)') "ATOMIC_POSITIONS {crystal}"
+        do i=1, p%na
+            opf="(a2, 2x, 3(F18.14, 1x))"
+            write(u,opf) p%atomic_symbol(p%species(i)), p%r(:,i)
+        enddo
+
+        if ( filename .ne. 'stdout' ) close(u)
     end subroutine
 end subroutine
 

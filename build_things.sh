@@ -7,7 +7,7 @@
 set -e
 
 #should everything be cleaned? I keep this in place since I might want more options in the future.
-CLEAN=YES
+CLEAN=NO
 HOLDING=NO
 TESTS=NO
 MANPAGE=YES
@@ -178,6 +178,7 @@ cd src/libflap
     fi
 cd ../../
 
+CLEAN=YES
 # now I should build a lot of codes. If we made it this far, it should be easy.
 listofcodes="
 phonon_dispersion_relations
