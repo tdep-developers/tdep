@@ -160,8 +160,9 @@ epotthings: block
         upper_bound(i)=sum( (ediff(:,i)-mean_energy(i))**2 )/real(sim%nt,r8)
         upper_bound(i)=upper_bound(i)*inverse_kbt*0.5_r8
     enddo
-    mean_energy=mean_energy*real(uc%na,r8)/real(ss%na,r8)
-    upper_bound=upper_bound*real(uc%na,r8)/real(ss%na,r8)
+    ! And normalize it to be per atom
+    mean_energy=mean_energy/real(ss%na,r8)
+    upper_bound=upper_bound/real(ss%na,r8)
 
 
     if ( mw%talk ) then
@@ -188,22 +189,19 @@ end block epotthings
 
 ! Calculate the actual free energy
 getenergy: block
-    real(r8) :: f_ph,ah3,ah4,toev
+    real(r8) :: f_ph,ah3,ah4
     integer :: u
 
-    ! how to get eV/atom
-    toev = lo_Hartree_to_eV / uc%na
-
     ! Some heuristics to figure out what the temperature is.
-    if (opts%classical) then
-        f_ph=dr%phonon_free_energy_classical(sim%temperature_thermostat)
-    else
+    if (opts%quantum) then
         f_ph=dr%phonon_free_energy(sim%temperature_thermostat)
+    else
+        f_ph=dr%phonon_free_energy_classical(sim%temperature_thermostat)
     end if
 
     if ( havehighorder ) then
         select type(qp); type is(lo_fft_mesh)
-            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,opts%classical,mw,mem,opts%verbosity+1)
+            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,opts%quantum,mw,mem,opts%verbosity+1)
         end select
     else
         ah3=0.0_r8
@@ -214,15 +212,15 @@ getenergy: block
         write(*,*) ''
         write(*,*) 'Lowest order approximation to the free energy: (eV/atom)'
         write(*,*) 'Calculated as <U - U_second - U_polar> + F_phonon'
-        write(*,*) 'F (eV/atom) = ',(U1 + f_ph)*toev
-        write(*,*) 'Absolute bound on error (meV):',upper_bound(3)*toev*1000
+        write(*,*) 'F (eV/atom) = ',(U1 + f_ph)*lo_Hartree_to_eV
+        write(*,*) 'Absolute bound on error (meV):',upper_bound(3)*lo_Hartree_to_eV*1000
 
         if ( havehighorder ) then
             write(*,*) ''
             write(*,*) 'Free energy with anharmonic corrections: (eV/atom)'
             write(*,*) 'Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
-            write(*,*) 'F (eV/atom) = ',(U0+f_ph+ah3+ah4)*toev
-            write(*,*) 'Absolute bound on error (meV):',upper_bound(5)*toev*1000
+            write(*,*) 'F (eV/atom) = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
+            write(*,*) 'Absolute bound on error (meV):',upper_bound(5)*lo_Hartree_to_eV*1000
         endif
         write(*,*) ''
     endif
@@ -232,27 +230,27 @@ getenergy: block
             if ( havehighorder ) then
                 write(u,*) '# Free energy with anharmonic corrections: (eV/atom)'
                 write(u,*) '# Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
-                write(u,*) 'F        = ',(U0+f_ph+ah3+ah4)*toev
-                write(u,*) '# Absolute bound on error:',upper_bound(5)*toev
+                write(u,*) 'F        = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(5)*lo_Hartree_to_eV
 
                 write(u,*) '# Lowest order approximation to the free energy: (eV/atom)'
                 write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
-                write(u,*) 'F        = ',(U1 + f_ph)*toev
-                write(u,*) '# Absolute bound on error:',upper_bound(3)*toev
+                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
 
                 write(u,*) '# Components of the Free energy'
-                write(u,*) 'U0       = ',U0*toev
-                write(u,*) 'F_phonon = ',f_ph*toev
-                write(u,*) 'F_3      = ',ah3*toev
-                write(u,*) 'F_4      = ',ah4*toev
+                write(u,*) 'U0       = ',U0*lo_Hartree_to_eV
+                write(u,*) 'F_phonon = ',f_ph*lo_Hartree_to_eV
+                write(u,*) 'F_3      = ',ah3*lo_Hartree_to_eV
+                write(u,*) 'F_4      = ',ah4*lo_Hartree_to_eV
             else
                 write(u,*) '# Lowest order approximation to the free energy: (eV/atom)'
                 write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
-                write(u,*) 'F        = ',(U1 + f_ph)*toev
-                write(u,*) '# Absolute bound on error:',upper_bound(3)*toev
+                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
+                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
                 write(u,*) '# Components of the Free energy'
-                write(u,*) 'U0       =',U1*toev
-                write(u,*) 'F_phonon =',f_ph*toev
+                write(u,*) 'U0       =',U1*lo_Hartree_to_eV
+                write(u,*) 'F_phonon =',f_ph*lo_Hartree_to_eV
             endif
         close(u)
     endif
