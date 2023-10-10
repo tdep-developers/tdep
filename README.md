@@ -24,6 +24,10 @@ This software is distributed under the MIT license. If you use it, please cite t
 
 [The manual has its own page, including example workflows and theoretical background.](https://tdep-developers.github.io/tdep/)
 
+## Tutorials
+
+You can find a range of tutorials for realistic research workflow using TDEP [in a dedicated repository](https://github.com/tdep-developers/tdep-tutorials).
+
 ## Installation
 
 [Please find installation instructions in the TDEP repository.](https://github.com/tdep-developers/tdep/blob/main/INSTALL.md)
