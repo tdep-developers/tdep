@@ -238,7 +238,7 @@ subroutine energies_and_forces(pot,u,e2,e3,e4,ep,f2,f3,f4,fp)
             enddo
             v0=v0/6.0_r8
             f4(:,a1)=v0
-            e4=e4+dot_product(v0,u(:,a1))/4.0_r8
+            e4=e4-dot_product(v0,u(:,a1))/4.0_r8
         enddo
     endif
 end subroutine

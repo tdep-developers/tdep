@@ -135,11 +135,11 @@ epotthings: block
     do i=1,sim%nt
         if ( mod(i,mw%n) .ne. mw%r ) cycle
         call pot%energies_and_forces(sim%u(:,:,i),e2,e3,e4,ep,f2,f3,f4,fp)
-        ediff(i,1)=sim%stat%total_energy(i)
-        ediff(i,2)=sim%stat%total_energy(i)-e2
-        ediff(i,3)=sim%stat%total_energy(i)-e2-ep
-        ediff(i,4)=sim%stat%total_energy(i)-e2-ep-e3
-        ediff(i,5)=sim%stat%total_energy(i)-e2-ep-e3-e4
+        ediff(i,1)=sim%stat%potential_energy(i)
+        ediff(i,2)=sim%stat%potential_energy(i)-e2
+        ediff(i,3)=sim%stat%potential_energy(i)-e2-ep
+        ediff(i,4)=sim%stat%potential_energy(i)-e2-ep-e3
+        ediff(i,5)=sim%stat%potential_energy(i)-e2-ep-e3-e4
     enddo
     call mw%allreduce('sum',ediff)
 
