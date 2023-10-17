@@ -43,9 +43,9 @@ authors:
   - name: Igor Abrikosov
     orcid: 0000-0001-7551-4717
     affiliation: 1
-  - name: Sergei Simak 
+  - name: Sergei I. Simak
     orcid: 0000-0002-1320-389X
-    affiliation: 1
+    affiliation: 1, 9
   - name: Olle Hellman
     orcid: 0000-0002-3453-2975
     affiliation: 2
@@ -66,6 +66,8 @@ affiliations:
     index: 7
   - name: ITP, Physics Department, University of Utrecht, 3584 CC Utrecht, the Netherlands
     index: 8
+  - name: Department of Physics and Astronomy, Uppsala University, SE-75120 Uppsala, Sweden
+    index: 9
 date: 2023
 bibliography: literature.bib
 ---
