@@ -122,6 +122,6 @@ We note that parts of the TDEP method have been implemented in other code packag
 
 # Acknowledgements
 
-F.K. acknowledges support from the Swedish Research Council (VR) program 2020-04630, and the Swedish e-Science Research Centre (SeRC). Work at Boston College was supported by the U.S. Department of Energy (DOE), Office of Science, Basic Energy Sciences (BES) under Award #DE-SC0021071. MJV, AC, and JPB acknowledge funding by ARC project DREAMS (G.A. 21/25-11) funded by Federation Wallonie Bruxelles and ULiege, and by Excellence of Science project CONNECT number 40007563 funded by FWO and FNRS. J. K. acknowledges support from the Swedish Research Council (VR) program 2021-00486.
+F.K. acknowledges support from the Swedish Research Council (VR) program 2020-04630, and the Swedish e-Science Research Centre (SeRC). Work at Boston College was supported by the U.S. Department of Energy (DOE), Office of Science, Basic Energy Sciences (BES) under Award #DE-SC0021071. MJV, AC, and JPB acknowledge funding by ARC project DREAMS (G.A. 21/25-11) funded by Federation Wallonie Bruxelles and ULiege, and by Excellence of Science project CONNECT number 40007563 funded by FWO and FNRS. R.F. acknowledges financial support by the Spanish State Research Agency under grant number PID2022-139776NB-C62 funded by MCIN/AEI/ 10.13039/501100011033 and by ERDF A way of making Europe. J. K. acknowledges support from the Swedish Research Council (VR) program 2021-00486.
 
 # References
