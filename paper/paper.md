@@ -104,9 +104,9 @@ Additionally, TDEP provides tools to prepare and organize _ab initio_ supercell 
 
 Here we list the most important codes that are shipped with the TDEP code, explain their purpose, and list the respective references in the literature. A more detailed explanation of all features can be found in the online documentation.
 
-- `generate_structure`: Generate supercells of target size that are as cubic as possible to maximize the largest possible real-space cutoff for the force constants [@Hellman.2011].
+- `generate_structure`: Generate supercells of target size, with options to make them as cubic as possible to maximize the real-space cutoff for the force constants [@Hellman.2011].
 
-- `canonical_configuration`: Create supercells with thermal displacements from the force constants using Monte Carlo sampling from a classical or quantum canonical distribution [@West.2006; @Shulumba.2017]. Using sTDEP to perform self-consistent sampling is explained in detail in [@Benshalom.2022].
+- `canonical_configuration`: Create supercells with thermal displacements from an initial guess or existing force constants, using Monte Carlo sampling from a classical or quantum canonical distribution [@West.2006; @Shulumba.2017]. Self-consistent sampling with sTDEP is explained in detail in [@Benshalom.2022].
 
 - `extract_forceconstants`: Obtain (effective) harmonic force constants from a set of supercell snapshots with displaced positions and forces [@Hellman.2013]. Optionally fit higher-order force constants [@Hellman.2013oi5], or dielectric tensor properties [@Benshalom.2022].
 
