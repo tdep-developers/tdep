@@ -1,6 +1,6 @@
 program anharmonic_free_energy
 !!{!src/anharmonic_free_energy/manual.md!}
-use konstanter, only: r8,lo_Hartree_to_eV,lo_kb_Hartree
+use konstanter, only: r8,lo_Hartree_to_eV,lo_kb_Hartree,lo_pressure_HartreeBohr_to_GPa
 use gottochblandat, only: open_file,walltime,lo_linspace,lo_progressbar_init,lo_progressbar,tochar,&
     lo_does_file_exist,lo_mean,lo_stddev
 use mpi_wrappers, only: lo_mpi_helper
@@ -66,17 +66,17 @@ init: block
     call fc%readfromfile(uc,'infile.forceconstant',mem,verbosity=-1)
     if ( mw%talk ) write(*,*) '... read second order forceconstant'
 
-    havehighorder=.true.
-    if ( .not.lo_does_file_exist('infile.forceconstant_thirdorder') ) havehighorder=.false.
-    if ( .not.lo_does_file_exist('infile.forceconstant_fourthorder') ) havehighorder=.false.
+   havehighorder=.true.
+   if ( .not.lo_does_file_exist('infile.forceconstant_thirdorder') ) havehighorder=.false.
+   if ( .not.lo_does_file_exist('infile.forceconstant_fourthorder') ) havehighorder=.false.
 
-    if ( havehighorder ) then
-        call fct%readfromfile(uc,'infile.forceconstant_thirdorder')
-        if ( mw%talk ) write(*,*) '... read third order forceconstant'
-        call fcf%readfromfile(uc,'infile.forceconstant_fourthorder')
-        if ( mw%talk ) write(*,*) '... read fourth order forceconstant'
-        call tmr%tock('reading input')
-    endif
+   if ( havehighorder ) then
+       call fct%readfromfile(uc,'infile.forceconstant_thirdorder')
+       if ( mw%talk ) write(*,*) '... read third order forceconstant'
+       call fcf%readfromfile(uc,'infile.forceconstant_fourthorder')
+       if ( mw%talk ) write(*,*) '... read fourth order forceconstant'
+       call tmr%tock('reading input')
+   endif
 
     ! Get a q-mesh for the integrations. Always an FFT mesh.
     if ( mw%talk ) write(*,*) '... generating q-mesh'
@@ -128,7 +128,6 @@ epotthings: block
     allocate(fp(3,ss%na))
 
     ! Calculate the baseline energy
-
     allocate(ediff(sim%nt,5))
     ediff=0.0_r8
 
@@ -157,17 +156,16 @@ epotthings: block
     allocate(mean_energy(5))
     do i=1,5
         mean_energy(i)=lo_mean(ediff(:,i))
-        upper_bound(i)=sum( (ediff(:,i)-mean_energy(i))**2 )/real(sim%nt,r8)
+        upper_bound(i)=lo_mean((ediff(:,i)-mean_energy(i))**2)
         upper_bound(i)=upper_bound(i)*inverse_kbt*0.5_r8
     enddo
+
     ! And normalize it to be per atom
     mean_energy=mean_energy/real(ss%na,r8)
     upper_bound=upper_bound/real(ss%na,r8)
 
-
     if ( mw%talk ) then
         write(*,*) 'Temperature (K) (from infile.meta): ',sim%temperature_thermostat
-        !write(*,*) 'Temperature (K): ',sim%temperature
         write(*,*) 'Potential energy:'
         if ( havehighorder ) then
             write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',mean_energy(1)*lo_Hartree_to_eV,' upper bound:',upper_bound(1)*lo_Hartree_to_eV
@@ -189,8 +187,10 @@ end block epotthings
 
 ! Calculate the actual free energy
 getenergy: block
-    real(r8) :: f_ph,ah3,ah4
+    real(r8) :: f_ph,ah3,ah4,f0,f1,f2,f3,f4,f5
+    real(r8) :: pref
     integer :: u
+    character(len=1000) :: opf
 
     ! Some heuristics to figure out what the temperature is.
     if (opts%quantum) then
@@ -208,7 +208,28 @@ getenergy: block
         ah4=0.0_r8
     endif
 
+    if (opts%stochastic) then
+        pref = -1.0_r8
+    else
+        pref = 1.0_r8
+    end if
     if ( mw%talk ) then
+        ! Write on a file
+        u = open_file('out', 'outfile.anharmonic_free_energy')
+        write(u, *) '# Free energy at ', sim%temperature_thermostat, 'K'
+        if (havehighorder) then
+            f0 = (U1 + f_ph)*lo_Hartree_to_eV
+            f1 = (U1 + f_ph + pref * 0.5*upper_bound(3))*lo_Hartree_to_eV
+            f2 = (U0 + f_ph+ah3+ah4)*lo_Hartree_to_eV
+            f3 = (U0 + f_ph+ah3+ah4 + pref * 0.5*upper_bound(5))*lo_Hartree_to_eV
+            write(u, "(1X, F12.5, 5(1X,e18.11))") sim%temperature_thermostat, f0, f1, f2, f3
+        else
+            f0 = (U1 + f_ph)*lo_Hartree_to_eV
+            f1 = (U1 + f_ph + pref*0.5*upper_bound(3))*lo_Hartree_to_eV
+            write(u, "(1X, F12.5, 3(1X,e18.11))") sim%temperature_thermostat, f0, f1
+        end if
+
+        ! But also on stdout
         write(*,*) ''
         write(*,*) 'Lowest order approximation to the free energy: (eV/atom)'
         write(*,*) 'Calculated as <U - U_second - U_polar> + F_phonon'
@@ -223,36 +244,6 @@ getenergy: block
             write(*,*) 'Absolute bound on error (meV):',upper_bound(5)*lo_Hartree_to_eV*1000
         endif
         write(*,*) ''
-    endif
-
-    if ( mw%talk ) then
-        u=open_file('out','outfile.anharmonic_free_energy')
-            if ( havehighorder ) then
-                write(u,*) '# Free energy with anharmonic corrections: (eV/atom)'
-                write(u,*) '# Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
-                write(u,*) 'F        = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
-                write(u,*) '# Absolute bound on error:',upper_bound(5)*lo_Hartree_to_eV
-
-                write(u,*) '# Lowest order approximation to the free energy: (eV/atom)'
-                write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
-                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
-                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
-
-                write(u,*) '# Components of the Free energy'
-                write(u,*) 'U0       = ',U0*lo_Hartree_to_eV
-                write(u,*) 'F_phonon = ',f_ph*lo_Hartree_to_eV
-                write(u,*) 'F_3      = ',ah3*lo_Hartree_to_eV
-                write(u,*) 'F_4      = ',ah4*lo_Hartree_to_eV
-            else
-                write(u,*) '# Lowest order approximation to the free energy: (eV/atom)'
-                write(u,*) '# Calculated as <U - U_second - U_polar> + F_phonon'
-                write(u,*) 'F        = ',(U1 + f_ph)*lo_Hartree_to_eV
-                write(u,*) '# Absolute bound on error:',upper_bound(3)*lo_Hartree_to_eV
-                write(u,*) '# Components of the Free energy'
-                write(u,*) 'U0       =',U1*lo_Hartree_to_eV
-                write(u,*) 'F_phonon =',f_ph*lo_Hartree_to_eV
-            endif
-        close(u)
     endif
 
 end block getenergy

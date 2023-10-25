@@ -16,6 +16,7 @@ type lo_opts
     logical :: readqmesh
     integer :: meshtype
     logical :: quantum = .false.
+    logical :: stochastic = .false.
     contains
         procedure :: parse
 end type
@@ -50,7 +51,11 @@ subroutine parse(opts)
         if ( lo_status .ne. 0 ) stop
     call cli%add(switch='--quantum', &
         help='Use Bose-Einstein occupations to compute the free energy', &
-        required=.false., act='store_true',def='.false',error=lo_status)
+        required=.false., act='store_true',def='.false.',error=lo_status)
+        if ( lo_status .ne. 0 ) stop
+    call cli%add(switch='--stochastic', &
+        help='Add second order cumulant contribution to the free energy with a minus sign for self-consistent sampling', &
+        required=.false., act='store_true',def='.false.',error=lo_status)
         if ( lo_status .ne. 0 ) stop
     cli_readiso
     cli_manpage
@@ -80,6 +85,7 @@ subroutine parse(opts)
     call cli%get(switch='--integrationtype',    val=opts%integrationtype,  error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--readiso',            val=opts%readiso,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--quantum',            val=opts%quantum,          error=lo_status); errctr=errctr+lo_status
+    call cli%get(switch='--stochastic',         val=opts%stochastic,       error=lo_status); errctr=errctr+lo_status
 
     if ( errctr .ne. 0 ) call lo_stop_gracefully(['Failed parsing the command line options'],lo_exitcode_baddim)
 
