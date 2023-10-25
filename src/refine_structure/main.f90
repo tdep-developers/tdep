@@ -39,6 +39,7 @@ write (*, *) 'Read unit cell'
 ! Refining just a cell
 call refine_one_cell(uc, p, opts%tolerance_lattice, opts%tolerance_internal, mem, 1)
 call p%writetofile('outfile.refined_cell', 1)
+write (*, *) '... wrote refined      cell to "outfile.refined_cell"'
 
 tst1: block
     real(r8), dimension(:, :, :), allocatable :: ops
@@ -49,23 +50,29 @@ tst1: block
 
 end block tst1
 
-stop
+! Read the supercell, if applicable
+if (trim(opts%supercell_filename) .ne. 'none') then
+    call ss%readfromfile(trim(opts%supercell_filename))
+    supercell = .true.
+else
+    supercell = .false.
+end if
 
-! !write(*,*) 'FIXME PRESERVE HEADER'
-!
-! ! Now, is the proposed unitcell actually a supercell of some other cell? That is a little annoying, but fixable.
-! ! call find_true_unitcell(uc)
-! ! call uc%classify('bravais')
-! ! stop
-! ! Is this a supercell?
-!
-! ! Read the supercell, if applicable
-! if ( trim(opts%supercell_filename) .ne. 'none' ) then
-!     call ss%readfromfile(trim(opts%supercell_filename))
-!     supercell=.true.
-! else
-!     supercell=.false.
-! endif
+! Maybe fix the supercell?
+if (supercell) then
+    call refine_supercell(p, ss)
+    call ss%writetofile('outfile.refined_supercell', 1)
+    write (*, *) '... wrote refined supercell to "outfile.refined_supercell"'
+end if
+
+!write(*,*) 'FIXME PRESERVE HEADER'
+
+! Now, is the proposed unitcell actually a supercell of some other cell? That is a little annoying, but fixable.
+! call find_true_unitcell(uc)
+! call uc%classify('bravais')
+! stop
+! Is this a supercell?
+
 !
 ! ! Read the prototype?
 ! if ( trim(opts%prototype_unitcell) .ne. 'none' ) then
