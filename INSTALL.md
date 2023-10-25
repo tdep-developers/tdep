@@ -50,6 +50,8 @@ cp important_settings.gfortran important_settings
   - `PATH_TO_BLASLAPACK_INC`: Same but for the INCLUDE files.
 
   - `PATH_TO_FFTW_LIB`, `PATH_TO_MPI_LIB`, `PATH_TO_HDF5_LIB` same for FFTW, MPI, HDF5
+  
+  - optionally: `GNUPLOTTERMINAL`, which can be `aqua` (on macOS), `qt` or `wxt` on linux
 
 Then run the build script via 
 

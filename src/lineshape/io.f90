@@ -164,6 +164,11 @@ subroutine write_lineshape_to_hdf5(se, p, qpt, wp, dir, di, qp, enhet, temperatu
         call h5%store_data(se%re_3ph*unitfactor, h5%group_id, 'real_threephonon_selfenergy', enhet=trim(unitname))
         call h5%store_data(se%re_4ph*unitfactor, h5%group_id, 'real_fourphonon_selfenergy', enhet=trim(unitname))
 
+        ! peak positions and widths
+        call h5%store_data(unitfactor*se%xmid, h5%group_id, 'peak_mid', enhet=trim(unitname))
+        call h5%store_data(unitfactor*(se%xhi - se%xlo), h5%group_id, 'peak_fwhm', enhet=trim(unitname))
+        call h5%store_data(se%tau/unitfactor, h5%group_id, 'lifetime', enhet=trim(unitname))
+
         call mem%allocate(dr0, [se%n_energy, se%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(dr1, [se%n_energy, p%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(dr2, [se%n_energy, p%sym%n_irreducible_atom], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

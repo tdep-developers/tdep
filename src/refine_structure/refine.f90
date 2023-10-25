@@ -14,7 +14,7 @@ implicit none
 
 private
 ! public :: refine_unitcell
-! public :: refine_supercell
+public :: refine_supercell
 ! public :: refine_lattice
 ! public :: find_true_unitcell
 public :: refine_one_cell

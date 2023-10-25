@@ -116,10 +116,12 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         allocate (se%xlo(se%n_mode))
         allocate (se%xhi(se%n_mode))
         allocate (se%scalingfactor(se%n_mode))
+        allocate (se%tau(se%n_mode))
         se%xmid = 0.0_r8
         se%xlo = 0.0_r8
         se%xhi = 0.0_r8
         se%scalingfactor = 0.0_r8
+        se%tau = 0.0_r8
     end block setopts
 
     call tmr%tock('self-energy initialization')
@@ -267,6 +269,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         se%xmid = 0.0_r8
         se%xlo = 0.0_r8
         se%xhi = 0.0_r8
+        se%tau= 0.0_r8
         do imode = 1, dr%n_mode
             if (wp%omega(imode) .lt. lo_freqtol) cycle
             if (mod(imode, mw%n) .ne. mw%r) cycle
@@ -281,11 +284,13 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             call integrate_spectral_function(se%energy_axis, wp%omega(imode), yim, yre, se%xmid(imode), se%xlo(imode), se%xhi(imode), &
                                              1.0_r8, opts%temperature, integraltol, f0, f1, f2)
             se%scalingfactor(imode) = 1.0_r8/f0
+            se%tau(imode) = f1
         end do
         call mw%allreduce('sum', se%scalingfactor)
         call mw%allreduce('sum', se%xmid)
         call mw%allreduce('sum', se%xhi)
         call mw%allreduce('sum', se%xlo)
+        call mw%allreduce('sum', se%tau)
 
         call mem%deallocate(yim, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(yre, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

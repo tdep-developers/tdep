@@ -26,7 +26,7 @@ PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
 FCFLAGS="-ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch -fopenmp"
 
 # Which gnuplot terminal to use by default.
-GNUPLOTTERMINAL="aqua"
+GNUPLOTTERMINAL="qt"
 
 # The following are already linked through the PrgEnv
 # BLAS/LAPACK
