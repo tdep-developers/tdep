@@ -17,6 +17,8 @@ type lo_opts
     integer :: meshtype
     logical :: quantum = .false.
     logical :: stochastic = .false.
+    logical :: thirdorder = .false.
+    logical :: fourthorder = .false.
     contains
         procedure :: parse
 end type
@@ -57,6 +59,14 @@ subroutine parse(opts)
         help='Add second order cumulant contribution to the free energy with a minus sign for self-consistent sampling', &
         required=.false., act='store_true',def='.false.',error=lo_status)
         if ( lo_status .ne. 0 ) stop
+    call cli%add(switch='--thirdorder', &
+        help='Compute third order anharmonic correction to the free energy', &
+        required=.false., act='store_true',def='.false',error=lo_status)
+    if (lo_status .ne. 0) stop
+    call cli%add(switch='--fourthorder', &
+        help='Compute fourth order anharmonic correction to the free energy', &
+        required=.false., act='store_true',def='.false',error=lo_status)
+    if (lo_status .ne. 0) stop
     cli_readiso
     cli_manpage
     cli_verbose
@@ -86,6 +96,11 @@ subroutine parse(opts)
     call cli%get(switch='--readiso',            val=opts%readiso,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--quantum',            val=opts%quantum,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--stochastic',         val=opts%stochastic,       error=lo_status); errctr=errctr+lo_status
+    call cli%get(switch='--thirdorder',         val=opts%thirdorder,       error=lo_status); errctr=errctr+lo_status
+    call cli%get(switch='--fourthorder',        val=opts%fourthorder,      error=lo_status); errctr=errctr+lo_status
+
+    ! If we have fourthorder we should also have thirdorder
+    if (opts%fourthorder) opts%thirdorder=.true.
 
     if ( errctr .ne. 0 ) call lo_stop_gracefully(['Failed parsing the command line options'],lo_exitcode_baddim)
 

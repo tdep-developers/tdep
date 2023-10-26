@@ -34,7 +34,7 @@ type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr
 type(lo_mdsim) :: sim
 
-real(r8), dimension(:), allocatable :: upper_bound,mean_energy
+real(r8), dimension(3,5) :: cumulant
 real(r8) :: timer_init,timer_total
 real(r8) :: U0,U1,energy_unit_factor
 logical :: havehighorder
@@ -66,17 +66,12 @@ init: block
     call fc%readfromfile(uc,'infile.forceconstant',mem,verbosity=-1)
     if ( mw%talk ) write(*,*) '... read second order forceconstant'
 
-   havehighorder=.true.
-   if ( .not.lo_does_file_exist('infile.forceconstant_thirdorder') ) havehighorder=.false.
-   if ( .not.lo_does_file_exist('infile.forceconstant_fourthorder') ) havehighorder=.false.
+    if (opts%thirdorder) call fct%readfromfile(uc,'infile.forceconstant_thirdorder')
+    if (opts%fourthorder) call fcf%readfromfile(uc,'infile.forceconstant_fourthorder')
+    havehighorder=.false.
+    if (opts%thirdorder .or. opts%fourthorder) havehighorder=.true.
 
-   if ( havehighorder ) then
-       call fct%readfromfile(uc,'infile.forceconstant_thirdorder')
-       if ( mw%talk ) write(*,*) '... read third order forceconstant'
-       call fcf%readfromfile(uc,'infile.forceconstant_fourthorder')
-       if ( mw%talk ) write(*,*) '... read fourth order forceconstant'
-       call tmr%tock('reading input')
-   endif
+    call tmr%tock('reading input')
 
     ! Get a q-mesh for the integrations. Always an FFT mesh.
     if ( mw%talk ) write(*,*) '... generating q-mesh'
@@ -142,55 +137,44 @@ epotthings: block
     enddo
     call mw%allreduce('sum',ediff)
 
-    ! need an inverse kbt to estimate upper bound on free energy
-    ! error.
-
     if ( sim%temperature_thermostat .gt. 1E-5_r8 ) then
         inverse_kbt=1.0_r8/lo_kb_Hartree/sim%temperature_thermostat
     else
         inverse_kbt=0.0_r8
     endif
 
-    ! Get the upper bound of the error of the free energy
-    allocate(upper_bound(5))
-    allocate(mean_energy(5))
+    ! Compute the first and second order cumulants
     do i=1,5
-        mean_energy(i)=lo_mean(ediff(:,i))
-        upper_bound(i)=lo_mean((ediff(:,i)-mean_energy(i))**2)
-        upper_bound(i)=upper_bound(i)*inverse_kbt*0.5_r8
+        cumulant(1,i)=lo_mean(ediff(:,i))
+        cumulant(2,i)=lo_mean((ediff(:,i)-cumulant(1,i))**2)
+        cumulant(2,i)=cumulant(2,i)*inverse_kbt*0.5_r8
+        cumulant(3,i)=lo_mean((ediff(:,i)-cumulant(1,i))**3)
+        cumulant(3,i)=cumulant(3,i)*inverse_kbt**2/6.0_r8
     enddo
 
     ! And normalize it to be per atom
-    mean_energy=mean_energy/real(ss%na,r8)
-    upper_bound=upper_bound/real(ss%na,r8)
+    cumulant=cumulant/real(ss%na,r8)
+
 
     if ( mw%talk ) then
         write(*,*) 'Temperature (K) (from infile.meta): ',sim%temperature_thermostat
         write(*,*) 'Potential energy:'
-        if ( havehighorder ) then
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',mean_energy(1)*lo_Hartree_to_eV,' upper bound:',upper_bound(1)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',mean_energy(2)*lo_Hartree_to_eV,' upper bound:',upper_bound(2)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',mean_energy(3)*lo_Hartree_to_eV,' upper bound:',upper_bound(3)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '        E-fc2-polar-fc3: ',mean_energy(4)*lo_Hartree_to_eV,' upper bound:',upper_bound(4)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '    E-fc2-polar-fc3-fc4: ',mean_energy(5)*lo_Hartree_to_eV,' upper bound:',upper_bound(5)*lo_Hartree_to_eV
-        else
-            write(*,*) '(no third and fourth order force constants present, reverting to lowest order free energy)'
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',mean_energy(1)*lo_Hartree_to_eV,' upper bound:',upper_bound(1)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',mean_energy(2)*lo_Hartree_to_eV,' upper bound:',upper_bound(2)*lo_Hartree_to_eV
-            write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',mean_energy(3)*lo_Hartree_to_eV,' upper bound:',upper_bound(3)*lo_Hartree_to_eV
-        endif
+        write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  input: ',cumulant(1,1)*lo_Hartree_to_eV,' upper bound:',cumulant(2,1)*lo_Hartree_to_eV
+        write(*,"(1X,A,E21.14,1X,A,F21.14)") '                  E-fc2: ',cumulant(1,2)*lo_Hartree_to_eV,' upper bound:',cumulant(2,2)*lo_Hartree_to_eV
+        write(*,"(1X,A,E21.14,1X,A,F21.14)") '            E-fc2-polar: ',cumulant(1,3)*lo_Hartree_to_eV,' upper bound:',cumulant(2,3)*lo_Hartree_to_eV
+        if (opts%thirdorder) then
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '        E-fc2-polar-fc3: ',cumulant(1,4)*lo_Hartree_to_eV,' upper bound:',cumulant(2,4)*lo_Hartree_to_eV
+        end if
+        if (opts%fourthorder) then
+            write(*,"(1X,A,E21.14,1X,A,F21.14)") '    E-fc2-polar-fc3-fc4: ',cumulant(1,5)*lo_Hartree_to_eV,' upper bound:',cumulant(2,5)*lo_Hartree_to_eV
+        end if
     endif
-    ! Make a note of the baseline energy
-    U0=mean_energy(5)
-    U1=mean_energy(3)
 end block epotthings
 
 ! Calculate the actual free energy
 getenergy: block
-    real(r8) :: f_ph,ah3,ah4,f0,f1,f2,f3,f4,f5
-    real(r8) :: pref
+    real(r8) :: f_ph,ah3,ah4,fe2_1,fe2_2,fe3_1,fe3_2,fe4_1,fe4_2,pref
     integer :: u
-    character(len=1000) :: opf
 
     ! Some heuristics to figure out what the temperature is.
     if (opts%quantum) then
@@ -201,7 +185,8 @@ getenergy: block
 
     if ( havehighorder ) then
         select type(qp); type is(lo_fft_mesh)
-            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,opts%quantum,mw,mem,opts%verbosity+1)
+            call perturbative_anharmonic_free_energy(uc,fct,fcf,qp,dr,sim%temperature_thermostat,ah3,ah4,&
+                                                     opts%fourthorder,opts%quantum,mw,mem,opts%verbosity+1)
         end select
     else
         ah3=0.0_r8
@@ -216,34 +201,45 @@ getenergy: block
     if ( mw%talk ) then
         ! Write on a file
         u = open_file('out', 'outfile.anharmonic_free_energy')
-        write(u, *) '# Free energy at ', sim%temperature_thermostat, 'K'
-        if (havehighorder) then
-            f0 = (U1 + f_ph)*lo_Hartree_to_eV
-            f1 = (U1 + f_ph + pref * 0.5*upper_bound(3))*lo_Hartree_to_eV
-            f2 = (U0 + f_ph+ah3+ah4)*lo_Hartree_to_eV
-            f3 = (U0 + f_ph+ah3+ah4 + pref * 0.5*upper_bound(5))*lo_Hartree_to_eV
-            write(u, "(1X, F12.5, 5(1X,e18.11))") sim%temperature_thermostat, f0, f1, f2, f3
-        else
-            f0 = (U1 + f_ph)*lo_Hartree_to_eV
-            f1 = (U1 + f_ph + pref*0.5*upper_bound(3))*lo_Hartree_to_eV
-            write(u, "(1X, F12.5, 3(1X,e18.11))") sim%temperature_thermostat, f0, f1
-        end if
-
-        ! But also on stdout
+        fe2_1 = (cumulant(1,3) + f_ph)*lo_Hartree_to_eV
+        fe2_2 = (cumulant(1,3) + f_ph + pref * cumulant(2,3))*lo_Hartree_to_eV
+        write(u, "(1X, A17, F8.2, 1X, A17)") '# Free energy at ', sim%temperature_thermostat, 'K, unit : eV/atom'
+        write(u, *) '# Lowest order (1st order cumulant, 2nd order cumulant)'
+        write(u, "(1X, 2(F12.5,' '))") fe2_1, fe2_2
         write(*,*) ''
         write(*,*) 'Lowest order approximation to the free energy: (eV/atom)'
         write(*,*) 'Calculated as <U - U_second - U_polar> + F_phonon'
-        write(*,*) 'F (eV/atom) = ',(U1 + f_ph)*lo_Hartree_to_eV
-        write(*,*) 'Absolute bound on error (meV):',upper_bound(3)*lo_Hartree_to_eV*1000
-
-        if ( havehighorder ) then
+        write(*,*) 'F (eV/atom) = ', fe2_1
+        write(*,*) 'F_phonon (eV/atom) =', f_ph*lo_Hartree_to_eV
+        write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,3)*lo_Hartree_to_eV*1000
+        write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,3)*lo_Hartree_to_eV*1000
+        if (opts%thirdorder .or. opts%fourthorder) then
+            fe3_1 = (cumulant(1,4) + f_ph + ah3)*lo_Hartree_to_eV
+            fe3_2 = (cumulant(1,4) + f_ph + ah3 + pref * cumulant(2,4))*lo_Hartree_to_eV
+            write(u, *) '# Third order anharmonic corrections (1st order cumulant, 2nd order cumulant)'
+            write(u, "(1X, 2(F12.5,' '))") fe3_1, fe3_2
             write(*,*) ''
-            write(*,*) 'Free energy with anharmonic corrections: (eV/atom)'
+            write(*,*) 'Free energy with third order anharmonic corrections: (eV/atom)'
+            write(*,*) 'Calculated as <U - U_second - U_polar - U_third> + F_phonon + F_3'
+            write(*,*) 'F (eV/atom) = ', fe3_1
+            write(*,*) 'F_3 (eV/atom) = ', ah3*lo_Hartree_to_eV
+            write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,4)*lo_Hartree_to_eV*1000
+            write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,4)*lo_Hartree_to_eV*1000
+        end if
+        if (opts%fourthorder) then
+            fe4_1 = (cumulant(1,5) + f_ph + ah3 + ah4)*lo_Hartree_to_eV
+            fe4_2 = (cumulant(1,5) + f_ph + ah3 + ah4 + pref * cumulant(2,5))*lo_Hartree_to_eV
+            write(u, *) '# Fourth order anharmonic corrections (1st order cumulant, 2nd order cumulant)'
+            write(u, "(1X, 2(F12.5,' '))") fe4_1, fe4_2
+            write(*,*) ''
+            write(*,*) 'Free energy with fourth order anharmonic corrections: (eV/atom)'
             write(*,*) 'Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
-            write(*,*) 'F (eV/atom) = ',(U0+f_ph+ah3+ah4)*lo_Hartree_to_eV
-            write(*,*) 'Absolute bound on error (meV):',upper_bound(5)*lo_Hartree_to_eV*1000
-        endif
-        write(*,*) ''
+            write(*,*) 'F (eV/atom) = ',fe4_1
+            write(*,*) 'F_3 (eV/atom) = ', ah3*lo_Hartree_to_eV
+            write(*,*) 'F_4 (eV/atom) = ', ah4*lo_Hartree_to_eV
+            write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,5)*lo_Hartree_to_eV*1000
+            write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,5)*lo_Hartree_to_eV*1000
+        end if
     endif
 
 end block getenergy

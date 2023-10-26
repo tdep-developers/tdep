@@ -21,7 +21,8 @@ public :: perturbative_anharmonic_free_energy
 contains
 
 !> Calculates the anharmonic contributions to the free energy
-subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_energy_thirdorder,free_energy_fourthorder,quantum,mw,mem,verbosity)
+subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_energy_thirdorder,free_energy_fourthorder,&
+                                               fourthorder,quantum,mw,mem,verbosity)
     !> crystal structure
     type(lo_crystalstructure), intent(in) :: p
     !> third order force constant
@@ -36,8 +37,8 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
     real(r8) :: temperature
     !> free energies
     real(r8), intent(out) :: free_energy_thirdorder,free_energy_fourthorder
-    !> use quantum limit
-    logical, intent(in) :: quantum
+    !> what to compute
+    logical, intent(in) :: quantum, fourthorder
     !> mpi helper
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
@@ -155,7 +156,6 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
         ! Optimizations:
         ! 1) check the prefactors, can maybe do those before in a neater way
         ! 2) only have to go over half the q-vectors I think.
-
         if ( verbosity .gt. 0 ) call lo_progressbar_init()
         en3=0.0_r8
         ctr=0
@@ -248,80 +248,84 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
             call lo_progressbar(' ... third order',qp%n_irr_point,qp%n_irr_point,t1-t0)
             t0=t1
         endif
+        call mw%allreduce('sum',en3)
 
-        ! Do the fourth order? Might as well.
-        call mem%allocate(evp1,dr%n_mode**2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%allocate(evp2,dr%n_mode**2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%allocate(evp3,dr%n_mode**4,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%allocate(ptf ,dr%n_mode**4,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        evp1=0.0_r8
-        evp2=0.0_r8
-        evp3=0.0_r8
-        ptf =0.0_r8
+        if (fourthorder) then
+            ! Do the fourth order? Might as well.
+            call mem%allocate(evp1,dr%n_mode**2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%allocate(evp2,dr%n_mode**2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%allocate(evp3,dr%n_mode**4,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%allocate(ptf ,dr%n_mode**4,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            evp1=0.0_r8
+            evp2=0.0_r8
+            evp3=0.0_r8
+            ptf =0.0_r8
 
-        if ( verbosity .gt. 0 ) call lo_progressbar_init()
-        en4=0.0_r8
-        ctr=0
-        do q1=1,qp%n_irr_point
-        do q2=1,qp%n_full_point
-            ! make it parallel
-            ctr=ctr+1
-            if ( mod(ctr,mw%n) .ne. mw%r ) cycle
-            qv1=qp%ip(q1)%r
-            qv2=qp%ap(q2)%r
-            prefactor=fourphonon_prefactor*qp%ap(q2)%integration_weight
+            if ( verbosity .gt. 0 ) call lo_progressbar_init()
+            en4=0.0_r8
+            ctr=0
+            do q1=1,qp%n_irr_point
+            do q2=1,qp%n_full_point
+                ! make it parallel
+                ctr=ctr+1
+                if ( mod(ctr,mw%n) .ne. mw%r ) cycle
+                qv1=qp%ip(q1)%r
+                qv2=qp%ap(q2)%r
+                prefactor=fourphonon_prefactor*qp%ap(q2)%integration_weight
 
-            ! pre-transform the matrix element
-            call pretransform_phi4(fcf,qv1,qv2,ptf)
-            ! pre-fetch eigenvectors. Maybe a speedup, dunno.
-            buf_ev1=nuvec1(:,:,q1)
-            buf_ev2=nuvec2(:,:,q2)
-            do b1=1,dr%n_mode
-            do b2=1,dr%n_mode
-                om1=dr%iq(q1)%omega(b1)
-                om2=dr%aq(q2)%omega(b2)
-                if ( om1 .lt. lo_freqtol ) cycle
-                if ( om2 .lt. lo_freqtol ) cycle
-                ! Decide if we take the classical limit for the occupations
-                if (quantum) then
-                    n1=lo_planck(temperature,om1)
-                    n2=lo_planck(temperature,om2)
-                else
-                    n1=lo_kb_Hartree*temperature / om1
-                    n2=lo_kb_Hartree*temperature / om2
-                end if
-                ! Now to get
-                evp1=0.0_r8
-                evp2=0.0_r8
-                evp3=0.0_r8
-                call zgerc(dr%n_mode, dr%n_mode, (1.0_r8,0.0_r8), buf_ev1(:,b1), 1, buf_ev1(:,b1), 1, evp1, dr%n_mode)
-                call zgerc(dr%n_mode, dr%n_mode, (1.0_r8,0.0_r8), buf_ev2(:,b2), 1, buf_ev2(:,b2), 1, evp2, dr%n_mode)
-                call zgeru(dr%n_mode**2, dr%n_mode**2, (1.0_r8,0.0_r8), evp2, 1, evp1, 1, evp3, dr%n_mode**2)
-                evp3=conjg(evp3)
-                psisq=real(dot_product(evp3,ptf),r8)
-                f1=(2*n1+1)*(2*n2+1)*psisq*prefactor
+                ! pre-transform the matrix element
+                call pretransform_phi4(fcf,qv1,qv2,ptf)
+                ! pre-fetch eigenvectors. Maybe a speedup, dunno.
+                buf_ev1=nuvec1(:,:,q1)
+                buf_ev2=nuvec2(:,:,q2)
+                do b1=1,dr%n_mode
+                do b2=1,dr%n_mode
+                    om1=dr%iq(q1)%omega(b1)
+                    om2=dr%aq(q2)%omega(b2)
+                    if ( om1 .lt. lo_freqtol ) cycle
+                    if ( om2 .lt. lo_freqtol ) cycle
+                    ! Decide if we take the classical limit for the occupations
+                    if (quantum) then
+                        n1=lo_planck(temperature,om1)
+                        n2=lo_planck(temperature,om2)
+                    else
+                        n1=lo_kb_Hartree*temperature / om1
+                        n2=lo_kb_Hartree*temperature / om2
+                    end if
+                    ! Now to get
+                    evp1=0.0_r8
+                    evp2=0.0_r8
+                    evp3=0.0_r8
+                    call zgerc(dr%n_mode, dr%n_mode, (1.0_r8,0.0_r8), buf_ev1(:,b1), 1, buf_ev1(:,b1), 1, evp1, dr%n_mode)
+                    call zgerc(dr%n_mode, dr%n_mode, (1.0_r8,0.0_r8), buf_ev2(:,b2), 1, buf_ev2(:,b2), 1, evp2, dr%n_mode)
+                    call zgeru(dr%n_mode**2, dr%n_mode**2, (1.0_r8,0.0_r8), evp2, 1, evp1, 1, evp3, dr%n_mode**2)
+                    evp3=conjg(evp3)
+                    psisq=real(dot_product(evp3,ptf),r8)
+                    f1=(2*n1+1)*(2*n2+1)*psisq*prefactor
 
-                en4(b1,q1)=en4(b1,q1)+f1
+                    en4(b1,q1)=en4(b1,q1)+f1
+                enddo
+                enddo
             enddo
+            if ( verbosity .gt. 0 .and. q1 .lt. qp%n_irr_point ) then
+                call lo_progressbar(' ... fourth order',q1,qp%n_irr_point,walltime()-t0)
+            endif
             enddo
-        enddo
-        if ( verbosity .gt. 0 .and. q1 .lt. qp%n_irr_point ) then
-            call lo_progressbar(' ... fourth order',q1,qp%n_irr_point,walltime()-t0)
-        endif
-        enddo
 
-        call mem%deallocate(evp1,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(evp2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(evp3,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(ptf ,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(buf_ev1,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(buf_ev2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        call mem%deallocate(buf_ev3,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(evp1,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(evp2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(evp3,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(ptf ,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(buf_ev1,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(buf_ev2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+            call mem%deallocate(buf_ev3,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
 
-        if ( verbosity .gt. 0 ) then
-            t1=walltime()
-            call lo_progressbar(' ... fourth order',qp%n_irr_point,qp%n_irr_point,t1-t0)
-            t0=t1
+            if ( verbosity .gt. 0 ) then
+                t1=walltime()
+                call lo_progressbar(' ... fourth order',qp%n_irr_point,qp%n_irr_point,t1-t0)
+                t0=t1
+            endif
+        call mw%allreduce('sum',en4)
         endif
     end block third
 
@@ -330,13 +334,13 @@ subroutine perturbative_anharmonic_free_energy(p,fct,fcf,qp,dr,temperature,free_
         integer :: q1
 
         ! Add it up
-        call mw%allreduce('sum',en4)
-        call mw%allreduce('sum',en3)
         free_energy_thirdorder=0.0_r8
         free_energy_fourthorder=0.0_r8
         do q1=1,qp%n_irr_point
             free_energy_thirdorder=free_energy_thirdorder+sum(en3(:,q1))*qp%ip(q1)%integration_weight
-            free_energy_fourthorder=free_energy_fourthorder+sum(en4(:,q1))*qp%ip(q1)%integration_weight
+            if (fourthorder) then
+                free_energy_fourthorder=free_energy_fourthorder+sum(en4(:,q1))*qp%ip(q1)%integration_weight
+            endif
         enddo
         ! And normalize it to be per atom
         free_energy_thirdorder=free_energy_thirdorder/p%na
