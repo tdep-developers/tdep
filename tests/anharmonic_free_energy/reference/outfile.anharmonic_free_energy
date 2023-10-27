@@ -1,7 +1,5 @@
- # Lowest order approximation to the free energy: (eV/atom)
- # Calculated as <U - U_second - U_polar> + F_phonon
- F        =   -3744.8468307109692     
- # Absolute bound on error:   0.0000000000000000     
- # Components of the Free energy
- U0       =  -3744.8468307109692     
- F_phonon =   0.0000000000000000     
+ # Free energy at  -314.16 K, unit : eV/atom
+ # Lowest order (1st order cumulant, 2nd order cumulant)
+  -3744.84683  -3744.84683 
+ # Third order anharmonic corrections (1st order cumulant, 2nd order cumulant)
+  -3744.84770  -3744.84770 
