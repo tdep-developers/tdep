@@ -57,10 +57,6 @@ init: block
     call uc%readfromfile('infile.ucposcar',verbosity=opts%verbosity)
     call uc%classify('wedge',timereversal=.true.)
     if ( mw%talk ) write(*,*) '... read unitcell'
-    if ( opts%readiso ) then
-        if ( mw%talk ) write(*,*) '... reading isotope distribution from file'
-        call uc%readisotopefromfile()
-    endif
 
     ! Read forceconstants
     call fc%readfromfile(uc,'infile.forceconstant',mem,verbosity=-1)

@@ -11,10 +11,7 @@ public :: lo_opts
 type lo_opts
     integer, dimension(3) :: qgrid
     integer :: integrationtype
-    logical :: readiso
     integer :: verbosity
-    logical :: readqmesh
-    integer :: meshtype
     logical :: quantum = .false.
     logical :: stochastic = .false.
     logical :: thirdorder = .false.
@@ -47,10 +44,6 @@ subroutine parse(opts)
 
     ! Specify some options
     cli_qpoint_grid
-    call cli%add(switch='--integrationtype',switch_ab='-it',&
-        help='Type of integration. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.',&
-        required=.false.,act='store',def='2',choices='1,2,3',error=lo_status)
-        if ( lo_status .ne. 0 ) stop
     call cli%add(switch='--quantum', &
         help='Use Bose-Einstein occupations to compute the free energy', &
         required=.false., act='store_true',def='.false.',error=lo_status)
@@ -61,17 +54,14 @@ subroutine parse(opts)
         if ( lo_status .ne. 0 ) stop
     call cli%add(switch='--thirdorder', &
         help='Compute third order anharmonic correction to the free energy', &
-        required=.false., act='store_true',def='.false',error=lo_status)
+        required=.false., act='store_true',def='.false.',error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--fourthorder', &
         help='Compute fourth order anharmonic correction to the free energy', &
-        required=.false., act='store_true',def='.false',error=lo_status)
+        required=.false., act='store_true',def='.false.',error=lo_status)
     if (lo_status .ne. 0) stop
-    cli_readiso
     cli_manpage
     cli_verbose
-    cli_meshtype
-    cli_readqmesh
 
     ! actually parse it
     errctr=0
@@ -90,10 +80,6 @@ subroutine parse(opts)
 
     ! get real options
     call cli%get(switch='--qpoint_grid',        val=opts%qgrid,            error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--readqmesh',          val=opts%readqmesh,        error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--meshtype',           val=opts%meshtype,         error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--integrationtype',    val=opts%integrationtype,  error=lo_status); errctr=errctr+lo_status
-    call cli%get(switch='--readiso',            val=opts%readiso,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--quantum',            val=opts%quantum,          error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--stochastic',         val=opts%stochastic,       error=lo_status); errctr=errctr+lo_status
     call cli%get(switch='--thirdorder',         val=opts%thirdorder,       error=lo_status); errctr=errctr+lo_status
