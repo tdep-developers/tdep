@@ -171,6 +171,7 @@ end block epotthings
 getenergy: block
     real(r8) :: f_ph,ah3,ah4,fe2_1,fe2_2,fe3_1,fe3_2,fe4_1,fe4_2,pref
     integer :: u
+    character(len=1000) :: opf
 
     ! Some heuristics to figure out what the temperature is.
     if (opts%quantum) then
@@ -195,46 +196,49 @@ getenergy: block
         pref = 1.0_r8
     end if
     if ( mw%talk ) then
+        opf = '(1X,A23,1X,F20.7)'
         ! Write on a file
         u = open_file('out', 'outfile.anharmonic_free_energy')
         fe2_1 = (cumulant(1,3) + f_ph)*lo_Hartree_to_eV
         fe2_2 = (cumulant(1,3) + f_ph + pref * cumulant(2,3))*lo_Hartree_to_eV
         write(u, "(1X, A17, F8.2, 1X, A17)") '# Free energy at ', sim%temperature_thermostat, 'K, unit : eV/atom'
         write(u, *) '# Lowest order (1st order cumulant, 2nd order cumulant)'
-        write(u, "(1X, 2(F12.5,' '))") fe2_1, fe2_2
+        write(u, "(1X, 2(F25.10,' '))") fe2_1, fe2_2
         write(*,*) ''
-        write(*,*) 'Lowest order approximation to the free energy: (eV/atom)'
+        write(*,*) 'Lowest order approximation to the free energy (eV/atom):'
         write(*,*) 'Calculated as <U - U_second - U_polar> + F_phonon'
-        write(*,*) 'F (eV/atom) = ', fe2_1
-        write(*,*) 'F_phonon (eV/atom) =', f_ph*lo_Hartree_to_eV
-        write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,3)*lo_Hartree_to_eV*1000
-        write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,3)*lo_Hartree_to_eV*1000
+        write(*,opf) 'F =', fe2_1
+        write(*,opf) 'F_phonon =', f_ph*lo_Hartree_to_eV
+        write(*,opf) 'Second order cumulant =',cumulant(2,3)*lo_Hartree_to_eV
+        write(*,opf) 'Third order cumulant =',cumulant(3,3)*lo_Hartree_to_eV
         if (opts%thirdorder .or. opts%fourthorder) then
             fe3_1 = (cumulant(1,4) + f_ph + ah3)*lo_Hartree_to_eV
             fe3_2 = (cumulant(1,4) + f_ph + ah3 + pref * cumulant(2,4))*lo_Hartree_to_eV
             write(u, *) '# Third order anharmonic corrections (1st order cumulant, 2nd order cumulant)'
-            write(u, "(1X, 2(F12.5,' '))") fe3_1, fe3_2
+            write(u, "(1X, 2(F25.10,' '))") fe3_1, fe3_2
             write(*,*) ''
-            write(*,*) 'Free energy with third order anharmonic corrections: (eV/atom)'
+            write(*,*) 'Free energy with third order anharmonic corrections (eV/atom):'
             write(*,*) 'Calculated as <U - U_second - U_polar - U_third> + F_phonon + F_3'
-            write(*,*) 'F (eV/atom) = ', fe3_1
-            write(*,*) 'F_3 (eV/atom) = ', ah3*lo_Hartree_to_eV
-            write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,4)*lo_Hartree_to_eV*1000
-            write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,4)*lo_Hartree_to_eV*1000
+            write(*,opf) 'F =', fe3_1
+            write(*,opf) 'F_phonon =', f_ph*lo_Hartree_to_eV
+            write(*,opf) 'F_3 =', ah3*lo_Hartree_to_eV
+            write(*,opf) 'Second order cumulant =',cumulant(2,4)*lo_Hartree_to_eV
+            write(*,opf) 'Third order cumulant =',cumulant(3,4)*lo_Hartree_to_eV
         end if
         if (opts%fourthorder) then
             fe4_1 = (cumulant(1,5) + f_ph + ah3 + ah4)*lo_Hartree_to_eV
             fe4_2 = (cumulant(1,5) + f_ph + ah3 + ah4 + pref * cumulant(2,5))*lo_Hartree_to_eV
             write(u, *) '# Fourth order anharmonic corrections (1st order cumulant, 2nd order cumulant)'
-            write(u, "(1X, 2(F12.5,' '))") fe4_1, fe4_2
+            write(u, "(1X, 2(F25.10,' '))") fe4_1, fe4_2
             write(*,*) ''
-            write(*,*) 'Free energy with fourth order anharmonic corrections: (eV/atom)'
+            write(*,*) 'Free energy with fourth order anharmonic corrections (eV/atom):'
             write(*,*) 'Calculated as <U - U_second - U_polar - U_third - U_fourth> + F_phonon + F_3 + F_4'
-            write(*,*) 'F (eV/atom) = ',fe4_1
-            write(*,*) 'F_3 (eV/atom) = ', ah3*lo_Hartree_to_eV
-            write(*,*) 'F_4 (eV/atom) = ', ah4*lo_Hartree_to_eV
-            write(*,*) 'Second order cumulant (meV/atom):',cumulant(2,5)*lo_Hartree_to_eV*1000
-            write(*,*) 'Third order cumulant (meV/atom):',cumulant(3,5)*lo_Hartree_to_eV*1000
+            write(*,opf) 'F  =',fe4_1
+            write(*,opf) 'F_phonon =', f_ph*lo_Hartree_to_eV
+            write(*,opf) 'F_3 =', ah3*lo_Hartree_to_eV
+            write(*,opf) 'F_4 =', ah4*lo_Hartree_to_eV
+            write(*,opf) 'Second order cumulant =',cumulant(2,5)*lo_Hartree_to_eV
+            write(*,opf) 'Third order cumulant =',cumulant(3,5)*lo_Hartree_to_eV
         end if
     endif
 
