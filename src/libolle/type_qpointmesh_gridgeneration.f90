@@ -242,7 +242,7 @@ module subroutine build_grid(qp,p,mw,mem,verbosity,nosymmetry)
             t0=t1
         endif
 
-        
+
 
         ! ! This is an agressive test to make sure all the symmetry operations
         ! ! I identified actually hold. This has not triggered in many years,
@@ -950,12 +950,15 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
 
     ! Build tetrahedrons somehow.
     buildtet: block
+        real(r8), dimension(:,:), allocatable :: center_it,center_at
+        integer, dimension(:,:,:), allocatable :: shift_it,shift_at
         integer, dimension(:,:), allocatable :: ind_it,ind_at
         integer, dimension(:), allocatable :: offset_shell
 
         real(r8), dimension(3,4,6) :: tc0
+        real(r8), dimension(3,6) :: tc1
         real(r8), dimension(3,8) :: bc0
-        real(r8), dimension(3) :: v0,v1,v2,w0
+        real(r8), dimension(3) :: v0,v1,v2,w0,w1
         integer, dimension(4,6) :: tetind,tetjnd
         integer, dimension(8) :: boxind
         integer, dimension(3) :: gi
@@ -969,8 +972,17 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
         nt_tot=qp%n_full_point*6
         call mem%allocate(ind_it,[4,nt_irr],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%allocate(ind_at,[4,nt_tot],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%allocate(center_it,[3,nt_irr],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%allocate(center_at,[3,nt_tot],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%allocate(shift_it,[3,4,nt_irr],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%allocate(shift_at,[3,4,nt_tot],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+
         ind_it=0
         ind_at=0
+        center_it=0.0_r8
+        center_at=0.0_r8
+        shift_it=0
+        shift_at=0
 
         ! And a dummy counter thing
         call mem%allocate(offset_shell,size(prototype_shell),persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
@@ -990,12 +1002,24 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
             ibox=prototype_shell(ii)
             v0=r(:,ibox)
             call neighbour_corners_from_center(qp,v0,boxind,bc0)
-            call chop_box_into_tetrahedrons(p,bc0,tetind,tc0)
+            call chop_box_into_tetrahedrons(p,bc0,tetind,tc0,tc1)
 
             ! Store this irreducible tetrahedron
             do i=1,6
+
                 itet=(ii-1)*6+i
                 ind_it(:,itet)=boxind(tetind(:,i))
+                center_it(:,itet)=tc1(:,i)
+                do j=1,4
+                    ! absolute coordinate of point
+                    w0=qp%ap( ind_it(j,itet) )%r
+                    ! to fractional
+                    w0=matmul(p%inv_reciprocal_latticevectors,w0)
+                    ! distance to box corner
+                    w0=tc0(:,j,i)-w0
+                    ! Store as lattice vector shift
+                    shift_it(:,j,itet)=anint(w0)
+                enddo
             enddo
 
             ctr1=0
@@ -1035,6 +1059,22 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
                         do i=1,6
                             jtet=offset_shell(ii)+(jj-1)*6+i
                             ind_at(:,jtet)=tetjnd(:,i)
+                            center_at(:,jtet)=lo_clean_fractional_coordinates( matmul(p%sym%op(iop)%rfm,tc1(:,i)) )
+                            do j=1,4
+                                w0=matmul(p%sym%op(iop)%rfm,tc0(:,j,i))
+                                shift_at(:,j,jtet)=int(anint(v0-lo_clean_fractional_coordinates(v0)))
+                            enddo
+                            do j=1,4
+                                w1=matmul(p%sym%op(iop)%rfm,tc0(:,j,i))
+                                ! absolute coordinate of point
+                                w0=qp%ap( ind_at(j,jtet) )%r
+                                ! to fractional
+                                w0=matmul(p%inv_reciprocal_latticevectors,w0)
+                                ! distance to box corner
+                                w0=w1-w0
+                                ! Store as lattice vector shift
+                                shift_at(:,j,jtet)=anint(w0)
+                            enddo
                         enddo
                         exit opl1
                     endif
@@ -1075,6 +1115,18 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
                         do i=1,6
                             jtet=offset_shell(ii)+(jj-1)*6+i
                             ind_at(:,jtet)=tetjnd(:,i)
+                            center_at(:,jtet)=lo_clean_fractional_coordinates( -matmul(p%sym%op(iop)%rfm,tc1(:,i)) )
+                            do j=1,4
+                                w1=-matmul(p%sym%op(iop)%rfm,tc0(:,j,i))
+                                ! absolute coordinate of point
+                                w0=qp%ap( ind_at(j,jtet) )%r
+                                ! to fractional
+                                w0=matmul(p%inv_reciprocal_latticevectors,w0)
+                                ! distance to box corner
+                                w0=w1-w0
+                                ! Store as lattice vector shift
+                                shift_at(:,j,jtet)=anint(w0)
+                            enddo
                         enddo
                         exit opl2
                     endif
@@ -1095,6 +1147,10 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
         ! Sync, and sanity checks
         call mw%allreduce('sum',ind_it)
         call mw%allreduce('sum',ind_at)
+        call mw%allreduce('sum',center_it)
+        call mw%allreduce('sum',center_at)
+        call mw%allreduce('sum',shift_it)
+        call mw%allreduce('sum',shift_at)
         call mw%allreduce('sum',ctr0)
         if ( minval(ind_it) .le. 0               ) ctr0=ctr0+1
         if ( maxval(ind_it) .gt. qp%n_full_point ) ctr0=ctr0+1
@@ -1120,14 +1176,27 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
                 if ( mod(ii,mw%n) .ne. mw%r ) cycle
                 v0=r(:,ii)
                 call neighbour_corners_from_center(qp,v0,boxind,bc0)
-                call chop_box_into_tetrahedrons(p,bc0,tetind,tc0)
+                call chop_box_into_tetrahedrons(p,bc0,tetind,tc0,tc1)
                 ! Store this tetrahedron
                 do i=1,6
                     itet=(ii-1)*6+i
                     ind_at(:,itet)=boxind(tetind(:,i))
+                    center_at(:,itet)=tc1(:,i)
+                    do j=1,4
+                        ! absolute coordinate of point
+                        w0=qp%ap( ind_at(j,itet) )%r
+                        ! to fractional
+                        w0=matmul(p%inv_reciprocal_latticevectors,w0)
+                        ! distance to box corner
+                        w0=tc0(:,j,i)-w0
+                        ! Store as lattice vector shift
+                        shift_at(:,j,itet)=anint(w0)
+                    enddo
                 enddo
             enddo
             call mw%allreduce('sum',ind_at)
+            call mw%allreduce('sum',center_at)
+            call mw%allreduce('sum',shift_at)
 
             ! Make space for tetrahedrons:
             qp%n_irr_tet=6*qp%n_full_point
@@ -1140,6 +1209,10 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
                 qp%it(itet)%full_index=ind_at(:,itet)
                 qp%at(itet)%integration_weight=1.0_r8
                 qp%it(itet)%integration_weight=1.0_r8
+                qp%at(itet)%center_of_mass=center_at(:,itet)
+                qp%it(itet)%center_of_mass=center_at(:,itet)
+                qp%at(itet)%lattice_vector_shift=shift_at(:,:,itet)
+                qp%it(itet)%lattice_vector_shift=shift_at(:,:,itet)
             enddo
         else
             ! This went well!
@@ -1156,11 +1229,15 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
                     itet=(ii-1)*6+i
                     qp%it(itet)%full_index=ind_it(:,itet)
                     qp%it(itet)%integration_weight=shell_ctr(ii)
+                    qp%it(itet)%center_of_mass=center_it(:,itet)
+                    qp%it(itet)%lattice_vector_shift=shift_it(:,:,itet)
                 enddo
             enddo
             do i=1,qp%n_full_tet
                 qp%at(i)%full_index=ind_at(:,i)
                 qp%at(i)%integration_weight=1.0_r8
+                qp%at(i)%center_of_mass=center_at(:,i)
+                qp%at(i)%lattice_vector_shift=shift_at(:,:,i)
             enddo
         endif
 
@@ -1168,6 +1245,10 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
         call mem%deallocate(offset_shell,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(ind_it,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(ind_at,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%deallocate(center_it,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%deallocate(center_at,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%deallocate(shift_it,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+        call mem%deallocate(shift_at,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(r,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(shell_ctr,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(shell_member,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
@@ -1191,11 +1272,11 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
             ! Make it parallel
             if ( mod(itet,mw%n) .ne. mw%r ) cycle
             ! Get unwrapped coordinates of tetrahedron
-            v0=qp%ap( qp%it(itet)%full_index(1) )%r
+            v0=qp%it(itet)%center_of_mass
             do icrn=1,4
-                v1=qp%ap( qp%it(itet)%full_index(icrn) )%r-v0
-                v1=matmul(p%inv_reciprocal_latticevectors,v1)
-                v1=lo_clean_fractional_coordinates(v1+0.5_r8)-0.5_r8
+                v1=qp%ap( qp%it(itet)%full_index(icrn) )%r
+                v1=matmul(p%inv_reciprocal_latticevectors,v1)-v0
+                v1=v1+qp%it(itet)%lattice_vector_shift(:,icrn)
                 tet(:,icrn)=matmul(p%reciprocal_latticevectors,v1)
             enddo
             if ( abs(lo_unsigned_tetrahedron_volume(tet)*p%volume-f0) .gt. 1E-10_r8 ) then
@@ -1205,6 +1286,25 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
             endif
         enddo
         call mw%allreduce('sum',wt)
+
+        ! Sanity check, do it again for the full set
+        do itet=1,qp%n_full_tet
+            ! Make it parallel
+            if ( mod(itet,mw%n) .ne. mw%r ) cycle
+            ! Get unwrapped coordinates of tetrahedron
+            v0=qp%at(itet)%center_of_mass
+            do icrn=1,4
+                v1=qp%ap( qp%at(itet)%full_index(icrn) )%r
+                v1=matmul(p%inv_reciprocal_latticevectors,v1)-v0
+                v1=v1+qp%at(itet)%lattice_vector_shift(:,icrn)
+                tet(:,icrn)=matmul(p%reciprocal_latticevectors,v1)
+            enddo
+            if ( abs(lo_unsigned_tetrahedron_volume(tet)*p%volume-f0) .gt. 1E-10_r8 ) then
+                call lo_stop_gracefully(['Unexpected tetrahedron weight'],lo_exitcode_symmetry,__FILE__,__LINE__,mw%comm)
+            endif
+        enddo
+
+
 
         ! Now store the proper weights, and sort out the irreducible indices
         do itet=1,qp%n_irr_tet
@@ -1259,6 +1359,7 @@ subroutine neighbour_corners_from_center(qp,r,ind,br)
     dlz(1)=-0.5_r8/qp%griddensity(3)
     dlz(2)= 0.5_r8/qp%griddensity(3)
 
+    ! This is a sanity check to make sure I know how to index, basically.
     l=0
     do i=1,2
     do j=1,2
@@ -1275,26 +1376,40 @@ subroutine neighbour_corners_from_center(qp,r,ind,br)
     enddo
     enddo
     enddo
-    ! And eventually fetch the coordinates?
-    do i=1,8
-        gi=qp%ind2gridind(:,ind(i))
-        v=qp%coordinate_from_index(gi)
-        v=lo_clean_fractional_coordinates(lo_chop(v,1E-11_r8))
-        v=lo_clean_fractional_coordinates(lo_chop(v,1E-11_r8))
-        br(:,i)=v
+    ! Then it's better to return the box in relative coordinates, since I actually know that it should be.
+    l=0
+    do i=1,2
+    do j=1,2
+    do k=1,2
+        v=r+[dlx(i),dly(j),dlz(k)]
+        l=l+1
+        br(:,l)=v
     enddo
+    enddo
+    enddo
+
+    ! ! And eventually fetch the coordinates?
+    ! do i=1,8
+    !     gi=qp%ind2gridind(:,ind(i))
+    !     v=qp%coordinate_from_index(gi)
+    !     v=lo_clean_fractional_coordinates(lo_chop(v,1E-11_r8))
+    !     v=lo_clean_fractional_coordinates(lo_chop(v,1E-11_r8))
+    !     br(:,i)=v
+    ! enddo
 end subroutine
 
 !> slice a box into tetrahedrons
-subroutine chop_box_into_tetrahedrons(p,box,tetind,tetcoord)
+subroutine chop_box_into_tetrahedrons(p,box,tetind,tetcoord,tetctr)
     !> crystal structure
     type(lo_crystalstructure), intent(in) :: p
     !> coordinates of box (in fractional coordinates)
     real(r8), dimension(3,8), intent(in) :: box
     !> indices to tetrahedrons
     integer, dimension(4,6), intent(out) :: tetind
-    !> coordinates of tetrahedrons, fractional coordinates
+    !> coordinates of tetrahedrons, fractional coordinates.
     real(r8), dimension(3,4,6), intent(out) :: tetcoord
+    !> center of mass of the tetrahedrons
+    real(r8), dimension(3,6), intent(out) :: tetctr
 
     type(lo_plane) :: plane
     real(r8), dimension(3,8) :: r
@@ -1305,14 +1420,13 @@ subroutine chop_box_into_tetrahedrons(p,box,tetind,tetcoord)
     integer, dimension(2) :: diagonal
     integer :: i,j,k,l
 
-
     ! First we have to unwrap the box and get the center of mass.
-    v0=box(:,1)
+    v0=box(:,1) !+[1.0_r8,2.0_r8,3.0_r8]*1E-5
     com=0.0_r8
     r=0.0_r8
     do i=1,8
         v1=box(:,i)-v0
-        v1=lo_clean_fractional_coordinates(v1+0.5_r8)-0.5_r8
+        !v1=lo_clean_fractional_coordinates(v1+0.5_r8)-0.5_r8
         r(:,i)=matmul(p%reciprocal_latticevectors,v1)
         com=com+r(:,i)/8.0_r8
     enddo
@@ -1343,7 +1457,7 @@ subroutine chop_box_into_tetrahedrons(p,box,tetind,tetcoord)
         if ( i .ne. diagonal(1) .and. i .ne. diagonal(2) ) then
             l=l+1
             otherpoints(l)=i
-            u(:,l)=box(:,i)
+            u(:,l)=r(:,i)
         endif
     enddo
 
@@ -1363,6 +1477,18 @@ subroutine chop_box_into_tetrahedrons(p,box,tetind,tetcoord)
     tetind(2,6)=diagonal(2)
     tetind(3,6)=otherpoints(angleind(6))
     tetind(4,6)=otherpoints(angleind(1))
+
+    ! Get the center of the tetrahedron, think that makes some sense
+    ! at least.
+    tetctr=0.0_r8
+    do i=1,6
+        v0=0.0_r8
+        do j=1,4
+            k=tetind(j,i)
+            v0=v0+box(:,k)*0.25_r8
+        enddo
+        tetctr(:,i)=lo_clean_fractional_coordinates(v0)
+    enddo
 
     ! And return the coordinates of the tetrahedrons.
     do i=1,6
