@@ -1,5 +1,5 @@
 ---
-title: "TDEP: Temperature Dependent Effective Potenials"
+title: "TDEP: Temperature Dependent Effective Potentials"
 tags:
   - Fortran
   - Physics
