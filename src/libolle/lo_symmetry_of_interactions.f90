@@ -927,11 +927,13 @@ subroutine generate(sl,uc,ss,cutoff2,cutoff3,cutoff4,polar,mw,mem,verbosity,&
         ! memory thing I think.
         ! FK: this breaks Raman detection in any material, check for no. of atoms instead
         ! if ( max(dc2,dc3) .gt. 0.0_r8 ) then
-        if ( uc%na < 100 ) then
+        if ( uc%na < 33 ) then
             call nullspace_eps_singlet(sl,sh,uc,mw,mem)
         else
-            write(lo_iou,*) 'FIXME: Large unitcell with ', uc%na, ' atoms used'
-            write(lo_iou,*) 'FIXME: Raman activity will NOT be reported'
+            if ( mw%talk ) then
+                write(lo_iou,*) 'FIXME: Large unitcell with ', uc%na, ' atoms used'
+                write(lo_iou,*) 'FIXME: Raman activity will NOT be reported'
+            end if
             sl%have_eps_singlet=.false.
             sl%nx_eps_singlet=0
             sl%n_eps_singlet_shell=0
