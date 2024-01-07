@@ -568,7 +568,7 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
               do i=1,p%na
                  if (p%species(i) /= it) exit
               end do
-              write(u,'(i10,e20.8,a)') it, lo_chop(p%isotope(i)%mass,lo_sqtol), ' # ', trim(p%atomic_symbol(it))
+              write(u,'(i10,e20.8,2a)') it, lo_chop(p%isotope(i)%mass,lo_sqtol), ' # ', trim(p%atomic_symbol(it))
             end do
             write(u,*) 'Atoms'
             write(u,*) ''
