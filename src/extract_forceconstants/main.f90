@@ -41,6 +41,7 @@ init: block
     call mem%init()
     t0 = walltime()
     call opts%parse()
+    if (mw%talk) write (lo_iou, *) 'READ STRUCTURE AND SETUP CUTOFFS'
     if (mw%talk .eqv. .false.) opts%verbosity = -100
     if (mw%talk) write (lo_iou, *) '... reading unitcell'
     call uc%readfromfile('infile.ucposcar', verbosity=opts%verbosity)
@@ -67,8 +68,11 @@ getfrcmap: block
         ! Now we have to calculate the whole thing.
         call uc%classify('wedge', timereversal=.true.)
         call ss%readfromfile('infile.ssposcar')
-        if (mw%talk) write (*, *) '... min cutoff: ', tochar(ss%mincutoff()*lo_bohr_to_A)
-        if (mw%talk) write (*, *) '... max cutoff: ', tochar(ss%maxcutoff()*lo_bohr_to_A)
+        if (mw%talk) write (*, '(1X,A,1X,F12.5)') '... min cutoff: ', ss%mincutoff()*lo_bohr_to_A
+        if (mw%talk) write (*, '(1X,A,1X,F12.5)') '... max cutoff: ', ss%maxcutoff()*lo_bohr_to_A
+        if (mw%talk) write (*, '(1X,A,1X,F12.5)') '--> rc2 cutoff: ', opts%cutoff2*lo_bohr_to_A
+        if (mw%talk) write (*, '(1X,A,1X,F12.5)') '--> rc3 cutoff: ', opts%cutoff3*lo_bohr_to_A
+        if (mw%talk) write (*, '(1X,A,1X,F12.5)') '--> rc4 cutoff: ', opts%cutoff4*lo_bohr_to_A
         ! Die early if there is no infile.lotosplitting
         if (opts%polar) then
         if (lo_does_file_exist('infile.lotosplitting') .eqv. .false.) then
