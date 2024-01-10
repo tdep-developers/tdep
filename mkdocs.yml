@@ -1,12 +1,16 @@
 site_name: TDEP
 
+repo_url: https://github.com/tdep-developers/tdep
+
+copyright: 'Copyright &copy; 2023 Olle Hellman, Florian Knoop'
+
 theme:
     name: 'material'
 
     palette:
-        primary: 'Orange'
-        accent: 'Blue Grey'
-    # logo: images/FV.svg
+        primary: red
+        accent: cyan
+    logo: 'media/matematico_favicon.png'
     favicon: 'media/matematico_favicon.png'
     include_search_page: false
     features:
@@ -14,7 +18,7 @@ theme:
         - navigation.instant
 
     font:
-        text: 'Open Sans'
+        text: Inter
         code: 'Droid Sans Mono'
 
 nav:
