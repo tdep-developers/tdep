@@ -39,9 +39,9 @@ subroutine parse(opts)
                  help='Number of samples', &
                  required=.false., act='store', def='50', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--output_format', switch_ab='-of', hidden=.false., &
-                 help='Output format. 1 is VASP, 2 Abinit, 3 LAMMPS, 4 FHI-AIMS.', &
-                 required=.false., act='store', def='1', choices='1,2,3,4', error=lo_status)
+    call cli%add(switch='--output_format', switch_ab='-of', &
+                 help='Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta. Default 1.', &
+                 required=.false., act='store', def='1', choices='1,2,4,5', error=lo_status)
     if (lo_status .ne. 0) stop
 
     cli_manpage

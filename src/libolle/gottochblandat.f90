@@ -1540,6 +1540,8 @@ subroutine lo_stop_gracefully(msg,exitcode,filename,line)
         write(*,*) 'exit code 6: I/O error'
     case(7)
         write(*,*) 'exit code 7: MPI error'
+    case(8)
+        write(*,*) 'exit code 8: Feature removed'
     end select
     write(*,*) ''
     do i=1,size(msg)

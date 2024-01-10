@@ -488,6 +488,7 @@ endif
 # A bit more advanced
 #
 $(OBJECT_PATH)type_crystalstructure.o:\
+	type_crystalstructure.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)geometryfunctions.o\
