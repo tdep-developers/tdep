@@ -8,8 +8,6 @@ set -e
 
 #should everything be cleaned? I keep this in place since I might want more options in the future.
 CLEAN=YES
-HOLDING=NO
-TESTS=NO
 MANPAGE=YES
 NTHREADS_MAKE=1
 for i in "$@"
@@ -21,10 +19,6 @@ case $i in
     ;;
     --clean)
     CLEAN=YES
-    shift # past argument with no value
-    ;;
-    --holding)
-    HOLDING=YES
     shift # past argument with no value
     ;;
     --nomanpage)
@@ -43,7 +37,6 @@ case $i in
 esac
 done
 echo "clean everything? ${CLEAN}"
-echo "build codes in holding? ${HOLDING}"
 echo "number of threads: ${NTHREADS_MAKE}"
 
 # Grab wich branch we are on, and which revision
@@ -230,140 +223,7 @@ do
     [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
 done
 
-# extra codes, old and undocumented
-listofholdingcodes="
-remap_forceconstant
-unstable_thermal_conductivity_do_not_use
-MEGAFIT
-eosfit
-dump_dynamical_matrices
-"
-# removed for now from the above list:
-# phasespace_surface
-# autocorrelation
-# force_constant_md
-#
-dum="
-unstable_thermal_conductivity_do_not_use
-project_magnetic_moments
-spin_mc
-parse_bandstructure
-join_simulations
-project_confused_parrot
-unstable_extract_forceconstants
-project_pacified_hyena
-project_startled_pangolin
-pyroelectric_coefficient
-anharmonic_free_energy
-fold_bands
-elastic_constants
-project_flaming_turtle
-more_arcs_unfolding
-parse_abinit_el_phon_data
-chargedensity
-fourier_transform_charge_density
-average_charge_density
-electrostatics_from_aims
-"
-
 basedir=`pwd`
-# only build these if specified
-if [ ${HOLDING} = "YES" ]
-then
-    for code in ${listofholdingcodes}
-    do
-        echo " "
-        echo "Building ${code}"
-        # go to the correct directory
-        cd holding/${code} || exit 0
-            # make sure there is space in the build thingy
-            [ -d ../../build/${code} ] || mkdir ../../build/${code}
-            # build it
-            if [ ${CLEAN} = "YES" ]
-            then
-                make clean && make -j ${NTHREADS_MAKE}
-            else
-                make -j ${NTHREADS_MAKE}
-            fi
-            if [ ${MANPAGE} = "YES" ]
-            then
-                # if I got a binary, run it with --manpage to create the manpage and move it to the right place
-                [ -f ../../build/${code}/${code} ] && ../../build/${code}/${code} --manpage
-                [ -f ${code} ] && ./${code} --manpage
-                [ -f "${code}.1" ] && mv ${code}.1 ../../man/man1 # manpage
-                [ -f "${code}.md" ] && mv ${code}.md ../../man/ # same thing in markdown format.
-            fi
-        cd ../../
-        # link it to bin?
-        [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
-    done
-fi # endif holding code thing
-
-
-# tests for debugging
-listoftestcodes="
-phonon_group_velocity
-electron_group_velocity
-polylogarithms
-bz_integrations
-translational_invariance
-tdep_test_convolution
-"
-
-# only build these if specified
-if [ ${TESTS} = "YES" ]
-then
-    for code in ${listoftestcodes}
-    do
-        echo " "
-        echo "Building ${code}"
-        # go to the correct directory
-        cd tests/${code} || exit 0
-            # make sure there is space in the build thingy
-            [ -d ../../build/${code} ] || mkdir ../../build/${code}
-            # build it
-            if [ ${CLEAN} = "YES" ]
-            then
-                make clean && make -j ${NTHREADS_MAKE}
-            else
-                make -j ${NTHREADS_MAKE}
-            fi
-            # if [ ${MANPAGE} = "YES" ]
-            # then
-            #     # if I got a binary, run it with --manpage to create the manpage and move it to the right place
-            #     [ -f ../../build/${code}/${code} ] && ../../build/${code}/${code} --manpage
-            #     [ -f ${code} ] && ./${code} --manpage
-            #     [ -f "${code}.1" ] && mv ${code}.1 ../../man/man1 # manpage
-            #     [ -f "${code}.md" ] && mv ${code}.md ../../man/ # same thing in markdown format.
-            # fi
-        cd ../../
-        # link it to bin?
-        [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
-    done
-fi # endif test code thing
-
-# just small fixes for the outcar processing scripts
-# echo ${PYTHONHEADER} > bin/process_outcar.py
-# tail -n+2 utils/process_outcar.py >> bin/process_outcar.py
-# chmod 755 bin/process_outcar.py
-# 
-# echo ${PYTHONHEADER} > bin/process_outcar_5.3.py
-# tail -n+2 utils/process_outcar_5.3.py | sed "s/GNUPLOTTERM/${GNUPLOTTERMINAL}/g" >> bin/process_outcar_5.3.py
-# chmod 755 bin/process_outcar_5.3.py
-
-# pythonplotsnippets="
-# lo_plot_sqe.py
-# lo_plot_phonon_dispersion.py
-# lo_plot_pair_distribution.py
-# "
-# for code in ${pythonplotsnippets}
-# do
-#     echo ${PYTHONHEADER} > bin/${code}
-#     tail -n+2 utils/${code} >> bin/${code}
-#     chmod 755 bin/${code}
-# done
-
-# and fix the python plotting guys
 
 echo " "
 echo "Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely"
