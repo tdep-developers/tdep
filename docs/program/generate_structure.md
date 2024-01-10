@@ -18,9 +18,9 @@ Optional switches:
     default value 0 0 0 0 0 0 0 0 0  
     Non-diagonal dimensions of supercell.
 
-* `--output_format value`, `-of value`, value in: `1,2,3,4,5`  
+* `--output_format value`, `-of value`, value in: `1,2,4,5`  
     default value 1  
-    Output format. 1 is VASP, 2 Abinit, 3 LAMMPS, 4 FHI-Aims and 5 Siesta
+    Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims and 5 Siesta
 
 * `--desired_na value`, `-na value`  
     default value -1  

@@ -22,9 +22,9 @@ Optional switches:
     default value .false.  
     Use Bose-Einstein statistics instead of Maxwell-Boltzmann. That is, use \( \sqrt{\frac{\hbar (2n+1) }{2 m \omega}} \) as the mean normal mode amplitudes instead of the classical \( \frac{1}{\omega}\sqrt{\frac{k_BT}{m}} \)
 
-* `--output_format value`, `-of value`, value in: `1,2,3,4,5`  
+* `--output_format value`, `-of value`, value in: `1,2,4,5`  
     default value 1  
-    Selects output format. 1 is VASP, 2 is Abinit, 3 is LAMMPS, 4 is FHI-Aims, 5 is Siesta. Default 1.
+    Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta. Default 1.
 
 * `--mindist value`  
     default value -1  
@@ -175,8 +175,7 @@ Or alternatively matching the maximum frequency to a reference value (option `--
 
 ### Stochastic sampling
 
-!!! todo
-    Link to the tutorial for stochastic sampling.
+There is a dedicated tutorial for stochastic sampling [here](https://github.com/tdep-developers/tdep-tutorials/tree/main/02_sampling).
 
 ### Input files
 

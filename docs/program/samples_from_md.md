@@ -14,9 +14,9 @@ Optional switches:
     default value 50  
     Number of samples
 
-* `--output_format value`, `-of value`, value in: `1,2,3,4`  
+* `--output_format value`, `-of value`, value in: `1,2,4,5`  
     default value 1  
-    Output format. 1 is VASP, 2 Abinit, 3 LAMMPS, 4 FHI-AIMS.
+    Output format. 1 is VASP, 2 Abinit, 4 FHI-AIMS, 5 Siesta
 
 * `--help`, `-h`  
     Print this help message
