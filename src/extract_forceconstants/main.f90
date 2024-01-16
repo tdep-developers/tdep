@@ -436,9 +436,16 @@ getU0: block
     if ((mw%talk) .and. (opts%verbosity > 0)) then
         write (*, *) ''
         write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
-        write (*, '(A)') '   conf        Epot                  Epolar                &
+        write (*, '(A)') '   conf              Epot                  Epolar                &
         &Epair                 Etriplet              Equartet'
     end if
+
+    ! file for the energies
+    u = open_file('out', 'outfile.energies')
+    write (u, '(A,A)') '# Unit:      ', 'meV/atom'
+    write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+    write (u, "(A)") '#  conf    Epot                  Epolar                &
+        &Epair                 Etriplet              Equartet'
 
     ctr = 0
     ctrtot = 0
@@ -538,11 +545,18 @@ getU0: block
         end if
         if ((mw%talk) .and. (opts%verbosity > 0)) then
             ctr = ctr + 1
+            ! Dump it to file
+            write (u, "(1X,I5,5(2X,E20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
+
             if (lo_trueNtimes(ctr, 20, ctrtot)) then
-                write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
+                write (*, "(1X,I5,F30.12,4(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
             end if
         end if
     end do
+
+    ! close outfile.energies
+    if (mw%talk) write (*, '(A)') ' ... writen to `outfile.energies`'
+    close (u)
 
     ! sync across ranks
     call mw%allreduce('sum', f0)
