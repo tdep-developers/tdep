@@ -1,8 +1,8 @@
 #!/bin/bash
 # A central place to put all the important paths. You probably have to modify this to make things work.
 
-# prefix of your conda installation
-PREFIX=/Users/flokno/working/projects/tdep/install/conda/conda
+# prefix of your conda environment folder (in which you have ./bin, ./lib, ./include, ... directories)
+PREFIX=/path/to/your/conda/environment
 
 # the fortran compiler
 FORTRAN_COMPILER="$PREFIX/bin/mpifort"
