@@ -188,9 +188,9 @@ dumpconf: block
             else
                 invert = .false.
             end if
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert, imaginary=opts%imaginary)
         else
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imaginary=opts%imaginary)
         end if
 
         ! dump to file
