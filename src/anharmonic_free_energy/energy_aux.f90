@@ -1,6 +1,4 @@
 
-
-
 ! !> Get the spectral anharmonic free energy
 ! subroutine spectral_free_energy(qp,dr,uc,F3,F4,npts,unitfactor,mw)
 !     !> qpoint mesh
