@@ -440,13 +440,6 @@ getU0: block
         &Epair                 Etriplet              Equartet'
     end if
 
-    ! file for the energies
-    u = open_file('out', 'outfile.energies')
-    write (u, '(A,A)') '# Unit:      ', 'eV/atom'
-    write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
-    write (u, "(A)") '#  conf    Epot                  Epolar                &
-        &Epair                 Etriplet              Equartet'
-
     ctr = 0
     ctrtot = 0
     do t = 1, sim%nt
@@ -545,18 +538,11 @@ getU0: block
         end if
         if ((mw%talk) .and. (opts%verbosity > 0)) then
             ctr = ctr + 1
-            ! Dump it to file
-            write (u, "(1X,I5,5(2X,E20.12))") t, e0(t)*toev, ep(t)*toev, e2(t)*toev, e3(t)*toev, e4(t)*toev
-
             if (lo_trueNtimes(ctr, 20, ctrtot)) then
                 write (*, "(1X,I5,F30.12,4(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
             end if
         end if
     end do
-
-    ! close outfile.energies
-    if (mw%talk) write (*, '(A)') ' ... writen to `outfile.energies`'
-    close (u)
 
     ! sync across ranks
     call mw%allreduce('sum', f0)
@@ -569,6 +555,25 @@ getU0: block
     call mw%allreduce('sum', e2)
     call mw%allreduce('sum', e3)
     call mw%allreduce('sum', e4)
+
+    ! dump to outfile.enegies
+    if ((mw%talk) .and. (opts%verbosity > 0)) then
+        ! file for the energies
+        u = open_file('out', 'outfile.energies')
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, "(A)") '#  conf    Epot                  Epolar                &
+            &Epair                 Etriplet              Equartet'
+
+        do t = 1, sim%nt
+            ! Dump it to file
+            write (u, "(1X,I5,5(2X,E20.12))") t, e0(t)*toev, ep(t)*toev, e2(t)*toev, e3(t)*toev, e4(t)*toev
+        end do
+
+        ! close outfile.energies
+        write (*, '(A)') ' ... energies writen to `outfile.energies`'
+        close (u)
+    end if
 
     ! Subtract a baseline to get sensible numbers to work with
     ebuf = e0 - e2 - e3 - e4 - ep
