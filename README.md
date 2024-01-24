@@ -2,7 +2,7 @@ Temperature Dependent Effective Potentials (TDEP)
 ===
 
 
-Briefly summarized, the package provides all the tools you need to build accurate model Hamiltonians for finite temperature lattice dynamics from first principles. TDEP includes several programs which we briefly introduce here. More details can be found in the [online documentation](https://tdep-developers.github.io/tdep/).
+Briefly summarized, the package provides all the tools you need to build accurate model Hamiltonians for finite temperature lattice dynamics from first principles. TDEP includes several programs for different tasks:
 
 - `generate_structure`: Generate supercells of target size, with options to make them as cubic as possible to maximize the real-space cutoff for the force constants.
 
@@ -16,9 +16,7 @@ Briefly summarized, the package provides all the tools you need to build accurat
 
 - `lineshape`: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone. The grid mode computes _spectral_ thermal transport properties as well.
 
-## Manual
-
-[The manual has its own page, including example workflows and theoretical background.](https://tdep-developers.github.io/tdep/)
+More details, examples, and theoretical background can be found in the [online documentation](https://tdep-developers.github.io/tdep/program). See [below](#how-to-cite) which references should be cited for which program.
 
 ## Tutorials
 
@@ -44,36 +42,50 @@ You can find a range of tutorials for realistic research workflow using TDEP [in
 
 This software is distributed under the MIT license. If you use it, please cite the respective publications:
 
-- `generate_structure`:
+`generate_structure`
 
-  - [O. Hellman, I. A. Abrikosov, and S. I. Simak, Phys Rev B **84**, 180301 (2011)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.84.180301)
+- [O. Hellman, I. A. Abrikosov, and S. I. Simak, Phys Rev B **84**, 180301 (2011)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.84.180301)
 
-- `canonical_configuration`: 
+`canonical_configuration`
 
-  - Classical statistics: [D. West and S. K. Estreicher, Phys Rev Lett **96**, 115504 (2006)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.115504)
-  - Quantum statistics: [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
+- Classical statistics: [D. West and S. K. Estreicher, Phys Rev Lett **96**, 115504 (2006)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.115504)
+- Quantum statistics: [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
 
-- `extract_forceconstants`: 
+`extract_forceconstants`
 
-  - Second order: [O. Hellman *et al.*, Phys Rev B **87**, 104111 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.87.104111)
+- Second order: [O. Hellman *et al.*, Phys Rev B **87**, 104111 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.87.104111)
 
-  - Third order: [O. Hellman and I. A. Abrikosov, Phys Rev B **88**, 144301 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.88.144301)
+- Third order: [O. Hellman and I. A. Abrikosov, Phys Rev B **88**, 144301 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.88.144301)
+- Fourth order: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
 
-  - Fourth order: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+`phonon_dispersion_relations`
 
-- `phonon_dispersion_relations`: 
+- [O. Hellman *et al.*, Phys Rev B **87**, 104111 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.87.104111)
 
-  -  [O. Hellman *et al.*, Phys Rev B **87**, 104111 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.87.104111)
+`thermal_conductivity`
 
-- `thermal_conductivity`: 
+- Method: [D. A. Broido *et al.*, Appl Phys Lett **91**, 231922 (2007)](https://doi.org/10.1063/1.2822891)
 
-  - Method: [D. A. Broido *et al.*, Appl Phys Lett **91**, 231922 (2007)](https://doi.org/10.1063/1.2822891)
-  - Implementation: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+- Implementation: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+- Fourth order contributions: [J. Klarbring *et al.*, Phys Rev Lett **125**, 045701 (2020)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.125.045701)
 
-  - Fourth order contributions: [J. Klarbring *et al.*, Phys Rev Lett **125**, 045701 (2020)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.125.045701)
+`lineshape`
 
-- `lineshape`: 
+- [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+- [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
+- Grid mode for spectral transport: [Đ. Dangić *et al.*, Npj Comput Mater **7**, 57 (2021)](https://www.nature.com/articles/s41524-021-00523-7)
 
-  - [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
-  - [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
-  - Grid mode for spectral transport: [Đ. Dangić *et al.*, Npj Comput Mater **7**, 57 (2021)](https://www.nature.com/articles/s41524-021-00523-7)
+## Troubleshooting
+
+Some common issues:
+
+### Symmetry errors
+
+TDEP is very strict about crystal symmetries. In phonopy world, the symmetry precision is about `1e-10`. If you see an error like
+
+```
+ERROR
+exit code 4: symmetry error
+```
+
+chances are high that your structure input files are not perfectly symmetric and consistent. **Precise input structures are a prerequisite for using TDEP successfully.**
