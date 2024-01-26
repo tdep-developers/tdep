@@ -6,16 +6,8 @@ folder = parent / "reference"
 
 
 def _read_file(file):
-    with open(file) as f:
-        next(f)
-        next(f)
-        F = float(next(f).split()[2])
-        next(f)
-        next(f)
-        U0 = float(next(f).split()[2])
-        Fp = float(next(f).split()[2])
-
-    return np.array([F, U0, Fp])
+    data = np.loadtxt(file)
+    return data
 
 
 def test_output(file="outfile.anharmonic_free_energy"):

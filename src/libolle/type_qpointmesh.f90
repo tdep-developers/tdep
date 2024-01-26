@@ -50,6 +50,10 @@ type lo_qptetrahedron
     integer, dimension(4) :: full_index=-lo_hugeint
     !> integration weight of this tetrahedron. Sums to 1.
     real(r8) :: integration_weight=-lo_huge
+    !> center of mass of tetrahedron
+    real(r8), dimension(3) :: center_of_mass=-lo_huge
+    !> lattice vector shifts of tetrahedron corners
+    integer, dimension(3,4) :: lattice_vector_shift=-lo_hugeint
 end type
 
 !> A general q-point

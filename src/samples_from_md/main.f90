@@ -2,7 +2,7 @@
 program samples_from_md
 !!{!src/samples_from_md/manual.md!}
 use konstanter, only: flyt, lo_huge, lo_tol, lo_hugeint
-use gottochblandat, only: open_file, lo_mean, lo_stddev, tochar, lo_progressbar_init, lo_progressbar, walltime
+use gottochblandat, only: open_file, lo_mean, lo_stddev, tochar, lo_progressbar_init, lo_progressbar, walltime, lo_stop_gracefully
 use type_crystalstructure, only: lo_crystalstructure
 use lo_randomnumbers, only: lo_mersennetwister
 use type_mdsim, only: lo_mdsim
@@ -148,7 +148,7 @@ do i = 1, opts%n
     case (2) ! Abinit
         call p%writetofile(fname, opts%output_format, .true.)
     case (3) ! LAMMPS
-        call p%writetofile(fname, opts%output_format, .true.)
+        call lo_stop_gracefully(['Native LAMMPS IO was removed, please use external converters.'], 8)
     case (4) ! AIMS
         call p%writetofile(fname, opts%output_format, .true.)
     case default

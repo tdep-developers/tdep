@@ -477,7 +477,7 @@ subroutine get_selfconsistent_solution(sc, dr, qp, uc, temperature, niter, tol, 
                 iter, m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3), scfcheck(iter)
 
             ! If we had too many iterations I want to adjust the mixing a little
-            if (iter .gt. 15) then
+            if (iter .gt. 15 .and. mixingparameter .gt. 0.10) then
                 mixingparameter = mixingparameter*0.98_r8
             end if
         end block addandcheck

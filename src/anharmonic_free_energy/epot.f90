@@ -1,10 +1,10 @@
 module epot
 !! Deal with many kinds of potential energy differences
-use konstanter, only: r8,lo_pi,lo_twopi,lo_tol,lo_sqtol,lo_status,lo_Hartree_to_eV,lo_kb_hartree
-use gottochblandat, only: tochar,walltime,lo_chop,lo_trueNtimes,lo_progressbar_init,&
-                   lo_progressbar,lo_frobnorm,open_file,lo_flattentensor,lo_sqnorm,lo_outerproduct,lo_mean,&
-                   lo_points_on_sphere,lo_mean,lo_stddev
-use mpi_wrappers, only: lo_mpi_helper,lo_stop_gracefully
+use konstanter, only: r8, lo_pi, lo_twopi, lo_tol, lo_sqtol, lo_status, lo_Hartree_to_eV, lo_kb_hartree
+use gottochblandat, only: tochar, walltime, lo_chop, lo_trueNtimes, lo_progressbar_init, &
+                          lo_progressbar, lo_frobnorm, open_file, lo_flattentensor, lo_sqnorm, lo_outerproduct, lo_mean, &
+                          lo_points_on_sphere, lo_mean, lo_stddev
+use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 !use geometryfunctions, only: lo_inscribed_sphere_in_box
 use type_crystalstructure, only: lo_crystalstructure
@@ -22,19 +22,19 @@ type lo_energy_differences
     type(lo_forceconstant_secondorder) :: fc2
     type(lo_forceconstant_thirdorder) :: fc3
     type(lo_forceconstant_fourthorder) :: fc4
-    real(r8), dimension(:,:,:,:), allocatable :: fcp
-    logical :: polar=.false.
+    real(r8), dimension(:, :, :, :), allocatable :: fcp
+    logical :: polar = .false.
 
-    contains
-        procedure :: setup=>setup_potential_energy_differences
-        procedure :: statistical_sampling
-        procedure :: energies_and_forces
+contains
+    procedure :: setup => setup_potential_energy_differences
+    procedure :: statistical_sampling
+    procedure :: energies_and_forces
 end type
 
 contains
 
 !> statistically sample
-subroutine statistical_sampling(pot,uc,ss,fc,temperature,mw,mem,verbosity)
+subroutine statistical_sampling(pot, uc, ss, fc, temperature, mw, mem, verbosity)
     !> container for potential energy differences
     class(lo_energy_differences), intent(inout) :: pot
     !> unitcell
@@ -53,198 +53,197 @@ subroutine statistical_sampling(pot,uc,ss,fc,temperature,mw,mem,verbosity)
     integer, intent(in) :: verbosity
 
     type(lo_crystalstructure) :: p
-    integer, parameter :: ninner=20,nouter=40
-    integer :: initer,outiter,nstep,ctr,i
-    real(r8), dimension(:,:), allocatable :: ebuf,rbuf
-    real(r8), dimension(:,:), allocatable :: f2,f3,f4,fp
-    real(r8) :: e2,e3,e4,ep,deltaE,expdeltaE,ikbt,tomev,emean
-
+    integer, parameter :: ninner = 20, nouter = 40
+    integer :: initer, outiter, nstep, ctr, i
+    real(r8), dimension(:, :), allocatable :: ebuf, rbuf
+    real(r8), dimension(:, :), allocatable :: f2, f3, f4, fp
+    real(r8) :: e2, e3, e4, ep, deltaE, expdeltaE, ikbt, tomev, emean
 
     ! Copy of structure to work with
-    p=ss
+    p = ss
 
     ! Total number of steps we are doing?
-    nstep=ninner*nouter
+    nstep = ninner*nouter
 
     ! Some helper space
-    call mem%allocate(ebuf,[nstep,3],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%allocate(rbuf,[3,mw%n],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    ebuf=0.0_r8
-    rbuf=0.0_r8
+    call mem%allocate(ebuf, [nstep, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(rbuf, [3, mw%n], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ebuf = 0.0_r8
+    rbuf = 0.0_r8
 
     ! Dummy space for force
-    call mem%allocate(f2,[3,ss%na],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%allocate(f3,[3,ss%na],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%allocate(f4,[3,ss%na],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%allocate(fp,[3,ss%na],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    f2=0.0_r8
-    f3=0.0_r8
-    f4=0.0_r8
-    fp=0.0_r8
+    call mem%allocate(f2, [3, ss%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(f3, [3, ss%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(f4, [3, ss%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(fp, [3, ss%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    f2 = 0.0_r8
+    f3 = 0.0_r8
+    f4 = 0.0_r8
+    fp = 0.0_r8
 
     ! Thermal factor?
-    ikbt=1.0_r8/(temperature*lo_kb_hartree)
-    tomev=lo_Hartree_to_eV*1000
+    ikbt = 1.0_r8/(temperature*lo_kb_hartree)
+    tomev = lo_Hartree_to_eV*1000
 
-    ctr=0
-    outloop: do outiter=1,nouter
-        inloop: do initer=1,ninner
-            ctr=ctr+1
+    ctr = 0
+    outloop: do outiter = 1, nouter
+        inloop: do initer = 1, ninner
+            ctr = ctr + 1
 
             ! Reset structure
-            p%u=0.0_r8
-            p%v=0.0_r8
-            p%r=ss%r
+            p%u = 0.0_r8
+            p%v = 0.0_r8
+            p%r = ss%r
             ! Get new structure
-            call pot%fc2%initialize_cell(p,uc,fc,temperature,.true.,.false.,-1.0_r8,mw,nosync=.true.)
+            call pot%fc2%initialize_cell(p, uc, fc, temperature, .true., .false., -1.0_r8, mw, nosync=.true.)
             ! Calculate the energy
-            call pot%energies_and_forces(p%u,e2,e3,e4,ep,f2,f3,f4,fp)
-            e2=e2 !/ss%na
-            e3=e3 !/ss%na
-            e4=e4 !/ss%na
-            ep=ep !/ss%na
+            call pot%energies_and_forces(p%u, e2, e3, e4, ep, f2, f3, f4, fp)
+            e2 = e2 !/ss%na
+            e3 = e3 !/ss%na
+            e4 = e4 !/ss%na
+            ep = ep !/ss%na
 
             ! H1-H0 difference
-            deltaE=e3+e4
-            expdeltaE=exp(-deltaE*ikbt)
-            ebuf(ctr,1)=deltaE
-            ebuf(ctr,2)=expdeltaE
-        enddo inloop
+            deltaE = e3 + e4
+            expdeltaE = exp(-deltaE*ikbt)
+            ebuf(ctr, 1) = deltaE
+            ebuf(ctr, 2) = expdeltaE
+        end do inloop
 
         ! Get new mean energy
-        emean=lo_mean(ebuf(1:ctr,1))/mw%n
-        call mw%allreduce('sum',emean)
-        do i=1,ctr
-            ebuf(i,3)=ebuf(i,1)-emean
-            ebuf(i,3)=exp(-ebuf(i,3)*ikbt)
-        enddo
+        emean = lo_mean(ebuf(1:ctr, 1))/mw%n
+        call mw%allreduce('sum', emean)
+        do i = 1, ctr
+            ebuf(i, 3) = ebuf(i, 1) - emean
+            ebuf(i, 3) = exp(-ebuf(i, 3)*ikbt)
+        end do
 
         ! Print a little summary
-        rbuf=0.0_r8
-        rbuf(1,mw%r+1)=lo_mean( ebuf(1:ctr,1) )/ss%na
-        rbuf(2,mw%r+1)=-log( lo_mean( ebuf(1:ctr,2) ) )/ikbt/ss%na
-        rbuf(3,mw%r+1)=-log( lo_mean( ebuf(1:ctr,3) ) )/ikbt/ss%na+emean/ss%na
-        call mw%allreduce('sum',rbuf)
+        rbuf = 0.0_r8
+        rbuf(1, mw%r + 1) = lo_mean(ebuf(1:ctr, 1))/ss%na
+        rbuf(2, mw%r + 1) = -log(lo_mean(ebuf(1:ctr, 2)))/ikbt/ss%na
+        rbuf(3, mw%r + 1) = -log(lo_mean(ebuf(1:ctr, 3)))/ikbt/ss%na + emean/ss%na
+        call mw%allreduce('sum', rbuf)
 
-        if ( verbosity .gt. 0 ) then
-            write(*,*) ctr,lo_mean(rbuf(3,:))*tomev,lo_mean(rbuf(2,:))*tomev,lo_stddev(rbuf(1,:))*tomev,lo_stddev(rbuf(2,:))*tomev
-        endif
-    enddo outloop
+        if (verbosity .gt. 0) then
+            write (*, *) ctr, lo_mean(rbuf(3, :))*tomev, lo_mean(rbuf(2, :))*tomev, lo_stddev(rbuf(1, :))*tomev, lo_stddev(rbuf(2, :))*tomev
+        end if
+    end do outloop
 
-    call mem%deallocate(ebuf,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%deallocate(rbuf,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%deallocate(f2,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%deallocate(f3,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%deallocate(f4,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    call mem%deallocate(fp,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+    call mem%deallocate(ebuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(rbuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(f2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(f3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(f4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(fp, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
 
 ! !> calculate energies and forces for a given configuration
-subroutine energies_and_forces(pot,u,e2,e3,e4,ep,f2,f3,f4,fp)
+subroutine energies_and_forces(pot, u, e2, e3, e4, ep, f2, f3, f4, fp)
     !> container for potential energy differences
     class(lo_energy_differences), intent(in) :: pot
     !> displacements
-    real(r8), dimension(:,:), intent(in) :: u
+    real(r8), dimension(:, :), intent(in) :: u
     !> energies
-    real(r8), intent(out) :: e2,e3,e4,ep
+    real(r8), intent(out) :: e2, e3, e4, ep
     !> forces
-    real(r8), dimension(:,:), intent(out) :: f2,f3,f4,fp
+    real(r8), dimension(:, :), intent(out) :: f2, f3, f4, fp
 
-    real(r8), dimension(3,3,3,3) :: m4
-    real(r8), dimension(3,3,3) :: m3
-    real(r8), dimension(3,3) :: m2
-    real(r8), dimension(3) :: v0,u2,u3,u4
-    integer :: a1,a2,a3,a4,i1,i2,i3,i4,i
+    real(r8), dimension(3, 3, 3, 3) :: m4
+    real(r8), dimension(3, 3, 3) :: m3
+    real(r8), dimension(3, 3) :: m2
+    real(r8), dimension(3) :: v0, u2, u3, u4
+    integer :: a1, a2, a3, a4, i1, i2, i3, i4, i
 
-    e2=0.0_r8
-    e3=0.0_r8
-    e4=0.0_r8
-    ep=0.0_r8
-    f2=0.0_r8
-    f3=0.0_r8
-    f4=0.0_r8
-    fp=0.0_r8
+    e2 = 0.0_r8
+    e3 = 0.0_r8
+    e4 = 0.0_r8
+    ep = 0.0_r8
+    f2 = 0.0_r8
+    f3 = 0.0_r8
+    f4 = 0.0_r8
+    fp = 0.0_r8
 
     ! pair term
-    do a1=1,size(u,2)
-        v0=0.0_r8
-        do i1=1,pot%fc2%atom(a1)%n
-            a2=pot%fc2%atom(a1)%pair(i1)%i2
-            m2=pot%fc2%atom(a1)%pair(i1)%m
-            v0=v0-matmul(m2,u(:,a2))
-        enddo
-        e2=e2-dot_product(u(:,a1),v0)*0.5_r8
-        f2(:,a1)=v0
-    enddo
+    do a1 = 1, size(u, 2)
+        v0 = 0.0_r8
+        do i1 = 1, pot%fc2%atom(a1)%n
+            a2 = pot%fc2%atom(a1)%pair(i1)%i2
+            m2 = pot%fc2%atom(a1)%pair(i1)%m
+            v0 = v0 - matmul(m2, u(:, a2))
+        end do
+        e2 = e2 - dot_product(u(:, a1), v0)*0.5_r8
+        f2(:, a1) = v0
+    end do
 
     ! polar term
-    if ( pot%polar ) then
-        ep=0.0_r8
-        do a1=1,size(u,2)
-            v0=0.0_r8
-            do a2=1,size(u,2)
-                v0=v0-matmul(pot%fcp(:,:,a1,a2),u(:,a2))
-            enddo
-            ep=ep-dot_product(u(:,a1),v0)*0.5_r8
-            fp(:,a1)=v0
-        enddo
-    endif
+    if (pot%polar) then
+        ep = 0.0_r8
+        do a1 = 1, size(u, 2)
+            v0 = 0.0_r8
+            do a2 = 1, size(u, 2)
+                v0 = v0 - matmul(pot%fcp(:, :, a1, a2), u(:, a2))
+            end do
+            ep = ep - dot_product(u(:, a1), v0)*0.5_r8
+            fp(:, a1) = v0
+        end do
+    end if
 
     ! triplet term
-    if ( pot%fc3%na .eq. size(u,2) ) then
-        do a1=1,size(u,2)
-            v0=0.0_r8
-            do i=1,pot%fc3%atom(a1)%n
-                m3=pot%fc3%atom(a1)%triplet(i)%m
-                a2=pot%fc3%atom(a1)%triplet(i)%i2
-                a3=pot%fc3%atom(a1)%triplet(i)%i3
-                u2=u(:,a2)
-                u3=u(:,a3)
-                do i1=1,3
-                do i2=1,3
-                do i3=1,3
-                    v0(i1)=v0(i1)-m3(i1,i2,i3)*u2(i2)*u3(i3)
-                enddo
-                enddo
-                enddo
-            enddo
-            v0=v0*0.5_r8
-            f3(:,a1)=v0
-            e3=e3-dot_product(v0,u(:,a1))/3.0_r8
-        enddo
-    endif
+    if (pot%fc3%na .eq. size(u, 2)) then
+        do a1 = 1, size(u, 2)
+            v0 = 0.0_r8
+            do i = 1, pot%fc3%atom(a1)%n
+                m3 = pot%fc3%atom(a1)%triplet(i)%m
+                a2 = pot%fc3%atom(a1)%triplet(i)%i2
+                a3 = pot%fc3%atom(a1)%triplet(i)%i3
+                u2 = u(:, a2)
+                u3 = u(:, a3)
+                do i1 = 1, 3
+                do i2 = 1, 3
+                do i3 = 1, 3
+                    v0(i1) = v0(i1) - m3(i1, i2, i3)*u2(i2)*u3(i3)
+                end do
+                end do
+                end do
+            end do
+            v0 = v0*0.5_r8
+            f3(:, a1) = v0
+            e3 = e3 - dot_product(v0, u(:, a1))/3.0_r8
+        end do
+    end if
 
     ! quartet term
-    if ( pot%fc4%na .eq. size(u,2) ) then
-        do a1=1,size(u,2)
-            v0=0.0_r8
-            do i=1,pot%fc4%atom(a1)%n
-                m4=pot%fc4%atom(a1)%quartet(i)%m
-                a2=pot%fc4%atom(a1)%quartet(i)%i2
-                a3=pot%fc4%atom(a1)%quartet(i)%i3
-                a4=pot%fc4%atom(a1)%quartet(i)%i4
-                u2=u(:,a2)
-                u3=u(:,a3)
-                u4=u(:,a4)
-                do i1=1,3
-                do i2=1,3
-                do i3=1,3
-                do i4=1,3
-                    v0(i1)=v0(i1)-m4(i1,i2,i3,i4)*u2(i2)*u3(i3)*u4(i4)
-                enddo
-                enddo
-                enddo
-                enddo
-            enddo
-            v0=v0/6.0_r8
-            f4(:,a1)=v0
-            e4=e4+dot_product(v0,u(:,a1))/4.0_r8
-        enddo
-    endif
+    if (pot%fc4%na .eq. size(u, 2)) then
+        do a1 = 1, size(u, 2)
+            v0 = 0.0_r8
+            do i = 1, pot%fc4%atom(a1)%n
+                m4 = pot%fc4%atom(a1)%quartet(i)%m
+                a2 = pot%fc4%atom(a1)%quartet(i)%i2
+                a3 = pot%fc4%atom(a1)%quartet(i)%i3
+                a4 = pot%fc4%atom(a1)%quartet(i)%i4
+                u2 = u(:, a2)
+                u3 = u(:, a3)
+                u4 = u(:, a4)
+                do i1 = 1, 3
+                do i2 = 1, 3
+                do i3 = 1, 3
+                do i4 = 1, 3
+                    v0(i1) = v0(i1) - m4(i1, i2, i3, i4)*u2(i2)*u3(i3)*u4(i4)
+                end do
+                end do
+                end do
+                end do
+            end do
+            v0 = v0/6.0_r8
+            f4(:, a1) = v0
+            e4 = e4 - dot_product(v0, u(:, a1))/4.0_r8
+        end do
+    end if
 end subroutine
 
 !> Calculate potential energy differences in several ways
-subroutine setup_potential_energy_differences(pot,uc,ss,fc2,fc3,fc4,mw,verbosity)
+subroutine setup_potential_energy_differences(pot, uc, ss, fc2, fc3, fc4, mw, verbosity)
     !> container for potential energy differences
     class(lo_energy_differences), intent(out) :: pot
     !> unitcell
@@ -262,55 +261,55 @@ subroutine setup_potential_energy_differences(pot,uc,ss,fc2,fc3,fc4,mw,verbosity
     !> how much to talk
     integer, intent(in) :: verbosity
 
-    real(r8) :: timer,t0,t1
+    real(r8) :: timer, t0, t1
 
-    timer=walltime()
-    t0=timer
-    t1=timer
+    timer = walltime()
+    t0 = timer
+    t1 = timer
 
-    if ( verbosity .gt. 0 ) then
-        write(*,*) ''
-        write(*,*) 'PREPARING POTENTIAL ENERGY DIFFERENCES'
-    endif
+    if (verbosity .gt. 0) then
+        write (*, *) ''
+        write (*, *) 'PREPARING POTENTIAL ENERGY DIFFERENCES'
+    end if
 
-    call fc2%remap(uc,ss,pot%fc2)
-    if ( verbosity .gt. 0 ) then
-        t1=walltime()
-        write(*,*) '... remapped second order (',tochar(t1-t0),')'
-        t0=t1
-    endif
+    call fc2%remap(uc, ss, pot%fc2)
+    if (verbosity .gt. 0) then
+        t1 = walltime()
+        write (*, *) '... remapped second order (', tochar(t1 - t0), ')'
+        t0 = t1
+    end if
 
-    if ( fc3%na .gt. 0 ) then
-        call fc3%remap(uc,ss,pot%fc3)
-        if ( verbosity .gt. 0 ) then
-            t1=walltime()
-            write(*,*) '... remapped third order (',tochar(t1-t0),')'
-            t0=t1
-        endif
-    endif
+    if (fc3%na .gt. 0) then
+        call fc3%remap(uc, ss, pot%fc3)
+        if (verbosity .gt. 0) then
+            t1 = walltime()
+            write (*, *) '... remapped third order (', tochar(t1 - t0), ')'
+            t0 = t1
+        end if
+    end if
 
-    if ( fc4%na .gt. 0 ) then
-        call fc4%remap(uc,ss,pot%fc4)
-        if ( verbosity .gt. 0 ) then
-            t1=walltime()
-            write(*,*) '... remapped fourth order (',tochar(t1-t0),')'
-            t0=t1
-        endif
-    endif
+    if (fc4%na .gt. 0) then
+        call fc4%remap(uc, ss, pot%fc4)
+        if (verbosity .gt. 0) then
+            t1 = walltime()
+            write (*, *) '... remapped fourth order (', tochar(t1 - t0), ')'
+            t0 = t1
+        end if
+    end if
 
-    if ( fc2%polar ) then
-       allocate(pot%fcp(3,3,ss%na,ss%na))
-       pot%fcp=0.0_r8
-       call fc2%supercell_longrange_dynamical_matrix_at_gamma(ss,pot%fcp,1E-15_r8)
-       pot%polar=.true.
+    if (fc2%polar) then
+        allocate (pot%fcp(3, 3, ss%na, ss%na))
+        pot%fcp = 0.0_r8
+        call fc2%supercell_longrange_dynamical_matrix_at_gamma(ss, pot%fcp, 1E-15_r8)
+        pot%polar = .true.
     else
-        pot%polar=.false.
-    endif
-    if ( verbosity .gt. 0 ) then
-        t1=walltime()
-        write(*,*) '... built polar forceconstant (',tochar(t1-t0),')'
-        t0=t1
-    endif
+        pot%polar = .false.
+    end if
+    if (verbosity .gt. 0) then
+        t1 = walltime()
+        write (*, *) '... built polar forceconstant (', tochar(t1 - t0), ')'
+        t0 = t1
+    end if
 end subroutine
 
 ! !> remove longrange interactions
@@ -531,6 +530,5 @@ end subroutine
 ! !    enddo
 ! !    call lo_progressbar(' ... subtracting dipole-dipole forces',sim%nt,sim%nt,walltime()-t0)
 ! end subroutine
-
 
 end module

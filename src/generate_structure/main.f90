@@ -86,12 +86,7 @@ getsupercell: block
             call ss%writetofile('outfile.supercell_abinit', opts%outputformat)
             write (*, *) '... wrote supercell in Abinit format'
         case (3) ! LAMMPS
-            call ss%writetofile('outfile.supercell_lammps', opts%outputformat, transformationmatrix=tm)
-            write (*, *) '... wrote supercell in LAMMPS format'
-            uc%latticevectors = matmul(tm, uc%latticevectors)
-            ss%latticevectors = matmul(tm, ss%latticevectors)
-            call uc%writetofile('outfile.uc_lammps', 1)
-            call ss%writetofile('outfile.ss_lammps', 1)
+            call lo_stop_gracefully(['Native LAMMPS IO was removed, please use external converters.'], 8)
         case (4) ! FHI-Aims
             call ss%writetofile('outfile.supercell_aims', opts%outputformat, transformationmatrix=tm)
             write (*, *) '... wrote supercell in FHI-Aims format'

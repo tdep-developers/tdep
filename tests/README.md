@@ -40,3 +40,13 @@ to clean test files.
 ## Reference files
 
 Were created with TDEP commit `8c01e0343e4098f1d160efc141f8af6ae7f54941` on a macbook with M1 chip.
+
+## Known issues
+
+- Errors like
+  ```
+  atomic_distribution/test_atomic_distribution.py::test_hdf5
+    <frozen importlib._bootstrap>:241: RuntimeWarning: numpy.ndarray size changed, may indicate binary incompatibility. Expected 16 from C header, got 96 from PyObject
+  ```
+
+  hint towards compatibility issues in your python environment. **They are unrelated to TDEP.**

@@ -488,6 +488,7 @@ endif
 # A bit more advanced
 #
 $(OBJECT_PATH)type_crystalstructure.o:\
+	type_crystalstructure.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)geometryfunctions.o\
@@ -500,6 +501,7 @@ $(OBJECT_PATH)type_crystalstructure_atomdata.o:\
     $(OBJECT_PATH)type_crystalstructure.o
 	$(FC) $(FFLAGS) -c type_crystalstructure_atomdata.f90 -o $@
 $(OBJECT_PATH)type_crystalstructure_io.o:\
+	type_crystalstructure_io.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)hdf5_wrappers.o\
     $(OBJECT_PATH)type_crystalstructure.o
