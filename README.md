@@ -41,11 +41,11 @@ You can find a range of tutorials for realistic research workflow using TDEP [in
 
 ## How to cite
 
-This software is distributed under the MIT license. If you use it, please cite the respective publications:
+This software is distributed under the MIT license. If you use it, please consider citing
 
-`generate_structure`
+[F. Knoop *et al.*, J. Open Source Softw **9**(94), 6150 (2024)](https://joss.theoj.org/papers/10.21105/joss.06150)
 
-- [O. Hellman, I. A. Abrikosov, and S. I. Simak, Phys Rev B **84**, 180301 (2011)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.84.180301)
+and the respective publications for the algorithms that were used:
 
 `canonical_configuration`
 
@@ -58,10 +58,6 @@ This software is distributed under the MIT license. If you use it, please cite t
 
 - Third order: [O. Hellman and I. A. Abrikosov, Phys Rev B **88**, 144301 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.88.144301)
 - Fourth order: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
-
-`phonon_dispersion_relations`
-
-- [O. Hellman *et al.*, Phys Rev B **87**, 104111 (2013)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.87.104111)
 
 `thermal_conductivity`
 

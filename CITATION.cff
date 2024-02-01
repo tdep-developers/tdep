@@ -1,0 +1,99 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Knoop
+  given-names: Florian
+  orcid: "https://orcid.org/0000-0002-7132-039X"
+- family-names: Shulumba
+  given-names: Nina
+  orcid: "https://orcid.org/0000-0002-2374-7487"
+- family-names: Castellano
+  given-names: Aloïs
+  orcid: "https://orcid.org/0000-0002-8783-490X"
+- family-names: Batista
+  given-names: J. P. Alvarinhas
+  orcid: "https://orcid.org/0000-0002-3314-249X"
+- family-names: Farris
+  given-names: Roberta
+  orcid: "https://orcid.org/0000-0001-6710-0100"
+- family-names: Verstraete
+  given-names: Matthieu J.
+  orcid: "https://orcid.org/0000-0001-6921-5163"
+- family-names: Heine
+  given-names: Matthew
+  orcid: "https://orcid.org/0000-0002-4882-6712"
+- family-names: Broido
+  given-names: David
+  orcid: "https://orcid.org/0000-0003-0182-4450"
+- family-names: Kim
+  given-names: Dennis S.
+  orcid: "https://orcid.org/0000-0002-5707-2609"
+- family-names: Klarbring
+  given-names: Johan
+  orcid: "https://orcid.org/0000-0002-6223-5812"
+- family-names: Abrikosov
+  given-names: Igor A.
+  orcid: "https://orcid.org/0000-0001-7551-4717"
+- family-names: Simak
+  given-names: Sergei I.
+  orcid: "https://orcid.org/0000-0002-1320-389X"
+- family-names: Hellman
+  given-names: Olle
+  orcid: "https://orcid.org/0000-0002-3453-2975"
+doi: 10.5281/zenodo.10589895
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Knoop
+    given-names: Florian
+    orcid: "https://orcid.org/0000-0002-7132-039X"
+  - family-names: Shulumba
+    given-names: Nina
+    orcid: "https://orcid.org/0000-0002-2374-7487"
+  - family-names: Castellano
+    given-names: Aloïs
+    orcid: "https://orcid.org/0000-0002-8783-490X"
+  - family-names: Batista
+    given-names: J. P. Alvarinhas
+    orcid: "https://orcid.org/0000-0002-3314-249X"
+  - family-names: Farris
+    given-names: Roberta
+    orcid: "https://orcid.org/0000-0001-6710-0100"
+  - family-names: Verstraete
+    given-names: Matthieu J.
+    orcid: "https://orcid.org/0000-0001-6921-5163"
+  - family-names: Heine
+    given-names: Matthew
+    orcid: "https://orcid.org/0000-0002-4882-6712"
+  - family-names: Broido
+    given-names: David
+    orcid: "https://orcid.org/0000-0003-0182-4450"
+  - family-names: Kim
+    given-names: Dennis S.
+    orcid: "https://orcid.org/0000-0002-5707-2609"
+  - family-names: Klarbring
+    given-names: Johan
+    orcid: "https://orcid.org/0000-0002-6223-5812"
+  - family-names: Abrikosov
+    given-names: Igor A.
+    orcid: "https://orcid.org/0000-0001-7551-4717"
+  - family-names: Simak
+    given-names: Sergei I.
+    orcid: "https://orcid.org/0000-0002-1320-389X"
+  - family-names: Hellman
+    given-names: Olle
+    orcid: "https://orcid.org/0000-0002-3453-2975"
+  date-published: 2024-02-01
+  doi: 10.21105/joss.06150
+  issn: 2475-9066
+  issue: 94
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6150
+  title: "TDEP: Temperature Dependent Effective Potentials"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06150"
+  volume: 9
+title: "TDEP: Temperature Dependent Effective Potentials"
+
