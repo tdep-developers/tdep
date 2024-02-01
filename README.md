@@ -2,6 +2,8 @@ Temperature Dependent Effective Potentials (TDEP)
 ===
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06150/status.svg)](https://doi.org/10.21105/joss.06150)
+![GitHub Release](https://img.shields.io/github/v/release/tdep-developers/tdep)
+![GitHub License](https://img.shields.io/github/license/tdep-developers/tdep)
 
 Briefly summarized, the package provides all the tools you need to build accurate model Hamiltonians for finite temperature lattice dynamics from first principles. TDEP includes several programs for different tasks:
 
