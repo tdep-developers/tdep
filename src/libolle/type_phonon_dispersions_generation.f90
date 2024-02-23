@@ -358,101 +358,198 @@ module subroutine allgather_fullmesh(dr, mw, mem)
     call mem%deallocate(rbuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
 
-! !> Calculate mode gruneisen parameters on a q-point mesh
-! module subroutine gruneisen(dr,qp,fct,p,verbosity,mpi_communicator)
-!     !> the dispersion relations
-!     class(lo_phonon_dispersions), intent(inout) :: dr
-!     !> the qpoint mesh
-!     class(lo_qpoint_mesh), intent(inout) :: qp
-!     !> the third order force constant
-!     type(lo_forceconstant_thirdorder), intent(in) :: fct
-!     !> the crystal structure
-!     type(lo_crystalstructure), intent(in) :: p
-!     !> how much to talk
-!     integer, intent(in), optional :: verbosity
-!     !> do the calculation distributed
-!     integer, intent(in), optional :: mpi_communicator
-!     !
-!     write(*,*) 'FIXME GRUNEISEN MPI'
-!     stop
-!
-!     integer :: q,rank,nrank,lqp
-!     real(r8) :: t0
-!     logical :: usempi
-!
-!     t0=walltime()
-!     if ( present(verbosity) ) then
-!        verbosity=verbosity
-!     else
-!        verbosity=0
-!     endif
-!
-!     ! If we have an MPI communicator attached, check that the q-points are distributed accordingly.
-!     if ( present(mpi_communicator) ) then
-!         ! Are the q-points distributed across a communicator?
-!         if ( qp%mpi%initialized ) then
-!             ! Yep, distributed. The same communicator that is sent here?
-!             if ( qp%mpi%communicator .ne. mpi_communicator ) then
-!                 ! This is weird. Not sure what to do. Probably redistribute?
-!                 call qp%divide_across_mpi(mpi_communicator)
-!             endif
-!         else
-!             ! Nope, not initialized. Do that!
-!             call qp%divide_across_mpi(mpi_communicator)
-!         endif
-!         usempi=.true.
-!         call mpi_comm_rank(mpi_communicator,rank,lo_status)
-!         call mpi_comm_size(mpi_communicator,nrank,lo_status)
-!         ! remove verbosity except on head rank
-!         if ( rank .ne. 0 ) verbosity=0
-!         ! if only one rank, don't use MPI at all.
-!         if ( nrank .eq. 1 ) usempi=.false.
-!     else
-!         ! Don't use MPI at all.
-!         usempi=.false.
-!         rank=0
-!         nrank=1
-!     endif
-!
-!     if ( verbosity .gt. 0 ) then
-!         if ( usempi ) then
-!             write(*,*) '... calculating gruneisen parameters over ',tochar(nrank),' MPI ranks'
-!         else
-!             write(*,*) '... calculating gruneisen parameters'
-!         endif
-!     endif
-!
-!     ! Make some space
-!     do q=1,qp%n_irr_point
-!         lo_allocate(dr%iq(q)%gruneisen(dr%n_mode))
-!         dr%iq(q)%gruneisen=0.0_r8
-!     enddo
-!     do q=1,qp%n_full_point
-!         lo_allocate(dr%aq(q)%gruneisen(dr%n_mode))
-!         dr%aq(q)%gruneisen=0.0_r8
-!     enddo
-!
-!     ! And the actual calculation
-!     if ( usempi ) then
-!         do lqp=1,qp%mpi%nqirr
-!             q=qp%mpi%qirr(lqp)
-!             call fct%mode_gruneisen_parameter(p,qp%ip(q),dr%iq(q)%omega,dr%iq(q)%egv,dr%iq(q)%gruneisen)
-!         enddo
-!         call dr%allgather_irreducible(qp,mpi_communicator,fieldlist=[4])
-!     else
-!         do q=1,qp%n_irr_point
-!             call fct%mode_gruneisen_parameter(p,qp%ip(q),dr%iq(q)%omega,dr%iq(q)%egv,dr%iq(q)%gruneisen)
-!         enddo
-!     endif
-!
-!     ! and spread them to the full thing
-!     do q=1,qp%n_full_point
-!         dr%aq(q)%gruneisen=dr%iq( qp%ap(q)%irrind )%gruneisen
-!     enddo
-!     if ( verbosity .gt. 0 ) then
-!         write(*,*) '... got gruneisen parameters in irreducible wedge in '//tochar(walltime()-t0,6)//' s'
-!         t0=walltime()
-!     endif
-! end subroutine
+!> Calculate mode gruneisen parameters on a q-point mesh
+module subroutine gruneisen(dr, qp, fct, p, verbosity, mpi_communicator)
+    !> the dispersion relations
+    class(lo_phonon_dispersions), intent(inout) :: dr
+    !> the qpoint mesh
+    class(lo_qpoint_mesh), intent(inout) :: qp
+    !> the third order force constant
+    type(lo_forceconstant_thirdorder), intent(in) :: fct
+    !> the crystal structure
+    type(lo_crystalstructure), intent(in) :: p
+    !> how much to talk
+    integer, intent(in), optional :: verbosity
+    integer :: talk
+    !> do the calculation distributed
+    integer, intent(in), optional :: mpi_communicator
+    !! fkdev: let's go without MPI
+    !
+    ! write (*, *) 'FIXME GRUNEISEN MPI'
+    ! stop
+
+    integer :: q, rank, nrank, lqp
+    real(r8) :: t0
+    logical :: usempi
+
+    ! fkev: MPI currently not supported
+    if (present(mpi_communicator)) then
+        write (*, *) 'FIXME GRUNEISEN MPI'
+        stop
+    end if
+
+    t0 = walltime()
+    if (present(verbosity)) then
+        talk = verbosity
+    else
+        talk = 0
+    end if
+
+    !! fkdev: comment out everything MPI related
+    ! ! If we have an MPI communicator attached, check that the q-points are distributed accordingly.
+    ! if (present(mpi_communicator)) then
+    !     ! Are the q-points distributed across a communicator?
+    !     if (qp%mpi%initialized) then
+    !         ! Yep, distributed. The same communicator that is sent here?
+    !         if (qp%mpi%communicator .ne. mpi_communicator) then
+    !             ! This is weird. Not sure what to do. Probably redistribute?
+    !             call qp%divide_across_mpi(mpi_communicator)
+    !         end if
+    !     else
+    !         ! Nope, not initialized. Do that!
+    !         call qp%divide_across_mpi(mpi_communicator)
+    !     end if
+    !     usempi = .true.
+    !     call mpi_comm_rank(mpi_communicator, rank, lo_status)
+    !     call mpi_comm_size(mpi_communicator, nrank, lo_status)
+    !     ! remove verbosity except on head rank
+    !     if (rank .ne. 0) _verbosity = 0
+    !     ! if only one rank, don't use MPI at all.
+    !     if (nrank .eq. 1) usempi = .false.
+    ! else
+    !     ! Don't use MPI at all.
+    !     usempi = .false.
+    !     rank = 0
+    !     nrank = 1
+    ! end if
+
+    !! fkdev: no mpi
+    usempi = .false.
+    rank = 0
+    nrank = 1
+
+    if (talk .gt. 0) then
+        if (usempi) then
+            write (*, *) '... calculating gruneisen parameters over ', tochar(nrank), ' MPI ranks'
+        else
+            write (*, *) '... calculating gruneisen parameters'
+        end if
+    end if
+
+    ! Make some space
+    do q = 1, qp%n_irr_point
+        allocate (dr%iq(q)%gruneisen(dr%n_mode))
+        dr%iq(q)%gruneisen = 0.0_r8
+    end do
+    do q = 1, qp%n_full_point
+        allocate (dr%aq(q)%gruneisen(dr%n_mode))
+        dr%aq(q)%gruneisen = 0.0_r8
+    end do
+
+    ! And the actual calculation
+    if (usempi) then
+        ! do lqp = 1, qp%mpi%nqirr
+        !     q = qp%mpi%qirr(lqp)
+        !     call fct%mode_gruneisen_parameter(p, qp%ip(q), dr%iq(q)%omega, dr%iq(q)%egv, dr%iq(q)%gruneisen)
+        ! end do
+        ! call dr%allgather_irreducible(qp, mpi_communicator, fieldlist=[4])
+    else
+        do q = 1, qp%n_irr_point
+            call fct%mode_gruneisen_parameter(p, qp%ip(q), dr%iq(q)%omega, dr%iq(q)%egv, dr%iq(q)%gruneisen)
+        end do
+    end if
+
+    ! and spread them to the full thing
+    do q = 1, qp%n_full_point
+        dr%aq(q)%gruneisen = dr%iq(qp%ap(q)%irreducible_index)%gruneisen
+    end do
+    if (talk .gt. 0) then
+        write (*, *) '... got gruneisen parameters in irreducible wedge in '//tochar(walltime() - t0, 6)//' s'
+        t0 = walltime()
+    end if
+end subroutine
+
+!> Calculate mode gruneisen tensors on a q-point mesh
+module subroutine gruneisen_tensor(dr, qp, fct, p, verbosity, mpi_communicator)
+    !> the dispersion relations
+    class(lo_phonon_dispersions), intent(inout) :: dr
+    !> the qpoint mesh
+    class(lo_qpoint_mesh), intent(inout) :: qp
+    !> the third order force constant
+    type(lo_forceconstant_thirdorder), intent(in) :: fct
+    !> the crystal structure
+    type(lo_crystalstructure), intent(in) :: p
+    !> how much to talk
+    integer, intent(in), optional :: verbosity
+    integer :: talk
+    !> do the calculation distributed
+    integer, intent(in), optional :: mpi_communicator
+
+    integer :: q, rank, nrank, lqp, iqp, iop, s
+    real(r8) :: t0
+    logical :: usempi
+
+    ! fkev: MPI currently not supported
+    if (present(mpi_communicator)) then
+        write (*, *) 'FIXME GRUNEISEN MPI'
+        stop
+    end if
+
+    t0 = walltime()
+    if (present(verbosity)) then
+        talk = verbosity
+    else
+        talk = 0
+    end if
+
+    !! fkdev: no mpi
+    usempi = .false.
+    rank = 0
+    nrank = 1
+
+    if (talk .gt. 0) then
+        write (*, *) '... calculating gruneisen parameters'
+    end if
+
+    ! Make some space
+    do q = 1, qp%n_irr_point
+        allocate (dr%iq(q)%gruneisen_tensor(dr%n_mode, 3, 3))
+        dr%iq(q)%gruneisen_tensor = 0.0_r8
+    end do
+    do q = 1, qp%n_full_point
+        allocate (dr%aq(q)%gruneisen_tensor(dr%n_mode, 3, 3))
+        dr%aq(q)%gruneisen_tensor = 0.0_r8
+        ! call fct%mode_gruneisen_tensor(p, qp%ap(q), dr%aq(q)%omega, dr%aq(q)%egv, dr%aq(q)%gruneisen_tensor)
+    end do
+
+    ! FK: we want to use symmetry like a human
+    ! compute in the irreducible wedge
+    do q = 1, qp%n_irr_point
+        call fct%mode_gruneisen_tensor(p, qp%ip(q), dr%iq(q)%omega, dr%iq(q)%egv, dr%iq(q)%gruneisen_tensor)
+    end do
+
+    ! and spread them to the full thing
+    do q = 1, qp%n_full_point
+        iqp = qp%ap(q)%irreducible_index
+        iop = qp%ap(q)%operation_from_irreducible
+        associate ( &
+            ig_ab => dr%iq(iqp)%gruneisen_tensor, &
+            op => p%sym%op(abs(iop)), &
+            nb => fct%na*3 &
+            )
+            ! we have a 3x3 matrix for each mode s that we need to rotate
+            do s = 1, nb
+                dr%aq(q)%gruneisen_tensor(s, :, :) = &
+                    lo_operate_on_secondorder_tensor(op, ig_ab(s, :, :))
+            end do
+        end associate
+
+    end do
+
+    if (talk .gt. 0) then
+        write (*, *) '... got gruneisen tensors in irreducible wedge in '//tochar(walltime() - t0, 6)//' s'
+        t0 = walltime()
+    end if
+end subroutine
 
 end submodule

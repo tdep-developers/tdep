@@ -79,6 +79,54 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
         end if
     end block init
 
+    if (map%have_fc_singlet) then
+        first: block
+            type(lo_scaling_and_product) :: asc
+            real(r8), dimension(:, :), allocatable :: wA
+            real(r8), dimension(:), allocatable :: wB, wC
+            integer :: nrow
+
+            ! Normal least squares for the full solution
+            call asc%generate(ih%cm1, ih%f1, nf, map%xuc%nx_fc_singlet, mw, noscale=.true.)
+            if (mw%r .eq. solrnk) then
+                call lo_linear_least_squares( &
+                    asc%ATA, asc%ATB, map%xuc%x_fc_singlet, map%constraints%eq1, map%constraints%neq1, gramified=.true.)
+            end if
+            call mw%bcast(map%xuc%x_fc_singlet, solrnk, __FILE__, __LINE__)
+            call asc%destroy()
+
+            ! Then the cross-checking guys
+            do div = 1, n_division
+                call tp%collect(map, 1, div, .true., nrow, mem, ih=ih, coeff=wA, values=wB)
+                call asc%generate(wA, wB, nrow, map%xuc%nx_fc_singlet, mw, noscale=.true.)
+                if (mw%r .eq. solrnk) then
+                    call lo_linear_least_squares( &
+                        asc%ATA, asc%ATB, ih%dx1(:, div), map%constraints%eq1, map%constraints%neq1, gramified=.true.)
+                end if
+                call asc%destroy()
+                call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
+                call mem%deallocate(wB, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
+            end do
+            call mw%bcast(ih%dx1, solrnk, __FILE__, __LINE__)
+
+            ! And subtract forces from the solution
+            if (tp%nt .gt. 0) then
+                call mem%allocate(wC, nf, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
+                wC = 0.0_r8
+                call lo_gemv(ih%cm1, map%xuc%x_fc_singlet, wC)
+                ih%f1 = wC
+                ih%f2 = ih%f2 - wC
+                ih%f3 = ih%f3 - wC
+                ih%f4 = ih%f4 - wC
+                call mem%deallocate(wC, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
+            end if
+            if (verbosity .gt. 0) write (*, *) '... solved first order (', tochar(walltime() - timer), 's)'
+        end block first
+    else
+        ! No first order, set it to nothing.
+        ih%f1 = 0.0_r8
+    end if
+
     if (map%have_fc_pair) then
         second: block
             type(lo_scaling_and_product) :: asc
@@ -131,7 +179,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call mem%allocate(wC, nf, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
                 wC = 0.0_r8
                 call lo_gemv(ih%cm2, map%xuc%x_fc_pair, wC)
-                ih%f1 = ih%f1 - wC
+                ! ih%f1 = ih%f1 - wC
                 ih%f2 = wC
                 ih%f3 = ih%f3 - wC
                 ih%f4 = ih%f4 - wC
@@ -146,54 +194,6 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
     else
         ! No second order, set it to nothing.
         ih%f2 = 0.0_r8
-    end if
-
-    if (map%have_fc_singlet) then
-        first: block
-            type(lo_scaling_and_product) :: asc
-            real(r8), dimension(:, :), allocatable :: wA
-            real(r8), dimension(:), allocatable :: wB, wC
-            integer :: nrow
-
-            ! Normal least squares for the full solution
-            call asc%generate(ih%cm1, ih%f1, nf, map%xuc%nx_fc_singlet, mw, noscale=.true.)
-            if (mw%r .eq. solrnk) then
-                call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_fc_singlet, map%constraints%eq1, map%constraints%neq1, gramified=.true.)
-            end if
-            call mw%bcast(map%xuc%x_fc_singlet, solrnk, __FILE__, __LINE__)
-            call asc%destroy()
-
-            ! Then the cross-checking guys
-            do div = 1, n_division
-                call tp%collect(map, 1, div, .true., nrow, mem, ih=ih, coeff=wA, values=wB)
-                call asc%generate(wA, wB, nrow, map%xuc%nx_fc_singlet, mw, noscale=.true.)
-                if (mw%r .eq. solrnk) then
-                    call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, ih%dx1(:, div), map%constraints%eq1, map%constraints%neq1, gramified=.true.)
-                end if
-                call asc%destroy()
-                call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
-                call mem%deallocate(wB, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
-            end do
-            call mw%bcast(ih%dx1, solrnk, __FILE__, __LINE__)
-
-            ! And subtract forces from the solution
-            if (tp%nt .gt. 0) then
-                call mem%allocate(wC, nf, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
-                wC = 0.0_r8
-                call lo_gemv(ih%cm1, map%xuc%x_fc_singlet, wC)
-                ih%f1 = wC
-                !ih%f2=ih%f2-wC
-                ih%f3 = ih%f3 - wC
-                ih%f4 = ih%f4 - wC
-                call mem%deallocate(wC, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
-            end if
-            if (verbosity .gt. 0) write (*, *) '... solved first order (', tochar(walltime() - timer), 's)'
-        end block first
-    else
-        ! No first order, set it to nothing.
-        ih%f1 = 0.0_r8
     end if
 
     if (map%have_fc_triplet) then
@@ -231,6 +231,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call mem%allocate(wC, nf, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
                 wC = 0.0_r8
                 call lo_gemv(ih%cm3, map%xuc%x_fc_triplet, wC)
+                ! ih%f1 = ih%f1 - wC
                 ih%f3 = wC
                 ih%f4 = ih%f4 - wC
                 call mem%deallocate(wC, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
@@ -282,6 +283,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call mem%allocate(wC, nf, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
                 wC = 0.0_r8
                 call lo_gemv(ih%cm4, map%xuc%x_fc_quartet, wC)
+                ! ih%f1 = ih%f1 - wC
                 ih%f4 = wC
                 call mem%deallocate(wC, persistent=.false., scalable=.true., file=__FILE__, line=__LINE__)
             end if
@@ -295,6 +297,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
         ! No fourth order, set it to nothing.
         ih%f4 = 0.0_r8
     end if
+
 end subroutine
 
 ! below are not exposed
