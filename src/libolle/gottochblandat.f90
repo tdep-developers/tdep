@@ -138,6 +138,7 @@ interface tochar
     module procedure tochar_intarr
     module procedure tochar_real
     module procedure tochar_realarr
+    module procedure tochar_logical
 end interface
 !> round and remove small numbers
 interface lo_chop
@@ -911,6 +912,19 @@ pure function lo_seconds_to_ddhhmmss(t) result(ddhhmmss)
     endif
 end function
 
+!> convert one logical to a character
+pure function tochar_logical(l) result(s)
+    !> integer to convert
+    logical, intent(in) :: l
+    !> resulting string
+    character(len=:), allocatable :: s
+
+    character(len=1) :: tmp
+
+    write(tmp,'(L1)') l
+    s=trim(adjustl(tmp))
+end function
+
 !> Set all the possible tolerances from a global tolerance
 #ifdef AGRESSIVE_SANITY
 subroutine lo_fetch_tolerance(tol,basis,realspace_cart_tol,realspace_fractional_tol,relative_tol,reciprocal_cart_tol,reciprocal_fractional_tol,temperature_tol,radian_tol,degree_tol,freq_tol,squared)
@@ -1047,6 +1061,7 @@ integer function open_file(inut,filename)
     character(len=*),intent(in) :: inut
     !
     integer :: unit, status
+    logical :: exist
     !
     status=0
     !
@@ -1057,6 +1072,14 @@ integer function open_file(inut,filename)
             open_file=unit
         case('out')
             open(unit=unit, file=filename, status='replace', action='write',iostat=status)
+            open_file=unit
+        case('append')
+            inquire(file=filename, exist=exist)
+            if (exist) then
+              open(unit=unit, file=filename, status='old', position='append', action='write', iostat=status)
+            else
+              open(unit=unit, file=filename, status='new', action='write',iostat=status)
+            end if
             open_file=unit
         case default
             call lo_stop_gracefully(["Please open the file with either 'in' or 'out', not something in between"],lo_exitcode_param)

@@ -378,6 +378,11 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             call writetofile_aims(p,filename,write_velocities)
         case(5) ! Siesta 
             call writetofile_siesta(p,filename,write_velocities)
+        case(6) ! Tdep 
+            if (write_velocities) then
+              call lo_stop_gracefully(['TDEP format does not accept velocities: '//tochar(write_velocities)],lo_exitcode_io,__FILE__,__LINE__)
+            end if
+            call writetofile_tdep(p,filename)
         case default
             call lo_stop_gracefully(['Unknown output format: '//tochar(output_format)],lo_exitcode_io,__FILE__,__LINE__)
     end select
@@ -822,6 +827,36 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             write(u,opf) p%species(i), symbol_to_z(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol), lo_chop(p%v(:,i),lo_sqtol)
         enddo
     end subroutine
+
+    subroutine writetofile_tdep(p,filename)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> the filename
+        character(len=*), intent(in) :: filename
+        !> if velocities should be written. Default false.
+
+        ! local
+        integer :: u, i,j,jj
+        real(flyt) :: latpar
+        character(len=1000) :: opf
+
+        ! Write to a file, or stdout.
+        if ( filename .eq. 'stdout' ) then
+            u=0
+        else
+            u=open_file('append',trim(filename))
+        endif
+
+        !write(u,*) 'Direct coordinates'
+        j=ceiling(log10(p%na*1.0_flyt+0.1_flyt))+1
+        opf="(1X,3(F18.14,' '),' site'I"//tochar(j)//",' species',I2,': ',A2)"
+        do i=1,p%na
+            write(u,opf) p%r(:,i)
+        enddo
+
+        if ( filename .ne. 'stdout' ) close(u)
+    end subroutine
+
 end subroutine
 
 !> Read isotope distribution from file
