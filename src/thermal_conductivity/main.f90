@@ -255,8 +255,7 @@ getkappa: block
 
         if (mw%talk) then
             m0 = kappa_offdiag*lo_kappa_au_to_SI
-            write (*, "(1X,A12,6(1X,A14),2X,A10)") 'Off diagonal', &
-                'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz'
+            write (*, "(1X,A25)") 'Off diagonal contribution'
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         end if
 
