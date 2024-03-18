@@ -17,7 +17,7 @@ use dump_data, only: lo_dump_gnuplot_2d_real
 ! unique
 use options, only: lo_opts
 use scatteringstrengths, only: calculate_scattering_amplitudes
-use pbe, only: get_kappa, calculate_qs, get_selfconsistent_solution
+use pbe, only: get_kappa, get_kappa_offdiag, calculate_qs, get_selfconsistent_solution
 use phononevents, only: lo_threephononevents, lo_find_all_scattering_events
 use mfp, only: lo_mfp, get_cumulative_plots, write_cumulative_plots
 
@@ -201,7 +201,7 @@ end block initkappa
 ! Iteratively solve the BTE for each temperature. Additionally calculate
 ! mean free path plots and things like that.
 getkappa: block
-    real(r8), dimension(3, 3) :: kappa, m0
+    real(r8), dimension(3, 3) :: kappa, kappa_offdiag, m0
     real(r8) :: t0
     integer :: i
 
@@ -228,6 +228,8 @@ getkappa: block
         call calculate_qs(qp, sc, dr, temperatures(i), mw, mem)
         timer_qs = timer_qs + walltime() - t0
 
+        call get_kappa_offdiag(dr, qp, uc, temperatures(i), fc, mem, mw, kappa_offdiag)
+
         ! Get the self-consistent solution
         call mpi_barrier(mw%comm, mw%error)
         if (opts%scfiterations .gt. 0) then
@@ -242,26 +244,33 @@ getkappa: block
             !call get_selfconsistent_solution(sc,dr,qp,uc,mw,temperatures(i),opts%scfiterations,opts%scftol)
             timer_scf = timer_scf + walltime() - t0
             call get_kappa(dr, qp, uc, temperatures(i), kappa)
-            m0 = kappa*lo_kappa_au_to_SI
+            m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
             if (mw%talk) write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         else
             call get_kappa(dr, qp, uc, temperatures(i), kappa)
-            m0 = kappa*lo_kappa_au_to_SI
+            m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
             if (mw%talk) write (*, "(1X,F12.3,6(1X,F14.4),2X,E10.3)") &
                 temperatures(i), m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         end if
 
+        if (mw%talk) then
+            m0 = kappa_offdiag*lo_kappa_au_to_SI
+            write (*, "(1X,A12,6(1X,A14),2X,A10)") 'Off diagonal', &
+                'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz'
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+        end if
+
         ! Store thermal conductivity tensor
         thermal_cond(1, i) = temperatures(i)
-        thermal_cond(2, i) = kappa(1, 1)*lo_kappa_au_to_SI
-        thermal_cond(3, i) = kappa(2, 2)*lo_kappa_au_to_SI
-        thermal_cond(4, i) = kappa(3, 3)*lo_kappa_au_to_SI
-        thermal_cond(5, i) = kappa(1, 3)*lo_kappa_au_to_SI
-        thermal_cond(6, i) = kappa(2, 3)*lo_kappa_au_to_SI
-        thermal_cond(7, i) = kappa(1, 2)*lo_kappa_au_to_SI
-        thermal_cond(8, i) = kappa(3, 1)*lo_kappa_au_to_SI
-        thermal_cond(9, i) = kappa(3, 2)*lo_kappa_au_to_SI
-        thermal_cond(10, i) = kappa(2, 1)*lo_kappa_au_to_SI
+        thermal_cond(2, i) = (kappa(1, 1) + kappa_offdiag(1, 1))*lo_kappa_au_to_SI
+        thermal_cond(3, i) = (kappa(2, 2) + kappa_offdiag(2, 2))*lo_kappa_au_to_SI
+        thermal_cond(4, i) = (kappa(3, 3) + kappa_offdiag(3, 3))*lo_kappa_au_to_SI
+        thermal_cond(5, i) = (kappa(1, 3) + kappa_offdiag(1, 3))*lo_kappa_au_to_SI
+        thermal_cond(6, i) = (kappa(2, 3) + kappa_offdiag(2, 3))*lo_kappa_au_to_SI
+        thermal_cond(7, i) = (kappa(1, 2) + kappa_offdiag(1, 2))*lo_kappa_au_to_SI
+        thermal_cond(8, i) = (kappa(3, 1) + kappa_offdiag(3, 1))*lo_kappa_au_to_SI
+        thermal_cond(9, i) = (kappa(3, 2) + kappa_offdiag(3, 2))*lo_kappa_au_to_SI
+        thermal_cond(10, i) = (kappa(2, 1) + kappa_offdiag(2, 1))*lo_kappa_au_to_SI
 
         ! Calculate the cumulative plots
         t0 = walltime()
