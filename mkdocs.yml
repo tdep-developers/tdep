@@ -15,7 +15,9 @@ theme:
     include_search_page: false
     features:
         - navigation.tabs
+        - navigation.sticky
         - navigation.instant
+        - navigation.indexes
 
     font:
         text: Inter
@@ -25,18 +27,19 @@ nav:
   - Home: README.md
   # - Tutorial:
   #   - Overview: manual/index.md
-  - Programs:
+  - Programs: 
+    - program/README.md
+    - Generate structure: program/generate_structure.md
+    - Canonical configuration: program/canonical_configuration.md
     - Extract forceconstants: program/extract_forceconstants.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
-    - Canonical configuration: program/canonical_configuration.md
-    - Anharmonic free energy: program/anharmonic_free_energy.md
     - Thermal conductivity: program/thermal_conductivity.md
     - Lineshape: program/lineshape.md
+    - Anharmonic free energy: program/anharmonic_free_energy.md
     - Atomic distribution: program/atomic_distribution.md
     - Pack simulation: program/pack_simulation.md
-    - Generate structure: program/generate_structure.md
-    - Crystal structure info: program/crystal_structure_info.md
     - Samples from MD: program/samples_from_md.md
+    - Crystal structure info: program/crystal_structure_info.md
     - Refine structure: program/refine_structure.md
   - Files: files.md
 

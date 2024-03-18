@@ -2,6 +2,7 @@
 submodule (type_symmetrylist) type_symmetrylist_unique
 use type_distancetable
 use type_voronoi_distancetable
+use type_symmetryoperation, only: lo_spacegroup_operation
 implicit none
 contains
 

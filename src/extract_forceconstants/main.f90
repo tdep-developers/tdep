@@ -436,7 +436,7 @@ getU0: block
     if ((mw%talk) .and. (opts%verbosity > 0)) then
         write (*, *) ''
         write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
-        write (*, '(A)') '   conf        Epot                  Epolar                &
+        write (*, '(A)') '   conf              Epot                  Epolar                &
         &Epair                 Etriplet              Equartet'
     end if
 
@@ -539,7 +539,7 @@ getU0: block
         if ((mw%talk) .and. (opts%verbosity > 0)) then
             ctr = ctr + 1
             if (lo_trueNtimes(ctr, 20, ctrtot)) then
-                write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
+                write (*, "(1X,I5,F30.12,4(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
             end if
         end if
     end do
@@ -555,6 +555,25 @@ getU0: block
     call mw%allreduce('sum', e2)
     call mw%allreduce('sum', e3)
     call mw%allreduce('sum', e4)
+
+    ! dump to outfile.enegies
+    if ((mw%talk) .and. (opts%verbosity > 0)) then
+        ! file for the energies
+        u = open_file('out', 'outfile.energies')
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, "(A)") '#  conf    Epot                  Epolar                &
+            &Epair                 Etriplet              Equartet'
+
+        do t = 1, sim%nt
+            ! Dump it to file
+            write (u, "(1X,I5,5(2X,E20.12))") t, e0(t)*toev, ep(t)*toev, e2(t)*toev, e3(t)*toev, e4(t)*toev
+        end do
+
+        ! close outfile.energies
+        write (*, '(A)') ' ... energies writen to `outfile.energies`'
+        close (u)
+    end if
 
     ! Subtract a baseline to get sensible numbers to work with
     ebuf = e0 - e2 - e3 - e4 - ep
@@ -612,7 +631,12 @@ getU0: block
 
         ! Dump it to file
         u = open_file('out', 'outfile.U0')
-        write (u, "(4(1X,E19.12))") &
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, "(A)") '#            mean(Epot)                     mean(Epot - Epolar - E2) &
+            &      mean(Epot - Epolar - E2 - E3)  mean(Epot - Epolar - E2 - E3 - E4)'
+
+        write (u, "(4(1X,E30.12))") &
             (baseline + lo_mean(e0))*toev, &
             (baseline + lo_mean(e0 - ep - e2))*toev, &
             (baseline + lo_mean(e0 - ep - e2 - e3))*toev, &
