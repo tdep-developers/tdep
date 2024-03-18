@@ -244,11 +244,11 @@ getkappa: block
             !call get_selfconsistent_solution(sc,dr,qp,uc,mw,temperatures(i),opts%scfiterations,opts%scftol)
             timer_scf = timer_scf + walltime() - t0
             call get_kappa(dr, qp, uc, temperatures(i), kappa)
-            m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
+            m0 = kappa*lo_kappa_au_to_SI
             if (mw%talk) write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         else
             call get_kappa(dr, qp, uc, temperatures(i), kappa)
-            m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
+            m0 = kappa*lo_kappa_au_to_SI
             if (mw%talk) write (*, "(1X,F12.3,6(1X,F14.4),2X,E10.3)") &
                 temperatures(i), m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         end if
@@ -256,6 +256,11 @@ getkappa: block
         if (mw%talk) then
             m0 = kappa_offdiag*lo_kappa_au_to_SI
             write (*, "(1X,A25)") 'Off diagonal contribution'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+            m0 = (kappa+kappa_offdiag)*lo_kappa_au_to_SI
+            write (*, "(1X,A19)") 'Total kappa (W/m/K)'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         end if
 
