@@ -277,7 +277,7 @@ getkappa: block
             write (*, '(1X,A37,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
             write (*, '(1X,A37,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
             write (*, '(1X,A37,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
-            write (*, '(1X,A37,A42)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+            write (*, '(1X,A37,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
             write (*, '(1X,A37,A50)') '', 'A. Fiorentino et al., Phys Rev B 107 054311 (2023)'
         end if
 
