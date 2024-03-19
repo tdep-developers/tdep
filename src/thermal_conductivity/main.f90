@@ -201,7 +201,7 @@ end block initkappa
 ! Iteratively solve the BTE for each temperature. Additionally calculate
 ! mean free path plots and things like that.
 getkappa: block
-    real(r8), dimension(3, 3) :: kappa, kappa_offdiag, m0
+    real(r8), dimension(3, 3) :: kappa, kappa_offdiag, kappa_sma, m0
     real(r8) :: t0
     integer :: i
 
@@ -228,6 +228,7 @@ getkappa: block
         call calculate_qs(qp, sc, dr, temperatures(i), mw, mem)
         timer_qs = timer_qs + walltime() - t0
 
+        call get_kappa(dr, qp, uc, temperatures(i), kappa_sma)
         call get_kappa_offdiag(dr, qp, uc, temperatures(i), fc, mem, mw, kappa_offdiag)
 
         ! Get the self-consistent solution
@@ -254,14 +255,30 @@ getkappa: block
         end if
 
         if (mw%talk) then
+            m0 = kappa_sma*lo_kappa_au_to_SI
+            write (*, "(1X,A33)") 'Single mode approximation (W/m/K)'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+            m0 = (kappa - kappa_sma)*lo_kappa_au_to_SI
+            write (*, "(1X,A33)") 'Dressed bubble correction (W/m/K)'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
             m0 = kappa_offdiag*lo_kappa_au_to_SI
-            write (*, "(1X,A25)") 'Off diagonal contribution'
+            write (*, "(1X,A44)") 'Off diagonal (coherent) contribution (W/m/K)'
             write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
             m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
             write (*, "(1X,A19)") 'Total kappa (W/m/K)'
             write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+
+            write (*, *) ''
+            write (*, '(1X,A21)') 'Suggested citations :'
+            write (*, '(1X,A37,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
+            write (*, '(1X,A37,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
+            write (*, '(1X,A37,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
+            write (*, '(1X,A37,A42)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+            write (*, '(1X,A37,A50)') '', 'A. Fiorentino et al., Phys Rev B 107 054311 (2023)'
         end if
 
         ! Store thermal conductivity tensor

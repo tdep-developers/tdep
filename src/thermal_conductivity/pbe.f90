@@ -910,7 +910,7 @@ subroutine get_kappa_offdiag(dr, qp, uc, temperature, fc, mem, mw, kappa_offdiag
             ! Skip gamma for acoustic branches
             if (dr%iq(iq)%omega(jmode) .lt. lo_freqtol) cycle
             om1 = dr%iq(iq)%omega(jmode)
-            do kmode = 1, dr%n_mode
+            do kmode = jmode, dr%n_mode
                 ! We only compute the off diagonal contribution
                 if (jmode .eq. kmode) cycle
                 ! Skip gamma for acoustic branches
@@ -925,8 +925,12 @@ subroutine get_kappa_offdiag(dr, qp, uc, temperature, fc, mem, mw, kappa_offdiag
                 f0 = n1*(n2 + 1) + n2*(n1 + 1)
                 f0 = f0*(om1 + om2)**2/4.0_r8
                 tau = (tau1 + tau2)/((tau1 + tau2)**2 + (om1 - om2)**2)
-
                 kappa_offdiag(:, :) = kappa_offdiag(:, :) + buf_velsq(:, :, jmode, kmode)*tau*f0*pref
+
+                f0 = n1*(n2 + 1) + n2*(n1 + 1)
+                f0 = f0*(om1 + om2)**2/4.0_r8
+                tau = (tau1 + tau2)/((tau1 + tau2)**2 + (om2 - om1)**2)
+                kappa_offdiag(:, :) = kappa_offdiag(:, :) + buf_velsq(:, :, kmode, jmode)*tau*f0*pref
             end do ! k mode
         end do ! j mode
     end do ! i qpt
