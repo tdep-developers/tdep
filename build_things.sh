@@ -173,6 +173,7 @@ cd ../../
 
 # now I should build a lot of codes. If we made it this far, it should be easy.
 listofcodes="
+dump_dynamical_matrices
 phonon_dispersion_relations
 crystal_structure_info
 generate_structure
