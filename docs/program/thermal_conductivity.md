@@ -706,45 +706,57 @@ The Boltzmann equation only takes into account the relaxation of phonons from pe
 However, for systems with complex unit cell, a contribution stemming from coherence tunelling between different phonons can become important.
 This off-diagonal coherent term can be introduced both by a formulation based on the Hardy current [^Isaeva2019] or a Wigner current [^Simoncelli2019], with very similar results[^Caldarelli2022].
 In TDEP, we use the formulation based on the Hardy heat current [^Isaeva2019]
+
 $$
 \begin{equation}
 J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}_\lambda^\dagger \hat{a}_{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
 \end{equation}
 $$
+
 where $v_{\lambda\lambda'}^\alpha$ are generalized group velocity tensor [^Dangic2021]
+
 $$
 \begin{equation}
 v_{\lambda\lambda'}^\alpha = \frac{i}{2 \sqrt{\omega_\lambda \omega_{\lambda'}}} \sum_{ij \beta\gamma} \epsilon_\lambda^{i\beta} \sum_{\mathbf{R}} \big( R^\alpha \frac{\Phi_{ij}^{\beta\gamma}(\mathbf{R})}{\sqrt{m_i m_j}} \big) \epsilon_{\lambda'}^{j\gamma}
 \end{equation}
 $$
+
 with $\mathbf{R}$ the distance vector between unit cells and $m_i$ the mass of atom $i$ in the unit cell.
 It should be recognized that for $\lambda = \lambda'$, we recover the heat current used previously to derive the thermal conductivity with the Boltzman equation.
 
 The derivation of this off-diagonal contribution starts from the Green-Kubo formula for the thermal conductivity tensor
+
 $$
 \begin{equation}
 \kappa_{\alpha\beta} = \frac{1}{V k_BT}\int_0^\infty dt \int_0^\beta d\nu \langle J_\alpha(-i\hbar\nu) J_\beta(t) \rangle
 \end{equation}
 $$
+
 Injecting the harmonic heat current into this equation allows to rewrite the total thermal conductivity tensor as [^Fiorentino2023]
+
 $$
 \begin{equation}
 \kappa_{\alpha\beta} = \kappa_{\alpha\beta}^{BTE} + \kappa_{\alpha\beta}^{c}
 \end{equation}
 $$
+
 where $\kappa_{\alpha\beta}^{\mathrm{BTE}}$ is the thermal conductivity from the previous section and $\kappa_{\alpha\beta}^{c}$ is the off-diagonal coherent contribution.
 This term is computed as
+
 $$
 \begin{equation}
 \kappa_{\alpha\beta}^{c} = \frac{1}{Vk_BT^2} \sum_{\lambda\lambda'\neq \lambda} c_{\lambda\lambda'} v_{\lambda\lambda'}^\alpha v_{\lambda\lambda'}^\beta \tau_{\lambda\lambda'} \delta_{q_\lambda q_{\lambda'}}
 \end{equation}
 $$
+
 with
+
 $$
 \begin{equation}
 c_{\lambda\lambda'} = \frac{1}{4} [n_\lambda (n_\lambda + 1) + n_{\lambda'} (n_{\lambda'} + 1) ] (\omega_\lambda + \omega_{\lambda'})^2
 \end{equation}
 $$
+
 $$
 \begin{equation}
 \tau_{\lambda\lambda'} = \frac{\Gamma_\lambda + \Gamma_{\lambda'}}{(\omega_{\lambda} - \omega_{\lambda'})^2 + (\Gamma_{\lambda} + \Gamma_{\lambda'})^2}
