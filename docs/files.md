@@ -192,3 +192,9 @@ The phonon many-body perturbation theory considers scattering by isotopes. By de
 ```
 
 Per atom in the unit cell, you specify the number of isotopes, followed by the appropriate number of concentrations and masses (in atomic mass units).
+
+### <a name="infile.forceconstant"></a> infile.forceconstant
+
+The second order irreducible force constants produced by the TDEP fit are contained in this file. It is an output of the extract_forceconstant program, but an input of several others, e.g. thermal_conductivity. It has to be renamed from outfile.xx to infile.xx.
+
+
