@@ -2,6 +2,7 @@ folders="anharmonic_free_energy/
 atomic_distribution/
 canonical_configuration/
 crystal_structure_info/
+dump_dynamical_matrices/
 extract_forceconstants/
 generate_structure/
 lineshape/
