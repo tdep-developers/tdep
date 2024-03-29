@@ -13,6 +13,7 @@ thermal_conductivity/
 
 for folder in ${folders}
 do
+        export PATH="../../bin/:$PATH"
 	pushd $folder
 	make testfiles
 	popd
