@@ -321,11 +321,11 @@ finalize_and_write: block
     if (mw%talk) then
         write (*, *) ''
         write (*, '(1X,A21)') 'Suggested citations :'
-        write (*, '(1X,A37,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
-        write (*, '(1X,A37,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
-        write (*, '(1X,A37,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
-        write (*, '(1X,A37,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
-        write (*, '(1X,A37,A50)') '', 'A. Fiorentino et al., Phys Rev B 107 054311 (2023)'
+        write (*, '(1X,A41,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
+        write (*, '(1X,A41,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
+        write (*, '(1X,A41,A43)') 'Iterative Boltzmann transport equation : ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
+        write (*, '(1X,A41,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
+        write (*, '(1X,A41,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
 
         t0 = timer_init + timer_count + timer_matrixelements + timer_qs + timer_kappa + timer_scf + timer_cumulative
         write (*, *) ' '
