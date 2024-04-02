@@ -846,32 +846,16 @@ Depending on options, the set of output files may differ. We start with the basi
 
 #### `outfile.thermal_conductivity`
 
-This file contains components of the thermal conductivity tensor $\kappa_{\alpha \beta}$ for each temperature.
+This file contains components of the thermal conductivity tensor $\kappa_{\alpha \beta}$​ for each temperature.
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>1</td>
-	<td>
-	\( T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx} \)
-	</td>
-</tr>
-<tr>
-	<td>2</td>
-	<td>
-	\( T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx} \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-</tbody>
-</table>
+$test$
+
+| **Row** | **Description**                                              |
+| ------- | ------------------------------------------------------------ |
+| 1       | $T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx}$ |
+| 2       | $T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx}$ |
+| …       | …                                                            |
+
 
 #### `outfile.cumulative_kappa.hdf5`
 
