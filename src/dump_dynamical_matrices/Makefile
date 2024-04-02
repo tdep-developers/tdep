@@ -3,7 +3,7 @@ CODE = dump_dynamical_matrices
 PROG = ../../build/$(CODE)/$(CODE)
 OBJECT_PATH=../../build/$(CODE)/
 
-OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o  $(OBJECT_PATH)ddb_io_out.o 
+OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o
 
 
 # some paths and stuff. Ok.
@@ -27,10 +27,8 @@ clean:
 	rm -f $(PROG) $(OBJS) *.mod $(OBJECT_PATH)*.mod
 
 
-$(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o  $(OBJECT_PATH)ddb_io_out.o
+$(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o 
 	$(F90) $(F90FLAGS) -c main.f90  -o $@
 $(OBJECT_PATH)options.o:
 	$(F90) $(F90FLAGS) -c options.f90 -o $@
-$(OBJECT_PATH)ddb_io_out.o:
-	$(F90) $(F90FLAGS) -c ddb_io_out.F90 -o $@
 
