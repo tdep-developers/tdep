@@ -697,6 +697,73 @@ $$
 \end{equation}
 $$
 
+
+
+### Off diagonal coherent contribution
+
+
+The Boltzmann equation only takes into account the relaxation of phonons from perturbed state to the equilibrium.
+However, for systems with complex unit cell, a contribution stemming from coherence tunelling between different phonons can become important.
+This off-diagonal coherent term can be introduced both by a formulation based on the Hardy current [^Isaeva2019] or a Wigner current [^Simoncelli2019], with very similar results[^Caldarelli2022].
+In TDEP, we use the formulation based on the Hardy heat current [^Isaeva2019]
+
+$$
+\begin{equation}
+J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}_\lambda^\dagger \hat{a}_{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
+\end{equation}
+$$
+
+where $v_{\lambda\lambda'}^\alpha$ are generalized group velocity tensor [^Dangic2021]
+
+$$
+\begin{equation}
+v_{\lambda\lambda'}^\alpha = \frac{i}{2 \sqrt{\omega_\lambda \omega_{\lambda'}}} \sum_{ij \beta\gamma} \epsilon_\lambda^{i\beta} \sum_{\mathbf{R}} \big( R^\alpha \frac{\Phi_{ij}^{\beta\gamma}(\mathbf{R})}{\sqrt{m_i m_j}} \big) \epsilon_{\lambda'}^{j\gamma}
+\end{equation}
+$$
+
+with $\mathbf{R}$ the distance vector between unit cells and $m_i$ the mass of atom $i$ in the unit cell.
+It should be recognized that for $\lambda = \lambda'$, we recover the heat current used previously to derive the thermal conductivity with the Boltzman equation.
+
+The derivation of this off-diagonal contribution starts from the Green-Kubo formula for the thermal conductivity tensor
+
+$$
+\begin{equation}
+\kappa_{\alpha\beta} = \frac{1}{V k_BT}\int_0^\infty dt \int_0^\beta d\nu \langle J_\alpha(-i\hbar\nu) J_\beta(t) \rangle
+\end{equation}
+$$
+
+Injecting the harmonic heat current into this equation allows to rewrite the total thermal conductivity tensor as [^Fiorentino2023]
+
+$$
+\begin{equation}
+\kappa_{\alpha\beta} = \kappa_{\alpha\beta}^{BTE} + \kappa_{\alpha\beta}^{c}
+\end{equation}
+$$
+
+where $\kappa_{\alpha\beta}^{\mathrm{BTE}}$ is the thermal conductivity from the previous section and $\kappa_{\alpha\beta}^{c}$ is the off-diagonal coherent contribution.
+This term is computed as
+
+$$
+\begin{equation}
+\kappa_{\alpha\beta}^{c} = \frac{1}{Vk_BT^2} \sum_{\lambda\lambda'\neq \lambda} c_{\lambda\lambda'} v_{\lambda\lambda'}^\alpha v_{\lambda\lambda'}^\beta \tau_{\lambda\lambda'} \delta_{q_\lambda q_{\lambda'}}
+\end{equation}
+$$
+
+with
+
+$$
+\begin{equation}
+c_{\lambda\lambda'} = \frac{1}{4} [n_\lambda (n_\lambda + 1) + n_{\lambda'} (n_{\lambda'} + 1) ] (\omega_\lambda + \omega_{\lambda'})^2
+\end{equation}
+$$
+
+$$
+\begin{equation}
+\tau_{\lambda\lambda'} = \frac{\Gamma_\lambda + \Gamma_{\lambda'}}{(\omega_{\lambda} - \omega_{\lambda'})^2 + (\Gamma_{\lambda} + \Gamma_{\lambda'})^2}
+\end{equation}
+$$
+
+
 ### Cumulative kappa
 
 @todo Check code snippets
@@ -779,32 +846,16 @@ Depending on options, the set of output files may differ. We start with the basi
 
 #### `outfile.thermal_conductivity`
 
-This file contains components of the thermal conductivity tensor $\kappa_{\alpha \beta}$ for each temperature.
+This file contains components of the thermal conductivity tensor $\kappa_{\alpha \beta}$​ for each temperature.
 
-<table class='table table-striped'>
-<thead><tr>
-	<th>Row</th>
-	<th>Description</th>
-</tr></thead>
-<tbody>
-<tr>
-	<td>1</td>
-	<td>
-	\( T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx} \)
-	</td>
-</tr>
-<tr>
-	<td>2</td>
-	<td>
-	\( T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx} \)
-	</td>
-</tr>
-<tr>
-	<td>...</td>
-	<td>...</td>
-</tr>
-</tbody>
-</table>
+$test$
+
+| **Row** | **Description**                                              |
+| ------- | ------------------------------------------------------------ |
+| 1       | $T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx}$ |
+| 2       | $T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad	\kappa_{yz} \quad	\kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad	\kappa_{yx}$ |
+| …       | …                                                            |
+
 
 #### `outfile.cumulative_kappa.hdf5`
 
@@ -957,3 +1008,13 @@ subplot(1,3,3); hold on; box on;
 [^Broido2007]: [Broido, D. A., Malorny, M., Birner, G., Mingo, N., & Stewart, D. A. (2007). Intrinsic lattice thermal conductivity of semiconductors from first principles. Applied Physics Letters, 91(23), 231922.](http://doi.org/10.1063/1.2822891)
 
 [^Broido2005]: [Broido, D. A., Ward, A., & Mingo, N. (2005). Lattice thermal conductivity of silicon from empirical interatomic potentials. Physical Review B, 72(1), 1–8.](http://doi.org/10.1103/PhysRevB.72.014308)
+
+[^Isaeva2019]: [Isaeva, L & Barbalinardo, G. & Donadio, D. & Baroni, S. (2019). Modeling heat transport in crystals and glasses from a unified lattice-dynamical approach. Nature Communications 10 3853](https://doi.org/10.1038/s41467-019-11572-4)
+
+[^Fiorentino2023]: [Fiorentino, A. & Baroni, S (2023). From Green-Kubo to the full Boltzmann kinetic approach to heat transport in crystals and glasses. Physical Review B, 107, 054311](https://doi.org/10.1103/PhysRevB.107.054311)
+
+[^Simoncelli2019]: [Simoncelli, M. & Marzari, N. & Mauri, F. (2019). Unified theory of thermal transport in crystals and glasses. Nature physics 15 803-819](https://doi.org/10.1038/s41567-019-0520-x)
+
+[^Caldarelli2022]: [Caldarelli, G. & Simoncelli, M. & Marzari, N. & Mauri, F. & Benfatto, L. (2022). Many-body Green's function approach to lattice thermal transport. Physical Review B 106 024312](https://doi.org/10.1103/PhysRevB.106.024312)
+
+[^Dangic2021]: [Dangić, Đ. & Hellman, O. & Fahy, S. and Savić, I. (2021) The origin of the lattice thermal conductivity enhancement at the ferroelectric phase transition in GeTe. Nature Computational Materials 7, 57](https://doi.org/10.1038/s41524-021-00523-7)
