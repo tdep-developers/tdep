@@ -17,7 +17,7 @@ use dump_data, only: lo_dump_gnuplot_2d_real
 ! unique
 use options, only: lo_opts
 use scatteringstrengths, only: calculate_scattering_amplitudes
-use pbe, only: get_kappa, calculate_qs, get_selfconsistent_solution
+use pbe, only: get_kappa, get_kappa_offdiag, calculate_qs, get_selfconsistent_solution
 use phononevents, only: lo_threephononevents, lo_find_all_scattering_events
 use mfp, only: lo_mfp, get_cumulative_plots, write_cumulative_plots
 
@@ -201,7 +201,7 @@ end block initkappa
 ! Iteratively solve the BTE for each temperature. Additionally calculate
 ! mean free path plots and things like that.
 getkappa: block
-    real(r8), dimension(3, 3) :: kappa, m0
+    real(r8), dimension(3, 3) :: kappa, kappa_offdiag, kappa_sma, m0
     real(r8) :: t0
     integer :: i
 
@@ -228,6 +228,9 @@ getkappa: block
         call calculate_qs(qp, sc, dr, temperatures(i), mw, mem)
         timer_qs = timer_qs + walltime() - t0
 
+        call get_kappa(dr, qp, uc, temperatures(i), kappa_sma)
+        call get_kappa_offdiag(dr, qp, uc, temperatures(i), fc, mem, mw, kappa_offdiag)
+
         ! Get the self-consistent solution
         call mpi_barrier(mw%comm, mw%error)
         if (opts%scfiterations .gt. 0) then
@@ -251,17 +254,38 @@ getkappa: block
                 temperatures(i), m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         end if
 
+        if (mw%talk) then
+            m0 = kappa_sma*lo_kappa_au_to_SI
+            write (*, *) ''
+            write (*, "(1X,A52)") 'Decomposition of the thermal conductivity (in W/m/K)'
+            write (*, "(1X,A85)") 'Single mode relaxation time approximation (RTA) to Boltzmann transport equation (BTE)'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+            m0 = (kappa - kappa_sma)*lo_kappa_au_to_SI
+            write (*, "(1X,A73)") 'Correction to full solution of the linearized BTE via iterative procedure'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+            m0 = kappa_offdiag*lo_kappa_au_to_SI
+            write (*, "(1X,A36)") 'Off diagonal (coherent) contribution'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+            m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
+            write (*, "(1X,A26)") 'Total thermal conductivity'
+            write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
+            write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
+        end if
+
         ! Store thermal conductivity tensor
         thermal_cond(1, i) = temperatures(i)
-        thermal_cond(2, i) = kappa(1, 1)*lo_kappa_au_to_SI
-        thermal_cond(3, i) = kappa(2, 2)*lo_kappa_au_to_SI
-        thermal_cond(4, i) = kappa(3, 3)*lo_kappa_au_to_SI
-        thermal_cond(5, i) = kappa(1, 3)*lo_kappa_au_to_SI
-        thermal_cond(6, i) = kappa(2, 3)*lo_kappa_au_to_SI
-        thermal_cond(7, i) = kappa(1, 2)*lo_kappa_au_to_SI
-        thermal_cond(8, i) = kappa(3, 1)*lo_kappa_au_to_SI
-        thermal_cond(9, i) = kappa(3, 2)*lo_kappa_au_to_SI
-        thermal_cond(10, i) = kappa(2, 1)*lo_kappa_au_to_SI
+        thermal_cond(2, i) = (kappa(1, 1) + kappa_offdiag(1, 1))*lo_kappa_au_to_SI
+        thermal_cond(3, i) = (kappa(2, 2) + kappa_offdiag(2, 2))*lo_kappa_au_to_SI
+        thermal_cond(4, i) = (kappa(3, 3) + kappa_offdiag(3, 3))*lo_kappa_au_to_SI
+        thermal_cond(5, i) = (kappa(1, 3) + kappa_offdiag(1, 3))*lo_kappa_au_to_SI
+        thermal_cond(6, i) = (kappa(2, 3) + kappa_offdiag(2, 3))*lo_kappa_au_to_SI
+        thermal_cond(7, i) = (kappa(1, 2) + kappa_offdiag(1, 2))*lo_kappa_au_to_SI
+        thermal_cond(8, i) = (kappa(3, 1) + kappa_offdiag(3, 1))*lo_kappa_au_to_SI
+        thermal_cond(9, i) = (kappa(3, 2) + kappa_offdiag(3, 2))*lo_kappa_au_to_SI
+        thermal_cond(10, i) = (kappa(2, 1) + kappa_offdiag(2, 1))*lo_kappa_au_to_SI
 
         ! Calculate the cumulative plots
         t0 = walltime()
@@ -295,6 +319,14 @@ finalize_and_write: block
 
     ! Print timings
     if (mw%talk) then
+        write (*, *) ''
+        write (*, '(1X,A21)') 'Suggested citations :'
+        write (*, '(1X,A41,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
+        write (*, '(1X,A41,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
+        write (*, '(1X,A41,A43)') 'Iterative Boltzmann transport equation : ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
+        write (*, '(1X,A41,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
+        write (*, '(1X,A41,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+
         t0 = timer_init + timer_count + timer_matrixelements + timer_qs + timer_kappa + timer_scf + timer_cumulative
         write (*, *) ' '
         write (*, *) 'Timings:'
