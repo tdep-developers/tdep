@@ -39,6 +39,7 @@ nav:
     - Atomic distribution: program/atomic_distribution.md
     - Pack simulation: program/pack_simulation.md
     - Samples from MD: program/samples_from_md.md
+    - Dump dynamical matrices: program/dump_dynamical_matrices.md
     - Crystal structure info: program/crystal_structure_info.md
     - Refine structure: program/refine_structure.md
   - Files: files.md

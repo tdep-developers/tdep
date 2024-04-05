@@ -22,21 +22,19 @@ class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mem_helper) :: mem
 type(lo_mpi_helper) :: mw
 
-
-integer :: i,u,a1,a2,ii,jj
-integer :: x,y,z
-integer :: nq,nb
-integer, dimension(:,:,:), allocatable :: symrel
+integer :: i, u, a1, a2, ii, jj
+integer :: x, y, z
+integer :: nq, nb
+integer, dimension(:, :, :), allocatable :: symrel
 integer, dimension(:), allocatable :: symafm
 real(flyt) :: v0(3)
-real(flyt), dimension(:,:), allocatable :: tnons
-real(flyt), dimension(:,:), allocatable :: spinat
-real(flyt), dimension(:,:), allocatable :: qpoints
-real(flyt), dimension(:,:), allocatable :: rotmat
-complex(flyt), dimension(:,:), allocatable :: dynmat
+real(flyt), dimension(:, :), allocatable :: tnons
+real(flyt), dimension(:, :), allocatable :: spinat
+real(flyt), dimension(:, :), allocatable :: qpoints
+real(flyt), dimension(:, :), allocatable :: rotmat
+complex(flyt), dimension(:, :), allocatable :: dynmat
 character(len=500) :: string
 character(len=500) :: filnam
-
 
 call mw%init()
 call mem%init()
@@ -47,44 +45,41 @@ call uc%readfromfile('infile.ucposcar')
 call uc%classify('bravais')
 
 call uc%classify('bz')
-call uc%classify('spacegroup',timereversal=.True.)
-call fc%readfromfile(uc,'infile.forceconstant',mem,1)
+call uc%classify('spacegroup', timereversal=.True.)
+call fc%readfromfile(uc, 'infile.forceconstant', mem, 1)
 ! I decided to skip the electrostatic stuff, probably better to use the Abinit version or something.
 !call loto%initempty()
 
-
-
-
-if ( opts%readqpointsfromfile ) then
+if (opts%readqpointsfromfile) then
     ! The file format is simple, first line is number of q-points, the rest of the lines are a q-point
     ! in fractional coordinates.
-    write (*,*) 'error: no longer reads qpt from file'
-    stop -1
-    u=open_file('in','infile.dynmatqpoints')
-        read(u,*) nq
-        lo_allocate(qpoints(3,nq))
-        do i=1,nq
-            read(u,*) qpoints(:,i)
-            ! convert to Cartesian
-            qpoints(:,i)=matmul(qpoints(:,i),uc%reciprocal_latticevectors)
-            
-        enddo
-            write(*,*) qpoints
-            write(*,*) uc%reciprocal_latticevectors(1,:)
-            write(*,*) uc%reciprocal_latticevectors(2,:)
-            write(*,*) uc%reciprocal_latticevectors(3,:)
-    close(u)
+    write (*, *) 'error: no longer reads qpt from file'
+    stop - 1
+    u = open_file('in', 'infile.dynmatqpoints')
+    read (u, *) nq
+    lo_allocate(qpoints(3, nq))
+    do i = 1, nq
+        read (u, *) qpoints(:, i)
+        ! convert to Cartesian
+        qpoints(:, i) = matmul(qpoints(:, i), uc%reciprocal_latticevectors)
+
+    end do
+    write (*, *) qpoints
+    write (*, *) uc%reciprocal_latticevectors(1, :)
+    write (*, *) uc%reciprocal_latticevectors(2, :)
+    write (*, *) uc%reciprocal_latticevectors(3, :)
+    close (u)
 end if
 
-write (*,*) ' opts%meshtype opts%qgrid ',opts%meshtype, opts%qgrid
+write (*, *) ' opts%meshtype opts%qgrid ', opts%meshtype, opts%qgrid
 
-        call lo_generate_qmesh(qp,uc,opts%qgrid,'fft',timereversal=.true.,headrankonly=.false.,&
-           mw=mw,mem=mem,verbosity=1)
+call lo_generate_qmesh(qp, uc, opts%qgrid, 'fft', timereversal=.true., headrankonly=.false., &
+                       mw=mw, mem=mem, verbosity=1)
 
-call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
+call fc%write_to_anaddb(uc, opts%qgrid, mw, mem)
 
 !else
-!    ! automagically generate a grid. Probably a bad idea, since my version of gridgeneration and 
+!    ! automagically generate a grid. Probably a bad idea, since my version of gridgeneration and
 !    ! Abinits might be different.
 !    write (*,*) ' opts%meshtype opts%qgrid ',opts%meshtype, opts%qgrid
 !    select case(opts%meshtype)
@@ -99,7 +94,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !    nq=qp%nq_tot
 !    lo_allocate(qpoints(3,qp%nq_tot))
 !    do i=1,nq
-!        qpoints(:,i)=qp%ap(i)%v 
+!        qpoints(:,i)=qp%ap(i)%v
 !        ! qp%ap(i)%w is the point in the BZ, qp%ap(i)%v is the point in the reciprocal unit cell
 !        ! not sure what you prefer. Should not matter.
 !    enddo
@@ -115,7 +110,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !lo_allocate(spinat(3,uc%na)) ! some space for the dynamical matrix
 !spinat = 0.0_flyt
 !lo_allocate(symafm(uc%sym%n)) ! some space for the antiferro operation flags
-!symafm = 1 
+!symafm = 1
 !lo_allocate(symrel(3,3,uc%sym%n)) ! some space for the symops
 !lo_allocate(tnons(3,uc%sym%n)) ! some space for the reduced translations
 !do i=1,uc%sym%n
@@ -128,7 +123,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !filnam = 'outfile.many_dynamical_matrices_DDB'
 !call ddb_io_out (string, &
 !    filnam, &
-!    uc%na,&       ! matom 
+!    uc%na,&       ! matom
 !    1, &       ! mband
 !    1,&       ! mkpt
 !    uc%sym%n,&       ! msym
@@ -156,7 +151,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !    uc%sym%n,&       ! nsym
 !    uc%nelements,&       ! ntypat
 !    (/2.0_flyt/),&       ! occ
-!    1, &       ! occopt 
+!    1, &       ! occopt
 !    2.0_flyt,&       ! pawecutdg
 !    transpose(uc%latticevectors)/lo_A_to_bohr,&       ! rprim
 !    0.0_flyt,&       ! dfpt_sciss
@@ -195,7 +190,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !  end do
 !end do
 !
-!do i=1,nq    
+!do i=1,nq
 !    q%w=qpoints(:,i)
 !    write (u,*) ""
 !    write (u,'(a32,12x,i8)') " 2nd derivatives (non-stat.)  - ",  uc%na*uc%na*3*3
@@ -208,7 +203,7 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !    dynmat = matmul( rotmat, matmul(dynmat, transpose(rotmat)) )
 !
 !    ! this is in eV/reduced coordinate - convert to Hartree and units of electron mass
-!    dynmat = dynmat / lo_eV_to_Hartree * lo_emu_to_amu 
+!    dynmat = dynmat / lo_eV_to_Hartree * lo_emu_to_amu
 !
 !    ! write the matrix itself. No idea what you want. Please adjust this to you favourite format.
 !    ! the dynamical matrix is nb x nb, flattened as
@@ -241,6 +236,6 @@ call fc%write_to_anaddb(uc,opts%qgrid,mw,mem)
 !lo_deallocate(spinat)
 !lo_deallocate(symrel)
 !lo_deallocate(tnons)
-    
+
 end program
 
