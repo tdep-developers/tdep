@@ -20,6 +20,8 @@
 
 [`samples_from_md`: Pick samples from an MD simulation in a clever way.](samples_from_md.md)
 
+[`dump_dynamical_matrices`: Write dynamical matrices on q-point grid.](dump_dynamical_matrices.md)
+
 [`crystal_structure_info`: Report which crystal structure and spacegroup TDEP sees.](crystal_structure_info.md)
 
 [`refine_structure`: Clean up input structures with imprecise symmetry.](refine_structure.md)
