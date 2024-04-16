@@ -51,30 +51,30 @@ endif
 
 ! Get a q-mesh
 if ( opts%readqmesh ) then
-    call lo_read_qmesh_from_file(qp,uc,'infile.qgrid.hdf5',verbosity=opts%verbosity)
+    call lo_read_qmesh_from_file(qp,uc,'infile.qgrid.hdf5',mem,verbosity=opts%verbosity)
     write(*,*) '... read mesh from file'
 else
     write(*,*) '... generate mesh'
-    call lo_generate_qmesh(qp,uc,opts%qgrid,'wedge',verbosity=opts%verbosity,timereversal=opts%timereversal,mw=mw)
+    call lo_generate_qmesh(qp,uc,opts%qgrid,'wedge',verbosity=opts%verbosity,timereversal=opts%timereversal,headrankonly=.true.,mw=mw,mem=mem)
 endif
 
 ! Get the actual q-point we are interested in
-qpoint%noperations=0
+qpoint%n_invariant_operation=0
 if ( trim(opts%highsymmetrypoint) .ne. 'none' ) then
-    qpoint%v=uc%coordinate_from_high_symmetry_point_label(opts%highsymmetrypoint)
+    qpoint%r=uc%coordinate_from_high_symmetry_point_label(opts%highsymmetrypoint)
 else
-    qpoint%v=uc%fractional_to_cartesian(opts%qpoint,reciprocal=.true.)
+    qpoint%r=uc%fractional_to_cartesian(opts%qpoint,reciprocal=.true.)
 endif
-qpoint%w=qpoint%v-uc%bz%gshift(qpoint%v)
+qpoint%r=qpoint%r-uc%bz%gshift(qpoint%r)
 
 ! Build the surfaces
 select type(qp)
 type is(lo_wedge_mesh)
     if ( opts%povray ) then
         call ps%generate(qp,uc,fc,fct,qpoint,opts%verbosity,opts%modespec,&
-                         calcintens=opts%intensities)
+                         calcintens=opts%intensities,mem=mem)
     else
-        call ps%generate(qp,uc,fc,fct,qpoint,opts%verbosity,calcintens=opts%intensities)
+        call ps%generate(qp,uc,fc,fct,qpoint,opts%verbosity,calcintens=opts%intensities,mem=mem)
     endif
 class default
     write(*,*) 'Unknown mesh type'

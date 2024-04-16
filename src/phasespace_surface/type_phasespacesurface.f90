@@ -3,6 +3,7 @@ module type_phasespacesurface
 use konstanter, only: flyt,lo_pi,lo_huge,lo_freqtol,lo_status,lo_sqtol,lo_twopi
 use gottochblandat, only: tochar,lo_cross,open_file,lo_signed_tetrahedron_volume,walltime,lo_sqnorm,&
                    lo_progressbar_init,lo_progressbar,qsort
+use lo_memtracker, only: lo_mem_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
@@ -67,7 +68,7 @@ contains
 #include "type_phasespacesurface_povray.f90"
 
 !> generate three-phonon scattering surfaces
-subroutine generate(ps,qp,uc,fc,fct,point,verbosity,modespec,calcintens)
+subroutine generate(ps,qp,uc,fc,fct,point,verbosity,modespec,calcintens,mem)
     !> fermisurface
     class(lo_phasespacesurface), intent(out) :: ps
     !> qpoint mesh
@@ -86,6 +87,7 @@ subroutine generate(ps,qp,uc,fc,fct,point,verbosity,modespec,calcintens)
     integer, dimension(:,:), intent(in), optional :: modespec
     !> calculate intensities (matrix elements)?
     logical, intent(in), optional :: calcintens
+    type(lo_mem_helper), intent(inout) :: mem
     !
     integer :: i,j,k,l,u,ii,srf
     integer :: b1,b2,b3
@@ -106,8 +108,8 @@ subroutine generate(ps,qp,uc,fc,fct,point,verbosity,modespec,calcintens)
     ps%nb=uc%na*3
     lo_allocate(ps%plus(ps%nb,ps%nb,ps%nb))
     lo_allocate(ps%minus(ps%nb,ps%nb,ps%nb))
-    lo_allocate(energy_plus(qp%nq_tot,ps%nb,ps%nb,ps%nb))
-    lo_allocate(energy_minus(qp%nq_tot,ps%nb,ps%nb,ps%nb))
+    lo_allocate(energy_plus(qp%n_full_point,ps%nb,ps%nb,ps%nb))
+    lo_allocate(energy_minus(qp%n_full_point,ps%nb,ps%nb,ps%nb))
     do b1=1,ps%nb
     do b2=1,ps%nb
     do b3=1,ps%nb
@@ -121,7 +123,7 @@ subroutine generate(ps,qp,uc,fc,fct,point,verbosity,modespec,calcintens)
     if ( verbosity .gt. 0 ) write(*,*) '... made some initial space'
       
     ! Get the energy values     
-    call energy_values_on_vertices(point,qp,uc,fc,energy_plus,energy_minus)
+    call energy_values_on_vertices(point,qp,uc,fc,energy_plus,energy_minus,mem=mem)
     if ( verbosity .gt. 0 ) write(*,*) '... got energies at nodes'
 
     if ( present(modespec) ) then

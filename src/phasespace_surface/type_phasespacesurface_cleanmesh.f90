@@ -73,9 +73,9 @@ subroutine bz_isosurface(qp,fvals,isoval,finr,fint,fingrad,uc,fc,qpoint1,plus,b1
     endif
     ! Fetch the tetrahedron energies
     ! space for possible points
-    lo_allocate(dumr(3,qp%ntet_tot*4))
-    lo_allocate(dumt(3,qp%ntet_tot*4))
-    lo_allocate(dumgrad(3,qp%ntet_tot*4))
+    lo_allocate(dumr(3,qp%n_full_tet*4))
+    lo_allocate(dumt(3,qp%n_full_tet*4))
+    lo_allocate(dumgrad(3,qp%n_full_tet*4))
     dumr=0.0_flyt
     dumt=0
     dumgrad=0.0_flyt
@@ -84,11 +84,11 @@ subroutine bz_isosurface(qp,fvals,isoval,finr,fint,fingrad,uc,fc,qpoint1,plus,b1
     l=0
     ll=0
     if ( verb ) call lo_progressbar_init()
-    do i=1,qp%ntet_tot
+    do i=1,qp%n_full_tet
         ! fetch energy at the corners, and coordinates
         do j=1,4            
-            ii=qp%atet(i)%gridind(j)
-            cpts(:,j)=qp%ap(ii)%w
+            ii=qp%at(i)%full_index(j)
+            cpts(:,j)=qp%ap(ii)%r
             tete(j)=fvals(ii)-isoval
         enddo
         sorti=sort_four_numbers(tete)
@@ -196,12 +196,12 @@ subroutine bz_isosurface(qp,fvals,isoval,finr,fint,fingrad,uc,fc,qpoint1,plus,b1
         !
         if ( verb ) then
             if ( mod(i,20) .eq. 0 ) then
-                call lo_progressbar(' ... building triangles',i,qp%ntet_tot)
+                call lo_progressbar(' ... building triangles',i,qp%n_full_tet)
             endif
         endif
     enddo
                 
-    if ( verb ) call lo_progressbar(' ... building triangles',qp%ntet_tot,qp%ntet_tot)
+    if ( verb ) call lo_progressbar(' ... building triangles',qp%n_full_tet,qp%n_full_tet)
 
     ! Stop if I found no points    
     if ( l .eq. 0 ) return
