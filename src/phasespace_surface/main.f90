@@ -33,8 +33,9 @@ call mem%init()
 
 
 ! Read unitcell
-call uc%readfromfile('infile.ucposcar')
 write(*,*) '... read unitcell poscar'
+call uc%readfromfile('infile.ucposcar')
+call uc%classify('wedge', timereversal=.true.)
 if ( opts%readiso ) then
     write(*,*) '... reading isotope distribution from file'
     call uc%readisotopefromfile()
