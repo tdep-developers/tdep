@@ -14,14 +14,14 @@ LIBS = -lolle -lflap $(blaslapackLIBS) $(incLIBShdf) $(incLIBSmpi) $(incLIBSfft)
 
 # ok, I think I get this.
 #OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10
-F90 = $(FC) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
+F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
 F90FLAGS = $(OPT) $(MODS) $(LIBS)
 
 # I guess this is the normal one
 all: $(PROG)
 
 $(PROG): $(OBJS)
-	$(F90) -o $@ $(OBJS) $(LPATH) $(LIBS)
+	$(F90) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.mod $(OBJECT_PATH)*.mod
