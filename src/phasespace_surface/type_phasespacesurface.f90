@@ -28,6 +28,8 @@ type lo_phasespacesurface_patch
     real(flyt), dimension(:, :), allocatable :: grad
     !> the matrix element (intensity) at each point
     real(flyt), dimension(:), allocatable :: psisquared
+    !> the norm of matrix elements (intensity)
+    real(flyt) :: psisquared_norm
     !> the frequencies of the modes involved at each point (index: point, modelabel)
     real(flyt), dimension(:, :), allocatable :: omega
     !> the eigenvectors of the modes involved at each point (index: point, :, modelabel)
@@ -140,15 +142,17 @@ subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens,
                                    ps%plus(b1, b2, b3)%tri, ps%plus(b1, b2, b3)%grad, &
                                    uc, fc, point, .true., b1, b2, b3, verbosity=1, &
                                    fct=fct, calcintens=calcintensities, psisq=ps%plus(b1, b2, b3)%psisquared, &
+                                   psisq_norm=ps%plus(b1, b2, b3)%psisquared_norm, &
                                    tot_omega=ps%plus(b1, b2, b3)%omega, tot_egv=ps%plus(b1, b2, b3)%egv, &
-                                   tot_q=ps%plus(b1, b2, b3)%q)
+                                   tot_q=ps%plus(b1, b2, b3)%q, mem=mem)
             else
                 call bz_isosurface(qp, energy_minus(:, b1, b2, b3), 0.0_flyt, ps%minus(b1, b2, b3)%pts, &
                                    ps%minus(b1, b2, b3)%tri, ps%minus(b1, b2, b3)%grad, &
                                    uc, fc, point, .false., b1, b2, b3, verbosity=1, &
                                    fct=fct, calcintens=calcintensities, psisq=ps%plus(b1, b2, b3)%psisquared, &
+                                   psisq_norm=ps%minus(b1, b2, b3)%psisquared_norm, &
                                    tot_omega=ps%minus(b1, b2, b3)%omega, tot_egv=ps%minus(b1, b2, b3)%egv, &
-                                   tot_q=ps%minus(b1, b2, b3)%q)
+                                   tot_q=ps%minus(b1, b2, b3)%q, mem=mem)
             end if
             if (allocated(ps%plus(b1, b2, b3)%tri)) then
                 ps%plus(b1, b2, b3)%ntri = size(ps%plus(b1, b2, b3)%tri, 2)
@@ -177,14 +181,16 @@ subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens,
                                ps%plus(b1, b2, b3)%tri, ps%plus(b1, b2, b3)%grad, &
                                uc, fc, point, .true., b1, b2, b3, &
                                fct=fct, calcintens=calcintensities, psisq=ps%plus(b1, b2, b3)%psisquared, &
+                               psisq_norm=ps%plus(b1, b2, b3)%psisquared_norm, &
                                tot_omega=ps%plus(b1, b2, b3)%omega, tot_egv=ps%plus(b1, b2, b3)%egv, &
-                               tot_q=ps%plus(b1, b2, b3)%q)
+                               tot_q=ps%plus(b1, b2, b3)%q, mem=mem)
             call bz_isosurface(qp, energy_minus(:, b1, b2, b3), 0.0_flyt, ps%minus(b1, b2, b3)%pts, &
                                ps%minus(b1, b2, b3)%tri, ps%minus(b1, b2, b3)%grad, &
                                uc, fc, point, .false., b1, b2, b3, &
                                fct=fct, calcintens=calcintensities, psisq=ps%plus(b1, b2, b3)%psisquared, &
+                               psisq_norm=ps%minus(b1, b2, b3)%psisquared_norm, &
                                tot_omega=ps%minus(b1, b2, b3)%omega, tot_egv=ps%minus(b1, b2, b3)%egv, &
-                               tot_q=ps%minus(b1, b2, b3)%q)
+                               tot_q=ps%minus(b1, b2, b3)%q, mem=mem)
             if (allocated(ps%plus(b1, b2, b3)%tri)) then
                 ps%plus(b1, b2, b3)%ntri = size(ps%plus(b1, b2, b3)%tri, 2)
                 ps%plus(b1, b2, b3)%npts = size(ps%plus(b1, b2, b3)%pts, 2)

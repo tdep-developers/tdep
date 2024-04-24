@@ -85,7 +85,8 @@ end select
 if (opts%povray) then
     call ps%write_to_povray(uc, 'outfile.phasespacesurface', opts%thetaphi(1), opts%thetaphi(2), opts%modespec, opts%povrayquality)
 else
-    ! Dump it to file
+    ! Dump it to file, skip nonzero
+    print *, '... write nonzero phase spaces and scattering intensities'
     cnt: block
         integer :: b1, b2, b3
 
@@ -93,7 +94,9 @@ else
         do b1 = 1, uc%na*3
         do b2 = 1, uc%na*3
         do b3 = 1, uc%na*3
-            write (*, *) b1, b2, b3, ps%plus(b1, b2, b3)%ntri
+            if (ps%plus(b1, b2, b3)%ntri > 0) then
+                write (*, '(4I20, E20.10)') b1, b2, b3, ps%plus(b1, b2, b3)%ntri, ps%plus(b1, b2, b3)%psisquared_norm
+            end if
         end do
         end do
         end do
@@ -101,7 +104,9 @@ else
         do b1 = 1, uc%na*3
         do b2 = 1, uc%na*3
         do b3 = 1, uc%na*3
-            write (*, *) b1, b2, b3, ps%minus(b1, b2, b3)%ntri
+            if (ps%minus(b1, b2, b3)%ntri > 0) then
+                write (*, '(4I20, E20.10)') b1, b2, b3, ps%minus(b1, b2, b3)%ntri, ps%minus(b1, b2, b3)%psisquared_norm
+            end if
         end do
         end do
         end do

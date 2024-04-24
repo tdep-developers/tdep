@@ -1,6 +1,7 @@
 
 !> slice up the tetrahedrons
-subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1, plus, b1, b2, b3, verbosity, calcintens, fct, psisq, tot_omega, tot_egv, tot_q)
+subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1, plus, &
+                         b1, b2, b3, verbosity, calcintens, fct, psisq, psisq_norm, tot_omega, tot_egv, tot_q, mem)
     !> the kpoint mesh
     type(lo_wedge_mesh), intent(in) :: qp
     !> the function values
@@ -26,10 +27,14 @@ subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1
     type(lo_forceconstant_thirdorder), intent(in), optional :: fct
     !> the 3-phonon matrix elements
     real(flyt), dimension(:), allocatable, intent(out), optional :: psisq
+    !> norm of the 3-phonon matrix elements
+    real(flyt), intent(out), optional :: psisq_norm
     !> the frequencies involved (index: point, modelabel)
     real(flyt), dimension(:, :), allocatable, intent(out), optional :: tot_omega
     !> the eigenvectors and q-points involved (index: point, :, modelabel)
     real(flyt), dimension(:, :, :), allocatable, intent(out), optional :: tot_egv, tot_q
+    !> memory helper to generate the q-points
+    type(lo_mem_helper), intent(inout) :: mem
     !
     integer, dimension(:, :), allocatable :: dumt
     integer, dimension(:), allocatable :: ind !,dumind
@@ -79,6 +84,7 @@ subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1
     dumr = 0.0_flyt
     dumt = 0
     dumgrad = 0.0_flyt
+    psisq_norm = 0.0_flyt
 
     tolerance = lo_freqtol
     l = 0
@@ -273,93 +279,115 @@ subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1
         fingrad(:, i) = fingrad(:, i)/norm2(fingrad(:, i))
     end do
 
-!    fixgrad: block
-!        integer :: n,nb
-!        type(lo_qpoint) :: qp1,qp2,qp3
-!        type(lo_phonon_dispersions_qpoint) :: drp1,drp2,drp3
-!        complex(flyt), dimension(:,:), allocatable :: D
-!        complex(flyt), dimension(:,:,:), allocatable :: Dq
-!        n=size(finr,2)
-!        allocate(fingrad(3,size(dumr,2)))
-!        fingrad=0.0_flyt
-!        !
-!        nb=fc%na*3
-!        lo_allocate(drp1%omega(nb))
-!        lo_allocate(drp1%egv(nb,nb))
-!        lo_allocate(drp1%vel(3,nb))
-!        lo_allocate(drp2%omega(nb))
-!        lo_allocate(drp2%egv(nb,nb))
-!        lo_allocate(drp2%vel(3,nb))
-!        lo_allocate(drp3%omega(nb))
-!        lo_allocate(drp3%egv(nb,nb))
-!        lo_allocate(drp3%vel(3,nb))
-!        lo_allocate(D(nb,nb))
-!        lo_allocate(Dq(3,nb,nb))
-!        lo_allocate(psisq(n))
-!        lo_allocate(tot_omega(n,3))
-!        lo_allocate(tot_egv(n,nb,3))
-!        lo_allocate(tot_q(n,3,3))
-!        !
-!        qp1%v=qpoint1%w
-!        qp1%w=qpoint1%w
-!        call lo_get_small_group_of_qpoint(qp1,uc)
-!        call drp1%generate(fc,uc,qp1)
-!        psisq=0.0_flyt
-!        tot_omega=0.0_flyt
-!        tot_egv=0.0_flyt
-!        tot_q=0.0_flyt
-!        !
-!        if ( verb ) call lo_progressbar_init()
-!        do i=1,n
-!            qp2%v=finr(:,i)
-!            qp2%w=finr(:,i)
-!            qp3%w=qp1%w+qp2%w
-!            qp3%w=qp3%w-uc%bz%gshift(qp3%w)
-!            qp3%v=qp3%w
-!            call lo_get_small_group_of_qpoint(qp2,uc)
-!            call lo_get_small_group_of_qpoint(qp3,uc)
-!            call drp2%generate(fc,uc,qp2)
-!            call drp3%generate(fc,uc,qp3)
-!            if ( plus ) then
-!                fingrad(:,i)=drp1%vel(:,b1)+drp2%vel(:,b2)-drp3%vel(:,b3)
-!            else
-!                fingrad(:,i)=drp1%vel(:,b1)-drp2%vel(:,b2)-drp3%vel(:,b3)
-!            endif
-!            ! Calculate intensities
-!            if ( calcintens ) then
-!                if ( verb ) then
-!                    if ( mod(i,20) .eq. 0 ) then
-!                        call lo_progressbar(' ... calculating intensities',i,n)
-!                    endif
-!                endif
-!                ! below is like thermal_conductivity/scatteringstrengths.f90
-!                ! (all this should be the same for plus and minus, right?)
-!                ! q-vectors with correct sign
-!                q1= qp1%w*lo_twopi !is this correct? (really not needed)
-!                q2=-qp2%w*lo_twopi
-!                q3=-qp3%w*lo_twopi
-!                ! frequencies, eigenvectors, q-vectors
-!                omega(1) = drp1%omega(b1)
-!                omega(2) = drp2%omega(b2)
-!                omega(3) = drp3%omega(b3)
-!                egv(:,1) = drp1%egv(:,b1)
-!                egv(:,2) = drp2%egv(:,b2)
-!                egv(:,3) = drp3%egv(:,b3)
-!                ! and the scattering amplitude
-!                c0=fct%scatteringamplitude(omega,egv,q2,q3)
-!                psisq(i) = abs(conjg(c0)*c0)
-!                ! put everything else together here so it's handy
-!                tot_omega(i,:) = omega;
-!                tot_egv(i,:,:) = egv;
-!                tot_q(i,:,1) = q1;
-!                tot_q(i,:,2) = q2;
-!                tot_q(i,:,3) = q3;
-!            endif
-!        enddo
-!        if ( calcintens ) then
-!            call lo_progressbar(' ... calculating intensities',n,n)
-!        endif
-!    end block fixgrad
+    ! Calculate the intensities? If not, we're done.
+    if ( .not. calcintensities) return
+
+    print *, "... ntri = ", ntri, size(fint, 2), ", calculate intensities"
+    fixgrad: block
+        integer :: n, nb
+        type(lo_qpoint) :: qp1, qp2, qp3
+        type(lo_phonon_dispersions_qpoint) :: drp1, drp2, drp3
+        complex(flyt), dimension(:, :), allocatable :: D
+        complex(flyt), dimension(:, :, :), allocatable :: Dq
+        n = size(finr, 2)
+        ! allocate (fingrad(3, size(dumr, 2)))
+        fingrad = 0.0_flyt
+        !
+        nb = fc%na*3
+        lo_allocate(drp1%omega(nb))
+        lo_allocate(drp1%egv(nb, nb))
+        lo_allocate(drp1%vel(3, nb))
+        lo_allocate(drp2%omega(nb))
+        lo_allocate(drp2%egv(nb, nb))
+        lo_allocate(drp2%vel(3, nb))
+        lo_allocate(drp3%omega(nb))
+        lo_allocate(drp3%egv(nb, nb))
+        lo_allocate(drp3%vel(3, nb))
+        lo_allocate(D(nb, nb))
+        lo_allocate(Dq(3, nb, nb))
+        lo_allocate(psisq(n))
+        lo_allocate(tot_omega(n, 3))
+        lo_allocate(tot_egv(n, nb, 3))
+        lo_allocate(tot_q(n, 3, 3))
+        !
+        qp1%r = qpoint1%r
+        call lo_get_small_group_of_qpoint(qp1, uc)
+        call drp1%generate(fc, uc, mem, qp1)
+        psisq = 0.0_flyt
+        tot_omega = 0.0_flyt
+        tot_egv = 0.0_flyt
+        tot_q = 0.0_flyt
+        !
+        if (verb) call lo_progressbar_init()
+        do i = 1, n
+            qp2%r = finr(:, i)
+            qp3%r = qp1%r + qp2%r
+            qp3%r = qp3%r - uc%bz%gshift(qp3%r)
+            call lo_get_small_group_of_qpoint(qp2, uc)
+            call lo_get_small_group_of_qpoint(qp3, uc)
+            call drp2%generate(fc, uc, mem, qp2)
+            call drp3%generate(fc, uc, mem, qp3)
+            if (plus) then
+                fingrad(:, i) = drp1%vel(:, b1) + drp2%vel(:, b2) - drp3%vel(:, b3)
+            else
+                fingrad(:, i) = drp1%vel(:, b1) - drp2%vel(:, b2) - drp3%vel(:, b3)
+            end if
+            ! Calculate intensities
+            if (calcintens) then
+                if (verb) then
+                    if (mod(i, 20) .eq. 0) then
+                        call lo_progressbar(' ... calculating intensities', i, n)
+                    end if
+                end if
+                ! below is like thermal_conductivity/scatteringstrengths.f90
+                ! (all this should be the same for plus and minus, right?)
+                ! q-vectors with correct sign
+                q1 = qp1%r*lo_twopi !is this correct? (really not needed)
+                q2 = -qp2%r*lo_twopi
+                q3 = -qp3%r*lo_twopi
+                ! frequencies, eigenvectors, q-vectors
+                omega(1) = drp1%omega(b1)
+                omega(2) = drp2%omega(b2)
+                omega(3) = drp3%omega(b3)
+                egv(:, 1) = drp1%egv(:, b1)
+                egv(:, 2) = drp2%egv(:, b2)
+                egv(:, 3) = drp3%egv(:, b3)
+
+                ! check for small values in omega
+                if (any(omega .lt. lo_freqtol)) then
+                    write (*, *) "*** small omega in scattering amplitude, set to 0"
+                    c0 = 0.0_flyt
+                else
+                    ! otherwise compute the scattering amplitude
+                    c0 = fct%scatteringamplitude(omega, egv, q2, q3)
+                end if
+
+                ! should not happend anymore prayer emoji
+                if (c0 /= c0) then  ! <- checks for NaN
+                    print *, "omega = ", omega
+                    print *, "q2 = ", q2
+                    print *, "q3 = ", q3
+                    print *, "c0 = ", c0
+                    write (*, *) "*** NaN in scattering amplitude, set to lo_huge = ", lo_huge
+                    c0 = sqrt(lo_huge)
+                end if
+                psisq(i) = abs(conjg(c0)*c0)
+                ! put everything else together here so it's handy
+                tot_omega(i, :) = omega
+                tot_egv(i, :, :) = egv
+                tot_q(i, :, 1) = q1
+                tot_q(i, :, 2) = q2
+                tot_q(i, :, 3) = q3
+            end if
+        end do
+        print *, "... found ", n, " points."
+        write (*, '(A, E15.5)') " ... max(abs(psisq)) = ", maxval(abs(psisq))
+        psisq_norm = norm2(psisq)
+        write (*, '(A, E15.5)') " ... psisq_norm      = ", psisq_norm
+        if (calcintens) then
+            call lo_progressbar(' ... calculating intensities', n, n)
+        end if
+    end block fixgrad
     !
 end subroutine
 
