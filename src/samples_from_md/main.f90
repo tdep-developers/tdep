@@ -26,7 +26,17 @@ call opts%parse()
 ! Seed random numbers
 call tw%init(iseed=0, rseed=walltime())
 ! Get simulation
-call sim%read_from_file(verbosity=1)
+call sim%read_from_hdf5('infile.sim.hdf5', verbosity=1)
+
+! Stop when velocities are not present
+if (.not. allocated(sim%v)) then
+    call lo_stop_gracefully(['No velocities present in the simulation. Is this an MD?'], 9)
+end if
+
+! Check if the number of samples is not too large
+if (opts%n .gt. sim%nt) then
+    call lo_stop_gracefully(['Number of samples is larger than the number of timesteps in the simulation.'], 9)
+end if
 
 ! List of all the samples
 allocate (indices(sim%nt))
