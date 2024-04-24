@@ -74,7 +74,7 @@ type is (lo_wedge_mesh)
         call ps%generate(qp, uc, fc, fct, qpoint, opts%verbosity, opts%modespec, &
                          calcintens=opts%intensities, mem=mem)
     else
-        call ps%generate(qp, uc, fc, fct, qpoint, opts%verbosity, calcintens=opts%intensities, mem=mem)
+        call ps%generate(qp, uc, fc, fct, qpoint, opts%verbosity, calcintens=opts%intensities, mem=mem, nband=opts%nband)
     end if
 class default
     write (*, *) 'Unknown mesh type'

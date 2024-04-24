@@ -84,7 +84,6 @@ subroutine bz_isosurface(qp, fvals, isoval, finr, fint, fingrad, uc, fc, qpoint1
     dumr = 0.0_flyt
     dumt = 0
     dumgrad = 0.0_flyt
-    psisq_norm = 0.0_flyt
 
     tolerance = lo_freqtol
     l = 0
