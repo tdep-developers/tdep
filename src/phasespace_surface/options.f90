@@ -20,6 +20,7 @@ type lo_opts
     integer :: nmodespec
     integer :: povrayquality
     logical :: intensities
+    integer :: nband
     character(len=10) :: highsymmetrypoint
 contains
     procedure :: parse
@@ -76,6 +77,10 @@ subroutine parse(opts)
                  help='Povray rendering quality, 1-9 where 1 is worst.', &
                  required=.false., act='store', def='9', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--nband', &
+                 help='Specify first band index', &
+                 required=.false., act='store', def='-1', error=lo_status)
+    if (lo_status .ne. 0) stop
     cli_qpoint_grid
     cli_readqmesh
     cli_manpage
@@ -105,6 +110,7 @@ subroutine parse(opts)
     call cli%get(switch='--pv_quality', val=opts%povrayquality)
     call cli%get_varying(switch='--modespec', val=dumi)
     call cli%get(switch='--intensities', val=opts%intensities)
+    call cli%get(switch='--nband', val=opts%nband)
 
     ! Clean up the mode specification thing right away
     n = size(dumi, 1) ! number of arguments

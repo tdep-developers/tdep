@@ -70,7 +70,7 @@ contains
 #include "type_phasespacesurface_povray.f90"
 
 !> generate three-phonon scattering surfaces
-subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens, mem)
+subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens, mem, nband)
     !> fermisurface
     class(lo_phasespacesurface), intent(out) :: ps
     !> qpoint mesh
@@ -90,6 +90,8 @@ subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens,
     !> calculate intensities (matrix elements)?
     logical, intent(in), optional :: calcintens
     type(lo_mem_helper), intent(inout) :: mem
+    !> optionally specify first band index
+    integer, intent(in), optional :: nband
     !
     integer :: i, j, k, l, u, ii, srf
     integer :: b1, b2, b3
@@ -117,8 +119,10 @@ subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens,
     do b3 = 1, ps%nb
         ps%plus(b1, b2, b3)%ntri = 0
         ps%plus(b1, b2, b3)%npts = 0
+        ps%plus(b1, b2, b3)%psisquared_norm = 0.0_flyt
         ps%minus(b1, b2, b3)%ntri = 0
         ps%minus(b1, b2, b3)%npts = 0
+        ps%minus(b1, b2, b3)%psisquared_norm = 0.0_flyt
     end do
     end do
     end do
@@ -174,6 +178,12 @@ subroutine generate(ps, qp, uc, fc, fct, point, verbosity, modespec, calcintens,
         l = 0
         call lo_progressbar_init()
         do b1 = 1, ps%nb
+        if (present(nband) .and. (nband > 0)) then
+            if (b1 .ne. nband) then
+                print *, '... nband = ', nband, ', skip b1 = ', b1
+                cycle
+            end if
+        end if
         do b2 = 1, ps%nb
         do b3 = 1, ps%nb
             ! get the isosurfaces
