@@ -100,11 +100,11 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     cli_readpath
     cli_nq_on_path
-    call cli%add(switch='--dos',hidden=.true., &
+    call cli%add(switch='--dos', hidden=.true., &
                  help='Calculate the broadened and shifted phonon DOS.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--dos_qpoint_grid',hidden=.true., &
+    call cli%add(switch='--dos_qpoint_grid', hidden=.true., &
                  help='Interpolate to a (preferrably) denser q-mesh when calculating the DOS.', &
                  nargs='3', required=.false., act='store', def='-1 -1 -1', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -171,7 +171,7 @@ subroutine parse(opts)
                  help='Calculate somewhat self-consistent lineshapes and stuff.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--geninterp',hidden=.true., &
+    call cli%add(switch='--geninterp', hidden=.true., &
                  help='First rule of interpolation is you do not talk about interpolation.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -179,7 +179,7 @@ subroutine parse(opts)
                  help='Cutoff for forceconstant interpolation.', &
                  required=.false., act='store', def='5.0', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--fancyinterp',hidden=.true., &
+    call cli%add(switch='--fancyinterp', hidden=.true., &
                  help='Second rule of interpolation is you do not talk about interpolation.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -313,6 +313,18 @@ subroutine parse(opts)
         end if
         if (opts%qgrid_dos(1) .ne. -1) then
             write (*, *) 'Makes no sense to specify a dos q-grid and a single point simultaneously'
+            stop
+        end if
+    end if
+
+    ! avoid using --readpath when not calculating a path, see #64
+    if (opts%readpathfromfile) then
+        if (.not. opts%qpointpath) then
+            write (*, *) '*** Makes no sense to specify --readpath when not calculating a path (--path).'
+            stop
+        end if
+        if (opts%dumpgrid) then
+            write (*, *) '*** Makes no sense to specify --readpath when calculating on grid (--dumpgrid).'
             stop
         end if
     end if
