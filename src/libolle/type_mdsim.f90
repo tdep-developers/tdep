@@ -1386,8 +1386,13 @@ subroutine write_to_hdf5(sim, uc, ss, filename, verbosity, eps, Z)
         lo_allocate(dr(3, sim%na, sim%nt))
         dr = sim%r(:, :, 1:sim%nt)
         call lo_h5_store_data(dr, h5%file_id, 'positions', enhet='fractional')
-        lo_deallocate(dr)
         if (verbosity .gt. 0) write (*, *) '... wrote positions'
+
+        ! Write displacements
+        dr = sim%u(:, :, 1:sim%nt)
+        call lo_h5_store_data(dr, h5%file_id, 'displacements', enhet='A')
+        lo_deallocate(dr)
+        if (verbosity .gt. 0) write (*, *) '... wrote displacements'
 
         ! Write forces
         lo_allocate(dr(3, sim%na, sim%nt))

@@ -581,6 +581,7 @@ $(OBJECT_PATH)type_jij_secondorder.o:\
 	$(FC) $(FFLAGS) -c type_jij_secondorder.f90 -o $@
 
 $(OBJECT_PATH)type_mdsim.o:\
+    type_mdsim.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)lo_randomnumbers.o\
