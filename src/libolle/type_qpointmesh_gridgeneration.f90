@@ -242,7 +242,7 @@ module subroutine build_grid(qp,p,mw,mem,verbosity,nosymmetry)
             t0=t1
         endif
 
-        
+
 
         ! ! This is an agressive test to make sure all the symmetry operations
         ! ! I identified actually hold. This has not triggered in many years,
@@ -366,6 +366,7 @@ module subroutine build_grid(qp,p,mw,mem,verbosity,nosymmetry)
             do j=1,nsym
                 i=connections( listofirr(k),j )
                 if ( i .eq. 0 ) cycle
+                if ( qp%ap(i)%irreducible_index .ne. 0 ) cycle
                 qp%ap(i)%irreducible_index=k
                 qp%ap(i)%operation_from_irreducible=j
             enddo
@@ -373,6 +374,7 @@ module subroutine build_grid(qp,p,mw,mem,verbosity,nosymmetry)
                 do j=1,nsym
                     i=-connections( listofirr(k),j+nsym )
                     if ( i .eq. 0 ) cycle
+                    if ( qp%ap(i)%irreducible_index .ne. 0 ) cycle
                     qp%ap(i)%irreducible_index=k
                     qp%ap(i)%operation_from_irreducible=-j
                 enddo
@@ -1006,7 +1008,6 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
 
             ! Store this irreducible tetrahedron
             do i=1,6
-
                 itet=(ii-1)*6+i
                 ind_it(:,itet)=boxind(tetind(:,i))
                 center_it(:,itet)=tc1(:,i)
@@ -1172,6 +1173,8 @@ module subroutine tesselate_qgrid(qp,p,mw,mem,verbosity)
 
             ! Just regenerate all the tetrahedrons the stupid way.
             ind_at=0
+            shift_at=0
+            center_at=0
             do ii=1,qp%n_full_point
                 if ( mod(ii,mw%n) .ne. mw%r ) cycle
                 v0=r(:,ii)
