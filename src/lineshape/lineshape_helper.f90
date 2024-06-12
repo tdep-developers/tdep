@@ -347,8 +347,8 @@ function interpolated_spectral_function(x, yim, yre, omega, scalefactor, xi) res
 
     ! This should put us in the right interval.
     ilo = floor(n*xi/xhi) + 1
-    !ilo=max(ilo,1)
-    !ilo=min(ilo,n-1)
+    ilo=max(ilo,1)
+    ilo=min(ilo,n-1)
     ihi = ilo + 1
     ! evaluate imaginary and real self-energy
     f0 = (x(ihi) - xi)/(x(ihi) - x(ilo))
@@ -773,6 +773,8 @@ subroutine find_spectral_function_max_and_fwhm(omega, maxomega, energy, sigmaIm,
     xhi = energy(ind_max + 1)
     derivdl = (energy(2) - energy(1))*1E-2_r8
 
+
+
     ! Try a few times to see if we get something that sticks?
     initloop: do iter = 1, 10
         ! Function values (i.e. derivatives)
@@ -802,6 +804,8 @@ subroutine find_spectral_function_max_and_fwhm(omega, maxomega, energy, sigmaIm,
             ! Move xlo a little closer?
             xlo = 0.5_r8*xlo + x0*0.5_r8
         end if
+
+
 
         ! Give up after a few attempts. This happens when the peak is at zero, I think.
         ! This is a somewhat safe choice anyway.

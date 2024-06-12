@@ -99,10 +99,12 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
         if (mw%r .eq. solrnk) then
             allocate (bs%energy_axis(opts%nf))
             allocate (bs%spectral_function(bs%n_point, opts%nf))
+            allocate (bs%spectral_function_with_prefactor(bs%n_point, opts%nf))
             allocate (bs%selfenergy_real(bs%n_point, opts%nf, dr%n_mode))
             allocate (bs%selfenergy_imag(bs%n_point, opts%nf, dr%n_mode))
             bs%energy_axis = 0.0_r8
             bs%spectral_function = 0.0_r8
+            bs%spectral_function_with_prefactor = 0.0_r8
             bs%selfenergy_real = 0.0_r8
             bs%selfenergy_imag = 0.0_r8
             do i = 1, bs%n_point
@@ -360,10 +362,8 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
 
         ! Now that I have the self-energies all over the place, makes sense to create the intensities
         spf: block
-            !real(r8), dimension(:,:,:), allocatable :: sigma
             real(r8), dimension(:), allocatable :: bufr, bufi, bufs
-            !real(r8) :: f0,f1
-            real(r8) :: im_at_gamma, im_lower_limit
+            real(r8) :: im_at_gamma, im_lower_limit,f1
             integer :: ipt, imode, ie
 
             ! put something at gamma to make the intensities not weird.
@@ -386,7 +386,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
             bufs = 0.0_r8
 
             bs%spectral_function = 0.0_r8
-            ! !bs%spectral_function_with_prefactor=0.0_r8
+            bs%spectral_function_with_prefactor=0.0_r8
             do ipt = 1, bs%n_point
             do imode = 1, dr%n_mode
                 if (bs%p(ipt)%omega(imode) .gt. lo_freqtol) then
@@ -404,8 +404,8 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
                 end if
                 bs%spectral_function(ipt, :) = bs%spectral_function(ipt, :) + bufs
                 ! And add the thermal prefactor thing
-                !f1=thermal_pref(bs%q(i)%r,bs%p(i)%egv(:,j),uc,opts%temperature,bs%p(i)%omega(j),sigma)
-                !bs%spectral_function_with_prefactor(i,:)=bs%spectral_function_with_prefactor(i,:)+dum*f1
+                f1=thermal_pref(bs%q(ipt)%r,bs%p(ipt)%egv(:,imode),uc,opts%temperature,bs%p(ipt)%omega(imode),thermal_disp)
+                bs%spectral_function_with_prefactor(ipt,:)=bs%spectral_function_with_prefactor(ipt,:)+bufs*f1
             end do
             end do
             ! And store the energy axis
@@ -561,6 +561,7 @@ module subroutine spectral_function_along_path_interp(bs, uc, ise, opts, mw, mem
             real(r8) :: im_at_gamma, im_lower_limit
             integer :: ipt, imode, ie
 
+
             ! put something at gamma to make the intensities not weird.
             im_at_gamma = (ise%energy(2) - ise%energy(1))*0.25_r8
 
@@ -614,6 +615,39 @@ module subroutine spectral_function_along_path_interp(bs, uc, ise, opts, mw, mem
     call mem%deallocate(buf_shift_3rd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(buf_linewidth, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
+
+function thermal_pref(bigQ,eigenvector,uc,temperature,omega,sigma) result(pref)
+    real(r8), dimension(3), intent(in) :: bigQ
+    complex(r8), dimension(:), intent(in) :: eigenvector
+    type(lo_crystalstructure), intent(in) :: uc
+    real(r8), intent(in) :: temperature
+    real(r8), intent(in) :: omega
+    real(r8), dimension(:,:,:), intent(in) :: sigma
+    real(r8) :: pref
+
+    integer :: i
+    complex(r8) :: c0,c1,c2
+    real(r8) :: f1,xs,dw
+
+    pref=1.0_r8
+    ! Add the thermal factor
+    pref=pref*(2*lo_planck(temperature,omega)+1.0_r8)
+
+    ! Cross-product guy
+    c2=0.0_r8
+    do i=1,uc%na
+        ! Grab the cross-section?
+        xs=uc%inelastic_neutron_cross_section(i)*uc%invsqrtmass(i)
+        ! Debye-Waller factor?
+        dw=exp( -0.5_r8*dot_product(bigQ,matmul(sigma(:,:,i),bigQ))*lo_twopi**2 )
+
+        f1=dot_product(lo_twopi*bigQ,uc%rcart(:,i))
+        c0=cmplx( cos(f1), sin(f1) ,r8)
+        c1=dot_product( lo_twopi*bigQ,eigenvector( (i-1)*3+1:i*3 ) )
+        c2=c2+c0*c1*xs
+    enddo
+    pref=pref*abs(conjg(c2)*c2)
+end function
 
 ! !> Calculate the spectral function along a path in the BZ
 ! subroutine spectralfunction_along_path(bs,uc,fc,fct,fcf,qp,dr,opts,mw,mem)
