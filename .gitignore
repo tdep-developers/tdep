@@ -46,6 +46,11 @@ tests/test*/disprel_xtck
 # things in the staging area
 staging/
 
+# Coding
+.vscode
+*venv*
+tmp
+
 # Compiled Object files
 *.slo
 *.lo

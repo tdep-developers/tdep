@@ -42,6 +42,7 @@ nav:
     - Dump dynamical matrices: program/dump_dynamical_matrices.md
     - Crystal structure info: program/crystal_structure_info.md
     - Refine structure: program/refine_structure.md
+    - Phase space: program/phasespace_surface.md
   - Files: files.md
 
 markdown_extensions:
