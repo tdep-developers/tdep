@@ -404,7 +404,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
                 end if
                 bs%spectral_function(ipt, :) = bs%spectral_function(ipt, :) + bufs
                 ! And add the thermal prefactor thing
-                f1=thermal_pref(bs%q(ipt)%r,bs%p(ipt)%egv(:,imode),uc,opts%temperature,bs%p(ipt)%omega(imode),thermal_disp)
+                f1=thermal_pref(bs%q(ipt)%r_abs,bs%p(ipt)%egv(:,imode),uc,opts%temperature,bs%p(ipt)%omega(imode),thermal_disp)
                 bs%spectral_function_with_prefactor(ipt,:)=bs%spectral_function_with_prefactor(ipt,:)+bufs*f1
             end do
             end do
