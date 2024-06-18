@@ -25,3 +25,5 @@
 [`crystal_structure_info`: Report which crystal structure and spacegroup TDEP sees.](crystal_structure_info.md)
 
 [`refine_structure`: Clean up input structures with imprecise symmetry.](refine_structure.md)
+
+[`phasespace_surface`: Compute the phonon scattering phase space.](phasespace_surface.md)
