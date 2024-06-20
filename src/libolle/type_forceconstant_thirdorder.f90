@@ -6,6 +6,7 @@ use gottochblandat, only: open_file, lo_chop, lo_sqnorm, lo_stop_gracefully, toc
 use type_crystalstructure, only: lo_crystalstructure
 use type_distancetable, only: lo_distancetable
 use type_qpointmesh, only: lo_qpoint
+use type_symmetryoperation, only: lo_operate_on_secondorder_tensor
 implicit none
 
 private
@@ -60,6 +61,8 @@ contains
     procedure :: unallocate
     !> mode gruneisen parameter
     procedure :: mode_gruneisen_parameter
+    !> mode gruneisen tensor
+    procedure :: mode_gruneisen_tensor
     !> size in memory, in bytes
     procedure :: size_in_mem => fc3_size_in_mem
 end type
@@ -500,14 +503,53 @@ subroutine mode_gruneisen_parameter(fct, p, qpoint, omega, eigenvectors, g)
     complex(r8), dimension(:, :), intent(in) :: eigenvectors
     !> the mode gruneisen parameters
     real(r8), dimension(:), intent(out) :: g
+
+    integer ::nb, s
+    real(r8), dimension(:, :, :), allocatable :: g_tensor
+
+    nb = fct%na*3
+    allocate (g_tensor(nb, 3, 3))
+
+    ! get the tensors first
+    call mode_gruneisen_tensor(fct, p, qpoint, omega, eigenvectors, g_tensor)
+
+    ! trace over tensor
+    do s = 1, nb
+        g(s) = (g_tensor(s, 1, 1) + g_tensor(s, 2, 2) + g_tensor(s, 3, 3))/3.0_r8
+        ! g(s) = sum(g_tensor(s, :, :))
+    end do
+
+    deallocate (g_tensor)
+
+end subroutine
+
+!> Get the mode Gruneisen tensor from the third order force constants
+subroutine mode_gruneisen_tensor(fct, p, qpoint, omega, eigenvectors, g_tensor)
+    !> the third order force constants
+    class(lo_forceconstant_thirdorder), intent(in) :: fct
+    !> The crystal structure
+    type(lo_crystalstructure), intent(in) :: p
+    !> the q-point
+    class(lo_qpoint), intent(in) :: qpoint
+    !> the frequencies
+    real(r8), dimension(:), intent(in) :: omega
+    !> the eigenvectors
+    complex(r8), dimension(:, :), intent(in) :: eigenvectors
+    !> the mode gruneisen tensors (mode,xyz,xyz)
+    real(r8), dimension(:, :, :), intent(out) :: g_tensor
     !
     real(r8), dimension(3) :: qv, rv2, rv3
     real(r8), dimension(3, 3, 3) :: m
     real(r8) :: effmass, iqr
     complex(r8), dimension(:, :, :), allocatable :: egv
-    complex(r8) :: c0, evprod, expiqr
-    integer :: i, j, k, s, t
+    complex(r8) ::  evprod, expiqr
+    complex(r8), dimension(3, 3) :: c0_tensor
+    real(r8), dimension(3, 3) :: c0_tensor_real, g_ab_temp
+    integer :: i, j, k, s, t, l
     integer :: nb, atom1, atom2, atom3
+    integer :: io, n_invariant_operation
+    real(r8), dimension(3) :: v0, v1, w0, w1
+    complex(r8), dimension(3) :: cv0, cv1, cv2
 
     nb = fct%na*3
     qv = qpoint%r*lo_twopi
@@ -525,11 +567,12 @@ subroutine mode_gruneisen_parameter(fct, p, qpoint, omega, eigenvectors, g)
         end do
     end do
 
-    g = 0.0_r8
+    g_tensor = 0.0_r8
     ! Get the actual gruneisen parameters
     do s = 1, nb
         ! A parameter for each band
-        c0 = 0.0_r8
+        c0_tensor = 0.0_r8
+        c0_tensor_real = 0.0_r8
         do atom1 = 1, fct%na
             do t = 1, fct%atom(atom1)%n
                 atom2 = fct%atom(atom1)%triplet(t)%i2
@@ -542,27 +585,56 @@ subroutine mode_gruneisen_parameter(fct, p, qpoint, omega, eigenvectors, g)
                 expiqr = cmplx(cos(iqr), sin(iqr), r8)
                 m = fct%atom(atom1)%triplet(t)%m
                 do i = 1, 3
-                do j = 1, 3
-                    evprod = conjg(egv(i, atom1, s))*egv(j, atom2, s)
-                    do k = 1, 3
-                        c0 = c0 + m(i, j, k)*evprod*expiqr*rv3(k)*effmass
+                    do j = 1, 3
+                        evprod = conjg(egv(i, atom1, s))*egv(j, atom2, s)
+                        do k = 1, 3
+                            ! c0 = c0 + m(i, j, k)*evprod*expiqr*rv3(k)*effmass
+                            do l = 1, 3
+                                c0_tensor(k, l) = c0_tensor(k, l) &
+                                                  + 0.5_r8*evprod*expiqr*effmass &
+                                                  *(m(i, j, k)*rv3(l) + m(i, j, l)*rv3(k))
+                            end do
+                        end do
                     end do
-                end do
                 end do
             end do
         end do
         ! I don't want infinity at gamma
         if (omega(s) .lt. lo_freqtol) then
-            c0 = 0.0_r8
+            c0_tensor = 0.0_r8
         else
-            c0 = c0/(6.0_r8*(omega(s)**2))
+            c0_tensor = c0_tensor/(2.0_r8*(omega(s)**2))
         end if
 #ifdef AGRESSIVE_SANITY
-        if (abs(aimag(c0)) .gt. lo_sqtol) then
+        if (abs(aimag(sum(c0_tensor))) .gt. lo_tol) then
+            write (*, *) 'size: ', abs(aimag(sum(c0_tensor)))
             call lo_stop_gracefully(['Imaginary component of gruneisen parameters nonzero, not correct'], lo_exitcode_symmetry, __FILE__, __LINE__)
         end if
 #endif
-        g(s) = -real(c0)
+
+        c0_tensor_real = -real(c0_tensor)
+
+        ! FK: average over small group because we can
+
+        g_ab_temp = 0.0_r8
+        n_invariant_operation = qpoint%n_invariant_operation
+        if (n_invariant_operation >= 1) then
+
+            do k = 1, qpoint%n_invariant_operation
+                io = qpoint%invariant_operation(k)
+                associate (op => p%sym%op(abs(io)))
+                    g_ab_temp = g_ab_temp + lo_operate_on_secondorder_tensor(op, c0_tensor_real)
+                end associate
+            end do
+            g_ab_temp = g_ab_temp/real(n_invariant_operation, r8)
+
+        else
+            ! nothing to do in this case
+            g_ab_temp = c0_tensor_real
+
+        end if
+
+        g_tensor(s, :, :) = g_ab_temp
     end do
     deallocate (egv)
 end subroutine
