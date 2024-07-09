@@ -5,30 +5,25 @@ OBJECT_PATH=../../build/$(CODE)/
 
 OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o
 
-
-# some paths and stuff. Ok.
-IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHhdf) $(incIPATHmpi) $(incIPATHfft)
-
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi) $(incLPATHfft)
+IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHhdf) $(incIPATHmpi) $(incIPATHfft)
 LIBS = -lolle -lflap $(blaslapackLIBS) $(incLIBShdf) $(incLIBSmpi) $(incLIBSfft)
 
-# ok, I think I get this.
-#OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10
-F90 = $(FC) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
+#OPT = -O0 -fbacktrace -fcheck=all -Wall
+F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH)
 F90FLAGS = $(OPT) $(MODS) $(LIBS)
 
-# I guess this is the normal one
 all: $(PROG)
 
 $(PROG): $(OBJS)
-	$(F90) -o $@ $(OBJS) $(LPATH) $(LIBS)
+	$(F90) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.mod $(OBJECT_PATH)*.mod
 
 
 $(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o 
-	$(F90) $(F90FLAGS) -c main.f90  -o $@
+	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 $(OBJECT_PATH)options.o:
-	$(F90) $(F90FLAGS) -c options.f90 -o $@
+	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
 
