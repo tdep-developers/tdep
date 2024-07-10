@@ -61,7 +61,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="cyan">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="cyan">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -338,6 +338,8 @@
       
         
       
+        
+      
     
     
     
@@ -577,6 +579,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#off-diagonal-coherent-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Off diagonal coherent contribution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cumulative-kappa" class="md-nav__link">
     <span class="md-ellipsis">
       Cumulative kappa
@@ -766,6 +777,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../dump_dynamical_matrices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dump dynamical matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../crystal_structure_info/" class="md-nav__link">
         
   
@@ -910,6 +942,15 @@
   <a href="#phonon-scattering-rates-and-the-phonon-boltzmann-equation" class="md-nav__link">
     <span class="md-ellipsis">
       Phonon scattering rates and the phonon Boltzmann equation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#off-diagonal-coherent-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Off diagonal coherent contribution
     </span>
   </a>
   
@@ -1613,6 +1654,54 @@ n_{\lambda}(n_{\lambda}+1) \frac{\hbar \pi}{8 N}
 \frac{T c_{\lambda} v_{\lambda}^\alpha F_{\lambda}^\beta}{\omega_{\lambda}}
 \end{equation}
 \]</div>
+<h3 id="off-diagonal-coherent-contribution">Off diagonal coherent contribution</h3>
+<p>The Boltzmann equation only takes into account the relaxation of phonons from perturbed state to the equilibrium.
+However, for systems with complex unit cell, a contribution stemming from coherence tunelling between different phonons can become important.
+This off-diagonal coherent term can be introduced both by a formulation based on the Hardy current <sup id="fnref:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">10</a></sup> or a Wigner current <sup id="fnref:Simoncelli2019"><a class="footnote-ref" href="#fn:Simoncelli2019">12</a></sup>, with very similar results<sup id="fnref:Caldarelli2022"><a class="footnote-ref" href="#fn:Caldarelli2022">13</a></sup>.
+In TDEP, we use the formulation based on the Hardy heat current <sup id="fnref2:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">10</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}_\lambda^\dagger \hat{a}_{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(v_{\lambda\lambda'}^\alpha\)</span> are generalized group velocity tensor <sup id="fnref:Dangic2021"><a class="footnote-ref" href="#fn:Dangic2021">14</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+v_{\lambda\lambda'}^\alpha = \frac{i}{2 \sqrt{\omega_\lambda \omega_{\lambda'}}} \sum_{ij \beta\gamma} \epsilon_\lambda^{i\beta} \sum_{\mathbf{R}} \big( R^\alpha \frac{\Phi_{ij}^{\beta\gamma}(\mathbf{R})}{\sqrt{m_i m_j}} \big) \epsilon_{\lambda'}^{j\gamma}
+\end{equation}
+\]</div>
+<p>with <span class="arithmatex">\(\mathbf{R}\)</span> the distance vector between unit cells and <span class="arithmatex">\(m_i\)</span> the mass of atom <span class="arithmatex">\(i\)</span> in the unit cell.
+It should be recognized that for <span class="arithmatex">\(\lambda = \lambda'\)</span>, we recover the heat current used previously to derive the thermal conductivity with the Boltzman equation.</p>
+<p>The derivation of this off-diagonal contribution starts from the Green-Kubo formula for the thermal conductivity tensor</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta} = \frac{1}{V k_BT}\int_0^\infty dt \int_0^\beta d\nu \langle J_\alpha(-i\hbar\nu) J_\beta(t) \rangle
+\end{equation}
+\]</div>
+<p>Injecting the harmonic heat current into this equation allows to rewrite the total thermal conductivity tensor as <sup id="fnref:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">11</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta} = \kappa_{\alpha\beta}^{BTE} + \kappa_{\alpha\beta}^{c}
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(\kappa_{\alpha\beta}^{\mathrm{BTE}}\)</span> is the thermal conductivity from the previous section and <span class="arithmatex">\(\kappa_{\alpha\beta}^{c}\)</span> is the off-diagonal coherent contribution.
+This term is computed as</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta}^{c} = \frac{1}{Vk_BT^2} \sum_{\lambda\lambda'\neq \lambda} c_{\lambda\lambda'} v_{\lambda\lambda'}^\alpha v_{\lambda\lambda'}^\beta \tau_{\lambda\lambda'} \delta_{q_\lambda q_{\lambda'}}
+\end{equation}
+\]</div>
+<p>with</p>
+<div class="arithmatex">\[
+\begin{equation}
+c_{\lambda\lambda'} = \frac{1}{4} [n_\lambda (n_\lambda + 1) + n_{\lambda'} (n_{\lambda'} + 1) ] (\omega_\lambda + \omega_{\lambda'})^2
+\end{equation}
+\]</div>
+<div class="arithmatex">\[
+\begin{equation}
+\tau_{\lambda\lambda'} = \frac{\Gamma_\lambda + \Gamma_{\lambda'}}{(\omega_{\lambda} - \omega_{\lambda'})^2 + (\Gamma_{\lambda} + \Gamma_{\lambda'})^2}
+\end{equation}
+\]</div>
 <h3 id="cumulative-kappa">Cumulative kappa</h3>
 <p>@todo Check code snippets</p>
 <p>@todo Spectral kappa, links to things.</p>
@@ -1674,32 +1763,30 @@ C = &amp; \sum_{v_y=0} x_{\lambda}
 <h3 id="output-files">Output files</h3>
 <p>Depending on options, the set of output files may differ. We start with the basic files that are written after running this code.</p>
 <h4 id="outfilethermal_conductivity"><code>outfile.thermal_conductivity</code></h4>
-<p>This file contains components of the thermal conductivity tensor <span class="arithmatex">\(\kappa_{\alpha \beta}\)</span> for each temperature.</p>
-<table class='table table-striped'>
-<thead><tr>
-    <th>Row</th>
-    <th>Description</th>
-</tr></thead>
+<p>This file contains components of the thermal conductivity tensor <span class="arithmatex">\(\kappa_{\alpha \beta}\)</span>​ for each temperature.</p>
+<p><span class="arithmatex">\(test\)</span></p>
+<table>
+<thead>
+<tr>
+<th><strong>Row</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
 <tbody>
 <tr>
-    <td>1</td>
-    <td>
-    \( T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad   \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx} \)
-    </td>
+<td>1</td>
+<td><span class="arithmatex">\(T_1 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx}\)</span></td>
 </tr>
 <tr>
-    <td>2</td>
-    <td>
-    \( T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad   \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx} \)
-    </td>
+<td>2</td>
+<td><span class="arithmatex">\(T_2 \qquad \kappa_{xx} \quad \kappa_{yy} \quad \kappa_{zz} \quad \kappa_{xz} \quad \kappa_{yz} \quad   \kappa_{xy} \quad \kappa_{zx} \quad \kappa_{zy} \quad   \kappa_{yx}\)</span></td>
 </tr>
 <tr>
-    <td>...</td>
-    <td>...</td>
+<td>…</td>
+<td>…</td>
 </tr>
 </tbody>
 </table>
-
 <h4 id="outfilecumulative_kappahdf5"><code>outfile.cumulative_kappa.hdf5</code></h4>
 <p>This file is self-explainatory. It contains the different cumulative plots described above, at a series of temperatures. Below is a matlab snippet that plots part of the output.</p>
 <div class="language-matlab highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
@@ -1853,6 +1940,21 @@ C = &amp; \sum_{v_y=0} x_{\lambda}
 </li>
 <li id="fn:Broido2005">
 <p><a href="http://doi.org/10.1103/PhysRevB.72.014308">Broido, D. A., Ward, A., &amp; Mingo, N. (2005). Lattice thermal conductivity of silicon from empirical interatomic potentials. Physical Review B, 72(1), 1–8.</a>&#160;<a class="footnote-backref" href="#fnref:Broido2005" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Isaeva2019">
+<p><a href="https://doi.org/10.1038/s41467-019-11572-4">Isaeva, L &amp; Barbalinardo, G. &amp; Donadio, D. &amp; Baroni, S. (2019). Modeling heat transport in crystals and glasses from a unified lattice-dynamical approach. Nature Communications 10 3853</a>&#160;<a class="footnote-backref" href="#fnref:Isaeva2019" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:Isaeva2019" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Fiorentino2023">
+<p><a href="https://doi.org/10.1103/PhysRevB.107.054311">Fiorentino, A. &amp; Baroni, S (2023). From Green-Kubo to the full Boltzmann kinetic approach to heat transport in crystals and glasses. Physical Review B, 107, 054311</a>&#160;<a class="footnote-backref" href="#fnref:Fiorentino2023" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Simoncelli2019">
+<p><a href="https://doi.org/10.1038/s41567-019-0520-x">Simoncelli, M. &amp; Marzari, N. &amp; Mauri, F. (2019). Unified theory of thermal transport in crystals and glasses. Nature physics 15 803-819</a>&#160;<a class="footnote-backref" href="#fnref:Simoncelli2019" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Caldarelli2022">
+<p><a href="https://doi.org/10.1103/PhysRevB.106.024312">Caldarelli, G. &amp; Simoncelli, M. &amp; Marzari, N. &amp; Mauri, F. &amp; Benfatto, L. (2022). Many-body Green's function approach to lattice thermal transport. Physical Review B 106 024312</a>&#160;<a class="footnote-backref" href="#fnref:Caldarelli2022" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Dangic2021">
+<p><a href="https://doi.org/10.1038/s41524-021-00523-7">Dangić, Đ. &amp; Hellman, O. &amp; Fahy, S. and Savić, I. (2021) The origin of the lattice thermal conductivity enhancement at the ferroelectric phase transition in GeTe. Nature Computational Materials 7, 57</a>&#160;<a class="footnote-backref" href="#fnref:Dangic2021" title="Jump back to footnote 14 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

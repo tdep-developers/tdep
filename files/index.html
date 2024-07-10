@@ -59,7 +59,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="cyan">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="cyan">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -308,6 +308,8 @@
       
         
           
+        
+      
         
       
         
@@ -594,6 +596,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../program/dump_dynamical_matrices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dump dynamical matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../program/crystal_structure_info/" class="md-nav__link">
         
   
@@ -765,6 +788,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#infileforceconstant" class="md-nav__link">
+    <span class="md-ellipsis">
+       infile.forceconstant
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -873,6 +905,15 @@
   <a href="#infileisotopes" class="md-nav__link">
     <span class="md-ellipsis">
        infile.isotopes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infileforceconstant" class="md-nav__link">
+    <span class="md-ellipsis">
+       infile.forceconstant
     </span>
   </a>
   
@@ -1224,6 +1265,8 @@ Z_i^{\alpha\beta} = \frac{\partial^2 U}{\partial \epsilon_i^{\alpha} \partial u_
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>...
 </span></code></pre></div>
 <p>Per atom in the unit cell, you specify the number of isotopes, followed by the appropriate number of concentrations and masses (in atomic mass units).</p>
+<h3 id="infileforceconstant"><a name="infile.forceconstant"></a> infile.forceconstant</h3>
+<p>The second order irreducible force constants produced by the TDEP fit are contained in this file. It is an output of the extract_forceconstant program, but an input of several others, e.g. thermal_conductivity. It has to be renamed from outfile.xx to infile.xx.</p>
 
 
 
