@@ -8,7 +8,7 @@ theme:
     name: 'material'
 
     palette:
-        primary: red
+        primary: white
         accent: cyan
     logo: 'media/matematico_favicon.png'
     favicon: 'media/matematico_favicon.png'
