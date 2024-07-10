@@ -22,8 +22,7 @@ clean:
 	rm -f $(PROG) $(OBJS) *.mod $(OBJECT_PATH)*.mod
 
 
-$(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o 
-	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
+$(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o
+	$(F90) $(F90FLAGS) -c main.f90 -o $@
 $(OBJECT_PATH)options.o:
-	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
-
+	$(F90) $(F90FLAGS) -c options.f90 -o $@
