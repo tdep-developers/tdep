@@ -6,7 +6,7 @@ use konstanter, only: r8, i8, lo_huge, lo_hugeint, lo_degenvector, lo_status, lo
                       lo_sqtol, lo_temperaturetol, &
                       lo_status, lo_hbar_hartree, lo_frequency_Hartree_to_Hz, lo_groupvel_HartreeBohr_to_ms, &
                       lo_exitcode_param, lo_hartree_to_eV, lo_bohr_to_m, lo_kappa_au_to_SI, lo_kb_hartree, &
-                      lo_Hartree_to_Joule, lo_exitcode_physical, lo_imag, lo_time_s_to_au
+                      lo_Hartree_to_Joule, lo_exitcode_physical, lo_imag, lo_time_s_to_au, lo_volume_bohr_to_A
 use gottochblandat, only: open_file, walltime, tochar, lo_trueNtimes, lo_classical_harmonic_oscillator_free_energy, &
                           lo_harmonic_oscillator_cv, lo_harmonic_oscillator_entropy, lo_harmonic_oscillator_free_energy, &
                           lo_planck, lo_sqnorm, lo_progressbar_init, lo_progressbar, qsort, lo_outerproduct, lo_chop, &
@@ -21,7 +21,8 @@ use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_qpointmesh, only: lo_qpoint, lo_qpoint_mesh, lo_monkhorst_pack_mesh, lo_wedge_mesh, lo_fft_mesh, &
                            lo_get_small_group_of_qpoint
-use type_symmetryoperation, only: lo_eigenvector_transformation_matrix, lo_operate_on_vector, lo_expandoperation_pair
+use type_symmetryoperation, only: lo_eigenvector_transformation_matrix, lo_operate_on_vector, lo_expandoperation_pair, &
+                                  lo_operate_on_secondorder_tensor
 use hdf5_wrappers, only: lo_hdf5_helper
 
 implicit none
@@ -37,8 +38,9 @@ type lo_phonon_dispersions_qpoint
     real(r8), dimension(:, :), allocatable :: vel
     !> mode eigenvectors
     complex(r8), dimension(:, :), allocatable :: egv
-    !> mode gruneisen parameter
+    !> mode gruneisen parameter and tensor
     real(r8), dimension(:), allocatable :: gruneisen
+    real(r8), dimension(:, :, :), allocatable :: gruneisen_tensor
     !> linewidth
     real(r8), dimension(:), allocatable :: linewidth
     !> anharmonic frequency shift
@@ -125,7 +127,8 @@ contains
     !> create the full dispersions
     procedure :: generate
     !> calculate gruneisen parameters
-    !procedure :: gruneisen
+    procedure :: gruneisen
+    procedure :: gruneisen_tensor
     !> phonon free energy
     procedure :: phonon_free_energy
     !> classical phonon free energy
@@ -163,14 +166,22 @@ interface
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
     end subroutine
-    ! module subroutine gruneisen(dr,qp,fct,p,verbosity,mpi_communicator)
-    !     class(lo_phonon_dispersions), intent(inout) :: dr
-    !     class(lo_qpoint_mesh), intent(inout) :: qp
-    !     type(lo_forceconstant_thirdorder), intent(in) :: fct
-    !     type(lo_crystalstructure), intent(in) :: p
-    !     integer, intent(in), optional :: verbosity
-    !     integer, intent(in), optional :: mpi_communicator
-    ! end subroutine
+    module subroutine gruneisen(dr, qp, fct, p, verbosity, mpi_communicator)
+        class(lo_phonon_dispersions), intent(inout) :: dr
+        class(lo_qpoint_mesh), intent(inout) :: qp
+        type(lo_forceconstant_thirdorder), intent(in) :: fct
+        type(lo_crystalstructure), intent(in) :: p
+        integer, intent(in), optional :: verbosity
+        integer, intent(in), optional :: mpi_communicator
+    end subroutine
+    module subroutine gruneisen_tensor(dr, qp, fct, p, verbosity, mpi_communicator)
+        class(lo_phonon_dispersions), intent(inout) :: dr
+        class(lo_qpoint_mesh), intent(inout) :: qp
+        type(lo_forceconstant_thirdorder), intent(in) :: fct
+        type(lo_crystalstructure), intent(in) :: p
+        integer, intent(in), optional :: verbosity
+        integer, intent(in), optional :: mpi_communicator
+    end subroutine
     module subroutine allgather_irreducible(dr, mw, mem)
         class(lo_phonon_dispersions), intent(inout) :: dr
         type(lo_mpi_helper), intent(inout) :: mw
@@ -331,12 +342,13 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
     real(r8), dimension(:, :), allocatable :: dd
     real(r8), dimension(3) :: v0, v1
     real(r8) :: n1, n, f0, omega, cv, tau
-    integer :: i, j, k, l
+    integer :: i, j, k, l, s
     character(len=1000) :: dname
 
     call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
     ! Some general attributes first:
+    call h5%store_attribute(uc%volume*lo_volume_bohr_to_A, h5%file_id, 'volume', lo_status)
     call h5%store_attribute(dr%n_mode/3, h5%file_id, 'number_of_atoms', lo_status)
     call h5%store_attribute(dr%n_mode, h5%file_id, 'number_of_bands', lo_status)
     call h5%store_attribute(dr%n_full_qpoint, h5%file_id, 'number_of_qpoints', lo_status)
@@ -407,6 +419,19 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
         end do
         call h5%store_data(dd, h5%file_id, trim(dname), enhet='dimensionless', dimensions='q-vector,mode')
         call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+    if (allocated(dr%aq(1)%gruneisen_tensor)) then
+        dname = 'gruneisen_tensors'
+        call mem%allocate(dddd, [3, 3, dr%n_mode, qp%n_full_point], &
+                          persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        dddd = 0.0_r8
+        do i = 1, qp%n_full_point
+            do s = 1, dr%n_mode
+                dddd(:, :, s, i) = dr%aq(i)%gruneisen_tensor(s, :, :)
+            end do
+        end do
+        call h5%store_data(dddd, h5%file_id, trim(dname), enhet='dimensionless', dimensions='q-vector,mode,xyz,xyz')
+        call mem%deallocate(dddd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end if
 
     ! Lifetimes
@@ -1192,6 +1217,7 @@ function phonon_dispersions_qpoint_size_in_mem(p) result(mem)
     if (allocated(p%vel)) mem = mem + storage_size(p%vel)*size(p%vel)
     if (allocated(p%egv)) mem = mem + storage_size(p%egv)*size(p%egv)
     if (allocated(p%gruneisen)) mem = mem + storage_size(p%gruneisen)*size(p%gruneisen)
+    if (allocated(p%gruneisen_tensor)) mem = mem + storage_size(p%gruneisen_tensor)*size(p%gruneisen_tensor)
     if (allocated(p%linewidth)) mem = mem + storage_size(p%linewidth)*size(p%linewidth)
     if (allocated(p%shift3)) mem = mem + storage_size(p%shift3)*size(p%shift3)
     if (allocated(p%shift4)) mem = mem + storage_size(p%shift4)*size(p%shift4)
@@ -1230,6 +1256,7 @@ pure function phonon_dispersions_qpoint_size_packed(p) result(mem)
     if (allocated(p%vel)) mem = mem + storage_size(p%vel)*size(p%vel)/8
     if (allocated(p%egv)) mem = mem + storage_size(p%egv)*size(p%egv)/8
     if (allocated(p%gruneisen)) mem = mem + storage_size(p%gruneisen)*size(p%gruneisen)/8
+    if (allocated(p%gruneisen_tensor)) mem = mem + storage_size(p%gruneisen_tensor)*size(p%gruneisen_tensor)/8
     if (allocated(p%linewidth)) mem = mem + storage_size(p%linewidth)*size(p%linewidth)/8
     if (allocated(p%shift3)) mem = mem + storage_size(p%shift3)*size(p%shift3)/8
     if (allocated(p%shift4)) mem = mem + storage_size(p%shift4)*size(p%shift4)/8

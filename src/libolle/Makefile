@@ -565,7 +565,8 @@ $(OBJECT_PATH)type_forceconstant_thirdorder.o:\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)type_crystalstructure.o\
     $(OBJECT_PATH)type_qpointmesh.o\
-    $(OBJECT_PATH)type_distancetable.o
+    $(OBJECT_PATH)type_distancetable.o\
+    $(OBJECT_PATH)type_symmetryoperation.o
 	$(FC) $(FFLAGS) -c type_forceconstant_thirdorder.f90 -o $@
 $(OBJECT_PATH)type_forceconstant_fourthorder.o:\
     $(OBJECT_PATH)konstanter.o\
@@ -642,6 +643,8 @@ $(OBJECT_PATH)type_embeddedatom.o:\
 	$(FC) $(FFLAGS) -c type_embeddedatom.f90 -o $@
 
 $(OBJECT_PATH)type_phonon_dispersions.o:\
+	type_phonon_dispersions.f90\
+	type_phonon_dispersions_generation.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)mpi_wrappers.o\

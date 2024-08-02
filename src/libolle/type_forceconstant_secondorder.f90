@@ -6,7 +6,7 @@ module type_forceconstant_secondorder
 !!
 use konstanter, only: r8, i8, lo_iou, lo_tol, lo_sqtol, lo_pi, lo_twopi, lo_huge, lo_hugeint, lo_exitcode_param, lo_exitcode_symmetry, &
                       lo_freqtol, lo_kb_hartree, lo_frequency_Hartree_to_THz
-use gottochblandat, only: tochar, walltime, lo_clean_fractional_coordinates, lo_chop, lo_sqnorm
+use gottochblandat, only: tochar, walltime, lo_clean_fractional_coordinates, lo_chop, lo_sqnorm, lo_invert_real_matrix
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use lo_longrange_electrostatics, only: lo_ewald_parameters
@@ -117,6 +117,7 @@ type lo_forceconstant_secondorder
     !> elastic constants, could be fun or something
     real(r8), dimension(6, 6) :: elastic_constants_voigt = lo_huge
     real(r8), dimension(3, 3, 3, 3) :: elastic_constants_tensor = lo_huge
+    real(r8), dimension(6, 6) :: elastic_compliances_voigt = lo_huge
 
     ! Can be useful with the commensurate modes:
 
@@ -373,6 +374,7 @@ subroutine remap(fc, uc, ss, fcss, ind)
     fcss%cutoff = -1
     fcss%elastic_constants_voigt = -1
     fcss%elastic_constants_tensor = -1
+    fcss%elastic_compliances_voigt = -1
     fcss%npairshells = -1
     fcss%npairop = -1
     fcss%nifc = -1
@@ -459,7 +461,7 @@ subroutine get_elastic_constants(fc, uc)
     integer :: i, j
     integer :: a1, pair
     integer :: al, be, gm, la
-    real(r8), dimension(6, 6) :: elc2
+    real(r8), dimension(6, 6) :: elc2, s_ij
     real(r8), dimension(3, 3, 3, 3) :: elc, bracket
     real(r8), dimension(3, 3) :: m
     real(r8), dimension(3) :: r
@@ -507,6 +509,12 @@ subroutine get_elastic_constants(fc, uc)
 
     fc%elastic_constants_voigt = elc2
     fc%elastic_constants_tensor = elc
+
+    ! add compliances (i.e. the inverse)
+    s_ij = 0.0_r8
+    call lo_invert_real_matrix(elc2, s_ij)
+    fc%elastic_compliances_voigt = s_ij
+
 contains
     !> Voigt-notation
     function contract_elastic_constant_indices(mu, nu) result(ind)

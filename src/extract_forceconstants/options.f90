@@ -68,6 +68,8 @@ type lo_opts
     logical :: fake_dielectric = .false.
     ! developer mode
     logical :: devmode = .false.
+    ! extract realspace pressure from force constants
+    logical :: pressure = .false.
 
 contains
     procedure :: parse
@@ -247,6 +249,9 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--developermode', switch_ab='-dev', hidden=.true., help='dev. mode', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
+    call cli%add(switch='--pressure', &
+                 help='Extract TDEP pressure from samples for lattice expansion etc.', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
 
     ! actually parse it
@@ -306,6 +311,7 @@ subroutine parse(opts)
     call cli%get(switch='--temperature', val=opts%temperature)
     call cli%get(switch='--fakediel', val=opts%fake_dielectric)
     call cli%get(switch='--developermode', val=opts%devmode)
+    call cli%get(switch='--pressure', val=opts%pressure)
 
     if (lo_status .ne. 0) stop
 
