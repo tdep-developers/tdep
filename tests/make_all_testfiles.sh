@@ -9,6 +9,7 @@ lineshape/
 pack_simulation/
 phonon_dispersion_relations/
 thermal_conductivity/
+phasespace_surface/
 "
 
 for folder in ${folders}
