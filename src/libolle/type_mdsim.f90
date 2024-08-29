@@ -1389,10 +1389,18 @@ subroutine write_to_hdf5(sim, uc, ss, filename, verbosity, eps, Z)
         if (verbosity .gt. 0) write (*, *) '... wrote positions'
 
         ! Write displacements
-        dr = sim%u(:, :, 1:sim%nt)
+        dr = sim%u(:, :, 1:sim%nt)*lo_bohr_to_A
         call lo_h5_store_data(dr, h5%file_id, 'displacements', enhet='A')
         lo_deallocate(dr)
         if (verbosity .gt. 0) write (*, *) '... wrote displacements'
+
+        ! Write velocities
+        if (allocated(sim%v)) then
+            dr = sim%v(:, :, 1:sim%nt)*lo_bohr_to_A/lo_time_au_to_fs
+            call lo_h5_store_data(dr, h5%file_id, 'velocities', enhet='A/fs')
+            lo_deallocate(dr)
+            if (verbosity .gt. 0) write (*, *) '... wrote velocities'
+        end if
 
         ! Write forces
         lo_allocate(dr(3, sim%na, sim%nt))
