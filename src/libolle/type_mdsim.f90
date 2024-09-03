@@ -4,7 +4,7 @@ module type_mdsim
 use konstanter, only: r8, lo_pi, lo_huge, lo_hugeint, lo_sqtol, lo_status, lo_force_eVA_to_HartreeBohr, lo_eV_to_Hartree, &
                       lo_pressure_GPa_to_HartreeBohr, lo_A_to_bohr, lo_exitcode_param, lo_bohr_to_A, lo_Hartree_to_eV, &
                       lo_force_Hartreebohr_to_eVA, lo_pressure_HartreeBohr_to_GPa, lo_exitcode_io, lo_kb_Hartree, &
-                      lo_time_fs_to_au, lo_time_au_to_fs
+                      lo_time_fs_to_au, lo_time_au_to_fs, lo_velocity_au_to_Afs
 use gottochblandat, only: open_file, lo_clean_fractional_coordinates, lo_mean, tochar, lo_trueNtimes, walltime, lo_sqnorm, &
                           lo_progressbar_init, lo_progressbar, lo_find_rotation_that_makes_strain_diagonal, lo_trace, &
                           lo_mass_from_Z
@@ -1396,7 +1396,8 @@ subroutine write_to_hdf5(sim, uc, ss, filename, verbosity, eps, Z)
 
         ! Write velocities
         if (allocated(sim%v)) then
-            dr = sim%v(:, :, 1:sim%nt)*lo_bohr_to_A/lo_time_au_to_fs
+            lo_allocate(dr(3, sim%na, sim%nt))
+            dr = sim%v(:, :, 1:sim%nt)*lo_velocity_au_to_Afs
             call lo_h5_store_data(dr, h5%file_id, 'velocities', enhet='A/fs')
             lo_deallocate(dr)
             if (verbosity .gt. 0) write (*, *) '... wrote velocities'
