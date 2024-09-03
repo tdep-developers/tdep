@@ -1306,6 +1306,7 @@ subroutine read_from_file(sim, verbosity, stride, magnetic, dielectric, variable
             write (*, *) '... short summary of simulation:'
             write (*, *) '                      number of atoms: ', tochar(sim%na)
             write (*, *) '             number of configurations: ', tochar(sim%nt)
+            write (*, *) '                        timestep (fs): ', tochar(sim%timestep*lo_time_au_to_fs)
             write (*, *) '              average temperature (K): ', tochar(avg_temperature)
             write (*, *) '                thermostat set to (K): ', tochar(sim%temperature_thermostat)
             write (*, *) '               average pressure (GPa): ', tochar(avg_pressure)
