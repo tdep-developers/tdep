@@ -65,7 +65,7 @@ and the respective publications for the algorithms that were used:
 
 - Method: [D. A. Broido *et al.*, Appl Phys Lett **91**, 231922 (2007)](https://doi.org/10.1063/1.2822891)
 
-- Implementation: [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+- Implementation: [O. Hellman and D.A. Broido, Phys. Rev. B **90**, 134309 (2014)](https://dx.doi.org/10.1103/physrevb.90.134309)
 - Fourth order contributions: [J. Klarbring *et al.*, Phys Rev Lett **125**, 045701 (2020)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.125.045701)
 
 `lineshape`
