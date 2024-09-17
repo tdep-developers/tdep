@@ -7,7 +7,7 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Simple_homogeneous.h>
 #include <CGAL/Homogeneous.h>
-#include <CGAL/gmpq.h>
+#include <CGAL/Gmpq.h>
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/convex_hull_3.h>

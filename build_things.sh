@@ -186,6 +186,7 @@ pack_simulation
 refine_structure
 thermal_conductivity
 anharmonic_free_energy
+phasespace_surface
 "
 
 #some things that are not quite ok yet
