@@ -498,8 +498,13 @@ module subroutine lo_solve_for_borncharges(map, p, Z, eps, filename, mw, mem, ve
                 ! Make sure it's hermitian? Seems like the sensible thing to do.
                 call lo_coeffmatrix_unitcell_Z_singlet(map, coeffM)
 
-                call ew%set(p, epsbuf, 2, 1E-20_r8, verbosity)
-                call ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeffM, epsbuf, p, verbosity)
+                if (map%polarcorrectiontype .eq. 4) then
+                    call ew%set_2D(p, epsbuf, -1, 1E-20_r8, verbosity)
+                    call ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeffM, epsbuf, p, verbosity)
+                else
+                    call ew%set_2D(p, epsbuf, -1, 1E-20_r8, verbosity)
+                    call ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeffM, epsbuf, p, verbosity)
+                endif   
 
                 ! cleanup
                 call mem%deallocate(coeffM, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

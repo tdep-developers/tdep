@@ -34,12 +34,18 @@ type lo_ewald_parameters
 contains
     !> set parameters
     procedure :: set => lo_set_dipole_ewald_parameters
+    !> set parameters for 2D
+    procedure :: set_2D => lo_set_dipole_ewald_parameters_2D
     !> force Born charges Hermitian
     procedure :: force_borncharges_hermitian
     !> calculate the long-range dynamical matrix
     procedure :: longrange_dynamical_matrix
+    !> calculate the long-range 2D dynamical matrix
+    procedure :: longrange_dynamical_matrix_2D
     !> calculate the long-range forceconstant for a supercell
     procedure :: supercell_longrange_forceconstant
+    !> calculate the long-range forceconstant for a 2D supercell
+    procedure :: supercell_longrange_forceconstant_2D
     !> measure size in memoryx
     procedure :: size_in_mem
     !> destroy
@@ -68,7 +74,28 @@ interface
         logical, intent(in), optional :: reconly
         logical, intent(in), optional :: chgmult
     end subroutine
+    module subroutine longrange_dynamical_matrix_2D( &
+        ew, p, q, born_effective_charges, born_onsite_correction, eps, D, Dx, Dy, Dz, reconly, chgmult)
+        class(lo_ewald_parameters), intent(in) :: ew
+        type(lo_crystalstructure), intent(in) :: p
+        real(r8), dimension(3), intent(in) :: q
+        real(r8), dimension(:, :, :), intent(in) :: born_effective_charges
+        real(r8), dimension(:, :, :), intent(in) :: born_onsite_correction
+        real(r8), dimension(3, 3), intent(in) :: eps
+        complex(r8), dimension(:, :, :, :), intent(out) :: D
+        complex(r8), dimension(:, :, :, :), intent(out), optional :: Dx, Dy, Dz
+        logical, intent(in), optional :: reconly
+        logical, intent(in), optional :: chgmult
+    end subroutine
     module subroutine supercell_longrange_forceconstant(ew, born_effective_charges, eps, ss, forceconstant, thres)
+        class(lo_ewald_parameters), intent(in) :: ew
+        real(r8), dimension(:, :, :), intent(in) :: born_effective_charges
+        real(r8), dimension(3, 3), intent(in) :: eps
+        type(lo_crystalstructure), intent(in) :: ss
+        real(r8), dimension(:, :, :, :), intent(out) :: forceconstant
+        real(r8), intent(in) :: thres
+    end subroutine
+    module subroutine supercell_longrange_forceconstant_2D(ew, born_effective_charges, eps, ss, forceconstant, thres)
         class(lo_ewald_parameters), intent(in) :: ew
         real(r8), dimension(:, :, :), intent(in) :: born_effective_charges
         real(r8), dimension(3, 3), intent(in) :: eps
@@ -194,7 +221,9 @@ subroutine lo_set_dipole_ewald_parameters(ew, p, eps, strategy, tol, verbosity, 
 
             ! Decide on a sensible distance where things should be zero, I heuristically
             ! pick double the nearest neighbour distance. Not a crucial choice, but it works.
-            doublenndist = p%nearest_neighbour_distance()*2.0_r8
+             doublenndist = p%nearest_neighbour_distance()*2.0_r8
+            !doublenndist = 4.60_r8  
+            !write(*,*) ('This is the distance where things are zero: '),doublenndist
             ! inverse of the metric
             invdete = 1.0_r8/sqrt(lo_determ(eps))
 
@@ -381,6 +410,158 @@ subroutine lo_set_dipole_ewald_parameters(ew, p, eps, strategy, tol, verbosity, 
         t1 = walltime()
         write (lo_iou, *) '... stored ', tochar(ew%n_Rvector), '+', tochar(ew%n_Gvector), &
             ' lattice vectors (', tochar(t1 - t0), 's)'
+        t0 = t1
+    end if
+end subroutine
+
+!> pick optimum Ewald parameters for dipole terms
+subroutine lo_set_dipole_ewald_parameters_2D(ew, p, eps, strategy, tol, verbosity, forced_lambda)
+    !> ewald parameters
+    class(lo_ewald_parameters), intent(out) :: ew
+    !> crystal structure
+    type(lo_crystalstructure), intent(in) :: p
+    !> dielectric tensor
+    real(r8), dimension(3, 3), intent(in) :: eps
+    !> strategy to choose lambda
+    integer, intent(in) :: strategy
+    !> tolerance
+    real(r8), intent(in) :: tol
+    !> talk a lot
+    integer, intent(in) :: verbosity
+    !> force a certain lambda parameter
+    real(r8), intent(in), optional :: forced_lambda
+
+    integer, parameter :: npts = 40
+    real(r8), dimension(3, npts) :: pts
+    real(r8) :: t0, t1, L, pol_out
+
+    t0 = walltime()
+    t1 = t0
+
+    ! Set some simple things
+    init: block
+        ew%eps = eps
+    end block init
+
+    !AA: for now I dont optimize L, i think if we want to do that we need to rewire the code again
+
+    L = norm2(p%latticevectors(:,3)) 
+    pol_out = (L/(4.0_r8*lo_pi))*(1 - 1/eps(3,3)) !out-of-plane polarizability
+
+    ew%lambda = 1.20_r8*4*lo_pi*pol_out !setting (L) slightly higher than the stability criteria!
+
+    !ew%lambda = 4.50_r8 !setting (L) slightly higher than the stability criteria!
+
+
+    
+
+    if (verbosity .gt. 0) then
+        t1 = walltime()
+        write (lo_iou, *) '... decided on seperation parameter (L)=', tochar(ew%lambda), '  (', tochar(t1 - t0), 's)'
+        t0 = t1
+    end if
+
+    ! Now build the vectors
+    buildvecs: block
+        integer, parameter :: niter = 1000
+        integer, dimension(3) :: bd
+        real(r8), dimension(:, :), allocatable :: dr
+        real(r8), dimension(:), allocatable :: vn
+        real(r8), dimension(3, 3) :: m0
+        real(r8), dimension(3) :: v0
+        real(r8) :: krad, rrad, f0, f1
+        integer, dimension(:), allocatable :: di
+        integer :: i, j, k, l, ndim
+
+        krad = (1/ew%lambda)*10.0_r8 !the inverse of the seperation parameter
+        !krad = ew%lambda  !the inverse of the seperation parameter
+
+        ! Then exactly the same thing again for G-vectors
+        !ndim = 0
+        !AA: assume this is fine for now
+        !do
+        !    ndim = ndim + 1
+        !    do i = 1, 3
+        !        m0(:, i) = p%reciprocal_latticevectors(:, i)*(2*ndim + 1)
+        !    end do
+        !    f0 = lo_inscribed_sphere_in_box(m0)
+        !    if (f0 .gt. krad) exit
+        
+        !end do
+
+        bd = 1
+        do
+            do i = 1, 3
+                m0(:, i) = p%reciprocal_latticevectors(:, i)*(2*bd(i) + 1)
+            end do
+            f0 = lo_inscribed_sphere_in_box(m0)
+            if (f0 .gt. krad) exit
+            bd = increment_dimensions(bd, p%reciprocal_latticevectors)
+        end do
+
+
+
+        write(*,*) ('in the ewald module, here is the supercell'),m0(:,:)
+        write(*,*) ('in the ewald module, here is the ndim'),bd(:)
+        write(*,*) ('in the ewald module, here is the krad'),krad
+
+
+        ! count realspace vectors
+        f0 = krad**2
+        l = 0
+        do i = -bd(1), bd(1)
+        do j = -bd(2), bd(2)
+            v0 = p%fractional_to_cartesian(real([i, j, 0], r8), reciprocal=.true.)
+            if (lo_sqnorm(v0) .lt. f0) then
+                l = l + 1
+            end if
+        end do
+        end do
+        ew%n_Gvector = l
+        allocate (ew%Gvec(3, l))
+        allocate (dr(3, l))
+        allocate (vn(l))
+        allocate (di(l))
+        ew%Gvec = 0.0_r8
+        dr = 0.0_r8
+        vn = 0.0_r8
+        di = 0
+        l = 0
+        do i = -bd(1), bd(1)
+        do j = -bd(2), bd(2)
+            v0 = p%fractional_to_cartesian(real([i, j, 0], r8), reciprocal=.true.)
+            f1 = lo_sqnorm(v0)
+            if (f1 .lt. f0) then
+                l = l + 1
+                vn(l) = -f1
+                dr(:, l) = v0
+            end if
+        end do
+        end do
+        ! Sort backwards by length
+        call lo_qsort(vn, di)
+        do i = 1, ew%n_Gvector
+            ew%Gvec(:, i) = dr(:, di(i))
+        end do
+        deallocate (dr)
+        deallocate (vn)
+        deallocate (di)
+
+        write(*,*) ('In the ewald module, Getting the Gvecs in 2D: ')
+        open(unit=10, file='Gvecs_ewald', status='replace', action='write')
+        do i = 1, ew%n_Gvector
+            write(10, '(3F10.5)') ew%Gvec(:, i)*lo_twopi
+        end do
+        close(10)
+        write(*,*) ('In the Ewald module , here is n_gvecs'),ew%n_Gvector
+
+    end block buildvecs
+
+        
+    if (verbosity .gt. 0) then
+        t1 = walltime()
+        write (lo_iou, *) '... stored ', tochar(ew%n_Gvector), &
+            ' reciprocal lattice vectors (', tochar(t1 - t0), 's)'
         t0 = t1
     end if
 end subroutine

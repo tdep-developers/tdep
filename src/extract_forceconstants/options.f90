@@ -194,7 +194,7 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--polarcorrectiontype', switch_ab='-pc', hidden=.true., &
                  help='What kind of polar correction to use.', &
-                 required=.false., act='store', def='3', choices='1,2,3', error=lo_status)
+                 required=.false., act='store', def='3', choices='1,2,3,4', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--secondorder_njump', switch_ab='-nj2', &
                  help='Second order neighbour jumps.', &

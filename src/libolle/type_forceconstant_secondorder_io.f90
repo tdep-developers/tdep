@@ -21,7 +21,7 @@ module subroutine writetofile(fc, p, fn)
     character(len=*), intent(in) :: fn
 
     integer :: i, j, a1, a2, u
-    real(r8) :: f0
+    real(r8) :: f0, sum_fc
     real(r8), dimension(3) :: v
     character(len=1000) :: opf
 
@@ -34,7 +34,7 @@ module subroutine writetofile(fc, p, fn)
             f0 = max(f0, norm2(v))
         end do
     end do
-
+    sum_fc = 0.0_r8
     ! Dump it
     u = open_file('out', trim(fn))
     ! Print the necessary stuff
@@ -55,9 +55,13 @@ module subroutine writetofile(fc, p, fn)
             do j = 1, 3
                 v = fc%atom(a1)%pair(i)%m(j, :)*lo_forceconstant_2nd_HartreeBohr_to_eVA
                 write (u, *) v
+                if (i .gt. 1) then
+                    sum_fc = sum_fc + ( abs(v(1)) + abs(v(2)) + abs(v(3)) )
+                end if                
             end do
         end do
     end do
+    write(*,*) ('Here is the sum of IFCS: '),sum_fc
     ! And all the Born-charge stuff, if necessary
     if (fc%polar .eqv. .false.) then
         write (u, *) '0   # This contains no information about Born charges or dielectric tensors'

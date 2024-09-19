@@ -570,7 +570,7 @@ module subroutine dynamicalmatrix(fc, p, qpoint, dynamical_matrix, mem, dynamica
         Dt = 0.0_r8
         ! And we might need the polar dynmat
         select case (fc%loto%correctiontype)
-        case (2:3)
+        case (2:4)
             call mem%allocate(Pt, [3, 3, na, na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             Pt = 0.0_r8
         end select
@@ -591,7 +591,7 @@ module subroutine dynamicalmatrix(fc, p, qpoint, dynamical_matrix, mem, dynamica
             select case (fc%loto%correctiontype)
             case (0)
                 ! Nothing
-            case (3)
+            case (3:4)
                 call mem%allocate(gradPt, [3, 3, na, na, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
                 gradPt = 0.0_r8
             end select
@@ -651,7 +651,7 @@ module subroutine dynamicalmatrix(fc, p, qpoint, dynamical_matrix, mem, dynamica
                 end select
             end do
             end do
-        case (3)
+        case (3:4)
             ! Incredibly smart correction. First the shortranged-part:
             do a1 = 1, fc%na
             do i = 1, fc%atom(a1)%n
@@ -692,7 +692,7 @@ module subroutine dynamicalmatrix(fc, p, qpoint, dynamical_matrix, mem, dynamica
             end select
 
             ! And the final non-analytical part
-            if (nonanalytical) then
+            if (nonanalytical .and. fc%loto%correctiontype .eq. 3) then
                 call nonanalytical_dynamical_matrix(fc, p, qdir, Gt)
             end if
 

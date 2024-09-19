@@ -437,11 +437,18 @@ module subroutine coefficients_ifc(ih, tp, map, sim, uc, ss, mw, mem, verbosity)
         end if
 
         ! If it's polar, it might be a good idea to be able to remove those forces.
-        if (map%polar .gt. 0 .and. map%polarcorrectiontype .eq. 3) then
+        if (map%polar .eq. 1) then
             ! Get some forceconstant thingy. This is a little confusing since
             ! things can be defined in different ways.
             call map%get_secondorder_forceconstant(uc, fc, mem, verbosity=-1)
-            if (fc%polar) then
+
+            if (fc%polar .and. map%polarcorrectiontype .eq. 3) then
+                allocate (ih%polar_fc(3, 3, ss%na, ss%na))
+                ih%polar_fc = 0.0_r8
+                call fc%supercell_longrange_dynamical_matrix_at_gamma(ss, ih%polar_fc, 1E-15_r8)
+            else if (fc%polar .and. map%polarcorrectiontype .eq. 4) then
+                ! AA: polar forces for 2D materials
+                write(*,*) ('Getting the LR IFCS in 2D to subtract the forces: ')
                 allocate (ih%polar_fc(3, 3, ss%na, ss%na))
                 ih%polar_fc = 0.0_r8
                 call fc%supercell_longrange_dynamical_matrix_at_gamma(ss, ih%polar_fc, 1E-15_r8)
@@ -452,7 +459,11 @@ module subroutine coefficients_ifc(ih, tp, map, sim, uc, ss, mw, mem, verbosity)
         else
             allocate (ih%polar_fc(1, 1, 1, 1))
             ih%polar_fc = -lo_huge
+       
         end if
+
+       
+
     end block init
 
     coeff: block
@@ -503,7 +514,8 @@ module subroutine coefficients_ifc(ih, tp, map, sim, uc, ss, mw, mem, verbosity)
             end if
 
             ! And perhaps the polar force thingy
-            if (map%polar .gt. 0 .and. map%polarcorrectiontype .eq. 3 .and. map%xuc%nx_Z_singlet .gt. 0) then
+            ! AA: do not force the correction to be type 3!
+            if (map%polar .gt. 0  .and. map%xuc%nx_Z_singlet .gt. 0) then
                 pf = 0.0_r8
                 epol = 0.0_r8
                 do j = 1, ss%na
@@ -516,6 +528,23 @@ module subroutine coefficients_ifc(ih, tp, map, sim, uc, ss, mw, mem, verbosity)
                 pf = 0.0_r8
                 epol = 0.0_r8
             end if
+            
+            !write(*,*) ('I want to write the polar forces out:')
+
+            !if (tt == 1) then
+            !    open(unit=10, file='pf', status='replace', action='write')
+            !else
+            !    open(unit=10, file='pf', status='old', position='append', action='write')
+            !endif
+    
+            !do j = 1, ss%na
+            !    write(10, '(3F10.5)') pf(:, j)
+            !end do
+
+            !close(10)
+
+
+
 
             ! Store
             ii = (tt - 1)*nf + 1
@@ -541,6 +570,7 @@ module subroutine coefficients_ifc(ih, tp, map, sim, uc, ss, mw, mem, verbosity)
                 call lo_progressbar('... creating fc coefficients', tt, tp%nt, walltime() - timer)
             end if
         end do
+
 
         if (map%have_fc_singlet) call mem%deallocate(CMD1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         if (map%have_fc_pair) call mem%deallocate(CMD2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

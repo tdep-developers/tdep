@@ -32,18 +32,25 @@ module subroutine set_ewald_and_enforce_borncharge_hermiticity(fc, p, mem, verbo
         call lo_stop_gracefully(['This polar correction type is deprecated'], lo_exitcode_param, __FILE__, __LINE__)
     case (3)
         ! also fine
+    case(4)
+        !2D polar stuff
+        write(*,*) ('Using the 2D model for polar forces')
     case default
         ! This should never happen
         call lo_stop_gracefully(['Undefined polar correction type'], lo_exitcode_param, __FILE__, __LINE__)
     end select
 
     setewald: block
-        ! set the Ewald parameters
+    select case (fc%loto%correctiontype)
+    case(3)
         if (present(fixlambda)) then
             call fc%ew%set(p, fc%loto%eps, 3, ewaldtol, verbosity, forced_lambda=fixlambda)
         else
             call fc%ew%set(p, fc%loto%eps, 2, ewaldtol, verbosity)
         end if
+    case(4)
+        call fc%ew%set_2D(p, fc%loto%eps, -1, ewaldtol, verbosity)
+    end select    
 
         ! If we are to optimize, then do that.
         call fc%ew%force_borncharges_Hermitian(fc%loto%x_Z, fc%loto%coeff_Z, fc%loto%eps, p, verbosity)
@@ -76,6 +83,9 @@ module subroutine set_ewald_and_enforce_borncharge_hermiticity(fc, p, mem, verbo
         select case (fc%loto%correctiontype)
         case (3)
             call fc%ew%longrange_dynamical_matrix(p, [0.0_r8, 0.0_r8, 0.0_r8], fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, Dc, reconly=.true.)
+        case (4)
+            write(*,*) ('2D polar forces to fix the onsite correction')
+            call fc%ew%longrange_dynamical_matrix_2D(p, [0.0_r8, 0.0_r8, 0.0_r8], fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, Dc, reconly=.true.)
         case default
             call lo_stop_gracefully(['Undefined polar correction type'], lo_exitcode_param, __FILE__, __LINE__)
         end select
@@ -111,18 +121,37 @@ module subroutine longrange_dynamical_matrix(fc, D, p, q, Dx, Dy, Dz)
     complex(r8), dimension(:, :, :, :), intent(out), optional :: Dx, Dy, Dz
 
     ! I just send this along!
-    if (fc%loto%correctiontype .ne. 3) then
-        call lo_stop_gracefully(['Need to use polar correction type 3.'], lo_exitcode_param, __FILE__, __LINE__)
-    end if
-    if (present(Dx)) then
-        call fc%ew%longrange_dynamical_matrix(p, q, &
+    !if (fc%loto%correctiontype .ne. 3) then
+    !    call lo_stop_gracefully(['Need to use polar correction type 3.'], lo_exitcode_param, __FILE__, __LINE__)
+    !end if
+
+    if (fc%loto%correctiontype .eq. 3) then
+        if (present(Dx)) then
+            call fc%ew%longrange_dynamical_matrix(p, q, &
                                               fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, &
                                               D, Dx, Dy, Dz, reconly=.true.)
-    else
-        call fc%ew%longrange_dynamical_matrix(p, q, &
+        else
+            call fc%ew%longrange_dynamical_matrix(p, q, &
                                               fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, &
                                               D, reconly=.true.)
+        end if
+    else if (fc%loto%correctiontype .eq. 4) then
+        if (present(Dx)) then
+            call fc%ew%longrange_dynamical_matrix_2D(p, q, &
+                                              fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, &
+                                              D, Dx, Dy, Dz, reconly=.true.)
+        else
+            call fc%ew%longrange_dynamical_matrix_2D(p, q, &
+                                              fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, &
+                                              D, reconly=.true.)
+        end if
+    else
+        call lo_stop_gracefully(['Need to use a valid polar correction type (3/4)'], lo_exitcode_param, __FILE__, __LINE__)
     end if
+
+
+
+
 end subroutine
 
 !> Non-analytical contribution at Gamma
@@ -179,12 +208,19 @@ module subroutine supercell_longrange_dynamical_matrix_at_gamma(fc, ss, dynmat, 
     if (maxval(ss%info%index_in_unitcell) .ne. fc%na) then
         call lo_stop_gracefully(['Mismatch between forceconstant and cell.'], lo_exitcode_param, __FILE__, __LINE__)
     end if
-    if (fc%loto%correctiontype .ne. 3) then
-        call lo_stop_gracefully(['Need to use polar correction type 3.'], lo_exitcode_param, __FILE__, __LINE__)
+    if (fc%loto%correctiontype .eq. 3) then
+        ! Again, just send it along for now. Will fix at some point, but I'm too lazy.
+        call fc%ew%supercell_longrange_forceconstant(fc%loto%born_effective_charges, fc%loto%eps, ss, dynmat, thres)
     end if
 
-    ! Again, just send it along for now. Will fix at some point, but I'm too lazy.
-    call fc%ew%supercell_longrange_forceconstant(fc%loto%born_effective_charges, fc%loto%eps, ss, dynmat, thres)
+    if (fc%loto%correctiontype .eq. 4) then
+        ! AA: call the 2D LR module!
+        write(*,*) ('Calling the 2D LR IFCS module at Gamma: ')
+        call fc%ew%supercell_longrange_forceconstant_2D(fc%loto%born_effective_charges, fc%loto%eps, ss, dynmat, thres)
+    end if
+
+    
 end subroutine
+
 
 end submodule
