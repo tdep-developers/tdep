@@ -1681,12 +1681,12 @@ n_{\lambda}(n_{\lambda}+1) \frac{\hbar \pi}{8 N}
 <p>The Boltzmann equation only takes into account the relaxation of phonons from perturbed state to the equilibrium.
 However, for systems with complex unit cell, a contribution stemming from coherence tunneling between different phonons (<span class="arithmatex">\(\lambda \neq \lambda'\)</span>) can become important.
 This off-diagonal term can be introduced both by a formulation based on the Hardy current <sup id="fnref:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">10</a></sup> or a Wigner current <sup id="fnref:Simoncelli2019"><a class="footnote-ref" href="#fn:Simoncelli2019">12</a></sup>, with very similar results<sup id="fnref:Caldarelli2022"><a class="footnote-ref" href="#fn:Caldarelli2022">13</a></sup>.
-In TDEP, we use the formulation based on the Hardy heat current <sup id="fnref2:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">10</a></sup>
-$$
+In TDEP, we use the formulation based on the Hardy heat current <sup id="fnref2:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">10</a></sup></p>
+<div class="arithmatex">\[
 \begin{equation}
-J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}<em>\lambda^\dagger \hat{a}</em>{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
+J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}_\lambda^\dagger \hat{a}_{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
 \end{equation}
-$$</p>
+\]</div>
 <p>where <span class="arithmatex">\(v_{\lambda\lambda'}^\alpha\)</span> are generalized group velocity tensor <sup id="fnref:Dangic2021"><a class="footnote-ref" href="#fn:Dangic2021">14</a></sup></p>
 <div class="arithmatex">\[
 \begin{equation}
@@ -1708,12 +1708,12 @@ It should be recognized that for <span class="arithmatex">\(\lambda = \lambda'\)
 \end{equation}
 \]</div>
 <p>where <span class="arithmatex">\(\kappa_{\alpha\beta}^{\mathrm{BTE}}\)</span> is the thermal conductivity from the previous section and <span class="arithmatex">\(\kappa_{\alpha\beta}^{{\rm c}}\)</span> is the off-diagonal (coherences') contribution.
-This term is computed as (cf. Eq. 22-24 in <sup id="fnref2:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">11</a></sup>)
-$$
+This term is computed as (cf. Eq. 22-24 in <sup id="fnref2:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">11</a></sup>)</p>
+<div class="arithmatex">\[
 \begin{equation}
 \kappa_{\alpha\beta}^{{\rm c}} = \frac{1}{Vk_BT^2} \sum_{\lambda\lambda'\neq \lambda} c_{\lambda\lambda'} v_{\lambda\lambda'}^\alpha v_{\lambda\lambda'}^\beta \tau_{\lambda\lambda'} \delta_{q_\lambda q_{\lambda'}}
 \end{equation}
-$$</p>
+\]</div>
 <p>with</p>
 <div class="arithmatex">\[
 \begin{equation}
