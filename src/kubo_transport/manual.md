@@ -304,7 +304,7 @@ and these are optional:
 
 ### Output files
 
-### `outfile.thermal_conductivity_4ph`
+### `outfile.kappa_kubo`
 
 This file contains the thermal conductivity tensor, with the decomposition from all contributions, in a format that can be parsed with tools such as numpy.
 It looks like this
@@ -327,7 +327,7 @@ It looks like this
 ```
 
 
-#### `outfile.grid_thermal_conductivity_4ph.hdf5`
+#### `outfile.grid_kubo.hdf5`
 
 This file contains nearly all quantities on the full q-grid.
 Below is a matlab snippet that plots a subset:

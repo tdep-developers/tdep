@@ -1,5 +1,5 @@
 #include "precompilerdefinitions"
-program thermal_conductivity_4ph
+program kubo_transport
 use konstanter, only: r8, lo_temperaturetol, lo_status, lo_kappa_au_to_SI, lo_freqtol, lo_m_to_Bohr, lo_emu_to_amu
 use gottochblandat, only: walltime, tochar, open_file
 use mpi_wrappers, only: lo_mpi_helper
@@ -61,7 +61,7 @@ initharmonic: block
         write (*, '(1X,A40,I4,I4,I4)') 'Monte-Carlo 4th order q-point grid      ', opts%qg4ph
         write (*, '(1X,A40,I5)') 'Max number of iteration                 ', opts%scfiterations
         write (*, '(1X,A40,E20.12)') 'Max mean free path (in m)               ', opts%mfp_max/lo_m_to_Bohr
-        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative BTE         ', opts%btetol
+        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative solution    ', opts%btetol
         select case (opts%integrationtype)
         case (1)
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Gaussian with fixed broadening'
@@ -202,12 +202,12 @@ kappa: block
     if (mw%talk) write (*, *) '... computing kappa in the single mode approximation'
     call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_sma)
     call tmr_kappa%tock('single mode approximation')
-    if (mw%talk) write (*, *) '... computing off diagonal coherent contribution'
+    if (mw%talk) write (*, *) '... computing off diagonal (coherence) contribution'
     call get_kappa_offdiag(dr, qp, uc, fc, opts%temperature, opts%classical, mem, mw, kappa_offdiag)
     call tmr_kappa%tock('off-diagonal contribution')
     if (opts%scfiterations .gt. 0) then
         if (mw%talk) then
-            write (*, *) '... solving iterative BTE'
+            write (*, *) '... solving iteratively the collective contribution'
             write (*, "(1X,A4,6(1X,A14),2X,A10)") 'iter', &
                 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   ', 'DeltaF/F'
         end if
@@ -227,7 +227,7 @@ kappa: block
     call tmr_kappa%stop()
     if (mw%talk) then
         ! First we write in the standard output
-        u = open_file('out', 'outfile.thermal_conductivity_4ph')
+        u = open_file('out', 'outfile.kappa_kubo')
         write (u, '(A2,A5,15X,A)') '# ', 'Unit:', 'W/m/K'
         write (u, '(A2,A12,8X,E20.12)') '# ', 'Temperature:', opts%temperature
 
@@ -235,31 +235,31 @@ kappa: block
         write (*, "(1X,A52)") 'Decomposition of the thermal conductivity (in W/m/K)'
         m0 = kappa_sma*lo_kappa_au_to_SI
         ! First in the standard output
-        write (*, "(1X,A85)") 'Single mode relaxation time approximation (RTA) to Boltzmann transport equation (BTE)'
+        write (*, "(1X,A)") 'Single mode approximation (SMA)'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
         write (*, "(5X,6(1X,F14.4))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         ! Then in the outfile
-        write (u, "(A43)") '# Single mode relaxation time approximation'
+        write (u, "(A)") '# Single mode approximation'
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
         m0 = (kappa_bte - kappa_sma)*lo_kappa_au_to_SI
         ! First in the standard output
-        write (*, "(1X,A73)") 'Correction to full solution of the linearized BTE via iterative procedure'
+        write (*, "(1X,A)") 'Correction to include collective contribution via iterative procedure'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
         write (*, "(5X,6(1X,F14.4))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         ! Then in the outfile
-        write (u, "(A25)") '# Collective contribution'
+        write (u, "(A)") '# Collective contribution'
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
         m0 = kappa_offdiag*lo_kappa_au_to_SI
         ! First in the standard output
-        write (*, "(1X,A36)") 'Off diagonal (coherent) contribution'
+        write (*, "(1X,A)") 'Off diagonal (coherence) contribution'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
         write (*, "(5X,6(1X,F14.4))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
         ! Then in the outfile
-        write (u, "(A36)") '# Off diagonal coherent contribution'
+        write (u, "(A)") '# Off diagonal (coherence) contribution'
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
@@ -292,11 +292,11 @@ finalize_and_write: block
     if (mw%talk) then
         write (*, *) ''
         write (*, *) '... dumping auxiliary data to files'
-        call dr%write_to_hdf5(qp, uc, 'outfile.grid_thermal_conductivity_4ph.hdf5', mem, opts%temperature)
+        call dr%write_to_hdf5(qp, uc, 'outfile.grid_kubo.hdf5', mem, opts%temperature)
 
         write (*, *) ''
-        write (*, '(A61,A)') 'Scattering rates can be found in                             ', 'outfile.grid_thermal_conductivity_4ph.hdf5'
-        write (*, '(A61,A)') 'Thermal conductivity tensor can be found in                  ', 'outfile.thermal_conductivity_4ph'
+        write (*, '(A61,A)') 'Scattering rates can be found in                             ', 'outfile.grid_kubo.hdf5'
+        write (*, '(A61,A)') 'Thermal conductivity tensor can be found in                  ', 'outfile.kappa_kubo'
 
         ! Print timings
         write (*, *) ''

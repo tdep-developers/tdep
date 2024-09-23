@@ -34,7 +34,7 @@ nav:
     - Extract forceconstants: program/extract_forceconstants.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
     - Thermal conductivity: program/thermal_conductivity.md
-    - Thermal conductivity 4ph: program/thermal_conductivity_4ph.md
+    - Kubo transport: program/kubo_transport.md
     - Lineshape: program/lineshape.md
     - Anharmonic free energy: program/anharmonic_free_energy.md
     - Atomic distribution: program/atomic_distribution.md

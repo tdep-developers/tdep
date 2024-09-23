@@ -47,15 +47,15 @@ subroutine parse(opts)
     integer :: i
 
     ! basic info
-    call cli%init(progname='thermal_conductivity_4ph', &
+    call cli%init(progname='kubo_transport', &
                   authors=lo_author, &
                   version=lo_version, &
                   license=lo_licence, &
                   help='Usage: ', &
                   description='Calculates the lattice thermal conductivity, including collective contribution &
                               &and off-diagonal coherent term up to fourth-order interactions.', &
-                  examples=["mpirun thermal_conductivity --temperature 300                        ", &
-                            "mpirun thermal_conductivity --fourthorder  -qg 30 30 30 -qg4ph 4 4 4 "], &
+                  examples=["mpirun kubo_transport --temperature 300                        ", &
+                            "mpirun kubo_transport --fourthorder  -qg 30 30 30 -qg4ph 4 4 4 "], &
                   epilog=new_line('a')//"...")
     ! real options
     call cli%add(switch='--readiso', &

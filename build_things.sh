@@ -185,7 +185,7 @@ atomic_distribution
 pack_simulation
 refine_structure
 thermal_conductivity
-thermal_conductivity_4ph
+kubo_transport
 anharmonic_free_energy
 phasespace_surface
 "

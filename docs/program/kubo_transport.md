@@ -1,7 +1,7 @@
 
 ### Short description
 
-Calculates the lattice thermal conductivity, including collective contribution and off-diagonal coherent term up to fourth-order interactions.
+Calculates the lattice thermal conductivity in the Green-Kubo formalism, including collective contribution and off-diagonal coherent term up to fourth-order interactions.
 
 ### Command line options:
 
@@ -65,9 +65,9 @@ Optional switches:
     Print version
 ### Examples
 
-`mpirun thermal_conductivity_4ph --temperature 300` 
+`mpirun kubo_transport --temperature 300` 
 
-`mpirun thermal_conductivity_4ph -qg 30 30 30 --temperature 300 -qg3ph 15 15 15` 
+`mpirun kubo_transport -qg 30 30 30 --temperature 300 -qg3ph 15 15 15` 
 
 `mpirun thermal_conductivity -qg 30 30 30 --qg3ph 15 15 15 -qg4ph 4 4 4` 
 
@@ -379,7 +379,7 @@ and these are optional:
 
 ### Output files
 
-### `outfile.thermal_conductivity_4ph`
+### `outfile.kappa_kubo`
 
 This file contains the thermal conductivity tensor, with the decomposition from all contributions, in a format that can be parsed with tools such as numpy.
 It looks like this
@@ -402,7 +402,7 @@ It looks like this
 ```
 
 
-#### `outfile.grid_thermal_conductivity_4ph.hdf5`
+#### `outfile.grid_kubo.hdf5`
 
 This file contains nearly all quantities on the full q-grid.
 Below is a matlab snippet that plots a subset:

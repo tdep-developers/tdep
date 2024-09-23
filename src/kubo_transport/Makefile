@@ -1,5 +1,5 @@
 include Makefile.inc
-CODE = thermal_conductivity_4ph
+CODE = kubo_transport
 PROG = ../../build/$(CODE)/$(CODE)
 OBJECT_PATH=../../build/$(CODE)/
 
