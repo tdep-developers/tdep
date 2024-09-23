@@ -67,6 +67,7 @@ and the respective publications for the algorithms that were used:
 
 - Implementation: [O. Hellman and D.A. Broido, Phys. Rev. B **90**, 134309 (2014)](https://dx.doi.org/10.1103/physrevb.90.134309)
 - Fourth order contributions: [J. Klarbring *et al.*, Phys Rev Lett **125**, 045701 (2020)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.125.045701)
+- Off diagonal contributions: [Simoncelli, M. & Marzari, N. & Mauri, F. (2019), Nat. Phys. **15** 803-819](https://doi.org/10.1038/s41567-019-0520-x), [Isaeva, L & Barbalinardo, G. & Donadio, D. & Baroni, S., Nat. Comm. **10** 3853 (2019)](https://doi.org/10.1038/s41467-019-11572-4), [Fiorentino, A. & Baroni, S, Phys. Rev. B, **107**, 054311 (2023)](https://doi.org/10.1103/PhysRevB.107.054311)
 
 `lineshape`
 

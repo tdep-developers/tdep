@@ -741,7 +741,7 @@ $$
 $$
 
 where $\kappa_{\alpha\beta}^{\mathrm{BTE}}$ is the thermal conductivity from the previous section and $\kappa_{\alpha\beta}^{c}$ is the off-diagonal coherent contribution.
-This term is computed as
+This term is computed as (eq. 22-24 in [^Fiorentino2023])
 
 $$
 \begin{equation}

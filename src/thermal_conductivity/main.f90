@@ -326,6 +326,8 @@ finalize_and_write: block
         write (*, '(1X,A41,A43)') 'Iterative Boltzmann transport equation : ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
         write (*, '(1X,A41,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
         write (*, '(1X,A41,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+        write (*, '(1X,A41,A49)') '                                     ', 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
+        write (*, '(1X,A41,A52)') '                                     ', 'A. Fiorentino et al., Phys Rev B 107, 054311  (2023)'
 
         t0 = timer_init + timer_count + timer_matrixelements + timer_qs + timer_kappa + timer_scf + timer_cumulative
         write (*, *) ' '
