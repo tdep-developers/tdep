@@ -705,6 +705,7 @@ The Boltzmann equation only takes into account the relaxation of phonons from pe
 However, for systems with complex unit cell, a contribution stemming from coherence tunneling between different phonons ($\lambda \neq \lambda'$) can become important.
 This off-diagonal term can be introduced both by a formulation based on the Hardy current [^Isaeva2019] or a Wigner current [^Simoncelli2019], with very similar results[^Caldarelli2022].
 In TDEP, we use the formulation based on the Hardy heat current [^Isaeva2019]
+
 $$
 \begin{equation}
 J_\alpha = \frac{1}{V} \sum_{\lambda\lambda'} \frac{\omega_\lambda + \omega_{\lambda'}}{2} v_{\lambda\lambda'}^\alpha \hat{a}_\lambda^\dagger \hat{a}_{\lambda'} \delta_{q_{\lambda} q_{\lambda'}}
@@ -740,6 +741,7 @@ $$
 
 where $\kappa_{\alpha\beta}^{\mathrm{BTE}}$ is the thermal conductivity from the previous section and $\kappa_{\alpha\beta}^{{\rm c}}$ is the off-diagonal (coherences') contribution.
 This term is computed as (cf. Eq. 22-24 in [^Fiorentino2023])
+
 $$
 \begin{equation}
 \kappa_{\alpha\beta}^{{\rm c}} = \frac{1}{Vk_BT^2} \sum_{\lambda\lambda'\neq \lambda} c_{\lambda\lambda'} v_{\lambda\lambda'}^\alpha v_{\lambda\lambda'}^\beta \tau_{\lambda\lambda'} \delta_{q_\lambda q_{\lambda'}}
