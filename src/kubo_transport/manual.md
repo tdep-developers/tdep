@@ -62,6 +62,8 @@ $$
 \end{equation}
 $$
 
+Within this approximation, the phonon spectral function $\chi''(\Omega)$ reduces to a Lorentzian centered on $\omega_\lambda$ with a width of $\Gamma_\lambda$.
+
 The contribution to $\Gamma_\lambda$ given by third order interaction is written
 
 $$
@@ -73,7 +75,8 @@ $$
 \end{equation}
 $$
 
-where the sum is over momentum conserving processes, $\mathbf{q} + \mathbf{q}' + \mathbf{q}'' = \mathbf{G}$ and the three-phonon matrix elements are given by
+with $n_\lambda = (e^{\hbar\omega_\lambda / k_{\mathrm{B}}T} - 1)^{-1}$ the Bose-Einstein distribution of phonon $\lambda$.
+In this equation, the sum is over momentum conserving processes, $\mathbf{q} + \mathbf{q}' + \mathbf{q}'' = \mathbf{G}$ and the three-phonon matrix elements are given by
 
 $$
 \begin{equation}
@@ -236,7 +239,7 @@ Performing some Fourier transform, we can now express the integral in term of sp
 
 $$
 \begin{equation}
-\int_0^\infty dt \int_0^\beta d\lambda \langle A_{\lambda}(i\hbar\lambda) B_{\lambda'}(i\hbar\lambda) A_{\lambda''}(t) B_{\lambda'''}(t) \rangle \approx \int d\Omega \chi_{\lambda}''(\Omega) \chi_{\lambda'}''(\Omega) \Omega^2 n(\Omega) (n(\Omega) + 1)
+\int_0^\infty dt \int_0^\beta d\lambda \langle A_{\lambda}(i\hbar\lambda) B_{\lambda'}(i\hbar\lambda) A_{\lambda''}(t) B_{\lambda'''}(t) \rangle \approx \int_{-\infty}^{\infty} d\Omega \chi_{\lambda}''(\Omega) \chi_{\lambda'}''(\Omega) \Omega^2 n(\Omega) (n(\Omega) + 1)
 \end{equation}
 $$
 
@@ -249,7 +252,7 @@ $$
 \end{equation}
 $$
 
-with $c_\lambda = \omega_\lambda^2 n(\omega_\lambda) (n(\omega_\lambda) + 1) / k_{\mathrm{B}}T^2$ the modal heat capacity and
+with
 
 $$
 \begin{equation}

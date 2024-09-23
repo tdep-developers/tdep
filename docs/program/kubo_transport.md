@@ -280,7 +280,7 @@ This approximation consists in neglecting the collective phonon contribution to 
 It is important to note that while starting from differents considerations, this formulation and the Boltzmann equation [^peierls1929]<sup>,</sup>[^peierls1955quantum]<sup>,</sup>[^Broido2007]<sup>,</sup>[^Broido2005] are strictly equivalent [^Fiorentino2023].
 
 
-### The off-diagonal coherent contribution
+### The off-diagonal contribution
 
 The off diagonal heat tensor is written
 
@@ -387,18 +387,18 @@ It looks like this
 ```
 # Unit:               W/m/K
 # Temperature:          0.300000000000E+03
-# Single mode relaxation time approximation
+# Single mode approximation
 #                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
-        0.769173980296E+02       0.769173980296E+02       0.769173980296E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+        0.708649123335E+02       0.708649123335E+02       0.708649123335E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
 # Collective contribution
 #                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
-        0.222791455811E+01       0.222791455811E+01       0.222791455811E+01       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
-# Off diagonal coherent contribution
+        0.475409189194E+01       0.475409189194E+01       0.475409189194E+01       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+# Off diagonal (coherence) contribution
 #                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
-        0.323145325119E-02       0.323145325119E-02       0.323145325119E-02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+        0.854567548533E-03       0.854567548533E-03       0.854567548533E-03       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
 # Total thermal conductivity
 #                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
-        0.791485440410E+02       0.791485440410E+02       0.791485440410E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+        0.756198587929E+02       0.756198587929E+02       0.756198587929E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
 ```
 
 
