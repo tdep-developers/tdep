@@ -17,6 +17,8 @@ Briefly summarized, the package provides all the tools you need to build accurat
 
 - `thermal_conductivity`: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity.
 
+- `thermal_conductivity_4ph`: Compute thermal transport including third- and fourth-order anharmonicity.
+
 - `lineshape`: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone. The grid mode computes _spectral_ thermal transport properties as well.
 
 More details, examples, and theoretical background can be found in the [online documentation](https://tdep-developers.github.io/tdep/program). See [below](#how-to-cite) which references should be cited for which program.

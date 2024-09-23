@@ -9,6 +9,7 @@ lineshape/
 pack_simulation/
 phonon_dispersion_relations/
 thermal_conductivity/
+thermal_conductivity_4ph/
 phasespace_surface/
 "
 

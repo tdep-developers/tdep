@@ -145,7 +145,8 @@ $(OBJECT_PATH)type_forcemap_coefficient_quartet_12.o \
 $(OBJECT_PATH)type_forcemap_coefficient_diel.o \
 $(OBJECT_PATH)type_forcemap_returntensors.o \
 $(OBJECT_PATH)type_forcemap_io.o \
-$(OBJECT_PATH)type_lassosolvers.o
+$(OBJECT_PATH)type_lassosolvers.o\
+$(OBJECT_PATH)lo_fftgrid_helper.o
 # maybe CGAL, maybe not.
 ifeq ($(USECGAL),yes)
 OBJScg = \
@@ -913,6 +914,10 @@ $(OBJECT_PATH)ifc_solvers_fastugly.o:\
     $(OBJECT_PATH)ifc_solvers.o
 	$(FC) $(FFLAGS) -c ifc_solvers_fastugly.f90 -o $@
 
+$(OBJECT_PATH)lo_fftgrid_helper.o:\
+    $(OBJECT_PATH)konstanter.o\
+    $(OBJECT_PATH)lo_randomnumbers.o
+	$(FC) $(FFLAGS) -c lo_fftgrid_helper.f90 -o $@
 
 clean:
 	rm -rf $(OBJECT_PATH)*.o $(MODULE_PATH)*mod

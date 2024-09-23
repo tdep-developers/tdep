@@ -21,7 +21,8 @@ use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_qpointmesh, only: lo_qpoint, lo_qpoint_mesh, lo_monkhorst_pack_mesh, lo_wedge_mesh, lo_fft_mesh, &
                            lo_get_small_group_of_qpoint
-use type_symmetryoperation, only: lo_eigenvector_transformation_matrix, lo_operate_on_vector, lo_expandoperation_pair
+use type_symmetryoperation, only: lo_eigenvector_transformation_matrix, lo_operate_on_vector, &
+                                  lo_expandoperation_pair, lo_operate_on_secondorder_tensor
 use hdf5_wrappers, only: lo_hdf5_helper
 
 implicit none
@@ -49,6 +50,12 @@ type lo_phonon_dispersions_qpoint
     real(r8), dimension(:), allocatable :: p_minus
     !> isotope scattering rate
     real(r8), dimension(:), allocatable :: p_iso
+    !> plus plus scattering rate
+    real(r8), dimension(:), allocatable :: p_plusplus
+    !> plus minus scattering rate
+    real(r8), dimension(:), allocatable :: p_plusminus
+    !> minus minus scattering rate
+    real(r8), dimension(:), allocatable :: p_minusminus
     !> QS parameter for thermal conductivity
     real(r8), dimension(:), allocatable :: qs
     !> Helper for thermal conductivity
@@ -329,6 +336,7 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
     real(r8), dimension(:, :, :, :), allocatable :: dddd
     real(r8), dimension(:, :, :), allocatable :: ddd
     real(r8), dimension(:, :), allocatable :: dd
+    real(r8), dimension(3, 3) :: v2
     real(r8), dimension(3) :: v0, v1
     real(r8) :: n1, n, f0, omega, cv, tau
     integer :: i, j, k, l
@@ -1205,6 +1213,9 @@ function phonon_dispersions_qpoint_size_in_mem(p) result(mem)
     if (allocated(p%p_plus)) mem = mem + storage_size(p%p_plus)*size(p%p_plus)
     if (allocated(p%p_minus)) mem = mem + storage_size(p%p_minus)*size(p%p_minus)
     if (allocated(p%p_iso)) mem = mem + storage_size(p%p_iso)*size(p%p_iso)
+    if (allocated(p%p_plusplus)) mem = mem + storage_size(p%p_plusplus)*size(p%p_plusplus)
+    if (allocated(p%p_plusminus)) mem = mem + storage_size(p%p_plusminus)*size(p%p_plusminus)
+    if (allocated(p%p_minusminus)) mem = mem + storage_size(p%p_minusminus)*size(p%p_minusminus)
     if (allocated(p%qs)) mem = mem + storage_size(p%qs)*size(p%qs)
     if (allocated(p%F0)) mem = mem + storage_size(p%F0)*size(p%F0)
     if (allocated(p%Fn)) mem = mem + storage_size(p%Fn)*size(p%Fn)
