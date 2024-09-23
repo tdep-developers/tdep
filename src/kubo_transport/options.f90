@@ -180,6 +180,11 @@ subroutine parse(opts)
     ! Get things to atomic units
     opts%mfp_max = opts%mfp_max*lo_m_to_Bohr
 
+    if (maxval(opts%qg4ph) .gt. 0 .and. .not. opts%fourthorder) then
+        write(*, *) 'You have to enable fourthorder to use a fourth order Monte-Carlo grid, stopping calculation.'
+        stop
+    end if
+
     ! Set automatic values for Monte-Carlo grids
     if (opts%thirdorder) then
         do i = 1, 3
