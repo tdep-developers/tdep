@@ -266,7 +266,7 @@ getkappa: block
             write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
             m0 = kappa_offdiag*lo_kappa_au_to_SI
-            write (*, "(1X,A36)") 'Off diagonal (coherent) contribution'
+            write (*, "(1X,A)") "Off-diagonal (coherences') contribution"
             write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
             write (*, "(5X,6(1X,F14.4),2X,E10.3)") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
             m0 = (kappa + kappa_offdiag)*lo_kappa_au_to_SI
@@ -320,12 +320,14 @@ finalize_and_write: block
     ! Print timings
     if (mw%talk) then
         write (*, *) ''
-        write (*, '(1X,A21)') 'Suggested citations :'
-        write (*, '(1X,A41,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
-        write (*, '(1X,A41,A53)') 'Method : ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
-        write (*, '(1X,A41,A43)') 'Iterative Boltzmann transport equation : ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
-        write (*, '(1X,A41,A49)') 'Algorithm : ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
-        write (*, '(1X,A41,A43)') 'Off diagonal coherent contribution : ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+        write (*, '(1X,A)') 'SUGGESTED CITATIONS:'
+        write (*, '(1X,A41,A)') 'Software: ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
+        write (*, '(1X,A41,A)') 'Method: ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
+        write (*, '(1X,A41,A)') 'Iterative Boltzmann transport equation: ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
+        write (*, '(1X,A41,A)') 'Algorithm: ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
+        write (*, '(1X,A41,A)') "Off-diagonal (coherences') contribution: ", 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
+        write (*, '(1X,A41,A)') '                                         ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
+        write (*, '(1X,A41,A)') '                                         ', 'A. Fiorentino et al., Phys Rev B 107, 054311  (2023)'
 
         t0 = timer_init + timer_count + timer_matrixelements + timer_qs + timer_kappa + timer_scf + timer_cumulative
         write (*, *) ' '
