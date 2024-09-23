@@ -1,7 +1,7 @@
 
 ### Short description
 
-Calculates the lattice thermal conductivity in the Green-Kubo formalism, including collective contribution and off-diagonal coherent term up to fourth-order interactions.
+Calculates the lattice thermal conductivity in the Green-Kubo formalism, including collective and off-diagonal contributions up to fourth-order interactions.
 
 ### Command line options:
 
