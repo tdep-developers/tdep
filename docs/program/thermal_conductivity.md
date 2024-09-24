@@ -48,7 +48,7 @@ Optional switches:
 
 * `--max_mfp value`  
     default value -1  
-    Add a limit on the mean free path as an approximation of domain size.
+    Add a limit on the mean free path as an approximation of domain size (in m).
 
 * `--dumpgrid`  
     default value .false.  
