@@ -156,7 +156,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         integer :: j, k, i2
 
         ! Let's average the off diagonal term
-        allq2: do q2 = 1, qp%n_full_point
+        allq2: do qi = 1, mcg%npoints
+            q2 = qgridfull(qi)
             buf_xi = 0.0_r8
             nn = 0
             ! First we get the average value
