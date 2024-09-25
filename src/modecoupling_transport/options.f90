@@ -47,16 +47,16 @@ subroutine parse(opts)
     integer :: i
 
     ! basic info
-    call cli%init(progname='kubo_transport', &
+    call cli%init(progname='modecoupling_transport', &
                   authors=lo_author, &
                   version=lo_version, &
                   license=lo_licence, &
                   help='Usage: ', &
                   description='Calculates the lattice thermal conductivity in the&
-                              & Green-Kubo formalism, including collective and off-diagonal&
+                              & mode-coupling formalism, including collective and off-diagonal&
                               & contributions up to fourth-order interactions.',&
-                  examples=["mpirun kubo_transport --temperature 300                        ", &
-                            "mpirun kubo_transport --fourthorder  -qg 30 30 30 -qg4ph 4 4 4 "], &
+                  examples=["mpirun modecoupling_transport --temperature 300                        ", &
+                            "mpirun modecoupling_transport --fourthorder  -qg 30 30 30 -qg4ph 4 4 4 "], &
                   epilog=new_line('a')//"...")
     ! real options
     call cli%add(switch='--readiso', &

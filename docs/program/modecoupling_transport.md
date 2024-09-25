@@ -1,7 +1,7 @@
 
 ### Short description
 
-Calculates the lattice thermal conductivity in the Green-Kubo formalism, including collective and off-diagonal contributions up to fourth-order interactions.
+Calculates the lattice thermal conductivity in the mode-coupling formalism, including collective and off-diagonal contributions up to fourth-order interactions.
 
 ### Command line options:
 
@@ -65,9 +65,9 @@ Optional switches:
     Print version
 ### Examples
 
-`mpirun kubo_transport --temperature 300` 
+`mpirun modecoupling_transport --temperature 300` 
 
-`mpirun kubo_transport -qg 30 30 30 --temperature 300 -qg3ph 15 15 15` 
+`mpirun modecoupling_transport -qg 30 30 30 --temperature 300 -qg3ph 15 15 15` 
 
 `mpirun thermal_conductivity -qg 30 30 30 --qg3ph 15 15 15 -qg4ph 4 4 4` 
 

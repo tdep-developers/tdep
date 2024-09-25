@@ -1,5 +1,5 @@
 include Makefile.inc
-CODE = kubo_transport
+CODE = modecoupling_transport
 PROG = ../../build/$(CODE)/$(CODE)
 OBJECT_PATH=../../build/$(CODE)/
 

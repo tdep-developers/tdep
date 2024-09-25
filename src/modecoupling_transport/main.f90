@@ -1,5 +1,5 @@
 #include "precompilerdefinitions"
-program kubo_transport
+program modecoupling_transport
 use konstanter, only: r8, lo_temperaturetol, lo_status, lo_kappa_au_to_SI, lo_freqtol, lo_m_to_Bohr, lo_emu_to_amu
 use gottochblandat, only: walltime, tochar, open_file
 use mpi_wrappers, only: lo_mpi_helper
@@ -227,7 +227,7 @@ kappa: block
     call tmr_kappa%stop()
     if (mw%talk) then
         ! First we write in the standard output
-        u = open_file('out', 'outfile.kappa_kubo')
+        u = open_file('out', 'outfile.kappa_modecoupling')
         write (u, '(A2,A5,15X,A)') '# ', 'Unit:', 'W/m/K'
         write (u, '(A2,A12,8X,E20.12)') '# ', 'Temperature:', opts%temperature
 
@@ -292,16 +292,17 @@ finalize_and_write: block
     if (mw%talk) then
         write (*, *) ''
         write (*, *) '... dumping auxiliary data to files'
-        call dr%write_to_hdf5(qp, uc, 'outfile.grid_kubo.hdf5', mem, opts%temperature)
+        call dr%write_to_hdf5(qp, uc, 'outfile.grid_modecoupling.hdf5', mem, opts%temperature)
 
         write (*, *) ''
-        write (*, '(A61,A)') 'Scattering rates can be found in                             ', 'outfile.grid_kubo.hdf5'
-        write (*, '(A61,A)') 'Thermal conductivity tensor can be found in                  ', 'outfile.kappa_kubo'
+        write (*, '(A,A)') 'Scattering rates can be found in               ', 'outfile.grid_modecoupling.hdf5'
+        write (*, '(A,A)') 'Thermal conductivity tensor can be found in    ', 'outfile.kappa_modecoupling'
 
         ! Print timings
         write (*, *) ''
         write (*, '(1X,A21)') 'Suggested citations :'
         write (*, '(1X,A41,A56)') 'Software : ', 'F. Knoop et al., J. Open Source Softw 9(94), 6150 (2024)'
+        write (*, '(1X,A41,A52)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23), (2023)'
         write (*, '(1X,A41,A33)') 'Theory and algorithm : ', 'A. Castellano et al, ArXiv (2024)'
     end if
     call tmr_tot%tock('io')

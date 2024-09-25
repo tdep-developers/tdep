@@ -9,7 +9,7 @@ lineshape/
 pack_simulation/
 phonon_dispersion_relations/
 thermal_conductivity/
-kubo_transport/
+modecoupling_transport/
 phasespace_surface/
 "
 
