@@ -310,6 +310,7 @@ end if
 
 ! Print some file and wrap it up
 wrapup: block
+    character(len=1000) :: buf
     ! Write everything on the grid to file, for some inexplicable reason.
     if (opts%dumpgrid) then
         ! small sanity check
@@ -322,8 +323,13 @@ wrapup: block
         end if
         ! actually write it
         if (mw%talk) then
-            call dr%write_to_hdf5(qp, uc, 'outfile.grid_dispersions.hdf5', mem)
-            write (*, *) '... wrote data for the full grid'
+            buf = 'outfile.grid_dispersions_irreducible.hdf5'
+            call dr%write_irreducible_to_hdf5(qp, uc, trim(buf), mem)
+            write (*, *) "... wrote data for the irreducible grid to '", trim(buf), "'"
+
+            buf = 'outfile.grid_dispersions.hdf5'
+            call dr%write_to_hdf5(qp, uc, trim(buf), mem)
+            write (*, *) "... wrote data for the full grid to        '", trim(buf), "'"
         end if
     end if
 
