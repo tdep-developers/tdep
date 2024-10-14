@@ -363,7 +363,7 @@ contains
 end subroutine
 
 !> use the harmonic model to initialize a cell
-module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
+module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert, imaginary)
     !> force constant for this (super) cell
     class(lo_forceconstant_secondorder), intent(inout) :: fcss
     !> supercell to be thermally populated
@@ -388,7 +388,10 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
     integer, intent(in), optional :: imode
     !> use negative mode amplitude so that u_i = \sum_s -Q_s X_si)
     logical, intent(in), optional :: invert
+    !> displace imaginary modes instead of discarding
+    logical, intent(in), optional :: imaginary
     real(r8) :: inv_prefactor
+    logical :: imaginary_
 
     ! Not sure about save attribute here.
     type(lo_mersennetwister), save :: tw
@@ -400,6 +403,12 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
         if (.not. invert) then
             inv_prefactor = -1.0_r8
         end if
+    end if
+
+    if (present(imaginary)) then
+        imaginary_ = imaginary
+    else
+        imaginary_ = .false.
     end if
 
     init: block
@@ -435,13 +444,21 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
         ! Set the amplitudes
         setamplitude: block
             integer :: i
+            real(r8) :: omega_tmp
+
             do i = 1, fcss%na*3
-                if (fcss%omega(i) .gt. lo_freqtol) then
+                if (imaginary_) then
+                    ! imaginary modes are supposed to be displaced instead of frozen
+                    omega_tmp = abs(fcss%omega(i))
+                else
+                    omega_tmp = fcss%omega(i)
+                end if
+                if (omega_tmp .gt. lo_freqtol) then
                     ! Choose quantum or classical statistics
                     if (quantum) then
-                        fcss%amplitudes(i) = sqrt((2*lo_planck(temperature, fcss%omega(i)) + 1)*0.5_r8/fcss%omega(i))
+                        fcss%amplitudes(i) = sqrt((2*lo_planck(temperature, omega_tmp) + 1)*0.5_r8/omega_tmp)
                     else
-                        fcss%amplitudes(i) = sqrt(lo_kb_hartree*temperature)/fcss%omega(i)
+                        fcss%amplitudes(i) = sqrt(lo_kb_hartree*temperature)/omega_tmp
                     end if
                 else
                     ! set to zero for acoustic modes
@@ -474,7 +491,7 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
                 do j = 1, 3
                     l = l + 1
                     ss%u(j, a1) = +fcss%amplitudes(imode)*ss%invsqrtmass(a1)*fcss%eigenvectors(l, imode)
-                    ss%v(j, a1) = -fcss%amplitudes(imode)*ss%invsqrtmass(a1)*fcss%eigenvectors(l, imode)*fcss%omega(imode)
+                    ss%v(j, a1) = -fcss%amplitudes(imode)*ss%invsqrtmass(a1)*fcss%eigenvectors(l, imode)*abs(fcss%omega(imode))
                 end do
                 end do
             else
@@ -487,7 +504,7 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
                         do j = 1, 3
                             l = l + 1
                             ss%u(j, a1) = ss%u(j, a1) + fcss%amplitudes(i)*ss%invsqrtmass(a1)*x1*fcss%eigenvectors(l, i)
-                            ss%v(j, a1) = ss%v(j, a1) - fcss%amplitudes(i)*ss%invsqrtmass(a1)*x2*fcss%eigenvectors(l, i)*fcss%omega(i)
+                            ss%v(j, a1) = ss%v(j, a1) - fcss%amplitudes(i)*ss%invsqrtmass(a1)*x2*fcss%eigenvectors(l, i)*abs(fcss%omega(i))
                         end do
                         end do
                     end do modeloop
