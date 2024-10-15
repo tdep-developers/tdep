@@ -33,8 +33,8 @@ nav:
     - Canonical configuration: program/canonical_configuration.md
     - Extract forceconstants: program/extract_forceconstants.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
+    - Thermal conductivity 2023: program/thermal_conductivity_2023.md
     - Thermal conductivity: program/thermal_conductivity.md
-    - Mode coupling transport: program/modecoupling_transport.md
     - Lineshape: program/lineshape.md
     - Anharmonic free energy: program/anharmonic_free_energy.md
     - Atomic distribution: program/atomic_distribution.md

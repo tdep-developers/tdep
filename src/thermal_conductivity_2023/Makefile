@@ -1,13 +1,15 @@
 include Makefile.inc
-CODE = modecoupling_transport
+CODE = thermal_conductivity_2023
 PROG = ../../build/$(CODE)/$(CODE)
 OBJECT_PATH=../../build/$(CODE)/
 
 OBJS = \
 $(OBJECT_PATH)main.o\
 $(OBJECT_PATH)options.o\
-$(OBJECT_PATH)scattering.o\
-$(OBJECT_PATH)kappa.o\
+$(OBJECT_PATH)scatteringstrengths.o\
+$(OBJECT_PATH)pbe.o\
+$(OBJECT_PATH)phononevents.o\
+$(OBJECT_PATH)mfp.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHmpi) $(incLPATHhdf)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHmpi) $(incIPATHhdf)
@@ -15,7 +17,7 @@ LIBS = -lolle -lflap $(blaslapackLIBS) $(incLIBSmpi) $(incLIBShdf)
 
 #OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
-F90FLAGS = $(OPT) $(MODS) $(LIBS)
+F90FLAGS = $(OPT) $(MODS) $(LIBS) 
 
 all: $(PROG)
 
@@ -27,14 +29,19 @@ clean:
 
 $(OBJECT_PATH)main.o: \
 $(OBJECT_PATH)options.o\
-$(OBJECT_PATH)scattering.o\
-$(OBJECT_PATH)kappa.o
+$(OBJECT_PATH)scatteringstrengths.o\
+$(OBJECT_PATH)pbe.o\
+$(OBJECT_PATH)phononevents.o\
+$(OBJECT_PATH)mfp.o
 	$(F90) $(OPT) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
-$(OBJECT_PATH)scattering.o:
-	$(F90) $(OPT) $(F90FLAGS) -c scattering.f90 $(LIBS) -o $@
-$(OBJECT_PATH)kappa.o:\
-	kappa.f90\
-	$(OBJECT_PATH)scattering.o
-	$(F90) $(OPT) $(F90FLAGS) -c kappa.f90 $(LIBS) -o $@
+$(OBJECT_PATH)scatteringstrengths.o: $(OBJECT_PATH)phononevents.o
+	$(F90) $(OPT) $(F90FLAGS) -c scatteringstrengths.f90 $(LIBS) -o $@
+$(OBJECT_PATH)pbe.o: $(OBJECT_PATH)phononevents.o
+	$(F90) $(OPT) $(F90FLAGS) -c pbe.f90 $(LIBS) -o $@
+$(OBJECT_PATH)phononevents.o:
+	$(F90) $(OPT) $(F90FLAGS) -c phononevents.f90 $(LIBS) -o $@
+$(OBJECT_PATH)mfp.o: 
+	$(F90) $(OPT) $(F90FLAGS) -c mfp.f90 $(LIBS) -o $@
 $(OBJECT_PATH)options.o:
 	$(F90) $(OPT) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
+
