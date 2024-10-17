@@ -11,6 +11,7 @@ use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_jij_secondorder, only: lo_jij_secondorder
 use type_mdsim, only: lo_mdsim
+use lo_randomnumbers, only: lo_mersennetwister
 
 use options, only: lo_opts
 use semirandom, only: generate_semirandom_configurations
@@ -23,19 +24,31 @@ type(lo_jij_secondorder) :: jij
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 integer, dimension(:), allocatable :: alloy_permutation
+type(lo_mersennetwister), save :: tw
 
 ! Get the necessary things first
 init: block
+    real(r8) :: seed
     ! Get CLI options
     call opts%parse()
     call mw%init()
     call mem%init()
     if (.not. mw%talk) opts%verbosity = -100
 
+    ! initialize random numbers
+    if (opts%seed < 0) then
+        seed = walltime()
+    else
+        ! use inverse of seed because integer part is ignored in lo_randomnumbers.f90
+        seed = 1.0_r8/float(opts%seed)
+    end if
+    if (mw%talk) print *, '... RANDOM SEED : ', opts%seed
+    call tw%init(iseed=mw%r, rseed=seed)
+
     ! Just make sure no clever person starts running this in parallel.
-    ! if ( mw%n .gt. 1 ) then
-    !     call lo_stop_gracefully(['Do not run this in parallel.'],lo_exitcode_param,__FILE__,__LINE__)
-    ! endif
+    if (mw%n .gt. 1) then
+        call lo_stop_gracefully(['Do not run this in parallel.'], lo_exitcode_param, __FILE__, __LINE__)
+    end if
 
     ! Read structures
     if (mw%talk) write (*, *) '... reading infiles'
@@ -188,9 +201,9 @@ dumpconf: block
             else
                 invert = .false.
             end if
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert, tw=tw)
         else
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, tw=tw)
         end if
 
         ! dump to file
