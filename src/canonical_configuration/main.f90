@@ -37,12 +37,18 @@ init: block
 
     ! initialize random numbers
     if (opts%seed < 0) then
+        ! fully random
         seed = walltime()
+        if (mw%talk) print *, '... walltime() used to initialize random state'
     else
         ! use inverse of seed because integer part is ignored in lo_randomnumbers.f90
-        seed = 1.0_r8/float(opts%seed)
+        if (mw%talk) print *, '... RANDOM SEED: ', opts%seed
+        if (opts%seed == 0) then
+            seed = 0.0_r8
+        else
+            seed = 1.0_r8/float(opts%seed)
+        end if
     end if
-    if (mw%talk) print *, '... RANDOM SEED : ', opts%seed
     call tw%init(iseed=mw%r, rseed=seed)
 
     ! Just make sure no clever person starts running this in parallel.
