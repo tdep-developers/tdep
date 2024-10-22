@@ -134,7 +134,11 @@ if (opts%modes) then
     if (mw%talk) write (*, '(1X,A,I5,A)') '--> ', opts%nconf, ' structures'
 end if
 
-write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)'
+if (opts%modes) then
+    write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)         frequency(THz)'
+else
+    write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)'
+end if
 dumpconf: block
     type(lo_mdsim) :: sim
     type(lo_crystalstructure) :: p
@@ -291,8 +295,15 @@ dumpconf: block
         else
             invert_char = '+'
         end if
-        write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8)") iconf, invert_char, &
-            ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
+        if (opts%modes) then
+            write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8,2X,F10.3)") iconf, invert_char, &
+                ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, &
+                avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf, fcss%omega(imode)*lo_frequency_Hartree_to_THz
+        else
+            write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8)") iconf, invert_char, &
+                ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, &
+                avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
+        end if
     end do
 
     ! And, at the end, maybe dump the fake simulation
