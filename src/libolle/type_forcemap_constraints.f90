@@ -198,7 +198,6 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotation
     dum_rhs=0.0_r8
 
     atomloop: do a1 = 1, map%n_atom_uc
-        dumeq_rot = 0.0_r8
         pairloop: do ipair = 1, map%xuc%n_fc_pair
             if (map%xuc%fc_pair(ipair)%selfterm) cycle pairloop
             if (map%xuc%fc_pair(ipair)%i1 .ne. a1) cycle pairloop
