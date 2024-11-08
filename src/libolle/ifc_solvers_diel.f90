@@ -154,7 +154,6 @@ module subroutine lsq_solve_diel(dh, tp, map, uc, ss, mw, mem, verbosity)
                 coeff = 0.0_r8
                 call lo_coeffmatrix_unitcell_Z_singlet(map, coeff)
                 call dh%ew%set(uc, eps, 2, 1E-20_r8, verbosity)
-                call dh%ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeff, eps, uc, verbosity)
                 call mem%deallocate(coeff, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             end if
             call asc%destroy()
@@ -243,7 +242,7 @@ module subroutine lsq_solve_diel(dh, tp, map, uc, ss, mw, mem, verbosity)
             call asc%generate(dh%cm_Z3, dh%Z3, tp%nt*map%n_atom_ss*9, map%xuc%nx_Z_triplet, mw, noscale=.true.)
             if (mw%r .eq. solrnk) then
                 call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_Z_triplet, map%constraints%eqz3, map%constraints%neqz3, gramified=.true.)
+                    asc%ATA, asc%ATB, map%xuc%x_Z_triplet, map%constraints%eqz3, map%constraints%dz, map%constraints%neqz3, gramified=.true.)
             end if
             call mw%bcast(map%xuc%x_Z_triplet, solrnk, __FILE__, __LINE__)
 
@@ -253,7 +252,7 @@ module subroutine lsq_solve_diel(dh, tp, map, uc, ss, mw, mem, verbosity)
                 call asc%generate(wA, wB, nrow, map%xuc%nx_Z_triplet, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, dh%dx_Z3(:, div), map%constraints%eqz3, map%constraints%neqz3, gramified=.true.)
+                        asc%ATA, asc%ATB, dh%dx_Z3(:, div), map%constraints%eqz3, map%constraints%dz, map%constraints%neqz3, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
@@ -454,9 +453,9 @@ module subroutine lo_solve_for_borncharges(map, p, Z, eps, filename, mw, mem, ve
             solveZ: block
                 type(lo_ewald_parameters) :: ew
                 real(r8), dimension(:, :), allocatable :: zM, coeffM
-                real(r8), dimension(:, :), allocatable :: constraintM
+                !real(r8), dimension(:, :), allocatable :: constraintM
                 real(r8), dimension(:), allocatable :: c, d
-                integer :: a1, i, n_constraint
+                integer :: a1, i !, n_constraint
 
                 call mem%allocate(coeffM, [9*map%n_atom_uc, map%xuc%nx_Z_singlet], &
                                   persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -468,7 +467,7 @@ module subroutine lo_solve_for_borncharges(map, p, Z, eps, filename, mw, mem, ve
                 do a1 = 1, map%n_atom_uc
                     zM((a1 - 1)*9 + 1:a1*9, 1) = lo_flattentensor(zbuf(:, :, a1))
                 end do
-                call lo_constraintmatrix_unitcell_Z_singlet(map, n_constraint, constraintM, mem)
+                !call lo_constraintmatrix_unitcell_Z_singlet(map, n_constraint, constraintM, mem)
 
                 ! fkdev: disable rotational for now, they break too much
                 call lo_dgelss(coeffM, zM, info=i)
@@ -493,13 +492,11 @@ module subroutine lo_solve_for_borncharges(map, p, Z, eps, filename, mw, mem, ve
 
                 if (verbosity .gt. 0) write (lo_iou, *) '... got Born effective charges'
 
-!write(*,*) 'constr err:',matmul(constraintM,matmul(coeffM,map%xuc%x_Z_singlet))
-
                 ! Make sure it's hermitian? Seems like the sensible thing to do.
-                call lo_coeffmatrix_unitcell_Z_singlet(map, coeffM)
+                !call lo_coeffmatrix_unitcell_Z_singlet(map, coeffM)
 
-                call ew%set(p, epsbuf, 2, 1E-20_r8, verbosity)
-                call ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeffM, epsbuf, p, verbosity)
+                !call ew%set(p, epsbuf, 2, 1E-20_r8, verbosity)
+                !call ew%force_borncharges_Hermitian(map%xuc%x_Z_singlet, coeffM, epsbuf, p, verbosity)
 
                 ! cleanup
                 call mem%deallocate(coeffM, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

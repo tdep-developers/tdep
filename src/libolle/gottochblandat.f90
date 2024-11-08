@@ -468,11 +468,12 @@ interface
 #endif
         real(flyt), dimension(:,:), intent(out) :: tm
     end subroutine
-    module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tolerance,subset,weights,gramified)
+    module subroutine lo_linear_least_squares(A,B,x,constraint_C,constraint_D,nconstraints,tolerance,subset,weights,gramified)
         real(flyt), dimension(:,:), intent(in) :: A
         real(flyt), dimension(:), intent(in) :: B
         real(flyt), dimension(:), intent(out) :: x
-        real(flyt), dimension(:,:), intent(in), optional :: zeroconstraints
+        real(flyt), dimension(:,:), intent(in), optional :: constraint_C
+        real(flyt), dimension(:), intent(in), optional :: constraint_D
         integer, intent(in), optional :: nconstraints
         real(flyt), intent(in), optional :: tolerance
         integer, intent(in), dimension(:), optional :: subset
@@ -1540,10 +1541,6 @@ subroutine lo_stop_gracefully(msg,exitcode,filename,line)
         write(*,*) 'exit code 6: I/O error'
     case(7)
         write(*,*) 'exit code 7: MPI error'
-    case(8)
-        write(*,*) 'exit code 8: Feature removed'
-    case(9)
-        write(*,*) 'exit code 9: Bad inputs.'
     end select
     write(*,*) ''
     do i=1,size(msg)

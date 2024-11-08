@@ -179,7 +179,7 @@ subroutine calculate_everything(uc, bs, dr, pd, qp, fc, mw, mem)
     end if
 
     ! Elastic constants?
-    call fc%get_elastic_constants(uc)
+    call fc%get_elastic_constants(uc,mw,-1)
     if (mw%talk) then
         call lo_h5_store_data(fc%elastic_constants_voigt*lo_pressure_HartreeBohr_to_GPa, &
                               file_id, 'elastic_constants', lo_status, enhet='GPa')

@@ -475,7 +475,6 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
 
         ! Sanity check
         f0 = sum(abs(selfterm))
-
         ! And adjust with the ASR correction
         if (nq .gt. 0) then
             do q = 1, nq
@@ -573,10 +572,10 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
         if (mw%r .eq. solrnk) then
             if (fixsym) then
                 call lo_linear_least_squares( &
-                    ATA, ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%neq2, gramified=.true.)
+                    ATA, ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, gramified=.true.)
             else
                 call lo_linear_least_squares( &
-                    ATA, ATB, map%xuc%x_fc_pair, map%constraints%eq2, 0, gramified=.true.)
+                    ATA, ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%d2,  0, gramified=.true.)
             end if
         end if
         call mw%bcast(map%xuc%x_fc_pair, solrnk)
@@ -611,14 +610,13 @@ subroutine lo_dynamical_matrix_coefficient_matrix_for_single_q(map, qv, coeffici
     complex(r8) :: expiqr
     real(r8) :: k_dot_r
     integer :: i, j, k, l, ii, jj, sh, o, a1, a2, ipair
-    integer :: nx, nd, na, nfc
+    integer :: nx, na, nfc
 
     ! Size of things
     na = map%n_atom_uc         ! number of atoms
-    nd = 3*3*na*na             ! flat dimensions of dynamical matrix
     nx = map%xuc%nx_fc_pair    ! dimensions of irreducible IFC
 
-    if (size(coefficientmatrix, 1) .ne. nd) then
+    if (size(coefficientmatrix, 1) .ne. 3*3*na*na ) then
         write (*, *) 'bad dimensions in dynmatrixcoeffM'
         stop
     end if
