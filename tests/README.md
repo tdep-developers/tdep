@@ -53,4 +53,4 @@ Were created with TDEP commit `8c01e0343e4098f1d160efc141f8af6ae7f54941` on a ma
 
 ## Optional tests
 
-There are optinal tests in `./optional`. The test mechanism to test these optional binaries is the same.
+There are optional tests in `./optional` for binaries that require extra steps to compile. These tests are ignored per default. The test mechanism to test these optional binaries is the same.
