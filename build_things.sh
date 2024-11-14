@@ -129,6 +129,47 @@ LDFLAGS =\$(incLPATHcgal) \$(incIPATHcgal) ${CGALLINKLINE}
 EOF
 fi
 
+
+# which codes should be compiled
+listofcodes="
+dump_dynamical_matrices
+phonon_dispersion_relations
+crystal_structure_info
+generate_structure
+canonical_configuration
+lineshape
+samples_from_md
+extract_forceconstants
+atomic_distribution
+pack_simulation
+refine_structure
+thermal_conductivity
+anharmonic_free_energy
+"
+
+# only when we have cgal
+if [ ${USECGAL} == "yes" ]
+then
+    echo "CGAL used, compile 'phasespace_surface'"
+    listofcodes="
+    ${listofcodes}
+    phasespace_surface
+    "
+fi
+
+echo ""
+echo "Compile following codes:"
+for code in ${listofcodes}
+do
+	echo $code
+done
+
+#some things that are not quite ok yet
+notdone="
+generate_kpoints
+"
+
+# start with the library
 # a place to put all the .o and .mod files in, to not make the source messy
 [ -d ../../build/libolle ] || mkdir ../../build/libolle
 # and somewhere for the .mod files
@@ -171,28 +212,7 @@ cd src/libflap
     fi
 cd ../../
 
-# now I should build a lot of codes. If we made it this far, it should be easy.
-listofcodes="
-dump_dynamical_matrices
-phonon_dispersion_relations
-crystal_structure_info
-generate_structure
-canonical_configuration
-lineshape
-samples_from_md
-extract_forceconstants
-atomic_distribution
-pack_simulation
-refine_structure
-thermal_conductivity
-anharmonic_free_energy
-phasespace_surface
-"
 
-#some things that are not quite ok yet
-notdone="
-generate_kpoints
-"
 
 # go through them and compile
 for code in ${listofcodes}
@@ -226,6 +246,7 @@ do
 done
 
 basedir=`pwd`
+tdep_bin_dir=${basedir}/bin
 
 echo " "
 echo "Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely"
@@ -233,6 +254,7 @@ echo "Printing bashrc_tdep, append these lines to your .bashrc for stuff to work
 cat>bashrc_tdep<<EOF
 MANPATH=\$MANPATH:${basedir}/man
 PATH=\$PATH:${basedir}/bin
+TDEP_BIN_DIR=${tdep_bin_dir}
 export MANPATH
 export PATH
 alias gnuplot='gnuplot -persist'

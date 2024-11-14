@@ -1,15 +1,15 @@
 Test suite
 ===
 
-## Run binaries and create test files
+## Create test files for all binaries
 
 ```bash
 make testfiles
 ```
 
-will run the TDEP binaries **from your current PATH** and create their output.
+will run each TDEP binary from the most recent TDEP build in `../bin` in the specific folder, and create the corresponding output. Your `PATH` is modified by `00-set_path.sh` to make sure that you are not accidentally running binaries from a previous TDEP build.
 
-## Run tests
+## Check all outputs
 
 To check the files that were created against reference data, please run
 
@@ -50,3 +50,7 @@ Were created with TDEP commit `8c01e0343e4098f1d160efc141f8af6ae7f54941` on a ma
   ```
 
   hint towards compatibility issues in your python environment. **They are unrelated to TDEP.**
+
+## Optional tests
+
+There are optinal tests in `./optional`. The test mechanism to test these optional binaries is the same.
