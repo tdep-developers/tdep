@@ -10,13 +10,17 @@ pack_simulation/
 phonon_dispersion_relations/
 thermal_conductivity_2023/
 thermal_conductivity/
-phasespace_surface/
 "
+
+echo "RUN TESTS"
+
+source 00-set_path.sh
 
 for folder in ${folders}
 do
-        export PATH="../../bin/:$PATH"
+	echo "RUN ${folder}"
 	pushd $folder
 	make testfiles
 	popd
+	echo
 done

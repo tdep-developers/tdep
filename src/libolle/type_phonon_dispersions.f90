@@ -140,6 +140,8 @@ contains
     procedure :: thermal_displacement_matrix
     !> store the full grid in a hdf file
     procedure :: write_to_hdf5
+    !> store the irreducible grid in a hdf5 file
+    procedure :: write_irreducible_to_hdf5
     !> make sure things that are supposed to be degenerate really are
     procedure :: enforce_degeneracy
     !> communication helper
@@ -633,6 +635,109 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
         call h5%store_data(dd, h5%file_id, trim(dname), enhet='J/K', dimensions='q-vector,mode')
         call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end if
+
+    call h5%close_file()
+    call h5%destroy(__FILE__, __LINE__)
+end subroutine
+
+!> write the dispersion on the irreducible mesh to a hdf5 file
+subroutine write_irreducible_to_hdf5(dr, qp, uc, filename, mem)
+    !> phonon dispersions
+    class(lo_phonon_dispersions), intent(in) :: dr
+    !> q-point mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> crystal structure
+    type(lo_crystalstructure), intent(in) :: uc
+    !> filename
+    character(len=*), intent(in) :: filename
+    !> memory tracker
+    type(lo_mem_helper), intent(inout) :: mem
+
+    type(lo_hdf5_helper) :: h5
+    real(r8), dimension(:, :, :, :), allocatable :: dddd
+    real(r8), dimension(:, :, :), allocatable :: ddd
+    real(r8), dimension(:, :), allocatable :: dd
+    real(r8), dimension(:), allocatable :: di
+    real(r8), dimension(3) :: v0, v1
+    real(r8) :: n1, n, f0, omega, cv, tau
+    integer :: i, j, k, l
+    character(len=1000) :: dname
+
+    call h5%init(__FILE__, __LINE__)
+    call h5%open_file('write', trim(filename))
+
+    ! Some general attributes first:
+    call h5%store_attribute(dr%n_mode/3, h5%file_id, 'number_of_atoms', lo_status)
+    call h5%store_attribute(dr%n_mode, h5%file_id, 'number_of_bands', lo_status)
+    call h5%store_attribute(dr%n_irr_qpoint, h5%file_id, 'number_of_qpoints', lo_status)
+    select type (qp)
+    type is (lo_monkhorst_pack_mesh)
+        call h5%store_attribute('Monkhorst-Pack', h5%file_id, 'meshtype', lo_status)
+    type is (lo_fft_mesh)
+        call h5%store_attribute('FFT', h5%file_id, 'meshtype', lo_status)
+    type is (lo_wedge_mesh)
+        call h5%store_attribute('Wedge', h5%file_id, 'meshtype', lo_status)
+    end select
+
+    ! q-points
+    dname = 'qpoints'
+    call mem%allocate(dd, [3, qp%n_irr_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    do i = 1, qp%n_irr_point
+        dd(:, i) = qp%ip(i)%r
+    end do
+    call h5%store_data(dd, h5%file_id, trim(dname), enhet='1/A', dimensions='q-vector,xyz')
+    call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+    ! frequencies
+    if (allocated(dr%iq(1)%omega)) then
+        dname = 'frequencies'
+        call mem%allocate(dd, [dr%n_mode, qp%n_irr_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_irr_point
+            dd(:, i) = dr%iq(i)%omega*lo_frequency_hartree_to_Hz
+        end do
+        call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz (angular)', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+
+    ! Group velocities
+    if (allocated(dr%iq(1)%vel)) then
+        dname = 'group_velocities'
+        call mem%allocate(ddd, [3, dr%n_mode, qp%n_irr_point], &
+                          persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_irr_point
+            ddd(:, :, i) = dr%iq(i)%vel*lo_groupvel_hartreebohr_to_ms
+        end do
+        call h5%store_data(ddd, h5%file_id, trim(dname), enhet='m/s', dimensions='q-vector,mode,xyz')
+        call mem%deallocate(ddd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+
+    ! Gruneisen parameters
+    if (allocated(dr%iq(1)%gruneisen)) then
+        dname = 'gruneisen_parameters'
+        call mem%allocate(dd, [dr%n_mode, qp%n_irr_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_irr_point
+            dd(:, i) = dr%iq(i)%gruneisen
+        end do
+        call h5%store_data(dd, h5%file_id, trim(dname), enhet='dimensionless', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+
+    ! unit cell vectors
+    dname = 'lattice_vectors'
+    call mem%allocate(dd, [3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! TODO: check transposition convention for lattice vectors
+    dd = lo_bohr_to_m*1.d10*transpose(uc%latticevectors)
+    call h5%store_data(dd, h5%file_id, trim(dname), enhet='A', dimensions='xyz,xyz')
+    call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+    ! integration weights
+    dname = 'integration_weights'
+    call mem%allocate(di, qp%n_irr_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    do i = 1, qp%n_irr_point
+        di(i) = qp%ip(i)%integration_weight
+    end do
+    call h5%store_data(di, h5%file_id, trim(dname), enhet='1', dimensions='q-vector')
+    call mem%deallocate(di, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     call h5%close_file()
     call h5%destroy(__FILE__, __LINE__)
