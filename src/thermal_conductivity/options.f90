@@ -88,7 +88,7 @@ subroutine parse(opts)
                  required=.false., act='store', def='300', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--max_mfp', &
-                 help='Add a limit on the mean free path as an approximation of domain size.', &
+                 help='Add a limit on the mean free path as an approximation of domain size (in m).', &
                  required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--btetol', &
