@@ -58,11 +58,11 @@ Optional switches:
     default value .false.  
     Do not consider isotope scattering.
 
-* `--scftol`
+* `--iterative_tolerance`
     default value 1e-5
     Tolerance for the iterative solution.
 
-* `--scfiterations`
+* `--iterative_maxsteps`
     default 200
     Max number of iterations for the iterative solution.
 
@@ -287,7 +287,7 @@ $$
 \end{equation}
 $$
 
-This approximation consists in neglecting the collective phonon contribution to the thermal conductivity tensor and can also be obtain by decoupling the four-point correlation in product of two-point correlation[^Caldarelli2022]<sup>,</sup>[^Castellano2024].
+This approximation consists in neglecting the collective phonon contribution to the thermal conductivity tensor and can also be obtain by decoupling the four-point correlation in product of two-point correlation functions[^Caldarelli2022]<sup>,</sup>[^Castellano2024].
 
 It is important to note that while starting from differents considerations, this formulation and the Boltzmann equation [^peierls1929]<sup>,</sup>[^peierls1955quantum]<sup>,</sup>[^Broido2007]<sup>,</sup>[^Broido2005] are strictly equivalent [^Fiorentino2023].
 

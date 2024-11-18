@@ -20,7 +20,7 @@ implicit none
 private
 public :: get_kappa
 public :: get_kappa_offdiag
-public :: iterative_scf
+public :: iterative_solution
 public :: symmetrize_kappa
 contains
 
@@ -319,7 +319,7 @@ subroutine symmetrize_kappa(kappa, uc)
     kappa = lo_chop(kappa, sum(abs(kappa))*1e-6_r8)
 end subroutine
 
-subroutine iterative_scf(sr, dr, qp, uc, temperature, niter, tol, classical, mw, mem)
+subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical, mw, mem)
     !> integration weights
     type(lo_scattering_rates), intent(inout) :: sr
     !> dispersions

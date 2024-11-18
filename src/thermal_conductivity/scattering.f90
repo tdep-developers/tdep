@@ -35,7 +35,7 @@ type lo_scattering_rates
     integer :: nlocal_point
     !> The list of qpoint and modes for this rank
     integer, dimension(:), allocatable :: q1, b1
-    !> Let's precompute the Bose-Einstein distribution
+    !> Bose-Einstein and squared smearing for each mode on irreducible q-point
     real(r8), dimension(:, :), allocatable :: be, sigsq
     !> The scattering matrix
     real(r8), dimension(:, :), allocatable :: Xi
@@ -268,7 +268,7 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         if (mw%talk) write (*, *) '... symmetrizing scattering matrix'
 
         ! We use the relation Xi_{R*q, R*q'} = Xi_{q, q'''} to enforce the symmetry of Xi
-        ! TODO actually use this symmetry to reduce the number of scattering to compute
+        ! TODO look if these irreducible pair could reduce the cost
         call mem%allocate(buf, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         do il = 1, sr%nlocal_point
             q1 = sr%q1(il)

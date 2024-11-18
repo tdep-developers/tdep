@@ -13,7 +13,7 @@ use type_phonon_dispersions, only: lo_phonon_dispersions
 use lo_timetracker, only: lo_timer
 
 use options, only: lo_opts
-use kappa, only: get_kappa, get_kappa_offdiag, iterative_scf, symmetrize_kappa
+use kappa, only: get_kappa, get_kappa_offdiag, iterative_solution, symmetrize_kappa
 use scattering, only: lo_scattering_rates
 
 implicit none
@@ -59,18 +59,18 @@ initharmonic: block
         write (*, '(1X,A40,I4,I4,I4)') 'full q-point grid                       ', opts%qgrid
         write (*, '(1X,A40,I4,I4,I4)') 'Monte-Carlo 3rd order q-point grid      ', opts%qg3ph
         write (*, '(1X,A40,I4,I4,I4)') 'Monte-Carlo 4th order q-point grid      ', opts%qg4ph
-        write (*, '(1X,A40,I5)') 'Max number of iteration                 ', opts%scfiterations
+        write (*, '(1X,A40,I5)') 'Max number of iteration                 ', opts%itermaxsteps
         write (*, '(1X,A40,E20.12)') 'Max mean free path (in m)               ', opts%mfp_max/lo_m_to_Bohr
-        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative solution    ', opts%scftol
+        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative solution    ', opts%itertol
         select case (opts%integrationtype)
         case (1)
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Gaussian with fixed broadening'
-            write (*, '(1X,A40,E20.12)') 'Broadening parameter                    ', opts%sigma
         case (2)
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Adaptive Gaussian'
+        write (*, '(1X,A40,E20.12)') 'Sigma factor for gaussian smearing      ', opts%sigma
         end select
         write (*, '(1X,A40,I4)') 'Number of MPI ranks                     ', mw%n
-        if (opts%seed .gt. 0) write(*, '(1X,A40,E20.12)') 'Random seed                             ', 1.0 / real(opts%seed, r8)
+        if (opts%seed .gt. 0) write(*, '(1X,A40,I10)') 'Random seed                             ', opts%seed
         write (*, *) ''
     end if
 
@@ -165,7 +165,7 @@ initharmonic: block
     call tmr_init%stop()
 end block initharmonic
 
-scatters: block
+get_scattering_rates: block
     call tmr_scat%start()
     if (mw%talk) then
         write (*, *) ''
@@ -180,10 +180,10 @@ scatters: block
     call tmr_tot%tock('scattering computation')
 
     if (mw%talk) write (*, "(1X,A,F12.3,A)") '... done in ', t0, ' s'
-end block scatters
+end block get_scattering_rates
 
-kappa: block
-    real(r8), dimension(3, 3) :: kappa_scf, kappa_offdiag, kappa_sma, m0
+blockkappa: block
+    real(r8), dimension(3, 3) :: kappa_iter, kappa_offdiag, kappa_sma, m0
     real(r8) :: t0
     integer :: i, u, q1, b1
 
@@ -192,7 +192,7 @@ kappa: block
 
     ! I might get a silly tiny temperature, then things will break.
     if (opts%temperature .lt. lo_temperaturetol) then
-        kappa_scf = 0.0_r8
+        kappa_iter = 0.0_r8
         kappa_sma = 0.0_r8
         kappa_offdiag = 0.0_r8
     end if
@@ -206,22 +206,22 @@ kappa: block
     if (mw%talk) write (*, *) '... computing off diagonal (coherence) contribution'
     call get_kappa_offdiag(dr, qp, uc, fc, opts%temperature, opts%classical, mem, mw, kappa_offdiag)
     call tmr_kappa%tock('off-diagonal contribution')
-    if (opts%scfiterations .gt. 0) then
+    if (opts%itermaxsteps .gt. 0) then
         if (mw%talk) then
             write (*, *) '... solving iteratively the collective contribution'
             write (*, "(1X,A4,6(1X,A14),2X,A10)") 'iter', &
                 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   ', 'DeltaF/F'
         end if
         t0 = walltime()
-        call iterative_scf(sr, dr, qp, uc, opts%temperature, opts%scfiterations, opts%scftol, opts%classical, mw, mem)
+        call iterative_solution(sr, dr, qp, uc, opts%temperature, opts%itermaxsteps, opts%itertol, opts%classical, mw, mem)
         t0 = walltime() - t0
         if (mw%talk) write (*, "(1X,A,F12.3,A)") '... done in ', t0, ' s'
         call tmr_kappa%tock('collective contribution')
     end if
-    call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_scf)
+    call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_iter)
     if (mw%talk) write (*, *) ''
     if (mw%talk) write (*, *) '... symmetrizing the thermal conductivity tensors'
-    call symmetrize_kappa(kappa_scf, uc)
+    call symmetrize_kappa(kappa_iter, uc)
     call symmetrize_kappa(kappa_offdiag, uc)
     call symmetrize_kappa(kappa_sma, uc)
     call tmr_kappa%tock('symmetrization')
@@ -244,7 +244,7 @@ kappa: block
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
-        m0 = (kappa_scf - kappa_sma)*lo_kappa_au_to_SI
+        m0 = (kappa_iter - kappa_sma)*lo_kappa_au_to_SI
         ! First in the standard output
         write (*, "(1X,A)") 'Correction to include collective contribution via iterative procedure'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
@@ -264,7 +264,7 @@ kappa: block
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
-        m0 = (kappa_scf + kappa_offdiag)*lo_kappa_au_to_SI
+        m0 = (kappa_iter + kappa_offdiag)*lo_kappa_au_to_SI
         ! First in the standard output
         write (*, "(1X,A26)") 'Total thermal conductivity'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
@@ -287,7 +287,7 @@ kappa: block
 
     call tmr_tot%tock('thermal conductivity computation')
     t0 = walltime() - t0
-end block kappa
+end block blockkappa
 
 finalize_and_write: block
     if (mw%talk) then

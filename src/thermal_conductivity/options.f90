@@ -15,8 +15,8 @@ type lo_opts
     real(flyt) :: sigma              !< scaling factor for adaptive gaussian
     real(flyt) :: tau_boundary       !< add a constant as boundary scattering
     real(flyt) :: mfp_max            !< add a length as boundary scattering
-    real(flyt) :: scftol             !< tolerance for the iterative solution
-    integer :: scfiterations         !< Number of iteration for the Boltzmann equation
+    real(flyt) :: itertol            !< tolerance for the iterative solution
+    integer :: itermaxsteps          !< Number of iteration for the Boltzmann equation
     logical :: classical             !< Use a classical formulation
     logical :: readiso               !< read isotope distribution from file
     logical :: thirdorder            !< use fourth order contribution
@@ -92,7 +92,7 @@ subroutine parse(opts)
                  help='Add a limit on the mean free path as an approximation of domain size (in m).', &
                  required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--scftol', &
+    call cli%add(switch='--iterative_tolerance', &
                  help='Tolerance for the iterative solution.', &
                  required=.false., act='store', def='1e-5', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -104,7 +104,7 @@ subroutine parse(opts)
                  help='Use the classical limit for phonon occupation and heat capacity.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--scfiterations', &
+    call cli%add(switch='--iterative_maxsteps', &
                  help='Max number of iterations for the iterative solution.', &
                  required=.false., act='store', def='200', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -156,7 +156,7 @@ subroutine parse(opts)
     call cli%get(switch='--qpoint_grid', val=opts%qgrid)
     call cli%get(switch='--qpoint_grid3ph', val=opts%qg3ph)
     call cli%get(switch='--qpoint_grid4ph', val=opts%qg4ph)
-    call cli%get(switch='--scfiterations', val=opts%scfiterations)
+    call cli%get(switch='--iterative_maxsteps', val=opts%itermaxsteps)
     call cli%get(switch='--sigma', val=opts%sigma)
     call cli%get(switch='--tau_boundary', val=opts%tau_boundary)
     call cli%get(switch='--nothirdorder', val=dumlog)
@@ -167,7 +167,7 @@ subroutine parse(opts)
     call cli%get(switch='--integrationtype', val=opts%integrationtype)
     call cli%get(switch='--readiso', val=opts%readiso)
     call cli%get(switch='--max_mfp', val=opts%mfp_max)
-    call cli%get(switch='--scftol', val=opts%scftol)
+    call cli%get(switch='--iterative_tolerance', val=opts%itertol)
     call cli%get(switch='--classical', val=opts%classical)
     call cli%get(switch='--seed', val=opts%seed)
     ! stuff that's not really an option
