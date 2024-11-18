@@ -4,7 +4,7 @@
 Calculates the lattice thermal conductivity from the iterative solution of the phonon Boltzmann equation. In addition, cumulative plots and raw data dumps of intermediate values are available.
 
 !!! Note
-    A new program, which is faster and include fourth-order scattering is now available [here](thermal_conductivity.md)
+    Legacy implementation, the significantly improved program [thermal_conductivity](thermal_conductivity.md) should be used!
 
 ### Command line options:
 

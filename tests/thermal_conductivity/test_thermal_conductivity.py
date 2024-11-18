@@ -6,11 +6,11 @@ parent = Path(__file__).parent
 folder = parent / "reference"
 
 files_hdf5 = [
-    "outfile.grid_kappa.hdf5",
+    "outfile.thermal_conductivity_grid.hdf5",
 ]
 
 
-def test_thermal_conductivity(file="outfile.kappa", atol=20, rtol=5):
+def test_thermal_conductivity(file="outfile.thermal_conductivity", atol=20, rtol=5):
     file_ref = folder / file
     file_new = parent / file
 

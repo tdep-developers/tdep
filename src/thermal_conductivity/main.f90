@@ -13,7 +13,7 @@ use type_phonon_dispersions, only: lo_phonon_dispersions
 use lo_timetracker, only: lo_timer
 
 use options, only: lo_opts
-use kappa, only: get_kappa, get_kappa_offdiag, iterative_bte, symmetrize_kappa
+use kappa, only: get_kappa, get_kappa_offdiag, iterative_scf, symmetrize_kappa
 use scattering, only: lo_scattering_rates
 
 implicit none
@@ -61,7 +61,7 @@ initharmonic: block
         write (*, '(1X,A40,I4,I4,I4)') 'Monte-Carlo 4th order q-point grid      ', opts%qg4ph
         write (*, '(1X,A40,I5)') 'Max number of iteration                 ', opts%scfiterations
         write (*, '(1X,A40,E20.12)') 'Max mean free path (in m)               ', opts%mfp_max/lo_m_to_Bohr
-        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative solution    ', opts%btetol
+        write (*, '(1X,A40,E20.12)') 'Tolerance for the iterative solution    ', opts%scftol
         select case (opts%integrationtype)
         case (1)
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Gaussian with fixed broadening'
@@ -183,7 +183,7 @@ scatters: block
 end block scatters
 
 kappa: block
-    real(r8), dimension(3, 3) :: kappa_bte, kappa_offdiag, kappa_sma, m0
+    real(r8), dimension(3, 3) :: kappa_scf, kappa_offdiag, kappa_sma, m0
     real(r8) :: t0
     integer :: i, u, q1, b1
 
@@ -192,7 +192,7 @@ kappa: block
 
     ! I might get a silly tiny temperature, then things will break.
     if (opts%temperature .lt. lo_temperaturetol) then
-        kappa_bte = 0.0_r8
+        kappa_scf = 0.0_r8
         kappa_sma = 0.0_r8
         kappa_offdiag = 0.0_r8
     end if
@@ -213,22 +213,22 @@ kappa: block
                 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   ', 'DeltaF/F'
         end if
         t0 = walltime()
-        call iterative_bte(sr, dr, qp, uc, opts%temperature, opts%scfiterations, opts%btetol, opts%classical, mw, mem)
+        call iterative_scf(sr, dr, qp, uc, opts%temperature, opts%scfiterations, opts%scftol, opts%classical, mw, mem)
         t0 = walltime() - t0
         if (mw%talk) write (*, "(1X,A,F12.3,A)") '... done in ', t0, ' s'
         call tmr_kappa%tock('collective contribution')
     end if
-    call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_bte)
+    call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_scf)
     if (mw%talk) write (*, *) ''
     if (mw%talk) write (*, *) '... symmetrizing the thermal conductivity tensors'
-    call symmetrize_kappa(kappa_bte, uc)
+    call symmetrize_kappa(kappa_scf, uc)
     call symmetrize_kappa(kappa_offdiag, uc)
     call symmetrize_kappa(kappa_sma, uc)
     call tmr_kappa%tock('symmetrization')
     call tmr_kappa%stop()
     if (mw%talk) then
         ! First we write in the standard output
-        u = open_file('out', 'outfile.kappa')
+        u = open_file('out', 'outfile.thermal_conductivity')
         write (u, '(A2,A5,15X,A)') '# ', 'Unit:', 'W/m/K'
         write (u, '(A2,A12,8X,E20.12)') '# ', 'Temperature:', opts%temperature
 
@@ -244,7 +244,7 @@ kappa: block
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
-        m0 = (kappa_bte - kappa_sma)*lo_kappa_au_to_SI
+        m0 = (kappa_scf - kappa_sma)*lo_kappa_au_to_SI
         ! First in the standard output
         write (*, "(1X,A)") 'Correction to include collective contribution via iterative procedure'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
@@ -264,7 +264,7 @@ kappa: block
         write (u, "(A1,6(1X,A24))") '#', 'kxx', 'kyy', 'kzz', 'kxy', 'kxz', 'kyz'
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
-        m0 = (kappa_bte + kappa_offdiag)*lo_kappa_au_to_SI
+        m0 = (kappa_scf + kappa_offdiag)*lo_kappa_au_to_SI
         ! First in the standard output
         write (*, "(1X,A26)") 'Total thermal conductivity'
         write (*, "(1X,A4,6(1X,A14))") '', 'kxx   ', 'kyy   ', 'kzz   ', 'kxy   ', 'kxz   ', 'kyz   '
@@ -293,11 +293,11 @@ finalize_and_write: block
     if (mw%talk) then
         write (*, *) ''
         write (*, *) '... dumping auxiliary data to files'
-        call dr%write_to_hdf5(qp, uc, 'outfile.grid_kappa.hdf5', mem, opts%temperature)
+        call dr%write_to_hdf5(qp, uc, 'outfile.thermal_conductivity_grid.hdf5', mem, opts%temperature)
 
         write (*, *) ''
-        write (*, '(A,A)') 'Scattering rates can be found in               ', 'outfile.grid_kappa.hdf5'
-        write (*, '(A,A)') 'Thermal conductivity tensor can be found in    ', 'outfile.kappa'
+        write (*, '(A,A)') 'Scattering rates can be found in               ', 'outfile.thermal_conductivity.hdf5'
+        write (*, '(A,A)') 'Thermal conductivity tensor can be found in    ', 'outfile.thermal_conductivity'
 
         ! Print timings
         write (*, *) ''

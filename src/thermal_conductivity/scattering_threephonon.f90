@@ -145,7 +145,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     end do compute_loop
 
     ! Now we can symmetrize the off-diagonal contribution
-    ! This can be done in a way to put a value to for mode that have been skipped by the Monte-Carlo !
+    ! For this, we only compute the average values from q-point on the Monte-Carlo grid.
+    ! But we distribute averaged entries of the scattering matrix for every equivalent points
     symmetrize_and_distribute: block
         !> To keep track of the number of mode we actually add
         integer, dimension(dr%n_mode) :: nn

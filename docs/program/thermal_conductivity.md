@@ -32,7 +32,7 @@ Optional switches:
 
 * `--sigma value`  
     default value 1.0  
-    Global scaling factor for adaptive Gaussian smearing.
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.
 
 * `--readqmesh`  
     default value .false.  
@@ -57,6 +57,18 @@ Optional switches:
 * `--noisotope`  
     default value .false.  
     Do not consider isotope scattering.
+
+* `--scftol`
+    default value 1e-5
+    Tolerance for the iterative solution.
+
+* `--scfiterations`
+    default 200
+    Max number of iterations for the iterative solution.
+
+* `--seed`
+    default -1
+    Seed for the random number generator of the Monte-Carlo grids.
 
 * `--help`, `-h`  
     Print this help message
@@ -275,7 +287,7 @@ $$
 \end{equation}
 $$
 
-This approximation consists in neglecting the collective phonon contribution to the thermal conductivity tensor and can also be obtain by decoupling the four-point correlation in product of two-point correlation.
+This approximation consists in neglecting the collective phonon contribution to the thermal conductivity tensor and can also be obtain by decoupling the four-point correlation in product of two-point correlation[^Caldarelli2022]<sup>,</sup>[^Castellano2024].
 
 It is important to note that while starting from differents considerations, this formulation and the Boltzmann equation [^peierls1929]<sup>,</sup>[^peierls1955quantum]<sup>,</sup>[^Broido2007]<sup>,</sup>[^Broido2005] are strictly equivalent [^Fiorentino2023].
 
@@ -299,7 +311,7 @@ $$
 \end{equation}
 $$
 
-For this contribution, we will directly neglect the collective part and decouple the four-point correlation in product of two-point correlations
+For this contribution, we will directly neglect the collective part (this is called the dressed-bubble approximation[^Caldarelli2022]<sup>,</sup>[^Fiorentino2023]) and decouple the four-point correlation in product of two-point correlations
 
 $$
 \begin{equation}
@@ -346,7 +358,7 @@ The first is the sum of the contribution of each q-point to the thermal conducti
 Fortunately for us, these two integrations converges at different rates.
 In particular, the expensive scattering integration converges more quickly than the thermal conductivity integration.
 
-Thus, to improve the computational cost, the code offers the possibility to decouple these two integrations by using a Monte-Carlo integration of the scattering.
+Thus, to improve the computational cost, the code offers the possibility to disassociate these two integrations by using a Monte-Carlo integration of the scattering.
 For this, we generate a full grid, on which the thermal conductivity will be integrated.
 A subset of this full grid can then be selected to perform the scattering integration.
 In order to improve the convergence, these point are not selected entirely at random but using a stratified approached in order to sample more uniformly the Brillouin zone.
@@ -359,9 +371,14 @@ This is schematically represented in the following picture, where each dot repre
 
 The code allows to use different Monte-Carlo grids for third and fourth order, using the variables `--qpoint_grid3ph` and `--qpoint_grid4ph`.
 
-It is important to note that since the points are selected randomly, the results will be noisy.
+It is important to note that this method of integration is not deterministic, so that several runs will give different results
 However, the noise reduces as the density of the Monte-Carlo grids increases, to finally vanish if the Monte-Carlo and full grid density are the same (which is the default).
 Similarly to the full grid on which the thermal conductivity is computed, the Monte-Carlo grid densities are parameters to be carefully converged.
+
+Converging the grids is an important step to ensure accurate results.
+Since the convergence of the Monte-Carlo grids are not related to the convergence of the full grid, their determination can be done independently.
+To reduce the computational cost of the convergence, an approach is to fix the full grid to a moderately large density, and first converge the third order grid and then the fourth-order one.
+Once the Monte-Carlo grid densities are known, then the full grid density can be determined.
 
 
 ### Input files
@@ -379,7 +396,7 @@ and these are optional:
 
 ### Output files
 
-### `outfile.kappa_kubo`
+### `outfile.thermal_conductivity`
 
 This file contains the thermal conductivity tensor, with the decomposition from all contributions, in a format that can be parsed with tools such as numpy.
 It looks like this
@@ -402,7 +419,7 @@ It looks like this
 ```
 
 
-#### `outfile.grid_kubo.hdf5`
+#### `outfile.thermal_conductivity_grid.hdf5`
 
 This file contains nearly all quantities on the full q-grid.
 Below is a matlab snippet that plots a subset:
