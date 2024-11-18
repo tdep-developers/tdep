@@ -67,7 +67,7 @@ subroutine parse(opts)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--integrationtype', switch_ab='-it', &
                  help='Type of integration for the phonon DOS. 1 is Gaussian, 2 adaptive Gaussian.', &
-                 required=.false., act='store', def='2', choices='1,2', error=lo_status)
+                 required=.false., act='store', def='2', choices='1,2,6', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--nothirdorder', &
                  help='Do not consider third order contributions to the scattering.', &

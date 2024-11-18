@@ -106,6 +106,9 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                     sigma = sqrt(sr%sigsq(q1, b1) + &
                                  sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
                                  sr%sigsq(qp%ap(q3)%irreducible_index, b3))
+                case (6)
+                    sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), &
+                                                 dr%default_smearing(b3), smearing)
                 end select
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3

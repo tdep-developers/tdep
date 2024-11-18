@@ -48,6 +48,9 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
             case (2)
                 sigma = sqrt(sr%sigsq(q1, b1) + &
                              sr%sigsq(qp%ap(q2)%irreducible_index, b2))
+            case (6)
+                sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2), &
+                                             dr%default_smearing(b2), smearing)
             end select
 
             i = (q2 - 1)*dr%n_mode + b2

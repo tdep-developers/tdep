@@ -154,6 +154,9 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                                      sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
                                      sr%sigsq(qp%ap(q3)%irreducible_index, b3) + &
                                      sr%sigsq(qp%ap(q4)%irreducible_index, b4))
+                    case (6)
+                        sigma = qp%smearingparameter(dr%aq(q3)%vel(:, b3) - dr%aq(q4)%vel(:, b4), &
+                                                     dr%default_smearing(b3), smearing)
                     end select
 
                     evp3 = 0.0_r8
