@@ -23,6 +23,7 @@ type lo_opts
     logical :: fourthorder           !< use fourth order contribution
     logical :: isotopescattering     !< use isotope scattering
     integer :: integrationtype       !< adaptive or standard gaussian integration
+    integer :: seed                  !< seed for the Monte-Carlo grid
 
     ! Debugging things
     logical :: timereversal
@@ -115,6 +116,10 @@ subroutine parse(opts)
                  help='Dimension of the grid for the fourphonon integration.', &
                  nargs='3', required=.false., act='store', def='-1 -1 -1', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--seed', &
+                 help='Seed for the random number generator of the Monte-Carlo grids', &
+                 required=.false., act='store', def='-1', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     ! hidden
     call cli%add(switch='--tau_boundary', hidden=.true., &
@@ -164,6 +169,7 @@ subroutine parse(opts)
     call cli%get(switch='--max_mfp', val=opts%mfp_max)
     call cli%get(switch='--btetol', val=opts%btetol)
     call cli%get(switch='--classical', val=opts%classical)
+    call cli%get(switch='--seed', val=opts%seed)
     ! stuff that's not really an option
     call cli%get(switch='--notr', val=dumlog)
     opts%timereversal = .not. dumlog

@@ -70,6 +70,7 @@ initharmonic: block
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Adaptive Gaussian'
         end select
         write (*, '(1X,A40,I4)') 'Number of MPI ranks                     ', mw%n
+        if (opts%seed .gt. 0) write(*, '(1X,A40,E20.12)') 'Random seed                             ', 1.0 / real(opts%seed, r8)
         write (*, *) ''
     end if
 

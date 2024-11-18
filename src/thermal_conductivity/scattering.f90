@@ -84,6 +84,7 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         integer, dimension(3) :: dims
         !> Some integers for the do loop/indices
         integer :: q1, b1, il, j, nlocal_point, ctr
+        !> The seed for the random number generator for the Monte-Carlo integration
 
         ! grid dimensions
         select type (qp)
@@ -93,8 +94,14 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
             call lo_stop_gracefully(['This routine only works with FFT meshes'], lo_exitcode_param, __FILE__, __LINE__)
         end select
 
+        if (opts%seed .gt. 0) then
+            rseed = 1.0 / real(opts%seed, r8)
+        else
+            rseed = walltime()
+        end if
+
         ! Initialize the random number generator
-        call rng%init(iseed=mw%r, rseed=walltime())
+        call rng%init(iseed=mw%r, rseed=rseed)
 
         if (mw%talk) write (*, *) '... creating Monte-Carlo grid'
         ! Initialize the monte-carlo grid
