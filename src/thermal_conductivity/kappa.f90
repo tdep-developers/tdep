@@ -362,7 +362,7 @@ subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical
                           scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(Fbb, [3, dr%n_mode*qp%n_full_point], persistent=.false., &
                           scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(buf, [3, sr%nlocal_point], persistent=.false., &
+        call mem%allocate(buf, [3, sr%my_nqpoints], persistent=.false., &
                           scalable=.false., file=__FILE__, line=__LINE__)
         Fnb = 0.0_r8
         Fbb = 0.0_r8
@@ -408,9 +408,9 @@ subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical
                 call lo_gemv(sr%Xi, Fbb(a, :), buf(a, :))
             end do
             ! And now we distribute the results on the irreducible qpoints
-            do il = 1, sr%nlocal_point
-                q1 = sr%q1(il)
-                b1 = sr%b1(il)
+            do il = 1, sr%my_nqpoints
+                q1 = sr%my_qpoints(il)
+                b1 = sr%my_modes(il)
                 Fnb(:, b1, q1) = -buf(:, il)/dr%iq(q1)%qs(b1)
             end do
             call mw%allreduce('sum', Fnb)

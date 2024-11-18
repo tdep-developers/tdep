@@ -71,8 +71,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     od_terms = 0.0_r8
 
     ! Already set some buffer values for mode (q1, b1)
-    q1 = sr%q1(il)
-    b1 = sr%b1(il)
+    q1 = sr%my_qpoints(il)
+    b1 = sr%my_modes(il)
     om1 = dr%iq(q1)%omega(b1)
     egv1 = dr%iq(q1)%egv(:, b1)/sqrt(om1)
 

@@ -31,8 +31,8 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
     ! Integers for do loops
     integer :: q1, b1, q2, b2, i, niso
 
-    q1 = sr%q1(il)
-    b1 = sr%b1(il)
+    q1 = sr%my_qpoints(il)
+    b1 = sr%my_modes(il)
     om1 = dr%iq(q1)%omega(b1)
     egviso(:, 1) = dr%iq(q1)%egv(:, b1)
 
