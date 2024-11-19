@@ -244,7 +244,7 @@ do
     # link it to bin?
     # [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
     # move it instead
-    [ -f build/${code}/${code} ] && mv ../build/${code}/${code} bin/${code}
+    [ -f build/${code}/${code} ] && mv build/${code}/${code} bin/${code}
 done
 
 basedir=`pwd`
