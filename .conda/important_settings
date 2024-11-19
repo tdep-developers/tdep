@@ -4,7 +4,7 @@
 # the fortran compiler
 FORTRAN_COMPILER="$BUILD_PREFIX/bin/mpifort"
 # required compiler flags
-FCFLAGS="-ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch"
+FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
 # extra flags, for debugging and such
 FCFLAGS_EXTRA=""
 
