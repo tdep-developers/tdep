@@ -2,7 +2,7 @@
 # A central place to put all the important paths. You probably have to modify this to make things work.
 
 # the fortran compiler
-FORTRAN_COMPILER="$GFORTRAN"
+FORTRAN_COMPILER="$FC"
 # required compiler flags
 FCFLAGS="-ffree-line-length-none -std=f2008 -cpp -fallow-argument-mismatch"
 # extra flags, for debugging and such
@@ -47,3 +47,4 @@ PATH_TO_HDF5_LIB="-L/$PREFIX/lib"
 PATH_TO_HDF5_INC="-I/$PREFIX/include"
 HDF5_LIBS="-lhdf5 -lhdf5_fortran"
 
+USECGAL=no
