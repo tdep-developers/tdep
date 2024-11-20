@@ -132,23 +132,20 @@ fi
 
 # which codes should be compiled
 listofcodes="
+dump_dynamical_matrices
+phonon_dispersion_relations
+crystal_structure_info
+generate_structure
+canonical_configuration
+lineshape
+samples_from_md
 extract_forceconstants
+atomic_distribution
+pack_simulation
+refine_structure
+thermal_conductivity
+anharmonic_free_energy
 "
-# listofcodes="
-# dump_dynamical_matrices
-# phonon_dispersion_relations
-# crystal_structure_info
-# generate_structure
-# canonical_configuration
-# lineshape
-# samples_from_md
-# extract_forceconstants
-# atomic_distribution
-# pack_simulation
-# refine_structure
-# thermal_conductivity
-# anharmonic_free_energy
-# "
 
 # only when we have cgal
 if [ ${USECGAL} == "yes" ]

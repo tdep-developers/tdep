@@ -2,7 +2,6 @@
 # A central place to put all the important paths. You probably have to modify this to make things work.
 
 # the fortran compiler
-# FORTRAN_COMPILER="$BUILD_PREFIX/bin/mpifort"
 FORTRAN_COMPILER="$FC"
 # required compiler flags
 FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
@@ -10,7 +9,7 @@ FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
 FCFLAGS_EXTRA=""
 
 # optimization stuff. Go all in, sometimes
-OPTIMIZATION_LEVEL="-O0"
+OPTIMIZATION_LEVEL="-O3"
 OPTIMIZATION_SENSITIVE="-O0"
 
 # the flag that sets the default real to a double.
