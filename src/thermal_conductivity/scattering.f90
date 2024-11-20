@@ -94,10 +94,15 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
             call lo_stop_gracefully(['This routine only works with FFT meshes'], lo_exitcode_param, __FILE__, __LINE__)
         end select
 
-        if (opts%seed .gt. 0) then
-            rseed = 1.0 / real(opts%seed, r8)
+        if (opts%seed .ge. 0) then
+            if (opts%seed == 0) then
+                rseed = 0.0_r8
+            else
+                rseed = 1.0 / real(opts%seed, r8)
+            end if
         else
             rseed = walltime()
+            if (mw%talk) write(*, *) '... walltime() used to generate random state'
         end if
 
         ! Initialize the random number generator
