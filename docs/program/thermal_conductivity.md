@@ -68,7 +68,7 @@ Optional switches:
 
 * `--seed`
     default -1
-    Seed for the random number generator of the Monte-Carlo grids.
+    Positive integer to seed the random number generator for the Monte-Carlo grids.
 
 * `--help`, `-h`  
     Print this help message

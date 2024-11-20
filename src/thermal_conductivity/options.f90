@@ -117,7 +117,7 @@ subroutine parse(opts)
                  nargs='3', required=.false., act='store', def='-1 -1 -1', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--seed', &
-                 help='Seed for the random number generator of the Monte-Carlo grids.', &
+                 help='Positive integer to seed the random number generator for the Monte-Carlo grids.', &
                  required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
 
