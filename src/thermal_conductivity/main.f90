@@ -69,7 +69,7 @@ initharmonic: block
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Adaptive Gaussian'
         write (*, '(1X,A40,E20.12)') 'Sigma factor for gaussian smearing      ', opts%sigma
         end select
-        write (*, '(1X,A40,I4)') 'Number of MPI ranks                     ', mw%n
+        write (*, '(1X,A40,I10)') 'Number of MPI ranks                     ', mw%n
         if (opts%seed .ge. 0) write(*, '(1X,A40,I10)') 'Random seed                             ', opts%seed
         write (*, *) ''
     end if
