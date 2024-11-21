@@ -32,7 +32,7 @@ PATH_LIB="/usr/lib/x86_64-linux-gnu"
 PATH_INC="/usr/include"
 PATH_TO_BLASLAPACK_LIB="-L/$PATH_LIB"
 PATH_TO_BLASLAPACK_INC="-I/$PATH_INC"
-BLASLAPACK_LIBS="-llapack -lscalapack-openmpi"
+BLASLAPACK_LIBS="-lblas -llapack -lscalapack-openmpi"
 
 # I use fftw for Fourier transforms.
 PATH_TO_FFTW_LIB="-L/$PATH_LIB"
