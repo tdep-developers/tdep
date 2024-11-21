@@ -2,7 +2,7 @@
 # A central place to put all the important paths. You probably have to modify this to make things work.
 
 # the fortran compiler
-FORTRAN_COMPILER="gfortran"
+FORTRAN_COMPILER="mpifort"
 # required compiler flags
 FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
 # extra flags, for debugging and such
