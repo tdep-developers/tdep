@@ -30,7 +30,7 @@ PATH_TO_FFTW_INC="-I/$PATH_INC"
 FFTW_LIBS="-lfftw3"
 
 # Also need MPI
-PATH_TO_MPI_LIB="-L/usr/lib/x86_64-linux-gnu/openmpi"
+PATH_TO_MPI_LIB="-L/usr/lib/x86_64-linux-gnu"
 PATH_TO_MPI_INC="-I/$PATH_INC"
 MPI_LIBS="-lmpi_mpifh -lmpi"
 
