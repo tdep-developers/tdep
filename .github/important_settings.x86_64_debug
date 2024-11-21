@@ -1,0 +1,7 @@
+#!/bin/bash
+# debug flags
+# FCFLAGS_EXTRA="-g -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs"
+# FCFLAGS_EXTRA="-fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic --warn-all"
+FCFLAGS_EXTRA="-fbacktrace -finit-real=nan -finit-derived -fmax-errors=10 --pedantic --warn-all"
+PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar -DAGRESSIVE_SANITY"
+OPTIMIZATION_LEVEL="-O0"
