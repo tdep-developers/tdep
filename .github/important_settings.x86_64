@@ -29,7 +29,7 @@ PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
 
 # These are the BLAS/LAPACK libraries. On OSX with gfortran, use the built-in 'framework accelerate'
 PATH_LIB="/usr/lib/x86_64-linux-gnu"
-PATH_INC="/usr/include/x86_64-linux-gnu"
+PATH_INC="/usr/include"
 PATH_TO_BLASLAPACK_LIB="-L/$PATH_LIB"
 PATH_TO_BLASLAPACK_INC="-I/$PATH_INC"
 BLASLAPACK_LIBS="-llapack -lscalapack"
