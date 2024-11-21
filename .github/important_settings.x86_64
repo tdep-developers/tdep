@@ -30,23 +30,23 @@ PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
 # These are the BLAS/LAPACK libraries. On OSX with gfortran, use the built-in 'framework accelerate'
 PATH_LIB="/usr/lib/x86_64-linux-gnu"
 PATH_INC="/usr/include/x86_64-linux-gnu"
-PATH_TO_BLASLAPACK_LIB="-L/$PREFIX/lib"
-PATH_TO_BLASLAPACK_INC="-I/$PREFIX/include"
+PATH_TO_BLASLAPACK_LIB="-L/$PATH_LIB"
+PATH_TO_BLASLAPACK_INC="-I/$PATH_INC"
 BLASLAPACK_LIBS="-llapack -lscalapack"
 
 # I use fftw for Fourier transforms.
-PATH_TO_FFTW_LIB="-L/$PREFIX/lib"
-PATH_TO_FFTW_INC="-I/$PREFIX/include"
+PATH_TO_FFTW_LIB="-L/$PATH_LIB"
+PATH_TO_FFTW_INC="-I/$PATH_INC"
 FFTW_LIBS="-lfftw3"
 
 # Also need MPI
-PATH_TO_MPI_LIB="-L/$PREFIX/lib"
-PATH_TO_MPI_INC="-I/$PREFIX/include"
+PATH_TO_MPI_LIB="-L/$PATH_LIB"
+PATH_TO_MPI_INC="-I/$PATH_INC"
 MPI_LIBS="-lmpi_mpifh -lmpi"
 
 # I also use HDF5 every now and then
-PATH_TO_HDF5_LIB="-L/$PREFIX/lib"
-PATH_TO_HDF5_INC="-I/$PREFIX/include"
+PATH_TO_HDF5_LIB="-L/$PATH_LIB"
+PATH_TO_HDF5_INC="-I/$PATH_INC"
 HDF5_LIBS="-lhdf5 -lhdf5_fortran"
 
 USECGAL=no
