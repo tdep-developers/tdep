@@ -2,7 +2,7 @@
 # A central place to put all the important paths. You probably have to modify this to make things work.
 
 # the fortran compiler
-FORTRAN_COMPILER="gfortran"
+FORTRAN_COMPILER="mpifort"
 # required compiler flags
 FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
 # extra flags, for debugging and such
@@ -29,10 +29,10 @@ PATH_TO_FFTW_LIB="-L/$PATH_LIB"
 PATH_TO_FFTW_INC="-I/$PATH_INC"
 FFTW_LIBS="-lfftw3"
 
-# Also need MPI
-PATH_TO_MPI_LIB="-L/usr/lib/x86_64-linux-gnu"
-PATH_TO_MPI_INC="-I/$PATH_INC"
-MPI_LIBS="-lmpi_mpifh -lmpi"
+# we use mpifort so not needed
+# PATH_TO_MPI_LIB="-L/usr/lib/x86_64-linux-gnu"
+# PATH_TO_MPI_INC="-I/$PATH_INC"
+# MPI_LIBS="-lmpi_mpifh -lmpi"
 
 # I also use HDF5 every now and then
 PATH_TO_HDF5_LIB="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/"
