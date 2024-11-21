@@ -40,13 +40,13 @@ PATH_TO_FFTW_INC="-I/$PATH_INC"
 FFTW_LIBS="-lfftw3"
 
 # Also need MPI
-PATH_TO_MPI_LIB="-L/$PATH_LIB"
-PATH_TO_MPI_INC="-I/$PATH_INC"
-MPI_LIBS="-lmpi_mpifh -lmpi"
+# PATH_TO_MPI_LIB="-L/$PATH_LIB"
+# PATH_TO_MPI_INC="-I/$PATH_INC"
+# MPI_LIBS="-lmpi_mpifh -lmpi"
 
 # I also use HDF5 every now and then
-PATH_TO_HDF5_LIB="-L/$PATH_LIB"
-PATH_TO_HDF5_INC="-I/$PATH_INC"
-HDF5_LIBS="-lhdf5_serial"
+PATH_TO_HDF5_LIB="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/"
+PATH_TO_HDF5_INC="-I/usr/include/hdf5/openmpi/"
+HDF5_LIBS="-lhdf5 -lhdf5_fortran"
 
 USECGAL=no
