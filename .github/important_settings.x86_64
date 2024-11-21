@@ -9,7 +9,7 @@ FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
 FCFLAGS_EXTRA=""
 
 # optimization stuff. Go all in, sometimes
-OPTIMIZATION_LEVEL="-O2"
+OPTIMIZATION_LEVEL="-O3"
 OPTIMIZATION_SENSITIVE="-O0"
 
 # the flag that sets the default real to a double.
