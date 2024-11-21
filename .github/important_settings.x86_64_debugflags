@@ -1,4 +1,3 @@
-#!/bin/bash
 # debug flags
 # FCFLAGS_EXTRA="-g -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic -Wall -Wextra -pedantic -Wcast-align -Wdisabled-optimization -Wmissing-include-dirs -Wshadow -Wunused -fdiagnostics-show-option -fcheck=all -Wstrict-overflow=0 -Wrealloc-lhs"
 FCFLAGS_EXTRA="-fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 --pedantic --warn-all"
