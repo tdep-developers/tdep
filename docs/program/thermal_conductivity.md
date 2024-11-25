@@ -471,7 +471,7 @@ subplot(1,3,3); hold on; box on;
 
 ```
 
-[^Castellano2024]: Castellano, A & Batista, J. P. & Verstraete, M. J. (2024). Temperature generalization of thermal transport in anharmonic crystals: theory and efficient implementation. ArXiv
+[^Castellano2024]: [Castellano, A & Batista, J. P. & Verstraete, M. J. (2024). Mode-coupling theory of heat transport in anharmonic materials](https://doi.org/10.48550/arXiv.2411.14949)
 
 [^peierls1929]: Peierls, R. E. (1929). Annalen der Physik, 3, 1055
 
