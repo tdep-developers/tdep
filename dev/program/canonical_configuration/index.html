@@ -1,0 +1,1187 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../generate_structure/">
+      
+      
+        <link rel="next" href="../extract_forceconstants/">
+      
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Canonical configuration - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Canonical configuration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+    
+  
+  Programs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../files/" class="md-tabs__link">
+        
+  
+    
+  
+  Files
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    TDEP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Programs
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Programs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Canonical configuration
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Canonical configuration
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Longer summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      Background
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#matching-with-a-debye-temperature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Matching with a Debye temperature
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stochastic-sampling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stochastic sampling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_forceconstants/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract forceconstants
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phonon dispersion relations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity_2023/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity 2023
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lineshape/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lineshape
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Anharmonic free energy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atomic_distribution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Atomic distribution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pack simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Samples from MD
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dump_dynamical_matrices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dump dynamical matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Crystal structure info
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Refine structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phasespace_surface/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phase space
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Files
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Longer summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      Background
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#matching-with-a-debye-temperature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Matching with a Debye temperature
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stochastic-sampling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stochastic sampling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Canonical configuration</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>Use forceconstants or a Debye temperature to generate uncorrelated supercell configurations emulating a canonical ensemble. These configurations can be used to either start ensemble runs of molecular dynamics with negligible equilibration time, or be used to directly sample phase space.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--temperature value</code>, <code>-t value</code><br />
+    default value 300<br />
+    Temperature to emulate</p>
+</li>
+<li>
+<p><code>--nconf value</code>, <code>-n value</code><br />
+    default value 5<br />
+    Number of configurations to generate</p>
+</li>
+<li>
+<p><code>--quantum</code><br />
+    default value .false.<br />
+    Use Bose-Einstein statistics instead of Maxwell-Boltzmann. That is, use <span class="arithmatex">\( \sqrt{\frac{\hbar (2n+1) }{2 m \omega}} \)</span> as the mean normal mode amplitudes instead of the classical <span class="arithmatex">\( \frac{1}{\omega}\sqrt{\frac{k_BT}{m}} \)</span></p>
+</li>
+<li>
+<p><code>--output_format value</code>, <code>-of value</code>, value in: <code>1,2,4,5</code><br />
+    default value 1<br />
+    Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta. Default 1.</p>
+</li>
+<li>
+<p><code>--mindist value</code><br />
+    default value -1<br />
+    What is the smallest distance between two atoms allowed, in units of the nearest neighbour distance.</p>
+</li>
+<li>
+<p><code>--debye_temperature value</code>, <code>-td value</code><br />
+    default value -1<br />
+    Generate forceconstants that match a Debye temperature, and build displacements according to these. See details below.</p>
+</li>
+<li>
+<p><code>--maximum_frequency value</code>, <code>-mf value</code><br />
+    default value -1<br />
+    Generate forceconstants that match a maximum frequency (in THz), and build displacements according to these. See details below.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>canonical_configuration -n 10 -t 300</code> </p>
+<p><code>canonical_configuration -n 300 -t 0 --quantum</code> </p>
+<p><code>canonical_configuration -n 20 -t 10 --quantum --debye_temperature 400</code> </p>
+<h3 id="longer-summary">Longer summary</h3>
+<p>This code takes a second order <a href="../extract_forceconstants/">forceconstant</a> and generates a supercell with the atoms displaced corresponding to a harmonic canonical ensemble. These configurations can be used directly, to generate force-displacement statistics to determine force constants and other thermal properties, or as the starting point for molecular dynamics.</p>
+<h3 id="background">Background</h3>
+<p>Born-Oppenheimer molecular dynamics can be expensive for many reasons. Firstly, it requires supercells with more than 100 atoms. Secondly, computation of the electronic ground state at every time step is time consuming. Thirdly, the cell must be fully equilibrated. The precision of the calculations is statistically linked to the number of configurations used: any property <span class="arithmatex">\(A\)</span> for which we want to calculate the ensemble average <span class="arithmatex">\(\langle A \rangle\)</span> must be converged with respect to the number of uncorrelated time steps.</p>
+<p>To minimize the equilibration time, the simulation cell can be initialized to a thermally excited state by selecting initial atomic velocities and displacement amplitudes according to the Maxwell-Boltzmann<sup id="fnref:West2006"><a class="footnote-ref" href="#fn:West2006">1</a></sup> or Bose - Einstein distributions.</p>
+<p>Starting with the equations of motion for the supercell (given harmonic <a href="../extract_forceconstants/">force constants</a>)</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{pmatrix}
+m_1 \ddot{\mathbf{u}}_1 \\
+m_2 \ddot{\mathbf{u}}_2 \\
+\vdots \\
+m_{N_a} \ddot{\mathbf{u}}_{N_a}
+\end{pmatrix}=
+\begin{pmatrix}
+\mathbf{\Phi}_{11} &amp; \mathbf{\Phi}_{12} &amp; \cdots &amp; \mathbf{\Phi}_{1N_a} \\
+\mathbf{\Phi}_{21} &amp; \mathbf{\Phi}_{22} &amp; \cdots &amp; \mathbf{\Phi}_{2N_a} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+\mathbf{\Phi}_{N_a1} &amp; \mathbf{\Phi}_{N_a2} &amp; \cdots &amp; \mathbf{\Phi}_{N_aN_a}
+\end{pmatrix}
+\begin{pmatrix}
+\mathbf{u}_1\\
+\mathbf{u}_2 \\
+\vdots \\
+\mathbf{u}_{N_a} \\
+\end{pmatrix}
+\end{equation}
+\]</div>
+<p>we diagonalise these and get obtaining <span class="arithmatex">\(3N_a\)</span> eigenvalues <span class="arithmatex">\(\omega^2_s\)</span> and eigenvectors <span class="arithmatex">\(\epsilon_s\)</span>. In the given cell, we can use this normal mode transformation to express the instantaneous positions and velocities,</p>
+<div class="arithmatex">\[
+\begin{align}
+u_i = &amp; \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \sin( \omega_s t+\delta_s ) \\
+\dot{u}_i = &amp; \sum_{s=1}^{3N_a} \epsilon_{is} A_{is} \omega_s \cos( \omega_s t+\delta_s)
+\end{align}
+\]</div>
+<p>This is identical to the transformation introduced in <a href="../phonon_dispersion_relations/">phonon dispersion relations</a>, except that the masses are incorporated in the normal mode amplitudes. We also omit the choice of <span class="arithmatex">\(\mathbf{q}\)</span>-vector, since we are only interested in the modes that are commensurate with the supercell. This leads to the dynamical matrix being a real symmetric matrix, with real eigenvalues and real eigenvectors.</p>
+<p>The normal mode amplitudes <span class="arithmatex">\(A_s\)</span> and the phase <span class="arithmatex">\(\delta_s\)</span> will be determined by the following boundary conditions: we require a set of positions and velocities that correspond to a canonical ensemble. We choose <span class="arithmatex">\(A_s\)</span> so that they are normally distributed around their mean value and that each mode <span class="arithmatex">\(s\)</span> should contribute, on average, <span class="arithmatex">\(k_B T/2\)</span> to the internal energy. Then</p>
+<div class="arithmatex">\[
+\begin{equation}
+\langle A_{is} \rangle =
+\sqrt{\frac{\hbar (2n_s+1) }{2 m_i \omega_s}}
+\approx
+\frac{1}{\omega_s}\sqrt{\frac{k_BT}{m_i}},
+\end{equation}
+\]</div>
+<p>where the approximate result is in the classical limit, $\hbar \omega \ll k_BT $. The appropriate distribution of atomic positions and velocities is given by,</p>
+<div class="arithmatex">\[
+\begin{align}
+u_i &amp; = \sum_{s=1}^{3N_a}
+\epsilon_{is} \langle A_{is} \rangle \sqrt{-2\ln \xi_1}\sin 2\pi\xi_2 \\
+\dot{u}_i &amp; = \sum_{s=1}^{3N_a}
+\omega_s \epsilon_{is} \langle A_{is} \rangle \sqrt{-2\ln \xi_1}\cos 2\pi\xi_2
+\end{align}
+\]</div>
+<p>Here, <span class="arithmatex">\(0 \lt \xi_n \lt 1\)</span>, represents a uniform distribution of random numbers, which are transformed to a normal distribution using the standard Box-Muller transform.</p>
+<p>Choosing the mean amplitudes in the classical limit gives us a snapshot in time from a canonical Maxwell-Boltzmann ensemble (within the harmonic approximation), which results in a starting point that reduces the time until equilibration by orders of magnitude. Choosing a Bose-Einstein distribution of mean amplitudes and velocities instead allows us to sample phase space while including quantum thermal disorder at low temperatures.</p>
+<p>For applications where one does not need consecutive timesteps, the starting configurations generated by this can be used  by run several simultaneous instances of Born-Oppenheimer molecular dynamics with different random starting configurations, rather than running a single long instance. This strategy allows for parallelization of Born-Oppenheimer molecular dynamics with near perfect linear scaling, since the overhead of equilibration time is almost completely eliminated.</p>
+<p><center>
+<img src="../../media/phase_space_spanning.png" width="500" />
+</center></p>
+<p>This is illustrated in the plot above. This is the singular value decomposition of molecular dynamics trajectories. A single colored field corresponds to data from a single random initial starting configuration. The dimensions spanned per unit time is greatly increased by stitching together calculations from different initial configurations. That is, 10 MD runs of 1000 time steps explores phase space better than a single MD run of 10x1000 time steps.</p>
+<h4 id="matching-with-a-debye-temperature">Matching with a Debye temperature</h4>
+<p>Up until this point we have assumed you have <a href="../extract_forceconstants/">forceconstants</a> to generate the normal mode displacements. If you don't, it's possible to guess them. The following procedure is used: assume a pair potential <span class="arithmatex">\(U(r)\)</span> which obeys</p>
+<div class="arithmatex">\[
+\begin{equation}
+\frac{ \partial U(r)}{\partial r_{ij} }=0
+\end{equation}
+\]</div>
+<p>and</p>
+<div class="arithmatex">\[
+\begin{equation}
+\frac{ \partial^2 U(r)}{\partial r_{ij}^2 }=\frac{\alpha}{r_{ij}^4}
+\end{equation}
+\]</div>
+<p>Here <span class="arithmatex">\(r_{ij}\)</span> is a pair distance in the supercell. Forceconstants can be calculated analytically from a pair potential, in this case they are given by</p>
+<div class="arithmatex">\[
+\begin{equation}
+\mathbf{\Phi}(r)=
+-\frac{\alpha}{r^6}
+\begin{pmatrix}
+r_x^2 &amp; r_x r_y &amp; r_x r_z \\
+r_x r_y &amp; r_y^2 &amp; r_y r_z \\
+r_x r_z &amp; r_y r_z &amp; r_z^2
+\end{pmatrix}
+\end{equation}
+\]</div>
+<p>By definition, this will always produce stable phonons with the correct symmetry. The parameter <span class="arithmatex">\(\alpha\)</span> is determined by numerically matching the zero-point motion of the phonons to a Debye temperature (option <code>--debyte_temperature</code>):</p>
+<div class="arithmatex">\[
+\begin{equation}
+\frac{1}{N} \sum_i \frac{\hbar \omega_i(\alpha)}{2} = \frac{9 k_B T_D}{8}
+\end{equation}
+\]</div>
+<p>Or alternatively matching the maximum frequency to a reference value (option <code>--maximum_frequency</code>). Using actual forceconstants is of course better, but this procedure generates surprisingly good configurations. They generally hold a decent balance between kinetic and potential energy, and by virtue of that they will cut equilibration time by orders of magnitude in your molecular dynamics.</p>
+<h3 id="stochastic-sampling">Stochastic sampling</h3>
+<p>There is a dedicated tutorial for stochastic sampling <a href="https://github.com/tdep-developers/tdep-tutorials/tree/main/02_sampling">here</a>.</p>
+<h3 id="input-files">Input files</h3>
+<ul>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../../files/#infile.ucposcar">infile.ssposcar</a> (use <a href="../generate_structure/">generate structure</a> to create one)</li>
+<li><a href="../../files/#infile.forceconstant">infile.forceconstant</a> (or use <code>--debye_temperature</code> as described above)</li>
+</ul>
+<h3 id="output-files">Output files</h3>
+<p>The desired number of configurations are printed in VASP POSCAR <a href="../../files/#infile.ucposcar">format</a> by default, but the <code>--output_format</code> option can provide output in a variety of formats.</p>
+<ul>
+<li>contcar_conf0001</li>
+<li>contcar_conf0002</li>
+<li>contcar_conf0003</li>
+<li>...</li>
+</ul>
+<p>In case you used a Debye temperature to generate the configurations, <code>outfile.fakeforceconstant</code> will be written. Use <a href="../phonon_dispersion_relations/">phonon dispersion relations</a> to plot it and check that the frequencies are reasonable.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:West2006">
+<p><a href="http://doi.org/10.1103/PhysRevLett.96.115504">West, D., &amp; Estreicher, S. (2006). First-Principles Calculations of Vibrational Lifetimes and Decay Channels: Hydrogen-Related Modes in Si. Physical Review Letters, 96(11), 115504.</a>&#160;<a class="footnote-backref" href="#fnref:West2006" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 Olle Hellman, Florian Knoop
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sticky", "navigation.instant", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1502 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../thermal_conductivity_2023/">
+      
+      
+        <link rel="next" href="../lineshape/">
+      
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Thermal conductivity - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Thermal conductivity
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+    
+  
+  Programs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../files/" class="md-tabs__link">
+        
+  
+    
+  
+  Files
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    TDEP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Programs
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Programs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical_configuration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Canonical configuration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_forceconstants/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract forceconstants
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phonon dispersion relations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity_2023/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity 2023
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Thermal conductivity
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Longer summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scattering-rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scattering rates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-diagonal-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The diagonal contribution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-off-diagonal-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The off-diagonal contribution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monte-carlo-integration-for-the-scattering-rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monte-Carlo integration for the scattering rates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outfilethermal_conductivity" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.thermal_conductivity
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="outfile.thermal_conductivity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilethermal_conductivity_gridhdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.thermal_conductivity_grid.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lineshape/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lineshape
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Anharmonic free energy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atomic_distribution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Atomic distribution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pack simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Samples from MD
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dump_dynamical_matrices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dump dynamical matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Crystal structure info
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Refine structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phasespace_surface/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phase space
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Files
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#longer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Longer summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scattering-rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scattering rates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-diagonal-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The diagonal contribution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-off-diagonal-contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The off-diagonal contribution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monte-carlo-integration-for-the-scattering-rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monte-Carlo integration for the scattering rates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outfilethermal_conductivity" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.thermal_conductivity
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="outfile.thermal_conductivity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilethermal_conductivity_gridhdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.thermal_conductivity_grid.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Thermal conductivity</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>Calculates the lattice thermal conductivity in the mode-coupling formalism, including collective and off-diagonal contributions up to fourth-order interactions.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--readiso</code><br />
+    default value .false.<br />
+    Read the isotope distribution from <code>infile.isotopes</code>. The format is specified <a href="../../files/#infile.isotopes">here</a>.</p>
+</li>
+<li>
+<p><code>--qpoint_grid value#1 value#2 value#3</code>, <code>-qg value#1 value#2 value#3</code><br />
+    default value 26 26 26<br />
+    Density of q-point mesh for Brillouin zone integrations.</p>
+</li>
+<li>
+<p><code>--qpoint_grid3ph value#1 value#2 value#3</code>, <code>-qg3ph value#1 value#2 value#3</code>
+    default value -1 -1 -1
+    Dimension of the grid for the threephonon integration.</p>
+</li>
+<li>
+<p><code>--qpoint_grid4ph value#1 value#2 value#3</code>, <code>-qg4ph value#1 value#2 value#3</code>
+    default value -1 -1 -1
+    Dimension of the grid for the fourphonon integration.</p>
+</li>
+<li>
+<p><code>--integrationtype value</code>, <code>-it value</code>, value in: <code>1,2</code><br />
+    default value 2<br />
+    Type of integration for the phonon DOS. 1 is Gaussian, 2 adaptive Gaussian.</p>
+</li>
+<li>
+<p><code>--sigma value</code><br />
+    default value 1.0<br />
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.</p>
+</li>
+<li>
+<p><code>--readqmesh</code><br />
+    default value .false.<br />
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.</p>
+</li>
+<li>
+<p><code>--fourthorder</code>
+    default value .false.
+    Consider four-phonon contributions to the scattering.</p>
+</li>
+<li>
+<p><code>--classical</code>
+    default value .false.
+    Use the classical limit for phonon occupation and heat capacity.</p>
+</li>
+<li>
+<p><code>--temperature value</code><br />
+    default value 300
+    Evaluate thermal conductivity at a single temperature.</p>
+</li>
+<li>
+<p><code>--max_mfp value</code><br />
+    default value -1<br />
+    Add a limit on the mean free path as an approximation of domain size (in m).</p>
+</li>
+<li>
+<p><code>--noisotope</code><br />
+    default value .false.<br />
+    Do not consider isotope scattering.</p>
+</li>
+<li>
+<p><code>--iterative_tolerance</code>
+    default value 1e-5
+    Tolerance for the iterative solution.</p>
+</li>
+<li>
+<p><code>--iterative_maxsteps</code>
+    default 200
+    Max number of iterations for the iterative solution.</p>
+</li>
+<li>
+<p><code>--seed</code>
+    default -1
+    Positive integer to seed the random number generator for the Monte-Carlo grids.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>mpirun thermal_conductivity --temperature 300</code> </p>
+<p><code>mpirun thermal_conductivity -qg 30 30 30 --temperature 300 -qg3ph 15 15 15</code> </p>
+<p><code>mpirun thermal_conductivity -qg 30 30 30 --fourthorder -qg4ph 4 4 4</code> </p>
+<h3 id="longer-summary">Longer summary</h3>
+<p>The thermal conductivity tensor can be computed from the Green-Kubo formula</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa^{\alpha\beta} = \frac{\beta}{V T} \int_0^\infty dt \int_0^\beta d\lambda \langle J_{\alpha}(i\hbar\lambda) J_\beta(t) \rangle
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(J_{\alpha}\)</span> is the heat current operator.
+In a crystal, the heat current operator can be approximated as</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha} = - \sum_{ij} \sum_{\beta\gamma} \big( \langle R_i^\alpha \rangle - \langle R_j^\alpha \rangle ) \Phi_{ij}^{\beta\gamma} u_i^\beta v_j^\gamma
+\end{equation}
+\]</div>
+<p>which can be projected on phonons to give</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha} = \frac{1}{2}\sum_{\lambda \lambda'} \hbar \omega_{\lambda'} v_{\lambda\lambda'}^{\alpha} A_\lambda B_{\lambda'}
+\end{equation}
+\]</div>
+<p>In this equation, <span class="arithmatex">\(A_\lambda\)</span> and <span class="arithmatex">\(B_\lambda\)</span> are respectively the displacements and momentum phonon operators and <span class="arithmatex">\(v_{\lambda\lambda'}^{\alpha}\)</span> is the generalized off-diagonal phonon group-velocity <sup id="fnref:Dangic2021"><a class="footnote-ref" href="#fn:Dangic2021">13</a></sup>, written</p>
+<div class="arithmatex">\[
+\begin{equation}
+v_{\lambda\lambda'}^\alpha = \frac{i}{2 \sqrt{\omega_\lambda \omega_{\lambda'}}} \sum_{ij \beta\gamma} \epsilon_\lambda^{i\beta} \sum_{\mathbf{R}} \big( \langle R_i^\alpha \rangle - \langle R_j^\alpha \rangle \big) \frac{\Phi_{ij}^{\beta\gamma}}{\sqrt{m_i m_j}} \epsilon_{\lambda'}^{j\gamma}
+\end{equation}
+\]</div>
+<p>and whose diagonal contributions are equal to the usual phonon group velocities <span class="arithmatex">\(\mathbf{v}_{\lambda\lambda} = \mathbf{v}_{\lambda}\)</span>.
+Now, the heat current can be separated in a diagonal and a non diagonal contribution as</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha} = J_{\alpha}^{\mathrm{d}} + J_{\alpha}^{\mathrm{nd}}
+\end{equation}
+\]</div>
+<p>Here, we will only provide a sketch of the derivation.
+For more informations, we refer reader to the article describing the implementation <sup id="fnref:Castellano2024"><a class="footnote-ref" href="#fn:Castellano2024">1</a></sup> and the references at the bottom of the page.</p>
+<h3 id="scattering-rates">Scattering rates</h3>
+<p>Before handling the thermal conductivity tensor, we will discuss the scattering rates of the phonons.
+Due to interaction with other phonons or quasiparticles, isotopic disorder, boundaries, ..., the phonons scatters.
+This scattering is encoded in the self-energy (or memory kernel).</p>
+<p>Here, we will make the approximation that these interactions are weak enough so that we can work in the Markovian approximation (or equivalently apply Fermi's golden rule).
+In this case, the self-energy can be simplified to a single number <span class="arithmatex">\(\Gamma_\lambda\)</span>, which allows to define the phonon lifetime</p>
+<div class="arithmatex">\[
+\begin{equation}
+\tau_\lambda = \frac{1}{2 \Gamma_\lambda}
+\end{equation}
+\]</div>
+<p>Within this approximation, the phonon spectral function <span class="arithmatex">\(\chi''(\Omega)\)</span> reduces to a Lorentzian centered on <span class="arithmatex">\(\omega_\lambda\)</span> with a width of <span class="arithmatex">\(\Gamma_\lambda\)</span>.</p>
+<p>The contribution to <span class="arithmatex">\(\Gamma_\lambda\)</span> given by third order interaction is written</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+\Gamma_\lambda^{3\mathrm{ph}} = \frac{\pi}{16} \sum_{\lambda' \lambda''} \vert \Psi_{\lambda\lambda'\lambda''} \vert^2  &amp;\big[(n_{\lambda'} + n_{\lambda''} + 1) (\delta(\omega_\lambda - \omega_{\lambda'} - \omega_{\lambda''}) - (\delta(\omega_\lambda + \omega_{\lambda'} + \omega_{\lambda''})) \\
+&amp;+ (n_{\lambda'} - n_{\lambda''}) (\delta(\omega_\lambda + \omega_{\lambda'} - \omega_{\lambda''}) - (\delta(\omega_\lambda - \omega_{\lambda'} + \omega_{\lambda''})) \big]
+\end{split}
+\end{equation}
+\]</div>
+<p>with <span class="arithmatex">\(n_\lambda = (e^{\hbar\omega_\lambda / k_{\mathrm{B}}T} - 1)^{-1}\)</span> the Bose-Einstein distribution of phonon <span class="arithmatex">\(\lambda\)</span>.
+In this equation, the sum is over momentum conserving processes, <span class="arithmatex">\(\mathbf{q} + \mathbf{q}' + \mathbf{q}'' = \mathbf{G}\)</span> and the three-phonon matrix elements are given by</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Psi_{\lambda\lambda'\lambda''} = \sum_{ijk} \sum_{\alpha\beta\gamma} \frac{\epsilon_{\lambda}^{i \alpha}\epsilon_{\lambda'}^{j \beta}\epsilon_{\lambda''}^{k \gamma}}
+{\sqrt{m_{i}m_{j}m_{k}}\sqrt{\omega_{\lambda}\omega_{\lambda'}\omega_{\lambda''}}}\Phi^{\alpha\beta\gamma}_{ijk}e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k}
+\end{equation}
+\]</div>
+<p>At the fourth-order, the contribution is</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+\Gamma_\lambda^{4\mathrm{ph}} = \frac{\pi}{96} \sum_{\lambda'\lambda''\lambda'''} \vert \Psi_{\lambda\lambda'\lambda''\lambda'''} \vert^2
+&amp;\big[ (n_{\lambda'} + 1)(n_{\lambda''} + 1)(n_{\lambda'''} + 1) - n_{\lambda'}n_{\lambda''}n_{\lambda'''} (\delta(\omega_{\lambda} - \omega_{\lambda'} - \omega_{\lambda''} - \omega_{\lambda'''}) - \delta(\omega_{\lambda} + \omega_{\lambda'} + \omega_{\lambda''} + \omega_{\lambda'''})) \\
+&amp;+ 3 n_{\lambda'}(n_{\lambda''} + 1)(n_{\lambda'''} + 1) - (n_{\lambda'} + 1) n_{\lambda''}n_{\lambda'''} (\delta(\omega_{\lambda} + \omega_{\lambda'} - \omega_{\lambda''} - \omega_{\lambda'''}) - \delta(\omega_{\lambda} - \omega_{\lambda'} + \omega_{\lambda''} + \omega_{\lambda'''}))] 
+\end{split}
+\end{equation}
+\]</div>
+<p>where the sum is also over momentum conserving processes, <span class="arithmatex">\(\mathbf{q} + \mathbf{q}' + \mathbf{q}'' + \mathbf{q}''' = \mathbf{G}\)</span> and the four-phonon matrix elements are given by</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Psi_{\lambda\lambda'\lambda''\lambda'''} = \sum_{ijkl} \sum_{\alpha\beta\gamma\delta} \frac{\epsilon_{\lambda}^{i \alpha}\epsilon_{\lambda'}^{j \beta}\epsilon_{\lambda''}^{k \gamma}\epsilon_{\lambda'''}^{l \delta}}
+{\sqrt{m_{i}m_{j}m_{k}m_{l}}\sqrt{\omega_{\lambda}\omega_{\lambda'}\omega_{\lambda''}\omega_{\lambda'''}}}\Phi^{\alpha\beta\gamma\delta}_{ijkl}e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k+i\mathbf{q}'''\cdot\mathbf{r}_l}
+\end{equation}
+\]</div>
+<p>The contribution to the scattering rate by isotopic disorder can be computed to Tamura's model<sup id="fnref:Tamura1983"><a class="footnote-ref" href="#fn:Tamura1983">4</a></sup>, written</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Gamma_{\lambda}^{\mathrm{iso}} = \frac{\pi}{4} \sum_{\lambda'} \omega_{\lambda} \omega_{\lambda'} \sum_i g_i \vert \epsilon_\lambda^{i\dagger} \epsilon_{\lambda'}^{i} \vert \delta(\omega_{\lambda} - \omega_{\lambda'})
+\end{equation}
+\]</div>
+<p>where the mass variance parameter <span class="arithmatex">\(g\)</span> is written</p>
+<div class="arithmatex">\[
+\begin{equation}
+g_i=\sum_j c_{i}^j \left(\frac{m_i^j-\bar{m_i}}{\bar{m_i}}\right)^2
+\end{equation}
+\]</div>
+<p>In this equation, <span class="arithmatex">\(\bar{m_i}\)</span> is the average isotopic mass( <span class="arithmatex">\(\bar{m_i}=\sum_j c_i^j m_i^j\)</span> ), <span class="arithmatex">\(m^j_i\)</span> is the mass of isotope <span class="arithmatex">\(j\)</span> of atom <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(c^j_i\)</span> is its concentration.</p>
+<p>Finally, scattering by domain boundaries is implemented as</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Gamma_{\lambda}^{\mathrm{boundary}} = \frac{v_{\lambda}}{2 L}
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(L\)</span> is a characteristic domain size.</p>
+<h3 id="the-diagonal-contribution">The diagonal contribution</h3>
+<p>The diagonal contribution to the heat current is written</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha}^{\mathrm{d}} = \sum_\lambda \hbar \omega_\lambda v_{\lambda}^{\alpha} A_\lambda B_\lambda
+\end{equation}
+\]</div>
+<p>Injecting it into the Green-Kubo formula, we obtain that the thermal conductivity tensor is proportional to a four-point correlation</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta}^\mathrm{d} \propto \int_0^\infty dt \int_0^\beta d\lambda \langle A_\lambda(i\hbar\lambda) B_\lambda(i\hbar\lambda) A_{\lambda'}(t) B_{\lambda'}(t) \rangle
+\end{equation}
+\]</div>
+<p>Solving the integral of this four-point correlation is a cumbersome task, and we refer the reader to references <sup id="fnref:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">10</a></sup><sup>,</sup><sup id="fnref2:Castellano2024"><a class="footnote-ref" href="#fn:Castellano2024">1</a></sup> for the detailed derivation.
+In a nutshell, an equation of motion is formulated for the four-point correlation.
+This equation of motion is then solved using a Laplace transform and injected in the thermal conductivity tensor to give</p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+\kappa_{\alpha\beta}^{\mathrm{d}} =&amp; \frac{1}{V} \sum_{\lambda\lambda'} v_{\lambda}^{\alpha} v_{\lambda}^{\beta} c_\lambda \Xi^{-1}({\lambda\lambda'}) \\
+=&amp; \frac{1}{V} \sum_{\lambda} c_\lambda v_{\lambda}^{\alpha} F_{\lambda\beta}
+\end{split}
+\end{equation}
+\]</div>
+<p>with <span class="arithmatex">\(c_\lambda = n_\lambda (n_\lambda + 1) \omega_\lambda^2 / k_{\mathrm{B}}T^2\)</span> and where the vector <span class="arithmatex">\(F_{\lambda}^{\beta}\)</span>, defined as</p>
+<div class="arithmatex">\[
+\begin{equation}
+F_{\lambda\alpha} = \Xi^{-1} v_{\lambda}^{\alpha}
+\end{equation}
+\]</div>
+<p>is simply introduced to ease the computation of the thermal conductivity tensor.</p>
+<p>In the previous equation, <span class="arithmatex">\(\Xi\)</span> is called the scattering matrix.
+The diagonal component of this matrix is equal to the scattering rates <span class="arithmatex">\(\Gamma_\lambda\)</span> of phonons while the off-diagonal part describes the coupling between modes, which introduce collective phonon contributions to heat transport.</p>
+<p>Using the Neumann series for matrix inversion, <span class="arithmatex">\(F_{\lambda}^{\alpha}\)</span> can be computed self-consistently <sup id="fnref:Omini"><a class="footnote-ref" href="#fn:Omini">6</a></sup><sup>,</sup><sup id="fnref:Omini1996"><a class="footnote-ref" href="#fn:Omini1996">5</a></sup> as</p>
+<div class="arithmatex">\[
+\begin{equation}
+F_{\lambda\alpha}^{n+1} = F_{\lambda\alpha}^0 - \tau_\lambda \sum_{\lambda'} \Xi_{\lambda\lambda'} F_{\lambda\alpha}^n
+\end{equation}
+\]</div>
+<p>where the starting point is given by</p>
+<div class="arithmatex">\[
+\begin{equation}
+F_{\lambda\alpha}^0 = v_{\lambda}^{\alpha} \tau_{\lambda\alpha}
+\end{equation}
+\]</div>
+<p>If the off-diagonal part of the scattering matrix are neglected, one obtain the single mode approximation, written</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta}^{\mathrm{d},\mathrm{SMA}} = \frac{1}{V} \sum_{\lambda\lambda'} v_{\lambda}^{\alpha} v_{\lambda}^{\beta} c_\lambda \tau_\lambda
+\end{equation}
+\]</div>
+<p>This approximation consists in neglecting the collective phonon contribution to the thermal conductivity tensor and can also be obtain by decoupling the four-point correlation in product of two-point correlation functions<sup id="fnref:Caldarelli2022"><a class="footnote-ref" href="#fn:Caldarelli2022">12</a></sup><sup>,</sup><sup id="fnref3:Castellano2024"><a class="footnote-ref" href="#fn:Castellano2024">1</a></sup>.</p>
+<p>It is important to note that while starting from differents considerations, this formulation and the Boltzmann equation <sup id="fnref:peierls1929"><a class="footnote-ref" href="#fn:peierls1929">2</a></sup><sup>,</sup><sup id="fnref:peierls1955quantum"><a class="footnote-ref" href="#fn:peierls1955quantum">3</a></sup><sup>,</sup><sup id="fnref:Broido2007"><a class="footnote-ref" href="#fn:Broido2007">7</a></sup><sup>,</sup><sup id="fnref:Broido2005"><a class="footnote-ref" href="#fn:Broido2005">8</a></sup> are strictly equivalent <sup id="fnref2:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">10</a></sup>.</p>
+<h3 id="the-off-diagonal-contribution">The off-diagonal contribution</h3>
+<p>The off diagonal heat tensor is written</p>
+<div class="arithmatex">\[
+\begin{equation}
+J_{\alpha}^{\mathrm{nd}} = \sum'_{\lambda \lambda'} \hbar \omega_{\lambda'} v_{\lambda\lambda'}^{\alpha} A_\lambda B_{\lambda'}
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(\sum'\)</span> indicates that <span class="arithmatex">\(\lambda = \lambda'\)</span> is excluded from the sum.
+Injecting this contribution into the Green-Kubo formula also ends up in something proportional to a four-point correlation function</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta}^\mathrm{nd} \propto \int_0^\infty dt \int_0^\beta d\lambda \langle A_{\lambda}(i\hbar\lambda) B_{\lambda'}(i\hbar\lambda) A_{\lambda''}(t) B_{\lambda'''}(t) \rangle
+\end{equation}
+\]</div>
+<p>For this contribution, we will directly neglect the collective part (this is called the dressed-bubble approximation<sup id="fnref2:Caldarelli2022"><a class="footnote-ref" href="#fn:Caldarelli2022">12</a></sup><sup>,</sup><sup id="fnref3:Fiorentino2023"><a class="footnote-ref" href="#fn:Fiorentino2023">10</a></sup>) and decouple the four-point correlation in product of two-point correlations</p>
+<div class="arithmatex">\[
+\begin{equation}
+\langle A_{\lambda} B_{\lambda'} A_{\lambda''} B_{\lambda'''} \rangle \approx \langle A_{\lambda} A_{\lambda''} \rangle \langle B_{\lambda'} B_{\lambda'''} \rangle + ...
+\end{equation}
+\]</div>
+<p>Performing some Fourier transform, we can now express the integral in term of spectral function <span class="arithmatex">\(\chi_{\lambda}''(\Omega)\)</span></p>
+<div class="arithmatex">\[
+\begin{equation}
+\int_0^\infty dt \int_0^\beta d\lambda \langle A_{\lambda}(i\hbar\lambda) B_{\lambda'}(i\hbar\lambda) A_{\lambda''}(t) B_{\lambda'''}(t) \rangle \approx \int_{-\infty}^{\infty} d\Omega \chi_{\lambda}''(\Omega) \chi_{\lambda'}''(\Omega) \Omega^2 n(\Omega) (n(\Omega) + 1)
+\end{equation}
+\]</div>
+<p>Recalling that we are working in the Markovian approximation, we can approximate these spectral functions as Lorentzian, and we can make the approximation that these will act as Dirac deltas centered on the harmonic frequencies.
+This allows to perform the integral analytically, and we finally obtain the off diagonal contribution to the thermal conductivity tensor as</p>
+<div class="arithmatex">\[
+\begin{equation}
+\kappa_{\alpha\beta}^{\mathrm{nd}} = \frac{1}{V} \sum_{\lambda\lambda'} v_{\lambda\lambda'}^{\alpha}v_{\lambda\lambda'}^{\beta} \frac{c_\lambda + c_{\lambda'}}{2} \Gamma_{\lambda\lambda'}
+\end{equation}
+\]</div>
+<p>with</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Gamma_{\lambda\lambda'} = \frac{\Gamma_\lambda + \Gamma_{\lambda'}}{(\omega_\lambda - \omega_{\lambda'})^2 + (\Gamma_\lambda + \Gamma_{\lambda'})^2}
+\end{equation}
+\]</div>
+<p>This off-diagonal contribution, describing wavelike-interference between phonons of similar frequencies, becomes important for system with complex unitcell.
+While the derivation sketched here is based on the Hardy current<sup id="fnref:Isaeva2019"><a class="footnote-ref" href="#fn:Isaeva2019">9</a></sup>, it can also be obtain from a Wigner description of heat transport <sup id="fnref:Simoncelli2019"><a class="footnote-ref" href="#fn:Simoncelli2019">11</a></sup>, with very similar results<sup id="fnref3:Caldarelli2022"><a class="footnote-ref" href="#fn:Caldarelli2022">12</a></sup>.</p>
+<h3 id="monte-carlo-integration-for-the-scattering-rates">Monte-Carlo integration for the scattering rates</h3>
+<p>To reach the thermodynamic limit, the thermal conductivity has to be computed on a large grid of q-points, which can make the computation quite expensive.
+This cost comes almost entirely from the computation of the scattering.</p>
+<p>However, one can observe that the computation of <span class="arithmatex">\(\kappa\)</span> actually requires two kind of integrations.
+The first is the sum of the contribution of each q-point to the thermal conductivity, while the second one correspond to the computation of the scattering.</p>
+<p>Fortunately for us, these two integrations converges at different rates.
+In particular, the expensive scattering integration converges more quickly than the thermal conductivity integration.</p>
+<p>Thus, to improve the computational cost, the code offers the possibility to disassociate these two integrations by using a Monte-Carlo integration of the scattering.
+For this, we generate a full grid, on which the thermal conductivity will be integrated.
+A subset of this full grid can then be selected to perform the scattering integration.
+In order to improve the convergence, these point are not selected entirely at random but using a stratified approached in order to sample more uniformly the Brillouin zone.</p>
+<p>This is schematically represented in the following picture, where each dot represents a point on a <span class="arithmatex">\(8\times8\)</span> grid, with the red dot corresponding to point selected for a Monte-Carlo integration equivalent to a <span class="arithmatex">\(4\times4\)</span> grid and the bar representing the way the grid is stratified.</p>
+<p><center>
+<img src="../../media/monte_carlo_grid.png" width="300" />
+</center></p>
+<p>The code allows to use different Monte-Carlo grids for third and fourth order, using the variables <code>--qpoint_grid3ph</code> and <code>--qpoint_grid4ph</code>.</p>
+<p>It is important to note that this method of integration is not deterministic, so that several runs will give different results
+However, the noise reduces as the density of the Monte-Carlo grids increases, to finally vanish if the Monte-Carlo and full grid density are the same (which is the default).
+Similarly to the full grid on which the thermal conductivity is computed, the Monte-Carlo grid densities are parameters to be carefully converged.</p>
+<p>Converging the grids is an important step to ensure accurate results.
+Since the convergence of the Monte-Carlo grids are not related to the convergence of the full grid, their determination can be done independently.
+To reduce the computational cost of the convergence, an approach is to fix the full grid to a moderately large density, and first converge the third order grid and then the fourth-order one.
+Once the Monte-Carlo grid densities are known, then the full grid density can be determined.</p>
+<h3 id="input-files">Input files</h3>
+<p>These files are necesarry:</p>
+<ul>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../extract_forceconstants/#infile.forceconstant">infile.forceconstant</a></li>
+<li><a href="../extract_forceconstants/#infile.forceconstant_thirdorder">infile.forceconstant_thirdorder</a></li>
+</ul>
+<p>and these are optional:</p>
+<ul>
+<li><a href="../../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
+<li><a href="../extract_forceconstants/#infile.forceconstant_fourthorder">infile.forceconstant_fourthorder</a></li>
+</ul>
+<h3 id="output-files">Output files</h3>
+<h3 id="outfilethermal_conductivity"><code>outfile.thermal_conductivity</code></h3>
+<p>This file contains the thermal conductivity tensor, with the decomposition from all contributions, in a format that can be parsed with tools such as numpy.
+It looks like this</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># Unit:               W/m/K
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a># Temperature:          0.300000000000E+03
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a># Single mode approximation
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>#                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        0.708649123335E+02       0.708649123335E+02       0.708649123335E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a># Collective contribution
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>#                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        0.475409189194E+01       0.475409189194E+01       0.475409189194E+01       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a># Off diagonal (coherence) contribution
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>#                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        0.854567548533E-03       0.854567548533E-03       0.854567548533E-03       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a># Total thermal conductivity
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>#                      kxx                      kyy                      kzz                      kxy                      kxz                      kyz
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        0.756198587929E+02       0.756198587929E+02       0.756198587929E+02       0.000000000000E+00       0.000000000000E+00       0.000000000000E+00
+</span></code></pre></div>
+<h4 id="outfilethermal_conductivity_gridhdf5"><code>outfile.thermal_conductivity_grid.hdf5</code></h4>
+<p>This file contains nearly all quantities on the full q-grid.
+Below is a matlab snippet that plots a subset:</p>
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c">% file to read from</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">fn</span><span class="p">=</span><span class="s">&#39;outfile.grid_thermal_conductivity.hdf5&#39;</span><span class="p">;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c">% convert units to THz from Hz?</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">toTHz</span><span class="p">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1E12</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="nb">pi</span><span class="p">;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/linewidths&#39;</span><span class="p">);</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Linewidth (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/lifetimes&#39;</span><span class="p">);</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:),</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;yscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Lifetime (s)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">    </span><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">    </span><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/mean_free_paths&#39;</span><span class="p">);</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">        </span><span class="nb">plot</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="nb">i</span><span class="p">,:)</span><span class="o">*</span><span class="n">toTHz</span><span class="p">,</span><span class="n">y</span><span class="p">(</span><span class="nb">i</span><span class="p">,:),</span><span class="s">&#39;marker&#39;</span><span class="p">,</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="s">&#39;linestyle&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;markersize&#39;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;yscale&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+</span><span id="__span-1-41"><a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (THz)&#39;</span><span class="p">)</span>
+</span><span id="__span-1-42"><a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Mean free paths (m)&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:Castellano2024">
+<p><a href="https://doi.org/10.48550/arXiv.2411.14949">Castellano, A &amp; Batista, J. P. &amp; Verstraete, M. J. (2024). Mode-coupling theory of heat transport in anharmonic materials</a>&#160;<a class="footnote-backref" href="#fnref:Castellano2024" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:Castellano2024" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:Castellano2024" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:peierls1929">
+<p>Peierls, R. E. (1929). Annalen der Physik, 3, 1055&#160;<a class="footnote-backref" href="#fnref:peierls1929" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:peierls1955quantum">
+<p><a href="https://books.google.com/books?id=WvPcBUsSJBAC">Peierls, R. E. (1955). Quantum Theory of Solids. Clarendon Press.</a>&#160;<a class="footnote-backref" href="#fnref:peierls1955quantum" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Tamura1983">
+<p><a href="http://doi.org/10.1103/PhysRevB.27.858">Tamura, S. (1983). Isotope scattering of dispersive phonons in Ge. Physical Review B, 27(2), 858–866.</a>&#160;<a class="footnote-backref" href="#fnref:Tamura1983" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Omini1996">
+<p><a href="http://doi.org/10.1103/PhysRevB.53.9064">Omini, M., &amp; Sparavigna, A. (1996). Beyond the isotropic-model approximation in the theory of thermal conductivity. Physical Review B, 53(14), 9064–9073.</a>&#160;<a class="footnote-backref" href="#fnref:Omini1996" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Omini">
+<p><a href="http://www.sif.it/riviste/ncd/econtents/1997/019/10/article/5">Omini, M., &amp; Sparavigna, A. (1997). Heat transport in dielectric solids with diamond structure. Nuovo Cimento Della Societa Italiana Di Fisica D, 19D, 1537–63.</a>&#160;<a class="footnote-backref" href="#fnref:Omini" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Broido2007">
+<p><a href="http://doi.org/10.1063/1.2822891">Broido, D. A., Malorny, M., Birner, G., Mingo, N., &amp; Stewart, D. A. (2007). Intrinsic lattice thermal conductivity of semiconductors from first principles. Applied Physics Letters, 91(23), 231922.</a>&#160;<a class="footnote-backref" href="#fnref:Broido2007" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Broido2005">
+<p><a href="http://doi.org/10.1103/PhysRevB.72.014308">Broido, D. A., Ward, A., &amp; Mingo, N. (2005). Lattice thermal conductivity of silicon from empirical interatomic potentials. Physical Review B, 72(1), 1–8.</a>&#160;<a class="footnote-backref" href="#fnref:Broido2005" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Isaeva2019">
+<p><a href="https://doi.org/10.1038/s41467-019-11572-4">Isaeva, L &amp; Barbalinardo, G. &amp; Donadio, D. &amp; Baroni, S. (2019). Modeling heat transport in crystals and glasses from a unified lattice-dynamical approach. Nature Communications 10 3853</a>&#160;<a class="footnote-backref" href="#fnref:Isaeva2019" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Fiorentino2023">
+<p><a href="https://doi.org/10.1103/PhysRevB.107.054311">Fiorentino, A. &amp; Baroni, S (2023). From Green-Kubo to the full Boltzmann kinetic approach to heat transport in crystals and glasses. Physical Review B, 107, 054311</a>&#160;<a class="footnote-backref" href="#fnref:Fiorentino2023" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:Fiorentino2023" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:Fiorentino2023" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Simoncelli2019">
+<p><a href="https://doi.org/10.1038/s41567-019-0520-x">Simoncelli, M. &amp; Marzari, N. &amp; Mauri, F. (2019). Unified theory of thermal transport in crystals and glasses. Nature physics 15 803-819</a>&#160;<a class="footnote-backref" href="#fnref:Simoncelli2019" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Caldarelli2022">
+<p><a href="https://doi.org/10.1103/PhysRevB.106.024312">Caldarelli, G. &amp; Simoncelli, M. &amp; Marzari, N. &amp; Mauri, F. &amp; Benfatto, L. (2022). Many-body Green's function approach to lattice thermal transport. Physical Review B 106 024312</a>&#160;<a class="footnote-backref" href="#fnref:Caldarelli2022" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:Caldarelli2022" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:Caldarelli2022" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Dangic2021">
+<p><a href="https://doi.org/10.1038/s41524-021-00523-7">Dangić, Đ. &amp; Hellman, O. &amp; Fahy, S. and Savić, I. (2021) The origin of the lattice thermal conductivity enhancement at the ferroelectric phase transition in GeTe. Nature Computational Materials 7, 57</a>&#160;<a class="footnote-backref" href="#fnref:Dangic2021" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 Olle Hellman, Florian Knoop
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sticky", "navigation.instant", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
