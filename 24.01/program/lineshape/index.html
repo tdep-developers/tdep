@@ -1,0 +1,1391 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../thermal_conductivity/">
+      
+      
+        <link rel="next" href="../anharmonic_free_energy/">
+      
+      
+      <link rel="icon" href="../../media/matematico_favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Lineshape - TDEP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CDroid+Sans+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Droid Sans Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#short-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TDEP" class="md-header__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TDEP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Lineshape
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+    
+  
+  Programs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../files/" class="md-tabs__link">
+        
+  
+    
+  
+  Files
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TDEP" class="md-nav__button md-logo" aria-label="TDEP" data-md-component="logo">
+      
+  <img src="../../media/matematico_favicon.png" alt="logo">
+
+    </a>
+    TDEP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tdep-developers/tdep" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Programs
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Programs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical_configuration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Canonical configuration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_forceconstants/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract forceconstants
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phonon_dispersion_relations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phonon dispersion relations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thermal_conductivity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Lineshape
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Lineshape
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Long summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      Background
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mass-disorder" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mass disorder
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilelineshapehdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.lineshape.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilephonon_spectral_functionhdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.phonon_spectral_function.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilephonon_dos_lineshapehdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.phonon_dos_lineshape.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anharmonic_free_energy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Anharmonic free energy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atomic_distribution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Atomic distribution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pack_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pack simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples_from_md/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Samples from MD
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crystal_structure_info/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Crystal structure info
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refine_structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Refine structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../files/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Files
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#short-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short description
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command line options:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Long summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      Background
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mass-disorder" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mass disorder
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output files
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outfilelineshapehdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.lineshape.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilephonon_spectral_functionhdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.phonon_spectral_function.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outfilephonon_dos_lineshapehdf5" class="md-nav__link">
+    <span class="md-ellipsis">
+      outfile.phonon_dos_lineshape.hdf5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Lineshape</h1>
+
+<h3 id="short-description">Short description</h3>
+<p>Calculate the frequency-dependent self-energy and phonon spectral function.</p>
+<h3 id="command-line-options">Command line options:</h3>
+<p>Optional switches:</p>
+<ul>
+<li>
+<p><code>--unit value</code>, value in: <code>thz,mev,icm</code><br />
+    default value thz<br />
+    Choose the output unit. The options are terahertz (in frequency, not angular frequency), inverse cm or meV.</p>
+</li>
+<li>
+<p><code>--temperature value</code><br />
+    default value 300<br />
+    Temperature used in the occupation numbers. Should be the same as the temperature the force constants where determined at.</p>
+</li>
+<li>
+<p><code>--n_energies value</code>, <code>-ne value</code><br />
+    default value 1200<br />
+    Number of energies for the energy-dependent self-energy.</p>
+</li>
+<li>
+<p><code>--qpoint_grid value#1 value#2 value#3</code>, <code>-qg value#1 value#2 value#3</code><br />
+    default value 26 26 26<br />
+    Density of q-point mesh for Brillouin zone integrations.</p>
+</li>
+<li>
+<p><code>--meshtype value</code>, value in: <code>1,2,3</code><br />
+    default value 2<br />
+    Type of q-point mesh. 1 Is a Monkhorst-Pack mesh, 2 an FFT mesh and 3 my fancy wedge-based mesh with approximately the same density the grid-based meshes. 4 build the commensurate mesh of an approximately cubic supercell.</p>
+</li>
+<li>
+<p><code>--integrationtype value</code>, <code>-it value</code>, value in: <code>1,2,3,4,5</code><br />
+    default value 2<br />
+    Type of integration for phase space integrals. 1 is Gaussian, 2 adaptive Gaussian and 3 Tetrahedron.</p>
+</li>
+<li>
+<p><code>--sigma value</code><br />
+    default value 1.0<br />
+    Global scaling factor for Gaussian/adaptive Gaussian smearing. The default is determined procedurally, and scaled by this number.</p>
+</li>
+<li>
+<p><code>--path</code><br />
+    default value .false.<br />
+    Calculate the self-energy and spectral function on a path through the BZ.</p>
+</li>
+<li>
+<p><code>--readpath</code>, <code>-rp</code><br />
+    default value .false.<br />
+    Read the q-point path from <code>infile.qpoints_dispersion</code>. Use <a href="../crystal_structure_info/">crystal structure into</a> to generate an example.</p>
+</li>
+<li>
+<p><code>--nq_on_path value</code>, <code>-nq value</code><br />
+    default value 100<br />
+    Number of q-points between each high symmetry point</p>
+</li>
+<li>
+<p><code>--qpoint value#1 value#2 value#3</code><br />
+    default value 0 0 0<br />
+    Calculate the self-energy at a single q-point, input in fractional coordinates.</p>
+</li>
+<li>
+<p><code>--highsymmetrypoint value</code><br />
+    default value none<br />
+    Samy as above, but you can specify the label of a high-symmetry point instead, e.g. "X" or "L".</p>
+</li>
+<li>
+<p><code>--max_energy value</code><br />
+    default value 1.4<br />
+    Maximum energy where the output is cut off, in multiples of the maximum harmonic frequency.</p>
+</li>
+<li>
+<p><code>--no_isotope_scattering</code><br />
+    default value .false.<br />
+    Switch off isotope (mass disorder) scattering</p>
+</li>
+<li>
+<p><code>--no_thirdorder_scattering</code><br />
+    default value .false.<br />
+    Switch of three-phonon scattering</p>
+</li>
+<li>
+<p><code>--qdirin value#1 value#2 value#3</code><br />
+    default value 1 0 0<br />
+    Incident wavevector (Cartesian coordinates). Determins the behaviour of the non-analytical components at the zone center.</p>
+</li>
+<li>
+<p><code>--grid</code><br />
+    default value .false.<br />
+    Calculate spectral functions on a grid.</p>
+</li>
+<li>
+<p><code>--readiso</code><br />
+    default value .false.<br />
+    Read the isotope distribution from file</p>
+</li>
+<li>
+<p><code>--readqmesh</code><br />
+    default value .false.<br />
+    Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.</p>
+</li>
+<li>
+<p><code>--help</code>, <code>-h</code><br />
+    Print this help message</p>
+</li>
+<li>
+<p><code>--version</code>, <code>-v</code><br />
+    Print version</p>
+</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<p><code>mpirun lineshape --highsymmetrypoint X --temperature 500</code> </p>
+<p><code>mpirun lineshape --path -qg 10 10 10 --noisotope</code> </p>
+<p><code>mpirun lineshape --dos -qg 10 10 10 --dos_qpoint_grid 24 24 24</code> </p>
+<h3 id="long-summary">Long summary</h3>
+<p>This code calculates the energy-dependent self energy from three-phonon scattering, as well as the contributions from mass imperfections and four-phonon scattering. It can produce nice figures like this:</p>
+<p><center><img src="../../media/lineshape_sqe.png" width="500" /></center></p>
+<h3 id="background">Background</h3>
+<p>It is nowadays routine to calculate e.g. <a href="../thermal_conductivity/">lattice thermal conductivity</a> using perturbation theory. At that level of approximation, you calculate the phonon lifetime via the imaginary part of the phonon self-energy at the harmonic frequencies. In general, however, the picture with a well defined phonon, shifted by a small energy <span class="arithmatex">\(\Delta\)</span> and broadened by <span class="arithmatex">\(\Gamma\)</span> is not enough. In general, the phonon self-energy is energy-dependent,<sup id="fnref:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+\Sigma(\Omega) = \Delta(\Omega) + i\Gamma(\Omega) \,,
+\end{equation}
+\]</div>
+<p>where we use <span class="arithmatex">\(\Omega\)</span> to distinguish this energy from the eigenvalues of the dynamical matrix, <span class="arithmatex">\(\omega^2\)</span>. Inelastic neutron measurements sometimes show scattering cross sections that deviate strongly from a Lorentzian. To reproduce this computationally, start by noting that in an idealised experiment the one-phonon neutron cross section would be measured as<sup id="fnref2:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref2:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+\sigma_{\lambda}(\Omega) \propto
+\frac{
+  2 \omega_{\lambda}\Gamma_{\lambda}(\Omega)
+}{
+  \left[\Omega^2-\omega^2_{\lambda}-2\omega_{\lambda}
+  \Delta_{\lambda}(\Omega)\right]^2+4\omega^2_{\lambda}\Gamma_{\lambda}^2(\Omega)}\,.
+\end{equation}
+\]</div>
+<p>Here <span class="arithmatex">\(\omega^2_{\lambda}\)</span> are the eigenvalues of the dynamical matrix, <span class="arithmatex">\(\Delta_{\lambda}(\Omega)\)</span> and <span class="arithmatex">\(\Gamma_{\lambda}(\Omega)\)</span> are the real and imaginary parts of the frequency dependent self-energy, and <span class="arithmatex">\(\hbar\Omega\)</span> is a probing energy. This is the quantity referred to as the lineshape. If you let <span class="arithmatex">\(\Delta\)</span> and <span class="arithmatex">\(\Gamma\)</span> go to a small constant, this reduces to a Lorentzian as expected.</p>
+<p>The energy axis is the probing energy, and the intensity represents the likelihood of exciting a phonon with energy <span class="arithmatex">\(\hbar\Omega\)</span> and momentum <span class="arithmatex">\(\textbf{q}\)</span>. We can interpret the cross section, or phonon lineshape, as the broadened and shifted phonon frequencies. The term "broadening" is used in the sense of a spectral representation: non-interaction quasiparticles are represented as Dirac <span class="arithmatex">\(\delta\)</span>-functions, but in the interacting case these are replaced by distributions with finite widths.</p>
+<p>Given the third order force constants, the imaginary part of the phonon self-energy can be calculated:<sup id="fnref3:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref3:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup><sup>,</sup><sup id="fnref:wallace1998thermodynamics"><a class="footnote-ref" href="#fn:wallace1998thermodynamics">4</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+\begin{split}
+\Gamma_{\lambda}(\Omega) &amp; =  \frac{\hbar\pi}{16}
+%\frac{V}{(2\pi)^3}
+\sum_{\lambda'\lambda''}
+\left|
+\Phi_{\lambda\lambda'\lambda''}
+\right|^2
+\big{\{}(n_{\lambda'}+n_{\lambda''}+1)
+\delta(\Omega-\omega_{\lambda'}-\omega_{\lambda''})+
+\\&amp; +(n_{\lambda'}-n_{\lambda''})
+\left[
+\delta(\Omega-\omega_{\lambda'}+\omega_{\lambda''}) -
+\delta(\Omega+\omega_{\lambda'}-\omega_{\lambda''})
+\right]
+\big{\}}
+\end{split}
+\end{equation}
+\]</div>
+<p>The imaginary part of the self energy is a sum over all possible three-phonon interactions $ \lambda \lambda' \lambda''$, <span class="arithmatex">\(n_{\lambda}\)</span> are the Bose-Einstein thermal occupation factors counting the number of phonons in each mode. The expression for the self-energy is then an integral over the allowed processes (conserving energy and momentum), weighted by how many phonons are in each of the different modes, with the scattering strength determined by the three-phonon matrix element:</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Phi_{\lambda\lambda'\lambda''} =
+\sum_{ijk}
+\sum_{\alpha\beta\gamma}
+\frac{
+\epsilon_{\lambda}^{i \alpha}
+\epsilon_{\lambda'}^{j \beta}
+\epsilon_{\lambda''}^{k \gamma}
+}{
+\sqrt{m_{i}m_{j}m_{j}}
+\sqrt{
+    \omega_{\lambda}
+    \omega_{\lambda'}
+    \omega_{\lambda''}}
+}
+\Phi^{\alpha\beta\gamma}_{ijk}
+e^{i \mathbf{q}\cdot\mathbf{r}_i + i \mathbf{q}'\cdot\mathbf{r}_j+i \mathbf{q}''\cdot\mathbf{r}_k}
+\end{equation}
+\]</div>
+<p>The real part is conveniently calculated via a Kramers-Kronig transform (it can of course be expressed in a similar way as the imaginary part:<sup id="fnref4:Maradudin1962"><a class="footnote-ref" href="#fn:Maradudin1962">1</a></sup><sup>,</sup><sup id="fnref4:RACowley1968"><a class="footnote-ref" href="#fn:RACowley1968">2</a></sup><sup>,</sup><sup id="fnref2:wallace1998thermodynamics"><a class="footnote-ref" href="#fn:wallace1998thermodynamics">4</a></sup></p>
+<div class="arithmatex">\[
+\begin{equation}
+\Delta(\Omega)=\frac{1}{\pi}\int\frac{\Gamma(\omega)}{\omega-\Omega}\mathrm{d}\omega\,.
+\end{equation}
+\]</div>
+<p>A significant deviation from Lorentzian lineshapes indicates anharmonic effects and can be checked by considering phonon spectral representation <span class="arithmatex">\(\sigma_{\lambda}\)</span>.</p>
+<h4 id="mass-disorder">Mass disorder</h4>
+<p>The mass disorder term is also included, stemming from the natural distribution of isotopes. According to Tamura<sup id="fnref:Tamura1983"><a class="footnote-ref" href="#fn:Tamura1983">5</a></sup>, if the isotopes are randomly distributed on the lattice sites then the strength of the isotope effects can be given by a mass variance parameter <span class="arithmatex">\(g\)</span>:</p>
+<div class="arithmatex">\[
+\begin{equation}
+g_i=\sum_j c_{i}^j \left(\frac{m_i^j-\bar{m_i}}{\bar{m_i}}\right)^2
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(\bar{m_i}\)</span> is the average isotopic mass( <span class="arithmatex">\(\bar{m_i}=\sum_j c_i^j m_i^j\)</span> ), <span class="arithmatex">\(m^j_i\)</span> is the mass of isotope <span class="arithmatex">\(j\)</span> of atom <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(c^j_i\)</span> is its concentration. We can write an expression for the imaginary part of the isotope self-energy:</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Gamma_{\lambda}(\Omega)=
+\frac{\pi}{4} \sum_{\lambda'}
+\Lambda_{\lambda\lambda'} \delta(\Omega-\omega_{\lambda}')
+\end{equation}
+\]</div>
+<p>where</p>
+<div class="arithmatex">\[
+\begin{equation}
+\Lambda_{\lambda\lambda'}=
+\omega_{\lambda}\omega_{\lambda'} \sum_i g_i \left| \epsilon_{\lambda}^{i \dagger} \epsilon_{\lambda'}^{i} \right|^2
+\end{equation}
+\]</div>
+<p>Per default, the isotope distribution will be the natural distribution. In case some other distribution is desired, this can be specified.</p>
+<h3 id="input-files">Input files</h3>
+<p>Required files:</p>
+<ul>
+<li><a href="../../files/#infile.ucposcar">infile.ucposcar</a></li>
+<li><a href="../extract_forceconstants/">infile.forceconstant</a></li>
+<li><a href="../extract_forceconstants/">infile.forceconstant_thirdorder</a></li>
+</ul>
+<p>Optional files:</p>
+<ul>
+<li><a href="../../files/#infile.qpoints_dispersion">infile.qpoints_dispersion</a> (to specify the q-point path)</li>
+<li><a href="../../files/#infile.isotopes">infile.isotopes</a> (for non-natural isotope distribution)</li>
+</ul>
+<h3 id="output-files">Output files</h3>
+<p>There are three possible modes for this code: the lineshape at a single q-point (default), along a path in the BZ (<code>--path</code>) or over the full BZ as a phonon DOS (<code>--dos</code>). The output files will differ. For lineshape at a single q, you get</p>
+<h4 id="outfilelineshapehdf5"><code>outfile.lineshape.hdf5</code></h4>
+<p>@todo Double-check that code snippets work.</p>
+<p>This file is self-documented. You can produce plots like this:</p>
+<p><center><img src="../../media/lineshapes.png" width="600" /></center></p>
+<p>For this plot, I used the following matlab snippet:</p>
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c">% read everything from file</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">fn</span><span class="p">=(</span><span class="s">&#39;outfile.phonon_lineshape.hdf5&#39;</span><span class="p">);</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c">% lineshape things</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">x1</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/intensity_axis&#39;</span><span class="p">);</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">y1</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/intensity&#39;</span><span class="p">);</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c">% self-energies</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">x2</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/selfenergy_axis&#39;</span><span class="p">);</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">z1</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/imaginary_threephonon_selfenergy&#39;</span><span class="p">);</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">z2</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/imaginary_isotope_selfenergy&#39;</span><span class="p">);</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">z3</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/real_threephonon_selfenergy&#39;</span><span class="p">);</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c">% and the unit and bare harmonic frequencies</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">energyunit</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/selfenergy_axis&#39;</span><span class="p">,</span><span class="s">&#39;unit&#39;</span><span class="p">);</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">omega</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/harmonic_frequencies&#39;</span><span class="p">);</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c">% create a legend</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">length</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="n">lgd</span><span class="p">{</span><span class="nb">i</span><span class="p">}=[</span><span class="s">&#39;mode &#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="nb">i</span><span class="p">)</span><span class="w"> </span><span class="s">&#39;, \omega = &#39;</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">omega</span><span class="p">(</span><span class="nb">i</span><span class="p">),</span><span class="s">&#39;%10.5f&#39;</span><span class="p">)</span><span class="w"> </span><span class="n">energyunit</span><span class="p">];</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="k">end</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">y1</span><span class="p">)</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Lineshape&#39;</span><span class="p">)</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">([</span><span class="s">&#39;\omega (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">([</span><span class="s">&#39;states/&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="p">])</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;xlim&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span><span class="o">*</span><span class="mf">1.4</span><span class="p">])</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">    </span><span class="nb">legend</span><span class="p">(</span><span class="n">lgd</span><span class="p">,</span><span class="s">&#39;edgecolor&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="n">z1</span><span class="o">+</span><span class="n">z2</span><span class="p">)</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Imaginary self-energy&#39;</span><span class="p">)</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">([</span><span class="s">&#39;\omega (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">([</span><span class="s">&#39;\Gamma (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;xlim&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span><span class="o">*</span><span class="mf">1.4</span><span class="p">])</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="nb">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">);</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w">    </span><span class="nb">plot</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="n">z3</span><span class="p">)</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="w">    </span><span class="nb">title</span><span class="p">(</span><span class="s">&#39;Real self-energy&#39;</span><span class="p">)</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">    </span><span class="nb">xlabel</span><span class="p">([</span><span class="s">&#39;\omega (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="w">    </span><span class="nb">ylabel</span><span class="p">([</span><span class="s">&#39;\Delta (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="w">    </span><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;yminortick&#39;</span><span class="p">,</span><span class="s">&#39;on&#39;</span><span class="p">,</span><span class="s">&#39;xlim&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span><span class="o">*</span><span class="mf">1.4</span><span class="p">])</span>
+</span></code></pre></div>
+<h4 id="outfilephonon_spectral_functionhdf5"><code>outfile.phonon_spectral_function.hdf5</code></h4>
+<p>These files represent the properties calculated as a function of <span class="arithmatex">\(\textbf{q}\)</span> along high symmetry directions in the Brillouin zone, such as the plot at the top of this page. The file is self-documented. Below is a sample matlab snippet that plots the spectral function:</p>
+<div class="language-matlab highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c">% read everything from file</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">fn</span><span class="p">=(</span><span class="s">&#39;outfile.phonon_spectral_function.hdf5&#39;</span><span class="p">);</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">h5disp</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">x</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/q_values&#39;</span><span class="p">);</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">y</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/energy_values&#39;</span><span class="p">);</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">gz</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/spectral_function&#39;</span><span class="p">);</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">xtck</span><span class="p">=</span><span class="nb">h5read</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/q_ticks&#39;</span><span class="p">);</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">xtcklabel</span><span class="p">=</span><span class="nb">strsplit</span><span class="p">(</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/&#39;</span><span class="p">,</span><span class="s">&#39;q_tick_labels&#39;</span><span class="p">));</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">energyunit</span><span class="p">=</span><span class="nb">h5readatt</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s">&#39;/&#39;</span><span class="p">,</span><span class="s">&#39;energy_unit&#39;</span><span class="p">);</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c">% plot the results</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="nb">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="nb">clf</span><span class="p">;</span><span class="w"> </span><span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"> </span><span class="n">box</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">[</span><span class="n">gy</span><span class="p">,</span><span class="n">gx</span><span class="p">]=</span><span class="nb">meshgrid</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">);</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c">% change the shift here until it looks nice</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">s</span><span class="p">=</span><span class="nb">pcolor</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span><span class="n">gy</span><span class="p">,</span><span class="nb">log10</span><span class="p">(</span><span class="n">gz</span><span class="o">+</span><span class="mf">1E-1</span><span class="p">));</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="nb">set</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="s">&#39;edgecolor&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;facecolor&#39;</span><span class="p">,</span><span class="s">&#39;interp&#39;</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xtick&#39;</span><span class="p">,</span><span class="n">xtck</span><span class="p">,</span><span class="s">&#39;xticklabel&#39;</span><span class="p">,</span><span class="n">xtcklabel</span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="nb">ylabel</span><span class="p">([</span><span class="s">&#39;Energy (&#39;</span><span class="w"> </span><span class="n">energyunit</span><span class="w"> </span><span class="s">&#39;)&#39;</span><span class="p">])</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="nb">xlim</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">)])</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="nb">ylim</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)])</span>
+</span></code></pre></div>
+<p>With matplotlib here is a sample snippet that produces decent-looking plots</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/local/opt/python/libexec/bin/python</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span> <span class="c1"># to be able to plot</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>              <span class="c1"># to math a little</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">h5</span>               <span class="c1"># to read the file</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># open the sqe file</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">f</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;outfile.phonon_spectral_function.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># get axes and intensity</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q_values&#39;</span><span class="p">))</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;energy_values&#39;</span><span class="p">))</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">gz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spectral_function&#39;</span><span class="p">))</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># for plotting, turn the axes into 2d arrays</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">gy</span><span class="p">,</span> <span class="n">gx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># x-ticks</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">xt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q_ticks&#39;</span><span class="p">))</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1"># labels for the x-ticks</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="n">xl</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q_tick_labels&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># get a proper Greek Γ</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">xl</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">,</span><span class="s1">&#39;Γ&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">xl</span><span class="p">]</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1"># label for y-axis</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="n">unit</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;energy_values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;unit&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1"># set a sensible size for the plot. This is a prb sized figure.</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="n">figure_height</span><span class="o">=</span><span class="mf">2.5</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="n">figure_width</span><span class="o">=</span><span class="mf">3.4039</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="n">fig</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="n">figure_width</span><span class="p">,</span><span class="n">figure_height</span><span class="p">),</span><span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>   <span class="c1"># Size of figure in prb</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">})</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;pdf.fonttype&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1"># actual plot, logarithmic color scale</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="c1"># make sure the intensities are 0-1</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="n">gz</span><span class="o">=</span><span class="n">gz</span><span class="o">-</span><span class="n">gz</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="n">gz</span><span class="o">=</span><span class="n">gz</span><span class="o">/</span><span class="n">gz</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1"># add a little bit so the logscale does not get angry at 0 intensity</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1"># change this magic number until it looks nice.</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="n">gz</span><span class="o">=</span><span class="n">gz</span><span class="o">+</span><span class="mf">1E-4</span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="c1"># make it logscale</span>
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="n">gz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gz</span><span class="p">)</span>
+</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
+</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">gx</span><span class="p">,</span> <span class="n">gy</span><span class="p">,</span> <span class="n">gz</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">rasterized</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">snap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>
+</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="c1"># Now start making the plot a little prettier:</span>
+</span><span id="__span-2-44"><a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+</span><span id="__span-2-45"><a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()])</span>
+</span><span id="__span-2-46"><a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a>
+</span><span id="__span-2-47"><a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="c1"># Set proper labels on the q-axis</span>
+</span><span id="__span-2-48"><a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">xt</span><span class="p">)</span>
+</span><span id="__span-2-49"><a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">xl</span><span class="p">)</span>
+</span><span id="__span-2-50"><a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="c1"># Set the size of the ticks, turn on minor ticks for the y-label only</span>
+</span><span id="__span-2-51"><a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="n">ax</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
+</span><span id="__span-2-52"><a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span><span class="n">pad</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="s1">&#39;in&#39;</span><span class="p">,</span><span class="n">bottom</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-2-53"><a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span><span class="n">pad</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="s1">&#39;in&#39;</span><span class="p">,</span><span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-2-54"><a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Energy (&quot;</span><span class="o">+</span><span class="n">unit</span><span class="o">+</span><span class="s2">&quot;)&quot;</span><span class="p">,</span><span class="n">labelpad</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-2-55"><a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="c1"># Set linewidth for the axes too</span>
+</span><span id="__span-2-56"><a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">,</span><span class="s1">&#39;right&#39;</span><span class="p">]:</span>
+</span><span id="__span-2-57"><a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span><span class="o">.</span><span class="n">set_linewidth</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="__span-2-58"><a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a>
+</span><span id="__span-2-59"><a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a><span class="c1"># No need to have lots of whitespace around the plot, adjust it a little</span>
+</span><span id="__span-2-60"><a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span class="c1"># So I know the height of my plot, how large is a label? And what are the unit? Hard to know.</span>
+</span><span id="__span-2-61"><a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="c1"># But if I know that, I can figure out reasonable spacings, I suppose. I know a</span>
+</span><span id="__span-2-62"><a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span class="c1"># typographers point is 1/72 of an inch. M is the widest character.</span>
+</span><span id="__span-2-63"><a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a>
+</span><span id="__span-2-64"><a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span class="n">height_of_label</span><span class="o">=</span><span class="mf">0.15</span> <span class="c1"># in inches, maybe? Should query this from the font/label text</span>
+</span><span id="__span-2-65"><a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span class="n">width_of_label</span><span class="o">=</span><span class="mf">0.05</span>  <span class="c1"># in inches, maybe? Should also query this</span>
+</span><span id="__span-2-66"><a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a>
+</span><span id="__span-2-67"><a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a><span class="c1"># These should be updated to take all the spacings into account</span>
+</span><span id="__span-2-68"><a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="n">pad_bottom</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="p">(</span><span class="n">figure_height</span><span class="o">-</span><span class="n">height_of_label</span><span class="p">)</span><span class="o">/</span><span class="n">figure_height</span>
+</span><span id="__span-2-69"><a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="n">pad_top</span><span class="o">=</span><span class="p">(</span><span class="n">figure_height</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">width_of_label</span><span class="p">)</span><span class="o">/</span><span class="n">figure_height</span>
+</span><span id="__span-2-70"><a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="n">pad_left</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="p">(</span><span class="n">figure_width</span><span class="o">-</span><span class="n">width_of_label</span><span class="o">-</span><span class="n">height_of_label</span><span class="o">*</span><span class="mf">1.3</span><span class="p">)</span><span class="o">/</span><span class="n">figure_width</span>
+</span><span id="__span-2-71"><a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a><span class="n">pad_right</span><span class="o">=</span><span class="p">(</span><span class="n">figure_width</span><span class="o">-</span><span class="n">width_of_label</span><span class="p">)</span><span class="o">/</span><span class="n">figure_width</span>
+</span><span id="__span-2-72"><a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a>
+</span><span id="__span-2-73"><a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a><span class="c1"># Anyway, adjust the whitespace so that it&#39;s a tight figure</span>
+</span><span id="__span-2-74"><a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">pad_left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">pad_right</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">pad_top</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="n">pad_bottom</span><span class="p">)</span>
+</span><span id="__span-2-75"><a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a>
+</span><span id="__span-2-76"><a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="c1"># Uncomment the next line to save it as a pdf instead.</span>
+</span><span id="__span-2-77"><a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="c1">#fig.savefig(&quot;foo.pdf&quot;, bbox_inches=&#39;tight&#39;, transparent=True, dpi=600)</span>
+</span><span id="__span-2-78"><a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<h4 id="outfilephonon_dos_lineshapehdf5"><code>outfile.phonon_dos_lineshape.hdf5</code></h4>
+<p>Is identical to <a href="../phonon_dispersion_relations/#outfile.phonon_dos.hdf5">this</a>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:Maradudin1962">
+<p><a href="http:/doi.org/10.1103/PhysRev.128.2589">Maradudin, A. A., &amp; Fein, A. (1962). Scattering of Neutrons by an Anharmonic Crystal. Physical Review, 128(6), 2589–2608.</a>&#160;<a class="footnote-backref" href="#fnref:Maradudin1962" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:Maradudin1962" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:Maradudin1962" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:Maradudin1962" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:RACowley1968">
+<p><a href="http:/doi.org/10.1088/0034-4885/31/1/303">Cowley, R. A. (1968). Anharmonic crystals. Reports on Progress in Physics, 31(1), 123–166.</a>&#160;<a class="footnote-backref" href="#fnref:RACowley1968" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:RACowley1968" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:RACowley1968" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:RACowley1968" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Leibfried1961">
+<p><a href="http:/doi.org/10.1016/S0081-1947(08)60656-6">Leibfried, G., &amp; Ludwig, W. (1961). Theory of Anharmonic Effects in Crystals. Solid State Physics - Advances in Research and Applications, 12(C), 275–444.</a>&#160;<a class="footnote-backref" href="#fnref:Leibfried1961" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:wallace1998thermodynamics">
+<p><a href="http:/books.google.se/books?id=qLzOmwSgMIsC">Wallace, D. C. (1998). Thermodynamics of crystals. Dover Publications, Incorporated.</a>&#160;<a class="footnote-backref" href="#fnref:wallace1998thermodynamics" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:wallace1998thermodynamics" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:Tamura1983">
+<p><a href="http:/doi.org/10.1103/PhysRevB.27.858">Tamura, S. (1983). Isotope scattering of dispersive phonons in Ge. Physical Review B, 27(2), 858–866.</a>&#160;<a class="footnote-backref" href="#fnref:Tamura1983" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 Olle Hellman, Florian Knoop
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sticky", "navigation.instant", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
