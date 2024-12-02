@@ -144,6 +144,7 @@ atomic_distribution
 pack_simulation
 refine_structure
 thermal_conductivity
+thermal_conductivity_2023
 anharmonic_free_energy
 "
 
@@ -211,7 +212,6 @@ cd src/libflap
         make -j ${NTHREADS_MAKE}
     fi
 cd ../../
-
 
 
 # go through them and compile

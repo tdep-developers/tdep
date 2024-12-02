@@ -8,6 +8,7 @@ generate_structure/
 lineshape/
 pack_simulation/
 phonon_dispersion_relations/
+thermal_conductivity_2023/
 thermal_conductivity/
 "
 
