@@ -12,7 +12,7 @@ env:
   N_THREADS: 4
 
 jobs:
-  Checkout-TDEP:
+  Compile-and-run-TDEP:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
