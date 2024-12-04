@@ -535,6 +535,10 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
             end do
         end do
         call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+
+    if (allocated(dr%iq(1)%p_minus) .and. present(temperature)) then
         dname = 'scattering_rates_minus'
         do i = 1, qp%n_full_point
             k = qp%ap(i)%irreducible_index
@@ -562,52 +566,55 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
         end do
         call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
         call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
 
+    if (allocated(dr%iq(1)%Fn) .and. present(temperature)) then
         call mem%allocate(dddd, [3, 3, dr%n_mode, qp%n_full_point], &
                           persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         dname = 'thermal_conductivity'
         dddd = 0.0_r8
-        if (allocated(dr%iq(1)%Fn)) then
-            do i = 1, qp%n_full_point
-                l = qp%ap(i)%irreducible_index
-                k = qp%ap(i)%operation_from_irreducible
-                do j = 1, dr%n_mode
-                    if (dr%aq(i)%omega(j) .lt. dr%omega_min*0.5_r8) cycle
-                    if (k .gt. 0) then
-                        v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%Fn(:, j), reciprocal=.true.)
-                        v1 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%vel(:, j), reciprocal=.true.)
-                    else
-                        v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%Fn(:, j), reciprocal=.true.)
-                        v1 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%vel(:, j), reciprocal=.true.)
-                    end if
-                    ! Get kappa for this q-point
-                    omega = dr%iq(l)%omega(j)
-                    n = lo_planck(temperature, omega)
-                    f0 = omega*(n + 1)*n
-                    dddd(:, :, j, i) = f0*lo_outerproduct(v0, v1)/(uc%volume*lo_kb_hartree*temperature)
-                end do
+        do i = 1, qp%n_full_point
+            l = qp%ap(i)%irreducible_index
+            k = qp%ap(i)%operation_from_irreducible
+            do j = 1, dr%n_mode
+                if (dr%aq(i)%omega(j) .lt. dr%omega_min*0.5_r8) cycle
+                if (k .gt. 0) then
+                    v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%Fn(:, j), reciprocal=.true.)
+                    v1 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%vel(:, j), reciprocal=.true.)
+                else
+                    v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%Fn(:, j), reciprocal=.true.)
+                    v1 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%vel(:, j), reciprocal=.true.)
+                end if
+                ! Get kappa for this q-point
+                omega = dr%iq(l)%omega(j)
+                n = lo_planck(temperature, omega)
+                f0 = omega*(n + 1)*n
+                dddd(:, :, j, i) = f0*lo_outerproduct(v0, v1)/(uc%volume*lo_kb_hartree*temperature)
             end do
-        else
-            do i = 1, qp%n_full_point
-                l = qp%ap(i)%irreducible_index
-                k = qp%ap(i)%operation_from_irreducible
-                do j = 1, dr%n_mode
-                    if (dr%aq(i)%omega(j) .lt. dr%omega_min*0.5_r8) cycle
-                    if (k .gt. 0) then
-                        v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%vel(:, j), reciprocal=.true.)
-                    else
-                        v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%vel(:, j), reciprocal=.true.)
-                    end if
-                    ! Get kappa for this q-point
-                    omega = dr%iq(l)%omega(j)
-                    cv = lo_harmonic_oscillator_cv(temperature, omega)
-                    if (dr%iq(l)%linewidth(j) .gt. lo_freqtol) then
-                        tau = 1.0_r8/(2.0_r8*dr%iq(l)%linewidth(j))
-                        dddd(:, :, j, i) = lo_outerproduct(v0, v0)*cv*tau/uc%volume
-                    end if
-                end do
+        end do
+        dddd = dddd*lo_kappa_au_to_SI
+        call h5%store_data(dddd, h5%file_id, trim(dname), enhet='W/mK', dimensions='q-vector,mode,xyz,xyz')
+        call mem%deallocate(dddd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    else if (allocated(dr%iq(1)%linewidth) .and. present(temperature)) then
+        do i = 1, qp%n_full_point
+            l = qp%ap(i)%irreducible_index
+            k = qp%ap(i)%operation_from_irreducible
+            do j = 1, dr%n_mode
+                if (dr%aq(i)%omega(j) .lt. dr%omega_min*0.5_r8) cycle
+                if (k .gt. 0) then
+                    v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(l)%vel(:, j), reciprocal=.true.)
+                else
+                    v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(l)%vel(:, j), reciprocal=.true.)
+                end if
+                ! Get kappa for this q-point
+                omega = dr%iq(l)%omega(j)
+                cv = lo_harmonic_oscillator_cv(temperature, omega)
+                if (dr%iq(l)%linewidth(j) .gt. lo_freqtol) then
+                    tau = 1.0_r8/(2.0_r8*dr%iq(l)%linewidth(j))
+                    dddd(:, :, j, i) = lo_outerproduct(v0, v0)*cv*tau/uc%volume
+                end if
             end do
-        end if
+        end do
         dddd = dddd*lo_kappa_au_to_SI
         call h5%store_data(dddd, h5%file_id, trim(dname), enhet='W/mK', dimensions='q-vector,mode,xyz,xyz')
         call mem%deallocate(dddd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

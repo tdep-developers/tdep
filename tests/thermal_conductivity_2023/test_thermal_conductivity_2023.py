@@ -6,7 +6,7 @@ parent = Path(__file__).parent
 folder = parent / "reference"
 
 files_hdf5 = [
-    "outfile.thermal_conductivity_grid.hdf5",
+    "outfile.cumulative_kappa.hdf5",
 ]
 
 

@@ -473,7 +473,7 @@ module subroutine nullspace_fc_quartet(sl,sh,ss,mw,mem)
         m0=0.0_r8
         do iop=1,size(op,3)
             call lo_gemm(op(:,:,iop),sl%fc_quartet_shell(shell)%coeff,m0)
-            if ( norm2(m0-sl%fc_quartet_shell(shell)%coeff) .gt. lo_sqtol*size(m0) ) then
+            if ( norm2(m0-sl%fc_quartet_shell(shell)%coeff) .gt. lo_tol*size(m0) ) then
                 call lo_stop_gracefully(['Not as invariant as it should be.'],lo_exitcode_symmetry,__FILE__,__LINE__,mw%comm)
             endif
         enddo
