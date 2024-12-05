@@ -1,11 +1,6 @@
 name: Compile TDEP and test binaries
 run-name: ${{ github.actor }} is trying to compile and run TDEP
 on:
-  push:
-    paths:
-      - .github/workflows/ci_simple_compilation_and_test.yml
-      - src/**
-      - tests/**
   pull_request:
     paths:
       - .github/workflows/ci_simple_compilation_and_test.yml
