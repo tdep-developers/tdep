@@ -5,6 +5,12 @@ on:
     paths:
       - .github/workflows/ci_simple_compilation_and_test.yml
       - src/**
+      - tests/**
+  pull_request:
+    paths:
+      - .github/workflows/ci_simple_compilation_and_test.yml
+      - src/**
+      - tests/**
   workflow_dispatch:
 
 env:
