@@ -5,12 +5,11 @@ from pathlib import Path
 parent = Path(__file__).parent
 folder = parent / "reference"
 
-files_hdf5 = [
-    "outfile.thermal_conductivity_grid.hdf5",
-]
+file = "outfile.thermal_conductivity"
+file_hdf5 = "outfile.thermal_conductivity_grid.hdf5"
 
 
-def test_thermal_conductivity(file="outfile.thermal_conductivity", atol=1, rtol=.1):
+def test_thermal_conductivity(file=file, atol=1, rtol=0.1):
     file_ref = folder / file
     file_new = parent / file
 
@@ -23,8 +22,8 @@ def test_thermal_conductivity(file="outfile.thermal_conductivity", atol=1, rtol=
 
 
 def test_conductivity_comparison(
-    file="outfile.thermal_conductivity",
-    file_grid="outfile.thermal_conductivity_grid.hdf5",
+    file=parent / file,
+    file_grid=parent / file_hdf5,
 ):
     """Check if the thermal conducivities conincide"""
     data1 = np.loadtxt(file)
