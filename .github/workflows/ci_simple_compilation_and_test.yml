@@ -1,0 +1,78 @@
+name: Compile TDEP and test binaries
+run-name: ${{ github.actor }} is trying to compile and run TDEP
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ci_simple_compilation_and_test.yml
+      - src/**
+      - tests/**
+  workflow_dispatch:
+
+env:
+  ARTIFACTS: tdep-test-artifacts
+  N_THREADS: 4
+
+jobs:
+  Compile-and-run-TDEP:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out TDEP code
+        uses: actions/checkout@v4
+        with:
+          repository: tdep-developers/tdep
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Install packages required for building TDEP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              gfortran \
+              libblas-dev \
+              liblapack-dev \
+              libhdf5-dev \
+              libhdf5-serial-dev \
+              libhdf5-openmpi-dev \
+              openmpi-bin \
+              libopenmpi-dev \
+              libfftw3-dev \
+              libscalapack-openmpi-dev
+      - name: compile TDEP with debug flags
+        id: compile_debug
+        run: |
+          cd ${{ github.workspace }}
+          cp .github/important_settings.x86_64 important_settings
+          cat .github/important_settings.fastcompile >> important_settings
+          cat .github/important_settings.x86_64_debugflags >> important_settings
+          bash build_things.sh --nthreads_make ${{ env.N_THREADS }}
+      - name: compile TDEP production
+        if: steps.compile_debug.outcome == 'success'
+        id: compile_production
+        run: |
+          cd ${{ github.workspace }}
+          cp .github/important_settings.x86_64 important_settings
+          bash build_things.sh --nthreads_make ${{ env.N_THREADS }}
+      - name: Create testfiles
+        id: testfiles
+        if: steps.compile_production.outcome == 'success'
+        run: |
+          cd ${{ github.workspace }}/tests
+          make
+      - name: Check tests
+        id: test
+        if: steps.testfiles.outcome == 'success'
+        run: |
+          cd ${{ github.workspace }}/tests
+          pip install -r requirements.txt
+          make test || exit 1
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ${{ env.ARTIFACTS }}
+          path: |
+            ${{ github.workspace }}/bin/
+            ${{ github.workspace }}/build/
+            ${{ github.workspace }}/tests/
+            ${{ github.workspace }}/bashrc_tdep
+          retention-days: 7

@@ -5,12 +5,11 @@ from pathlib import Path
 parent = Path(__file__).parent
 folder = parent / "reference"
 
-files_hdf5 = [
-    "outfile.thermal_conductivity_grid.hdf5",
-]
+file = "outfile.thermal_conductivity"
+file_hdf5 = "outfile.thermal_conductivity_grid.hdf5"
 
 
-def test_thermal_conductivity(file="outfile.thermal_conductivity", atol=20, rtol=5):
+def test_thermal_conductivity(file=file, atol=1, rtol=0.1):
     file_ref = folder / file
     file_new = parent / file
 
@@ -22,20 +21,23 @@ def test_thermal_conductivity(file="outfile.thermal_conductivity", atol=20, rtol
     )
 
 
-def test_hdf5(files=files_hdf5, atol=1, rtol=0.01):
-    for file in files:
-        file_ref = folder / file
-        file_new = parent / file
+def test_conductivity_comparison(
+    file=parent / file,
+    file_grid=parent / file_hdf5,
+):
+    """Check if the thermal conducivities conincide"""
+    data1 = np.loadtxt(file)
 
-        ds_ref = xr.load_dataset(file_ref)
-        ds_new = xr.load_dataset(file_new)
+    # without off-diagonal contribution
+    kappa1 = data1[0][:3] + data1[1][:3]
 
-        for var in ds_ref.data_vars:
-            x = ds_ref[var]
-            y = ds_new[var]
-            np.testing.assert_allclose(x, y, atol=atol, rtol=rtol, err_msg=var)
+    ds = xr.load_dataset(file_grid)
+
+    kappa2 = np.diag(ds.thermal_conductivity.sum(axis=(0, 1)) / ds.number_of_qpoints)
+
+    np.testing.assert_allclose(kappa1, kappa2)
 
 
 if __name__ == "__main__":
     test_thermal_conductivity()
-    test_hdf5()
+    test_conductivity_comparison()

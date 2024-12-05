@@ -1,0 +1,54 @@
+#!/bin/bash
+# A central place to put all the important paths. You probably have to modify this to make things work.
+
+# the fortran compiler
+FORTRAN_COMPILER="mpifort"
+# required compiler flags
+FCFLAGS="-ffree-line-length-none -std=gnu -cpp -fallow-argument-mismatch"
+# extra flags, for debugging and such
+FCFLAGS_EXTRA=""
+
+# optimization stuff. Go all in, sometimes
+OPTIMIZATION_LEVEL="-O3"
+OPTIMIZATION_SENSITIVE="-O0"
+
+# the flag that sets the default real to a double.
+DOUBLE_FLAG=  # "-fdefault-real-8"
+# The flag that tells the compiler where to put .o and .mod files.
+MODULE_FLAG="-J"
+
+# These are the BLAS/LAPACK libraries. On OSX with gfortran, use the built-in 'framework accelerate'
+PATH_LIB="/usr/lib/x86_64-linux-gnu"
+PATH_INC="/usr/include"
+PATH_TO_BLASLAPACK_LIB="-L/$PATH_LIB"
+PATH_TO_BLASLAPACK_INC="-I/$PATH_INC"
+BLASLAPACK_LIBS="-lblas -llapack -lscalapack-openmpi"
+
+# I use fftw for Fourier transforms.
+PATH_TO_FFTW_LIB="-L/$PATH_LIB"
+PATH_TO_FFTW_INC="-I/$PATH_INC"
+FFTW_LIBS="-lfftw3"
+
+# we use mpifort so not needed
+# PATH_TO_MPI_LIB="-L/usr/lib/x86_64-linux-gnu"
+# PATH_TO_MPI_INC="-I/$PATH_INC"
+# MPI_LIBS="-lmpi_mpifh -lmpi"
+
+# I also use HDF5 every now and then
+PATH_TO_HDF5_LIB="-L/usr/lib/x86_64-linux-gnu/hdf5/openmpi/"
+PATH_TO_HDF5_INC="-I/usr/include/hdf5/openmpi/"
+HDF5_LIBS="-lhdf5 -lhdf5_fortran"
+
+USECGAL=no
+
+# some less important things
+# the header to put in python scripts.
+PYTHONHEADER="#!/usr/bin/env python"
+
+# Which gnuplot terminal to use by default.
+# Choices: aqua, qt, wxt
+GNUPLOTTERMINAL="qt"
+
+# Precompiler flags. Selecting default gnuplot terminal, and make the progressbars work.
+PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
+
