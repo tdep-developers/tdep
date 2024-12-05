@@ -1,7 +1,6 @@
 import numpy as np
 import xarray as xr
 from pathlib import Path
-import pytest
 
 parent = Path(__file__).parent
 folder = parent / "reference"
@@ -42,5 +41,4 @@ def test_conductivity_comparison(
 
 if __name__ == "__main__":
     test_thermal_conductivity()
-    test_hdf5()
     test_conductivity_comparison()
