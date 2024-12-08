@@ -129,7 +129,7 @@ module subroutine longrange_dynamical_matrix( &
             Gvec = ew%Gvec(:, ig)
             Kvec = (Gvec + q)*lo_twopi
             Kvec = lo_chop((Gvec + q)*lo_twopi, lo_sqtol)
-            if (lo_sqnorm(Kvec) .lt. lo_sqtol) cycle
+            if (lo_sqnorm(Kvec) .lt. lo_sqtol**2 ) cycle
             ! K-norm with dielectric metric
             knorm = dot_product(Kvec, matmul(eps, Kvec))
             invknorm = 1.0_r8/knorm
@@ -625,7 +625,7 @@ module subroutine supercell_longrange_forceconstant(ew, born_effective_charges, 
         do a1 = 1, ss%na
             m0 = 0.0_r8
             do a2 = 1, ss%na
-                m0 = m0 + dm(:, :, a2, a1)
+                m0 = m0 + dm(:, :, a1, a2)
             end do
             forceconstant(:, :, a1, a1) = forceconstant(:, :, a1, a1) - m0
         end do
@@ -665,5 +665,240 @@ module pure function ewald_H_thingy(x, y, inveps) result(H)
     H(2, 3) = x(2)*x(3)*f0 - inveps(2, 3)*f1
     H(3, 3) = x(3)*x(3)*f0 - inveps(3, 3)*f1
 end function
+
+!> longrange dipole-dipole dynamical matrix
+module subroutine longrange_elastic_constant_bracket( ew, p, born_effective_charges, eps, bracket, rottensor, reconly, mw, verbosity)
+    !> Ewald helper
+    class(lo_ewald_parameters), intent(in) :: ew
+    !> crystalstructure
+    type(lo_crystalstructure), intent(in) :: p
+    !> Born effective charges
+    real(r8), dimension(:, :, :), intent(in) :: born_effective_charges
+    !> dielectric constant
+    real(r8), dimension(3, 3), intent(in) :: eps
+    !> elastic constant bracket thingy
+    real(r8), dimension(3,3,3,3), intent(out) :: bracket
+    !> rotational tensor thingy
+    real(r8), dimension(:,:,:,:), intent(out) :: rottensor
+    !> only calculate the reciprocal sum
+    logical, intent(in), optional :: reconly
+    !> mpi helper
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> talk a lot?
+    integer, intent(in) :: verbosity
+
+    real(r8), dimension(3, 3) :: inveps
+    real(r8) :: timer
+    logical :: longrange
+
+    ! Set some things and precalculate
+    init: block
+
+        timer=walltime()
+
+        ! First figure out what we are going to calculate
+        if (present(reconly)) then
+            longrange = reconly
+        else
+            longrange = .false.
+            write(*,*) 'FIXME SHORT-RANGE CONTRIBUTIONS ',__FILE__,__LINE__
+            stop
+        end if
+
+        ! inverse dielectric tensor
+        inveps = lo_invert3x3matrix(eps)
+        inveps = lo_chop(inveps, lo_sqtol)
+        ! inverse determinant
+        !dete = 1.0_r8/sqrt(lo_determ(eps))
+        ! bracket
+        bracket=0.0_r8
+    end block init
+
+    ! First the reciprocal part
+    reciprocalspace: block
+        real(r8), dimension(3,3,3,3) :: tE,brk0,brk1
+        real(r8), dimension(3,3,3) :: tD
+        real(r8), dimension(3,3) :: mC,mA
+        real(r8), dimension(3) :: vB
+        real(r8), dimension(3, 3) :: mu,m0,m1
+        real(r8), dimension(3) :: Kvec, tauvec, Keps, vw
+        real(r8) :: expLambdaKnorm,f0,inv4lambda2, partialChi, knorm, invknorm, ikr, Kx, Ky, Kz, expikr, Chi
+        integer :: ialpha,ibeta,igamma,idelta,i,j,ii,jj
+        integer :: a1,a2,ig
+
+        ! Second derivative of outer product thingy
+        tE=0.0_r8
+
+        tE(:,1,1,1)=real([2,0,0],r8)
+        tE(:,2,1,1)=real([0,0,0],r8)
+        tE(:,3,1,1)=real([0,0,0],r8)
+
+        tE(:,1,1,2)=real([0,1,0],r8)
+        tE(:,2,1,2)=real([1,0,0],r8)
+        tE(:,3,1,2)=real([0,0,0],r8)
+
+        tE(:,1,1,3)=real([0,0,1],r8)
+        tE(:,2,1,3)=real([0,0,0],r8)
+        tE(:,3,1,3)=real([1,0,0],r8)
+
+        tE(:,1,2,2)=real([0,0,0],r8)
+        tE(:,2,2,2)=real([0,2,0],r8)
+        tE(:,3,2,2)=real([0,0,0],r8)
+
+        tE(:,1,2,3)=real([0,0,0],r8)
+        tE(:,2,2,3)=real([0,0,1],r8)
+        tE(:,3,2,3)=real([0,1,0],r8)
+
+        tE(:,1,3,3)=real([0,0,0],r8)
+        tE(:,2,3,3)=real([0,0,0],r8)
+        tE(:,3,3,3)=real([0,0,2],r8)
+
+        tE(:,:,2,1)=tE(:,:,1,2)
+        tE(:,:,3,1)=tE(:,:,1,3)
+        tE(:,:,3,2)=tE(:,:,2,3)
+
+        inv4lambda2 = 1.0_r8/(4.0_r8*(ew%lambda**2))
+        brk0=0.0_r8
+        rottensor=0.0_r8
+
+        if ( verbosity .gt. 0 ) then
+            call lo_progressbar_init()
+        endif
+
+        do ig = 1, ew%n_Gvector
+            Kvec = lo_chop(ew%Gvec(:, ig)*lo_twopi, lo_sqtol)
+
+
+
+            ! Multiply in the charges
+            if ( mod(ig,mw%n) .ne. mw%r ) cycle
+
+            if (verbosity .gt. 0) then
+                if ( ig .lt. ew%n_Gvector ) call lo_progressbar('... long-range elastic constants', ig, ew%n_Gvector, walltime() - timer)
+            end if
+
+            Kx=Kvec(1)
+            Ky=Kvec(2)
+            Kz=Kvec(3)
+
+            if (lo_sqnorm(Kvec) .lt. lo_sqtol**2 ) cycle
+            ! K-norm with dielectric metric
+            knorm = dot_product(Kvec, matmul(eps, Kvec))
+            invknorm = 1.0_r8/knorm
+            expLambdaKnorm = exp(-knorm*inv4lambda2)
+            ! Half of the Chi-function
+            partialChi = expLambdaKnorm*invknorm
+            ! K \otimes K term, and related derivatives
+            mA= lo_outerproduct(Kvec, Kvec)
+
+            tD(:, 1, 1) = [2*Kx, Ky, Kz]
+            tD(:, 2, 1) = [Ky, 0.0_r8, 0.0_r8]
+            tD(:, 3, 1) = [Kz, 0.0_r8, 0.0_r8]
+
+            tD(:, 1, 2) = [0.0_r8, Kx, 0.0_r8]
+            tD(:, 2, 2) = [Kx, 2*Ky, Kz]
+            tD(:, 3, 2) = [0.0_r8, Kz, 0.0_r8]
+
+            tD(:, 1, 3) = [0.0_r8, 0.0_r8, Kx]
+            tD(:, 2, 3) = [0.0_r8, 0.0_r8, Ky]
+            tD(:, 3, 3) = [Kx, Ky, 2*Kz]
+
+            Keps = matmul(Kvec, eps)
+
+            mu = 4*lo_outerproduct(Keps,Keps)*invknorm*invknorm - 2*eps*(invknorm + inv4lambda2)
+
+            do a1=1,p%na
+            do a2=1,p%na
+                tauvec = lo_chop(p%rcart(:, a1) - p%rcart(:, a2), lo_sqtol)
+                ikr = dot_product(Kvec, tauvec)
+                expikr = real( cmplx(cos(ikr), sin(ikr), r8), r8)
+                Chi = partialChi*expikr
+
+                !vw= tauvec*lo_imag -2*Keps*(invknorm + inv4lambda2)
+                vw= -2*Keps*(invknorm + inv4lambda2)
+                vB = Chi*vw
+                mC = mu*Chi + lo_outerproduct(vw,vw)*Chi
+
+                brk1=0.0_r8
+                do igamma=1,3
+                do idelta=1,3
+
+                    m0=0.0_r8
+                    do ialpha=1,3
+                    do ibeta=1,3
+                        m0(ialpha,ibeta) = Chi*tE(ialpha,ibeta,igamma,idelta) + &
+                                           tD(ialpha,ibeta,igamma)*vB(idelta) + &
+                                           tD(ialpha,ibeta,idelta)*vB(igamma) + &
+                                           mA(ialpha,ibeta)*mC(igamma,idelta)
+                    enddo
+                    enddo
+                    ! multiply in charges
+                    m1=0.0_r8
+                    do i=1,3
+                    do j=1,3
+                        do ii=1,3
+                        do jj=1,3
+                            m1(i,j)=m1(i,j) + m0(ii,jj)*born_effective_charges(i,ii,a1)*born_effective_charges(j,jj,a2)
+                        enddo
+                        enddo
+                    enddo
+                    enddo
+                    ! store
+                    do ialpha=1,3
+                    do ibeta=1,3
+                        brk1(ialpha,ibeta,igamma,idelta) = m1(ialpha,ibeta)
+                    enddo
+                    enddo
+                enddo
+                enddo
+
+                ! Suppose I have to multiply in the charges now, should go outside the alpha,beta indices.
+                brk0=brk0+brk1
+
+                do igamma=1,3
+                    m0=0.0_r8
+                    do ialpha=1,3
+                    do ibeta=1,3
+                        m0(ialpha,ibeta) = tD(ialpha,ibeta,igamma)*Chi + mA(ialpha,ibeta)*vB(igamma)
+                    enddo
+                    enddo
+                    ! multiply in charges
+                    m1=0.0_r8
+                    do i=1,3
+                    do j=1,3
+                        do ii=1,3
+                        do jj=1,3
+                            m1(i,j)=m1(i,j) + m0(ii,jj)*born_effective_charges(i,ii,a1)*born_effective_charges(j,jj,a2)
+                        enddo
+                        enddo
+                    enddo
+                    enddo
+                    ! store
+                    do ialpha=1,3
+                    do ibeta=1,3
+                        rottensor(ialpha,ibeta,igamma,a1)=rottensor(ialpha,ibeta,igamma,a1) + real(m1(ialpha,ibeta),r8)
+                    enddo
+                    enddo
+                enddo
+
+            enddo
+            enddo
+
+
+        end do
+        ! and multiply in the prefactor
+        call mw%allreduce('sum',brk0)
+        call mw%allreduce('sum',rottensor)
+        f0 = 4.0_r8*lo_pi/p%volume
+        brk0=brk0*f0
+
+        bracket=-real(brk0,r8)
+
+        if (verbosity .gt. 0) then
+            call lo_progressbar('... long-range elastic constants', ew%n_Gvector, ew%n_Gvector, walltime() - timer)
+        end if
+    end block reciprocalspace
+
+end subroutine
 
 end submodule

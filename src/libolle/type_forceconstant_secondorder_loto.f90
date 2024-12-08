@@ -46,7 +46,7 @@ module subroutine set_ewald_and_enforce_borncharge_hermiticity(fc, p, mem, verbo
         end if
 
         ! If we are to optimize, then do that.
-        call fc%ew%force_borncharges_Hermitian(fc%loto%x_Z, fc%loto%coeff_Z, fc%loto%eps, p, verbosity)
+        !call fc%ew%force_borncharges_Hermitian(fc%loto%x_Z, fc%loto%coeff_Z, fc%loto%eps, p, verbosity)
     end block setewald
 
     ! Now set the charges and so on.
@@ -75,6 +75,7 @@ module subroutine set_ewald_and_enforce_borncharge_hermiticity(fc, p, mem, verbo
         Dc = 0.0_r8
         select case (fc%loto%correctiontype)
         case (3)
+            !fc%loto%born_onsite_correction=0.0_r8
             call fc%ew%longrange_dynamical_matrix(p, [0.0_r8, 0.0_r8, 0.0_r8], fc%loto%born_effective_charges, fc%loto%born_onsite_correction, fc%loto%eps, Dc, reconly=.true.)
         case default
             call lo_stop_gracefully(['Undefined polar correction type'], lo_exitcode_param, __FILE__, __LINE__)

@@ -51,7 +51,6 @@ $(OBJECT_PATH)lo_symmetry_of_interactions_helpers.o \
 $(OBJECT_PATH)lo_symmetry_of_interactions_tuplets.o \
 $(OBJECT_PATH)lo_symmetry_of_interactions_nullspace.o \
 $(OBJECT_PATH)lo_longrange_electrostatics.o \
-$(OBJECT_PATH)lo_longrange_electrostatics_optz.o \
 $(OBJECT_PATH)lo_longrange_electrostatics_dynmat.o \
 $(OBJECT_PATH)lo_dielectric_interaction.o \
 $(OBJECT_PATH)lo_dielectric_interaction_matrixelements.o \
@@ -299,11 +298,6 @@ $(OBJECT_PATH)lo_longrange_electrostatics.o:\
 	$(OBJECT_PATH)type_crystalstructure.o \
     $(OBJECT_PATH)gottochblandat.o
 	$(FC) $(FFLAGS) -c lo_longrange_electrostatics.f90 -o $@
-$(OBJECT_PATH)lo_longrange_electrostatics_optz.o:\
-	lo_longrange_electrostatics_optz.f90 \
-    $(OBJECT_PATH)lo_longrange_electrostatics.o \
-	$(OBJECT_PATH)quadratures_stencils.o
-	$(FC) $(FFLAGS) -c lo_longrange_electrostatics_optz.f90 -o $@
 $(OBJECT_PATH)lo_longrange_electrostatics_dynmat.o:\
 	lo_longrange_electrostatics_dynmat.f90 \
     $(OBJECT_PATH)lo_longrange_electrostatics.o

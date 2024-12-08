@@ -1411,7 +1411,7 @@ pure module subroutine lo_transpositionmatrix(tm)
 end subroutine
 
 !> wrapper around LAPACK so that it is not destructive. Solves Ax=B, perhaps with constraints such that Cx=0, with a bunch of fancy options.
-module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tolerance,subset,weights,gramified)
+module subroutine lo_linear_least_squares(A,B,x,constraint_C,constraint_D,nconstraints,tolerance,subset,weights,gramified)
     !> matrix A
     real(flyt), dimension(:,:), intent(in) :: A
     !> vector B
@@ -1419,7 +1419,9 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
     !> solution
     real(flyt), dimension(:), intent(out) :: x
     !> linear constraints
-    real(flyt), dimension(:,:), intent(in), optional :: zeroconstraints
+    real(flyt), dimension(:,:), intent(in), optional :: constraint_C
+    !> D in Cx=D
+    real(flyt), dimension(:), intent(in), optional :: constraint_D
     !> number of constraints
     integer, intent(in), optional :: nconstraints
     !> specify a tolerance
@@ -1447,11 +1449,11 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
         ! least more robust than just a plain application.
 
         ! Initial sanity test for the constraints
-        if ( present(zeroconstraints) ) then
+        if ( present(constraint_C) ) then
             if ( .not.present(nconstraints) ) then
                 call lo_stop_gracefully(['Need to provide the number of constraints to the llsq'],lo_exitcode_param,__FILE__,__LINE__)
             elseif ( nconstraints .gt. 0 ) then
-                if ( nconstraints .ne. size(zeroconstraints,1) ) then
+                if ( nconstraints .ne. size(constraint_C,1) ) then
                     call lo_stop_gracefully(['Inconsistent number of constraints'],lo_exitcode_param,__FILE__,__LINE__)
                 endif
             endif
@@ -1534,7 +1536,7 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
                 lo_allocate(vC(nc,size(xind)))
                 vC=0.0_flyt
                 do i=1,size(xind)
-                    vC(:,i)=zeroconstraints(:,xind(i))
+                    vC(:,i)=constraint_C(:,xind(i))
                 enddo
                 call lo_compress_equations(vC,l,wC,trans=.false.,tolerance=lo_sqtol)
                 if ( l .ne. nc ) then
@@ -1556,14 +1558,17 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
             ! first copy the response vector
             vB=0.0_flyt
             vB(1:nx)=B
+            do i=1,nc
+                vB(nx+i)=constraint_D(i)
+            enddo
             ! then the full thingy
             wA=0.0_flyt
             wA(1:nx,1:nx)=A
             do j=1,nx
             do i=1,nc
                 l=nx+i
-                wA(l,j)=zeroconstraints(i,j)
-                wA(j,l)=zeroconstraints(i,j)
+                wA(l,j)=constraint_C(i,j)
+                wA(j,l)=constraint_C(i,j)
             enddo
             enddo
         else
@@ -1572,7 +1577,7 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
             wA=A
             if ( nc .gt. 0 ) then
                 lo_allocate(wC(nc,size(A,2)))
-                wC=zeroconstraints
+                wC=constraint_C
             endif
             ! And a copy of the prediction vector
             lo_allocate(vB(size(B)))
@@ -1698,22 +1703,24 @@ module subroutine lo_linear_least_squares(A,B,x,zeroconstraints,nconstraints,tol
 
     ! Now for the final touch.
     finalize: block
-        real(flyt), dimension(:), allocatable :: viol
+        !real(flyt), dimension(:), allocatable :: viol
 
-        ! Check if the constraints are satisfied
-        if ( present(zeroconstraints) ) then
-        if ( nconstraints .gt. 0 ) then
-            lo_allocate(viol(size(zeroconstraints,2)))
-            viol=0.0_flyt
-            call dgemv('N',size(zeroconstraints,1),size(zeroconstraints,2),1.0_flyt,&
-                       zeroconstraints,size(zeroconstraints,1),X,1,0.0_flyt,viol,1)
-            ! Check if they are not satisfied. If so, fix it.
-            if ( sum(abs(viol)) .gt. tol ) then
-                call lo_enforce_linear_constraints(zeroconstraints,x,tol,nosquare=.true.)
-            endif
-            lo_deallocate(viol)
-        endif
-        endif
+        ! ! Check if the constraints are satisfied
+        ! if ( present(zeroconstraints) ) then
+        ! if ( nconstraints .gt. 0 ) then
+        !     lo_allocate(viol(size(zeroconstraints,2)))
+        !     viol=0.0_flyt
+        !     ! call dgemv('N',size(zeroconstraints,1),size(zeroconstraints,2),1.0_flyt,&
+        !     !            zeroconstraints,size(zeroconstraints,1),X,1,0.0_flyt,viol,1)
+        !     ! Check if they are not satisfied. If so, fix it.
+        !     if ( sum(abs(viol)) .gt. tol ) then
+        !         write(*,*) 'Constraints not satisfied!'
+        !         stop
+        !         !call lo_enforce_linear_constraints(zeroconstraints,x,tol,nosquare=.true.)
+        !     endif
+        !     lo_deallocate(viol)
+        ! endif
+        ! endif
         ! Chop away small numbers
         X=lo_chop(X,tol*1E-2_flyt)
     end block finalize

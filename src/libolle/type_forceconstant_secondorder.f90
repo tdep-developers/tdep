@@ -117,6 +117,8 @@ type lo_forceconstant_secondorder
     !> elastic constants, could be fun or something
     real(r8), dimension(6, 6) :: elastic_constants_voigt = lo_huge
     real(r8), dimension(3, 3, 3, 3) :: elastic_constants_tensor = lo_huge
+    real(r8), dimension(6, 6) :: elastic_constants_voigt_longrange = lo_huge
+    real(r8), dimension(3, 3, 3, 3) :: elastic_constants_tensor_longrange = lo_huge
 
     ! Can be useful with the commensurate modes:
 
@@ -450,63 +452,113 @@ subroutine remap(fc, uc, ss, fcss, ind)
 end subroutine
 
 !> Returns all 81 elastic constants, provided I got the Huang invariances right.
-subroutine get_elastic_constants(fc, uc)
-    !> the forceconstant
+subroutine get_elastic_constants(fc, uc, mw, verbosity)
+    !> forceconstant
     class(lo_forceconstant_secondorder), intent(inout) :: fc
-    !> the crystal structure
+    !> crystal structure
     type(lo_crystalstructure), intent(in) :: uc
-    !
-    integer :: i, j
-    integer :: a1, pair
-    integer :: al, be, gm, la
-    real(r8), dimension(6, 6) :: elc2
-    real(r8), dimension(3, 3, 3, 3) :: elc, bracket
-    real(r8), dimension(3, 3) :: m
-    real(r8), dimension(3) :: r
+    !> mpi helper
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> talk a lot?
+    integer, intent(in) :: verbosity
 
-    bracket = 0.0_r8
-    do a1 = 1, fc%na
-    do pair = 1, fc%atom(a1)%n
-        m = fc%atom(a1)%pair(pair)%m
-        r = fc%atom(a1)%pair(pair)%r
+    shortrange: block
+        integer :: i, j
+        integer :: a1, pair
+        integer :: al, be, gm, la
+        real(r8), dimension(6, 6) :: elc2
+        real(r8), dimension(3, 3, 3, 3) :: elc, bracket
+        real(r8), dimension(3, 3) :: m
+        real(r8), dimension(3) :: r
+
+        bracket = 0.0_r8
+        do a1 = 1, fc%na
+        do pair = 1, fc%atom(a1)%n
+            m = fc%atom(a1)%pair(pair)%m
+            r = fc%atom(a1)%pair(pair)%r
+            do la = 1, 3
+            do gm = 1, 3
+            do be = 1, 3
+            do al = 1, 3
+                bracket(al, be, gm, la) = bracket(al, be, gm, la) + m(al, be)*r(gm)*r(la)
+            end do
+            end do
+            end do
+            end do
+        end do
+        end do
+        bracket = -bracket*0.5_r8/uc%volume
+
         do la = 1, 3
         do gm = 1, 3
         do be = 1, 3
         do al = 1, 3
-            bracket(al, be, gm, la) = bracket(al, be, gm, la) + m(al, be)*r(gm)*r(la)
+            elc(al, be, gm, la) = bracket(al, gm, be, la) + bracket(be, gm, al, la) - bracket(al, be, gm, la)
         end do
         end do
         end do
         end do
-    end do
-    end do
-    bracket = -bracket*0.5_r8/uc%volume
 
-    do la = 1, 3
-    do gm = 1, 3
-    do be = 1, 3
-    do al = 1, 3
-        elc(al, be, gm, la) = bracket(al, gm, be, la) + bracket(be, gm, al, la) - bracket(al, be, gm, la)
-    end do
-    end do
-    end do
-    end do
+        elc2 = 0.0_r8
+        do la = 1, 3
+        do gm = 1, 3
+        do be = 1, 3
+        do al = 1, 3
+            i = contract_elastic_constant_indices(al, be)
+            j = contract_elastic_constant_indices(gm, la)
+            elc2(i, j) = elc(al, be, gm, la)
+        end do
+        end do
+        end do
+        end do
 
-    elc2 = 0.0_r8
-    do la = 1, 3
-    do gm = 1, 3
-    do be = 1, 3
-    do al = 1, 3
-        i = contract_elastic_constant_indices(al, be)
-        j = contract_elastic_constant_indices(gm, la)
-        elc2(i, j) = elc(al, be, gm, la)
-    end do
-    end do
-    end do
-    end do
+        fc%elastic_constants_voigt = elc2
+        fc%elastic_constants_tensor = elc
+    end block shortrange
 
-    fc%elastic_constants_voigt = elc2
-    fc%elastic_constants_tensor = elc
+    longrange: block
+        real(r8), dimension(:,:,:,:), allocatable :: rottensor
+        real(r8), dimension(6, 6) :: elc2
+        real(r8), dimension(3, 3, 3, 3) :: elc, bracket
+        integer :: i, j
+        integer :: al, be, gm, la
+
+        if ( fc%loto%correctiontype .gt. 0 ) then
+            allocate(rottensor(3,3,3,uc%na))
+            rottensor=0.0_r8
+            call fc%ew%longrange_elastic_constant_bracket(uc,fc%loto%born_effective_charges,fc%loto%eps,bracket,rottensor,reconly=.true.,mw=mw, verbosity=verbosity)
+            bracket = -bracket*0.5_r8/uc%volume
+
+            do la = 1, 3
+            do gm = 1, 3
+            do be = 1, 3
+            do al = 1, 3
+                elc(al, be, gm, la) = bracket(al, gm, be, la) + bracket(be, gm, al, la) - bracket(al, be, gm, la)
+            end do
+            end do
+            end do
+            end do
+
+            elc2 = 0.0_r8
+            do la = 1, 3
+            do gm = 1, 3
+            do be = 1, 3
+            do al = 1, 3
+                i = contract_elastic_constant_indices(al, be)
+                j = contract_elastic_constant_indices(gm, la)
+                elc2(i, j) = elc(al, be, gm, la)
+            end do
+            end do
+            end do
+            end do
+
+            fc%elastic_constants_voigt_longrange = elc2
+            fc%elastic_constants_tensor_longrange = elc
+        else
+            fc%elastic_constants_voigt_longrange  = 0.0_r8
+            fc%elastic_constants_tensor_longrange = 0.0_r8
+        endif
+    end block longrange
 contains
     !> Voigt-notation
     function contract_elastic_constant_indices(mu, nu) result(ind)

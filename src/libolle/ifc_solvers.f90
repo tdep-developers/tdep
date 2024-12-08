@@ -15,7 +15,7 @@ use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_qpointmesh, only: lo_qpoint
-use type_forcemap, only: lo_forcemap
+use type_forcemap, only: lo_forcemap,lo_coeffmatrix_unitcell_Z_singlet
 use type_mdsim, only: lo_mdsim
 use type_blas_lapack_wrappers, only: lo_gemv
 use lo_longrange_electrostatics, only: lo_ewald_parameters
@@ -304,7 +304,7 @@ interface
 end interface
 ! ifc_solvers_fastugly
 interface
-    module subroutine lo_solve_for_irreducible_ifc_fastugly(map, uc, ss, sim, mw, mem, verbosity)
+    module subroutine lo_solve_for_irreducible_ifc_fastugly(map, uc, ss, sim, mw, mem, verbosity, fix_secondorder)
         type(lo_forcemap), intent(inout) :: map
         type(lo_crystalstructure), intent(in) :: uc
         type(lo_crystalstructure), intent(in) :: ss
@@ -312,6 +312,7 @@ interface
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
+        logical, intent(in) :: fix_secondorder
     end subroutine
 end interface
 
@@ -461,6 +462,107 @@ subroutine lo_solve_for_irreducible_ifc(map, sim, uc, ss, solver, mw, mem, verbo
         end select
     end block dielectric
     call mem%tock(__FILE__, __LINE__, mw%comm)
+
+    ! As soon as we know the Born charges we can construct the IFC constraints
+    buildconstraints: block
+        type(lo_ewald_parameters) :: ew
+        complex(r8), dimension(:,:,:,:), allocatable :: D0
+        real(r8), dimension(:,:,:,:), allocatable :: rottensor
+        real(r8), dimension(:,:,:), allocatable :: wZ,wD
+        real(r8), dimension(:,:), allocatable :: coeff_Z
+        real(r8), dimension(:), allocatable :: v0
+        real(r8), dimension(:), allocatable :: hermitian_rhs, huang_rhs, rotational_rhs
+        real(r8), dimension(3,3,3,3) :: bracket
+        real(r8), dimension(3,3) :: eps,m0,m1
+        integer :: i,j,k,l,ii
+        integer :: a1,a2
+
+        allocate(hermitian_rhs(9*uc%na))
+        allocate(rotational_rhs(27*uc%na))
+        allocate(huang_rhs(81))
+        hermitian_rhs=0.0_r8
+        rotational_rhs=0.0_r8
+        huang_rhs=0.0_r8
+
+        if ( map%polar .gt. 0 ) then
+            ! First thing we need is the polar dynamical matrix to know
+            ! how we should build the Hermiticity constraints.
+            eps=lo_unflatten_2tensor(matmul(map%eps_global_shell%coeff, map%xuc%x_eps_global))
+
+            allocate(wZ(3,3,uc%na))
+            allocate(wD(3,3,uc%na))
+            allocate(v0(9*uc%na))
+            allocate(coeff_Z(uc%na*9,map%xuc%nx_Z_singlet))
+            allocate(D0(3,3,uc%na,uc%na))
+            wZ=0.0_r8
+            wD=0.0_r8
+            v0=0.0_r8
+            coeff_Z=0.0_r8
+            D0=0.0_r8
+
+            call lo_coeffmatrix_unitcell_Z_singlet(map, coeff_Z)
+            v0=matmul(coeff_Z,map%xuc%x_Z_singlet)
+            do a1 = 1, uc%na
+                wZ(:, :, a1) = lo_unflatten_2tensor(v0((a1 - 1)*9 + 1:a1*9))
+            end do
+
+            call ew%set(uc, eps, 2, 1E-20_r8, verbosity=-1)
+            call ew%longrange_dynamical_matrix(uc, [0.0_r8, 0.0_r8, 0.0_r8], wZ, wD, eps, D0, reconly=.true., chgmult=.true.)
+
+            do a1=1,uc%na
+                m0=0.0_r8
+                m1=0.0_r8
+                do a2=1,uc%na
+                    m0=m0+real(d0(:,:,a1,a2),r8)
+                    m1=m1+real(d0(:,:,a2,a1),r8)
+                enddo
+                m0=m0-m1
+                hermitian_rhs( (a1-1)*9+1:a1*9 ) = -lo_flattentensor(m0)
+            enddo
+            hermitian_rhs = lo_chop(hermitian_rhs,1E-12_r8)
+
+            ! Next up we do the huang + rotational invariances
+            allocate(rottensor(3,3,3,uc%na))
+            rottensor=0.0_r8
+            call ew%longrange_elastic_constant_bracket( uc, wZ, eps, bracket, rottensor, reconly=.true., mw=mw, verbosity=verbosity)
+
+            huang_rhs=0.0_r8
+            ii=0
+            do i=1,3
+            do j=1,3
+            do k=1,3
+            do l=1,3
+                ii=ii+1
+                huang_rhs(ii) = bracket(k,l,i,j) - bracket(i,j,k,l)
+            enddo
+            enddo
+            enddo
+            enddo
+            huang_rhs = lo_chop(huang_rhs,1E-12_r8)
+
+            ii=0
+            do a1=1,uc%na
+            do i=1,3
+            do j=1,3
+            do k=1,3
+                ii=ii+1
+                rotational_rhs(ii) = rottensor(i,j,k,a1)-rottensor(i,k,j,a1)
+            enddo
+            enddo
+            enddo
+            enddo
+            rotational_rhs = lo_chop(rotational_rhs,1E-12_r8)
+
+        else
+            ! We just have zeros
+            huang_rhs=0.0_r8
+            hermitian_rhs=0.0_r8
+            rotational_rhs=0.0_r8
+        endif
+
+        call map%forceconstant_constraints(uc,rotational=.true.,huanginvariances=.true.,hermitian=.true.,hermitian_rhs=hermitian_rhs,huang_rhs=huang_rhs,rotational_rhs=rotational_rhs,verbosity=verbosity)
+        !call map%forceconstant_constraints(uc,rotational=.false.,huanginvariances=.true.,hermitian=.true.,hermitian_rhs=hermitian_rhs,huang_rhs=huang_rhs,verbosity=verbosity)
+    end block buildconstraints
 
     ! Get some things that are always needed
     !call mem%tick()
