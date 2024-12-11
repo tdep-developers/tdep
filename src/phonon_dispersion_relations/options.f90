@@ -115,7 +115,7 @@ subroutine parse(opts)
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--dumpgrid', &
-                 help='Write files with q-vectors, frequencies, eigenvectors and group velocities for a grid.', &
+                 help='Write files with q-vectors, frequencies, eigenvectors and group velocities for the irreducible and full grid.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
 

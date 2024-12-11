@@ -4,6 +4,7 @@ Temperature Dependent Effective Potentials (TDEP)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06150/status.svg)](https://doi.org/10.21105/joss.06150)
 ![GitHub Release](https://img.shields.io/github/v/release/tdep-developers/tdep)
 ![GitHub License](https://img.shields.io/github/license/tdep-developers/tdep)
+[![Compile TDEP and test binaries](https://github.com/tdep-developers/tdep/actions/workflows/ci_simple_compilation_and_test.yml/badge.svg)](https://github.com/tdep-developers/tdep/actions/workflows/ci_simple_compilation_and_test.yml)
 
 Briefly summarized, the package provides all the tools you need to build accurate model Hamiltonians for finite temperature lattice dynamics from first principles. TDEP includes several programs for different tasks:
 
@@ -15,9 +16,11 @@ Briefly summarized, the package provides all the tools you need to build accurat
 
 - `phonon_dispersion_relations`: Calculate phonon dispersion relations and related harmonic thermodynamic properties from the second-order force constants.
 
-- `thermal_conductivity`: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity.
+- `thermal_conductivity`: Compute thermal transport in the mode-coupling formalism including third- and fourth-order anharmonicity.
 
 - `lineshape`: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone. The grid mode computes _spectral_ thermal transport properties as well.
+
+- `thermal_conductivity_2023`: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity. Legacy implementation, the significantly improved program thermal_conductivity should be used!
 
 More details, examples, and theoretical background can be found in the [online documentation](https://tdep-developers.github.io/tdep/program). See [below](#how-to-cite) which references should be cited for which program.
 
