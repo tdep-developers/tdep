@@ -174,12 +174,15 @@ type lo_forcemap_constraints
     integer :: neq2 = -lo_hugeint
     integer :: neq3 = -lo_hugeint
     integer :: neq4 = -lo_hugeint
-    !> clean constraints
+    !> C in Cx=D
     real(r8), dimension(:, :), allocatable :: eq1, eq2, eq3, eq4
+    !> D in Cx=D
+    real(r8), dimension(:), allocatable :: d1, d2, d3, d4
 
     !> number of Z triplet constraints
     integer :: neqz3 = -lo_hugeint
     real(r8), dimension(:, :), allocatable :: eqz3
+    real(r8), dimension(:), allocatable :: dz
 end type
 
 !> pre-defined groups of tuplets to speed things up later
@@ -325,7 +328,7 @@ type lo_forcemap
 
     !> Some operations
     type(lo_tensor_singletop), dimension(:), allocatable :: op_singlet
-    type(lo_tensor_pairop), dimension(:), allocatable :: op_pair
+    type(lo_tensor_pairop),    dimension(:), allocatable :: op_pair
     type(lo_tensor_tripletop), dimension(:), allocatable :: op_triplet
     type(lo_tensor_quartetop), dimension(:), allocatable :: op_quartet
 
@@ -361,23 +364,30 @@ interface
 end interface
 ! Interfaces to type_forcemap_constraints
 interface
-    module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, verbosity)
+    module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
         class(lo_forcemap), intent(inout) :: map
         type(lo_crystalstructure), intent(in) :: uc
         logical, intent(in) :: rotational
         logical, intent(in) :: huanginvariances
         logical, intent(in) :: hermitian
+        real(r8), dimension(:), intent(in) :: hermitian_rhs
+        real(r8), dimension(:), intent(in) :: huang_rhs
+        real(r8), dimension(:), intent(in) :: rotational_rhs
         integer, intent(in) :: verbosity
     end subroutine
     module subroutine enforce_constraints(map)
         class(lo_forcemap), intent(inout) :: map
     end subroutine
-    module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, neq2, rotational, huang, hermitian)
+    module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
         class(lo_forcemap), intent(in) :: map
         type(lo_crystalstructure), intent(in) :: uc
         real(r8), dimension(:, :), allocatable, intent(out) :: eq2
+        real(r8), dimension(:), allocatable, intent(out) :: vD
         integer, intent(out) :: neq2
         logical, intent(in) :: rotational, huang, hermitian
+        real(r8), dimension(:), intent(in) :: hermitian_rhs
+        real(r8), dimension(:), intent(in) :: huang_rhs
+        real(r8), dimension(:), intent(in) :: rotational_rhs
     end subroutine
 end interface
 ! Interfaces to the coefficient matrices

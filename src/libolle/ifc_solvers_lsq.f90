@@ -92,7 +92,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                               noscale=.true., usereference=usereference, n_atom=ss%na)
             if (mw%r .eq. solrnk) then
                 call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%neq2, gramified=.true.)
+                    asc%ATA, asc%ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, gramified=.true.)
             end if
             call asc%destroy()
             call mw%bcast(map%xuc%x_fc_pair, solrnk, __FILE__, __LINE__)
@@ -106,7 +106,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call asc%generate(ih%cm2, ih%f2, nf, map%xuc%nx_fc_pair, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%neq2, gramified=.true.)
+                        asc%ATA, asc%ATB, map%xuc%x_fc_pair, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mw%bcast(map%xuc%x_fc_pair, solrnk, __FILE__, __LINE__)
@@ -118,7 +118,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call asc%generate(wA, wB, nrow, map%xuc%nx_fc_pair, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, ih%dx2(:, div), map%constraints%eq2, map%constraints%neq2, gramified=.true.)
+                        asc%ATA, asc%ATB, ih%dx2(:, div), map%constraints%eq2, map%constraints%d2, map%constraints%neq2, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
@@ -159,7 +159,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
             call asc%generate(ih%cm1, ih%f1, nf, map%xuc%nx_fc_singlet, mw, noscale=.true.)
             if (mw%r .eq. solrnk) then
                 call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_fc_singlet, map%constraints%eq1, map%constraints%neq1, gramified=.true.)
+                    asc%ATA, asc%ATB, map%xuc%x_fc_singlet, map%constraints%eq1, map%constraints%d1, map%constraints%neq1, gramified=.true.)
             end if
             call mw%bcast(map%xuc%x_fc_singlet, solrnk, __FILE__, __LINE__)
             call asc%destroy()
@@ -170,7 +170,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call asc%generate(wA, wB, nrow, map%xuc%nx_fc_singlet, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, ih%dx1(:, div), map%constraints%eq1, map%constraints%neq1, gramified=.true.)
+                        asc%ATA, asc%ATB, ih%dx1(:, div), map%constraints%eq1, map%constraints%d1, map%constraints%neq1, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
@@ -207,7 +207,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
             call asc%generate(ih%cm3, ih%f3, nf, map%xuc%nx_fc_triplet, mw, noscale=.true.)
             if (mw%r .eq. solrnk) then
                 call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_fc_triplet, map%constraints%eq3, map%constraints%neq3, gramified=.true.)
+                    asc%ATA, asc%ATB, map%xuc%x_fc_triplet, map%constraints%eq3, map%constraints%d3, map%constraints%neq3, gramified=.true.)
             end if
             call asc%destroy()
             call mw%bcast(map%xuc%x_fc_triplet, solrnk, __FILE__, __LINE__)
@@ -218,7 +218,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call asc%generate(wA, wB, nrow, map%xuc%nx_fc_triplet, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, ih%dx3(:, div), map%constraints%eq3, map%constraints%neq3, gramified=.true.)
+                        asc%ATA, asc%ATB, ih%dx3(:, div), map%constraints%eq3, map%constraints%d3, map%constraints%neq3, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
@@ -258,7 +258,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
             call asc%generate(ih%cm4, ih%f4, nf, map%xuc%nx_fc_quartet, mw, noscale=.true.)
             if (mw%r .eq. solrnk) then
                 call lo_linear_least_squares( &
-                    asc%ATA, asc%ATB, map%xuc%x_fc_quartet, map%constraints%eq4, map%constraints%neq4, gramified=.true.)
+                    asc%ATA, asc%ATB, map%xuc%x_fc_quartet, map%constraints%eq4, map%constraints%d4, map%constraints%neq4, gramified=.true.)
             end if
             call asc%destroy()
             call mw%bcast(map%xuc%x_fc_quartet, solrnk, __FILE__, __LINE__)
@@ -269,7 +269,7 @@ module subroutine lsq_solve(map, uc, ss, ih, tp, force_stable, usereference, max
                 call asc%generate(wA, wB, nrow, map%xuc%nx_fc_quartet, mw, noscale=.true.)
                 if (mw%r .eq. solrnk) then
                     call lo_linear_least_squares( &
-                        asc%ATA, asc%ATB, ih%dx4(:, div), map%constraints%eq4, map%constraints%neq4, gramified=.true.)
+                        asc%ATA, asc%ATB, ih%dx4(:, div), map%constraints%eq4, map%constraints%d4, map%constraints%neq4, gramified=.true.)
                 end if
                 call asc%destroy()
                 call mem%deallocate(wA, persistent=.true., scalable=.true., file=__FILE__, line=__LINE__)
@@ -356,7 +356,7 @@ subroutine force_solution_stable_fifth_time( &
         ! Normal least squares for the full solution
         call asc%generate(ih%cm2, ih%f2, tp%nt*ss%na*3, map%xuc%nx_fc_pair, mw, noscale=.true.)
         if (mw%r .eq. solrnk) then
-            call lo_linear_least_squares(asc%ATA, asc%ATB, ifc, map%constraints%eq2, map%constraints%neq2, gramified=.true.)
+            call lo_linear_least_squares(asc%ATA, asc%ATB, ifc, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, gramified=.true.)
         end if
         call asc%destroy()
         call mw%bcast(ifc, solrnk, __FILE__, __LINE__)

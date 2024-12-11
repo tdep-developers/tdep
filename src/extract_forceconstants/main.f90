@@ -51,7 +51,6 @@ end block init
 ! We need a forcemap to continue.
 getfrcmap: block
     type(lo_interaction_tensors) :: slt
-    real(r8) :: t0
 
     ! Either read it from file or create it
     if (opts%readforcemap) then
@@ -62,8 +61,8 @@ getfrcmap: block
         end if
         call map%read_from_hdf5(uc, 'infile.forcemap.hdf5', opts%verbosity)
         ! Update constraints that depend on structure
-        call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%neq2, &
-                                           opts%rotationalconstraints, opts%huanginvariance, opts%hermitian)
+        !call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%neq2, &
+        !                                   opts%rotationalconstraints, opts%huanginvariance, opts%hermitian)
     else
         ! Now we have to calculate the whole thing.
         call uc%classify('wedge', timereversal=.true.)
@@ -90,12 +89,6 @@ getfrcmap: block
         call map%generate(uc, ss, polarcorrectiontype=opts%polarcorrectiontype, &
                           st=slt, mw=mw, mem=mem, verbosity=opts%verbosity, devmode=opts%devmode)
 
-        ! Create the constraints
-        t0 = walltime()
-        call map%forceconstant_constraints(uc, opts%rotationalconstraints, &
-                                           opts%huanginvariance, opts%hermitian, opts%verbosity + 10)
-        if (mw%talk) write (*, *) '... got constraints in ', tochar(walltime() - t0), 's'
-        ! Maybe print forcemap to file.
         if (opts%printforcemap .and. mw%talk) then
             call map%write_to_hdf5('outfile.forcemap.hdf5', opts%verbosity)
         end if
@@ -339,13 +332,21 @@ getfc: block
     end if
     if (map%have_fc_pair) then
         call map%get_secondorder_forceconstant(uc, fc2, mem, opts%verbosity)
+        call fc2%get_elastic_constants(uc, mw, opts%verbosity)
         if (mw%talk) then
             call fc2%writetofile(uc, 'outfile.forceconstant')
-            call fc2%get_elastic_constants(uc)
             write (*, *) ''
-            write (*, *) 'ELASTIC CONSTANTS (GPa):'
+            write (*, *) 'ELASTIC CONSTANTS (short range) (GPa):'
             do i = 1, 6
                 write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
+            end do
+            write (*, *) 'ELASTIC CONSTANTS (long range) (GPa):'
+            do i = 1, 6
+                write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt_longrange(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
+            end do
+            write (*, *) 'ELASTIC CONSTANTS (total) (GPa):'
+            do i = 1, 6
+                write (*, "(6(3X,F15.5))") lo_chop((fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
         end if
     end if

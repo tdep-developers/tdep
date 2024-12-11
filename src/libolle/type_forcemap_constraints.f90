@@ -4,7 +4,7 @@ implicit none
 contains
 
 !> generate the linear constraints on the equations
-module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, verbosity)
+module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
     !> symmetry stuff rearranged into coordination shells
     class(lo_forcemap), intent(inout) :: map
     !> unitcell
@@ -15,6 +15,12 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
     logical, intent(in) :: huanginvariances
     !> build the Hermitian constraints
     logical, intent(in) :: hermitian
+    !> rhs for the Hermitian constraints
+    real(r8), dimension(:), intent(in) :: hermitian_rhs
+    !> rhs for Huang invariances
+    real(r8), dimension(:), intent(in) :: huang_rhs
+    !> rhs for rotational invariances
+    real(r8), dimension(:), intent(in) :: rotational_rhs
     !> how much to talk?
     integer, intent(in) :: verbosity
 
@@ -40,7 +46,7 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
 
         if (map%have_fc_pair) then
             t0 = walltime()
-            call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%neq2, rotational, huanginvariances, hermitian)
+            call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
             if (verbosity .gt. 0) then
                 write (*, *) '... ', tochar(map%constraints%neq2), ' secondorder constraints (', tochar(walltime() - t0), 's)'
             end if
@@ -51,6 +57,12 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
         if (map%have_fc_triplet) then
             t0 = walltime()
             call lo_thirdorder_asr(map, map%constraints%eq3, map%constraints%neq3)
+            if ( map%constraints%neq3 .gt. 0 ) then
+                allocate(map%constraints%d3(map%constraints%neq3))
+            else
+                allocate(map%constraints%d3(1))
+            endif
+            map%constraints%d3=0.0_r8
             if (verbosity .gt. 0) then
                 write (*, *) '... ', tochar(map%constraints%neq3), ' thirdorder constraints (', tochar(walltime() - t0), 's)'
             end if
@@ -61,11 +73,13 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
         if (map%have_fc_quartet) then
             t0 = walltime()
             call lo_fourthorder_asr(map, map%constraints%eq4, map%constraints%neq4)
-            !if ( present(mw) ) then
-            !    call lo_fourthorder_asr(map,map%constraints%eq4,map%constraints%neq4,mw)
-            !else
-            !    call lo_fourthorder_asr(map,map%constraints%eq4,map%constraints%neq4)
-            !endif
+            if ( map%constraints%neq4 .gt. 0 ) then
+                allocate(map%constraints%d4(map%constraints%neq4))
+            else
+                allocate(map%constraints%d4(1))
+            endif
+            map%constraints%d4=0.0_r8
+
             if (verbosity .gt. 0) then
                 write (*, *) '... ', tochar(map%constraints%neq4), ' fourthorder constraints (', tochar(walltime() - t0), 's)'
             end if
@@ -76,6 +90,13 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
         if (map%have_Z_triplet) then
             t0 = walltime()
             call lo_Ztriplet_asr(map, map%constraints%eqz3, map%constraints%neqz3)
+            if ( map%constraints%neqz3 .gt. 0 ) then
+                allocate(map%constraints%dz(map%constraints%neqz3))
+            else
+                allocate(map%constraints%dz(1))
+            endif
+            map%constraints%dz=0.0_r8
+
             if (verbosity .gt. 0) then
                 write (*, *) '... ', tochar(map%constraints%neqz3), ' Z triplet constraints (', tochar(walltime() - t0), 's)'
             end if
@@ -134,39 +155,49 @@ module subroutine enforce_constraints(map)
 end subroutine
 
 !> Rotational, Hermitian and Huang invariances for the second order
-module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, neq2, rotational, huang, hermitian)
+module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
     !> symmetry stuff rearranged into coordination shells
     class(lo_forcemap), intent(in) :: map
     !> unitcell
     type(lo_crystalstructure), intent(in) :: uc
-    !> the constraints
+    !> constraints, C in Cx=D
     real(r8), dimension(:, :), allocatable, intent(out) :: eq2
+    !> constraints, D in Cx=D
+    real(r8), dimension(:), allocatable, intent(out) :: vD
     !> how many equations did I get?
     integer, intent(out) :: neq2
     !> which constraints should I care about?
     logical, intent(in) :: rotational, huang, hermitian
+    !> rhs of hermitian constraints
+    real(r8), dimension(:), intent(in) :: hermitian_rhs
+    real(r8), dimension(:), intent(in) :: huang_rhs
+    real(r8), dimension(:), intent(in) :: rotational_rhs
 
-    real(r8), dimension(:, :), allocatable :: dumeq, dumeq_rot, dumeq_huang, dumeq_herm
+    real(r8), dimension(:, :), allocatable :: dumeq, dumeq_rot, dumeq_huang, dumeq_herm, m0,U,V
+    real(r8), dimension(:), allocatable :: dum_rhs, S
     real(r8) :: wm9x1(9, 1), wm9x2(9, 2), wm9x3(9, 3), wm9x4(9, 4), wm9x5(9, 5), wm9x6(9, 6), wm9x7(9, 7), wm9x8(9, 8), wm9x9(9, 9)
     real(r8) :: m9x81(9, 81), m9x27(9, 27), m9x9(9, 9)
     real(r8), dimension(9, 9) :: CM
     real(r8), dimension(3) :: rij
+    real(r8) :: f0
     integer, dimension(9) :: xind, xlocind
     integer :: eqctr, a1, a2, i, j
     integer :: unsh, unop, nfc, ipair, nx
 
     nfc = map%xuc%nx_fc_pair
     eqctr = 0
-    allocate (dumeq(nfc, (map%n_atom_uc)*27 + 81 + 9*map%n_atom_uc))
-    allocate (dumeq_rot(nfc, 27))
+    allocate (dumeq(nfc, map%n_atom_uc*27 + 81 + 9*map%n_atom_uc))
+    allocate (dumeq_rot(nfc, map%n_atom_uc*27))
     allocate (dumeq_huang(nfc, 81))
-    allocate (dumeq_herm(nfc, 9))
+    allocate (dumeq_herm(nfc, map%n_atom_uc*9))
+    allocate (dum_rhs( map%n_atom_uc*27 + 81 + 9*map%n_atom_uc))
     dumeq = 0.0_r8
     dumeq_rot = 0.0_r8
     dumeq_huang = 0.0_r8
+    dumeq_herm = 0.0_r8
+    dum_rhs=0.0_r8
+
     atomloop: do a1 = 1, map%n_atom_uc
-        dumeq_herm = 0.0_r8
-        dumeq_rot = 0.0_r8
         pairloop: do ipair = 1, map%xuc%n_fc_pair
             if (map%xuc%fc_pair(ipair)%selfterm) cycle pairloop
             if (map%xuc%fc_pair(ipair)%i1 .ne. a1) cycle pairloop
@@ -212,7 +243,7 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, neq2, rotational, 
             ! add equations together
             if (rotational) then
                 m9x27 = secondorder_rotational_coefficient(rij, CM)
-                dumeq_rot(xind(1:nx), :) = dumeq_rot(xind(1:nx), :) + m9x27(xlocind(1:nx), :)
+                dumeq_rot(xind(1:nx), (a1-1)*27+1:a1*27) = dumeq_rot(xind(1:nx), (a1-1)*27+1:a1*27) + m9x27(xlocind(1:nx), :)
             end if
             if (huang) then
                 m9x81 = secondorder_huang_coefficient(rij, CM)
@@ -220,42 +251,80 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, neq2, rotational, 
             end if
             if (hermitian) then
                 m9x9 = secondorder_hermitian_character(CM)
-                dumeq_herm(xind(1:nx), :) = dumeq_herm(xind(1:nx), :) + m9x9(xlocind(1:nx), :)
+                dumeq_herm(xind(1:nx), (a1-1)*9+1:a1*9) = dumeq_herm(xind(1:nx), (a1-1)*9+1:a1*9) + m9x9(xlocind(1:nx), :)
             end if
         end do pairloop
-        ! Add only the new, unique rotational equations to the larger list. This is to decrease the dimensionality
-        ! of the SVD I have to do later to completely reduce the equations.
-        if (rotational) then
-            eql_rot2: do i = 1, 27
-                do j = 1, eqctr
-                    if (sum(abs(dumeq(:, j) - dumeq_rot(:, i))) .lt. lo_tol) cycle eql_rot2
-                end do
-                eqctr = eqctr + 1
-                dumeq(:, eqctr) = dumeq_rot(:, i)
-            end do eql_rot2
-        end if
-        if (hermitian) then
-            eql_herm: do i = 1, 9
-                do j = 1, eqctr
-                    if (sum(abs(dumeq(:, j) - dumeq_herm(:, i))) .lt. lo_tol) cycle eql_herm
-                end do
-                eqctr = eqctr + 1
-                dumeq(:, eqctr) = dumeq_herm(:, i)
-            end do eql_herm
-        end if
     end do atomloop
     ! Now stack the other equations to this
+    if (rotational) then
+        do i = 1, map%n_atom_uc*27
+            eqctr = eqctr + 1
+            dumeq(:, eqctr) = dumeq_rot(:, i)
+            dum_rhs(eqctr) = rotational_rhs(i)
+        end do
+    end if
     if (huang) then
-        eql_huang: do i = 1, 81
-            do j = 1, eqctr
-                if (sum(abs(dumeq(:, j) - dumeq_huang(:, i))) .lt. lo_tol) cycle eql_huang
-            end do
+        do i = 1, 81
             eqctr = eqctr + 1
             dumeq(:, eqctr) = dumeq_huang(:, i)
-        end do eql_huang
+            dum_rhs(eqctr) = huang_rhs(i)
+            !write(*,*) i,eqctr,dum_rhs(eqctr),sum(abs(dumeq))
+        end do
     end if
-    ! And agressively reduce it
-    call lo_reduce_equations(dumeq(:, 1:eqctr), eq2, neq2)
+    if (hermitian) then
+        do i=1,map%n_atom_uc*9
+            eqctr = eqctr + 1
+            dumeq(:, eqctr) = dumeq_herm(:, i)
+            dum_rhs(eqctr) = hermitian_rhs(i)
+            !write(*,*) i,eqctr,dum_rhs(eqctr),sum(abs(dumeq))
+        enddo
+    end if
+
+    ! Now we want to reduce the equations
+    allocate(m0(eqctr,nfc))
+    m0=transpose(dumeq(:,1:eqctr))
+    m0=lo_chop(m0,1E-13_r8)
+    ! Some intermediate cleanup
+    deallocate(dumeq)
+    deallocate(dumeq_herm)
+    deallocate(dumeq_rot)
+    deallocate(dumeq_huang)
+
+    ! Reduce equations to full rank
+    allocate(S(max(eqctr,nfc)))
+    allocate(U(eqctr,eqctr))
+    allocate(V(nfc,nfc))
+    S=0.0_r8
+    U=0.0_r8
+    V=0.0_r8
+    call lo_dgesvd(m0,s,u,v)
+
+    if ( s(1) .gt. 1E-15_r8 ) then
+        ! Means we have non-trivial constraints
+        j=0
+        do i=1,size(s)
+            if ( s(i)/s(1) .gt. 1E-10_r8 ) j=j+1
+        enddo
+        neq2=j
+
+        allocate(vD(neq2))
+        vD=0.0_r8
+
+        ! Fix the RHS of the constraints
+        call lo_gemv(U(:,1:neq2),dum_rhs(1:eqctr),vD,trans='T')
+        ! And the actual coefficient matrix
+        allocate(eq2(neq2,nfc))
+        eq2=0.0_r8
+        do i=1,neq2
+            eq2(i,:)=S(i)*V(i,:)
+        enddo
+        eq2=lo_chop(eq2,1E-12_r8)
+    else
+        ! No relevant constraints
+        neq2=0
+        allocate(vD(1))
+        vD=0.0_r8
+    endif
 
 contains
     pure function secondorder_rotational_coefficient(r, cl) result(m)

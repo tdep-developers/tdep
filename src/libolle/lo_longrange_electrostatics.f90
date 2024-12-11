@@ -6,7 +6,7 @@ module lo_longrange_electrostatics
 use konstanter, only: r8, i8, lo_iou, lo_pi, lo_twopi, lo_huge, lo_tol, lo_hugeint, lo_exitcode_param, lo_exitcode_symmetry
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use type_crystalstructure, only: lo_crystalstructure
-use gottochblandat, only: walltime, tochar, lo_points_on_sphere, lo_determ, lo_invert3x3matrix, lo_sqnorm
+use gottochblandat, only: walltime, tochar, lo_points_on_sphere, lo_determ, lo_invert3x3matrix, lo_sqnorm, lo_progressbar_init, lo_progressbar
 use geometryfunctions, only: lo_inscribed_sphere_in_box, lo_bounding_sphere_of_box
 use lo_brents_method, only: lo_brent_helper
 use lo_sorting, only: lo_qsort
@@ -34,10 +34,10 @@ type lo_ewald_parameters
 contains
     !> set parameters
     procedure :: set => lo_set_dipole_ewald_parameters
-    !> force Born charges Hermitian
-    procedure :: force_borncharges_hermitian
     !> calculate the long-range dynamical matrix
     procedure :: longrange_dynamical_matrix
+    !> get the long-range partial elastic constants
+    procedure :: longrange_elastic_constant_bracket
     !> calculate the long-range forceconstant for a supercell
     procedure :: supercell_longrange_forceconstant
     !> measure size in memoryx
@@ -47,14 +47,6 @@ contains
 end type
 
 interface
-    module subroutine force_borncharges_Hermitian(ew, x_Z, coeff_Z, eps, p, verbosity)
-        class(lo_ewald_parameters), intent(in) :: ew
-        real(r8), dimension(:), intent(inout) :: x_Z
-        real(r8), dimension(:, :), intent(in) :: coeff_Z
-        real(r8), dimension(3, 3), intent(in) :: eps
-        type(lo_crystalstructure), intent(in) :: p
-        integer, intent(in) :: verbosity
-    end subroutine
     module subroutine longrange_dynamical_matrix( &
         ew, p, q, born_effective_charges, born_onsite_correction, eps, D, Dx, Dy, Dz, reconly, chgmult)
         class(lo_ewald_parameters), intent(in) :: ew
@@ -67,6 +59,17 @@ interface
         complex(r8), dimension(:, :, :, :), intent(out), optional :: Dx, Dy, Dz
         logical, intent(in), optional :: reconly
         logical, intent(in), optional :: chgmult
+    end subroutine
+    module subroutine longrange_elastic_constant_bracket( ew, p, born_effective_charges, eps, bracket, rottensor, reconly, mw, verbosity)
+        class(lo_ewald_parameters), intent(in) :: ew
+        type(lo_crystalstructure), intent(in) :: p
+        real(r8), dimension(:, :, :), intent(in) :: born_effective_charges
+        real(r8), dimension(3, 3), intent(in) :: eps
+        real(r8), dimension(3,3,3,3), intent(out) :: bracket
+        real(r8), dimension(:,:,:,:), intent(out) :: rottensor
+        logical, intent(in), optional :: reconly
+        type(lo_mpi_helper), intent(inout) :: mw
+        integer, intent(in) :: verbosity
     end subroutine
     module subroutine supercell_longrange_forceconstant(ew, born_effective_charges, eps, ss, forceconstant, thres)
         class(lo_ewald_parameters), intent(in) :: ew
