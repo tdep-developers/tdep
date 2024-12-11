@@ -346,7 +346,7 @@ getfc: block
             end do
             write (*, *) 'ELASTIC CONSTANTS (total) (GPa):'
             do i = 1, 6
-                write (*, "(6(3X,F15.5))") lo_chop( (fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
+                write (*, "(6(3X,F15.5))") lo_chop((fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
         end if
     end if
