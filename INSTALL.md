@@ -1,7 +1,7 @@
 Installation
 ===
 
-`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files saved, we advise to pick the one closest to your target system and adjust the respective fields.j
+`TDEP` is written in modern Fortran, and requires a working Fortran environment. All system-specific settings are saved in a file called `important_settings`. There are some example `important_settings.target` template files in the [`examples/build`](./examples/build) folder. We advise to pick the one closest to your target system and adjust the respective fields.
 
 ## Requirements
 
@@ -27,10 +27,10 @@ and confirm that libraries and include files add up at a place where you find th
 
 ## Example
 
-- Pick e.g. the `important_settings.gfortran` and copy it to `important_settings`:
+- Pick e.g. the `./examples/build/important_settings.gfortran` and copy it to `important_settings`:
 
 ```bash
-cp important_settings.gfortran important_settings
+cp examples/build/important_settings.gfortran important_settings
 ```
 
 - adjust:
@@ -108,7 +108,7 @@ If you are using [`Homebrew`](https://brew.sh/), you can install all dependencie
 brew install gcc openmpi gnuplot hdf5
 ```
 
-Then proceed as [in the example above](#Example). Check out the [`important_settings.osx_gfortran_accelerate`](./important_settings.osx_gfortran_accelerate) file as well for reference.
+Then proceed as [in the example above](#Example). Check out the [`important_settings.osx_gfortran_accelerate`](./examples/build/important_settings.osx_gfortran_accelerate) file as well for reference.
 
 ## Supercomputers
 
@@ -116,8 +116,8 @@ This will depend on the supercomputer you work with, but there should be no big 
 
 There are two template settings files you can look into:
 
-- [`important_settings.sigma`](./important_settings.sigma) is a template file for a supercomputer with traditional Intel architecture and Intel compilers + MKL math library.
-- [`important_settings.dardel`](./important_settings.dardel) is for a Cray supercomputer with AMD CPUs where `gfortran` is used to compile.
+- [`important_settings.sigma`](./examples/build/important_settings.sigma) is a template file for a supercomputer with traditional Intel architecture and Intel compilers + MKL math library.
+- [`important_settings.dardel`](./examples/build/important_settings.dardel) is for a Cray supercomputer with AMD CPUs where `gfortran` is used to compile.
 
 ## Anaconda
 
@@ -146,7 +146,7 @@ conda install -c conda-forge gfortran openmpi-mpifort scalapack fftw hdf5
 
 ### Install
 
-Copy `important_settings.conda` to `important_settings` and adjust the `PREFIX`, i.e.,
+Copy `./examples/build/important_settings.conda` to `important_settings` and adjust the `PREFIX`, i.e.,
 
 ```
 ...
