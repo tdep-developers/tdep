@@ -10,11 +10,13 @@ use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_forceconstant_fourthorder, only: lo_forceconstant_fourthorder
 use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
+use type_phonon_dos, only: lo_phonon_dos
 use lo_timetracker, only: lo_timer
 
 use options, only: lo_opts
 use kappa, only: get_kappa, get_kappa_offdiag, iterative_solution, symmetrize_kappa
 use scattering, only: lo_scattering_rates
+use cumulative_kappa, only: lo_cumulative_kappa
 
 implicit none
 
@@ -24,6 +26,7 @@ type(lo_forceconstant_secondorder) :: fc
 type(lo_forceconstant_thirdorder) :: fct
 type(lo_forceconstant_fourthorder) :: fcf
 type(lo_phonon_dispersions) :: dr
+type(lo_phonon_dos) :: pd
 type(lo_crystalstructure) :: uc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
@@ -31,6 +34,7 @@ type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr_init, tmr_scat, tmr_kappa, tmr_tot
 ! The scattering rates
 type(lo_scattering_rates) :: sr
+type(lo_cumulative_kappa) :: mf
 real(r8) :: t0
 
 ! Set up all harmonic properties. That involves reading all the input file,
@@ -225,7 +229,6 @@ blockkappa: block
     call symmetrize_kappa(kappa_offdiag, uc)
     call symmetrize_kappa(kappa_sma, uc)
     call tmr_kappa%tock('symmetrization')
-    call tmr_kappa%stop()
     if (mw%talk) then
         ! First we write in the standard output
         u = open_file('out', 'outfile.thermal_conductivity')
@@ -277,6 +280,18 @@ blockkappa: block
         close (u)
     end if
 
+    ! First we get the cumulative kappa with the mean free path
+    if (mw%talk) write(*, *) '... computing cumulative kappa'
+    call mf%get_cumulative_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%sigma, mw, mem)
+    call tmr_kappa%tock('cumulative kappa')
+
+    ! Then the spectral kappa
+    if (mw%talk) write(*, *) '... computing spectral kappa'
+    call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, &
+                     sigma=opts%sigma, n_dos_point=opts%freqpts, integrationtype=opts%dosintegrationtype)
+    call mf%get_spectral_kappa(uc, qp, dr, pd, mw, mem)
+    call tmr_kappa%tock('spectral kappa')
+
     ! In a last step, we have to add a prefactor to Fn, to have the right kappa per mode in the outfile
     do q1 = 1, qp%n_irr_point
         do b1 = 1, dr%n_mode
@@ -286,6 +301,7 @@ blockkappa: block
     end do
 
     call tmr_tot%tock('thermal conductivity computation')
+    call tmr_kappa%stop()
     t0 = walltime() - t0
 end block blockkappa
 
@@ -294,10 +310,12 @@ finalize_and_write: block
         write (*, *) ''
         write (*, *) '... dumping auxiliary data to files'
         call dr%write_to_hdf5(qp, uc, 'outfile.thermal_conductivity_grid.hdf5', mem, opts%temperature)
+        call mf%write_to_hdf5(pd, uc, opts%unit, 'outfile.cumulative_thermal_conductivity.hdf5', mem)
 
         write (*, *) ''
-        write (*, '(A,A)') 'Scattering rates can be found in               ', 'outfile.thermal_conductivity.hdf5'
-        write (*, '(A,A)') 'Thermal conductivity tensor can be found in    ', 'outfile.thermal_conductivity'
+        write (*, '(A,A)') 'Scattering rates can be found in                   ', 'outfile.thermal_conductivity_grid.hdf5'
+        write (*, '(A,A)') 'Thermal conductivity tensor can be found in        ', 'outfile.thermal_conductivity'
+        write (*, '(A,A)') 'Cumulative and spectral thermal conductivity in    ', 'outfile.cumulativethermal_conductivity.hdf5'
 
         ! Print timings
         write (*, *) ''
