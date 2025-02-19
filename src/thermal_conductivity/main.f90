@@ -302,12 +302,19 @@ blockkappa: block
     call mf%get_boundary_kappa(qp, dr, uc, kappa_offdiag, opts%mfppts, opts%temperature, opts%classical, mw, mem)
     call tmr_kappa%tock('boundary kappa')
 
-    ! Then the spectral kappa
-    if (mw%talk) write(*, *) '... computing spectral kappa'
+    if (mw%talk) write(*, *) '... computing density of state'
     call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, sigma=opts%dossigma, &
                      n_dos_point=opts%freqpts, integrationtype=opts%dosintegrationtype)
+
+    ! Then the spectral kappa
+    if (mw%talk) write(*, *) '... computing spectral kappa'
     call mf%get_spectral_kappa(uc, qp, dr, pd, mw, mem)
     call tmr_kappa%tock('spectral kappa')
+
+    ! And finally the angular momentum
+    if (mw%talk) write(*, *) '... computing angular momentum'
+    call mf%get_angular_momentum(uc, qp, dr, pd, opts%temperature, mw, mem)
+    call tmr_kappa%tock('angular momentum')
 
     ! In a last step, we have to add a prefactor to Fn, to have the right kappa per mode in the outfile
     do q1 = 1, qp%n_irr_point

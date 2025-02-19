@@ -39,10 +39,17 @@ type lo_cumulative_kappa
     !> With boundary scattering
     real(r8), dimension(:), allocatable :: boundary_xaxis
     real(r8), dimension(:, :), allocatable :: boundary_kappa
+    !> angular momentum matrix
+    real(r8), dimension(3, 3) :: angmomalpha
+    !> spectral angular momentum matrix
+    real(r8), dimension(:, :), allocatable :: fq_angmom
+    real(r8), dimension(:, :, :), allocatable :: fq_angmom_band
+    real(r8), dimension(:, :, :), allocatable :: fq_angmom_atom
 contains
     procedure :: get_cumulative_kappa
     procedure :: get_spectral_kappa
     procedure :: get_boundary_kappa
+    procedure :: get_angular_momentum
     procedure :: write_to_hdf5
 end type
 
@@ -483,6 +490,29 @@ subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
                            spec_kappa_band=mf%fq_kappa_band, spec_kappa_atom=mf%fq_kappa_atom)
 end subroutine
 
+subroutine get_angular_momentum(mf, uc, qp, dr, pd, temperature, mw, mem)
+    !> The cumulative plot
+    class(lo_cumulative_kappa), intent(inout) :: mf
+    !> The structure
+    type(lo_crystalstructure), intent(in) :: uc
+    !> The q-grid
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> The dispersion
+    type(lo_phonon_dispersions), intent(inout) :: dr
+    !> Phonon density of states
+    type(lo_phonon_dos), intent(inout) :: pd
+    !> The temperature
+    real(r8), intent(in) :: temperature
+    !> MPI helper
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> memory helper
+    type(lo_mem_helper), intent(inout) :: mem
+
+    call dr%phonon_angular_momentum_matrix(qp, uc, temperature, mf%angmomalpha, mw)
+    call pd%spectral_angular_momentum(uc, qp, dr, temperature, mw, mem, spec_angmom=mf%fq_angmom, &
+                                      spec_angmom_band=mf%fq_angmom_band, spec_angmom_atom=mf%fq_angmom_atom)
+end subroutine
+
 subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     !> The cumulative plot
     class(lo_cumulative_kappa), intent(in) :: mf
@@ -590,6 +620,21 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
                        'boundary_scattering_lengths', enhet='m', dimensions='domainsize')
     call h5%store_data(mf%boundary_kappa*lo_kappa_au_to_SI, h5%file_id, &
                        'boundary_scattering_kappa', enhet='W/m/K', dimensions='xx,domainsize')
+
+    ! And now the angular momentum
+    ! Angular momentum matrix, per direction
+    call mem%allocate(d3, [pd%n_dos_point, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    d3 = 0.0_r8
+    do i = 1, pd%n_dos_point
+        d3(i, :, :) = reshape(mf%fq_angmom(i, :), [3, 3])
+    end do
+    d3 = d3/unitfactor
+    call h5%store_data(d3, h5%file_id, 'spectral_angmom_vs_frequency_per_direction', &
+                       enhet='dunno', dimensions='xyz,xyz,frequency')
+    call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! Store just the tensor
+    call h5%store_data(mf%angmomalpha, h5%file_id, 'angular_momentum_tensor', &
+                       enhet='dunno', dimensions='xyz,xyz')
 
     call h5%close_file()
     call h5%destroy(__FILE__, __LINE__)
