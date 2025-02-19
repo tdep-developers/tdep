@@ -278,6 +278,7 @@ blockkappa: block
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
         close (u)
+        write(*, *) ''
     end if
 
     ! First we get the cumulative kappa with the mean free path

@@ -76,7 +76,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     kappa_chop = 0.0_r8
     ! Chop up kappa into irreducible contributions
     chopkappa: block
-        real(r8), dimension(:, :, :), allocatable :: kf, kappa_flat
+        real(r8), dimension(:, :, :), allocatable :: kappa_flat
         real(r8), dimension(3, 3) :: buf
         complex(r8), dimension(3) :: cv0
         real(r8), dimension(uc%na) :: prj
@@ -84,46 +84,36 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         real(r8), dimension(6) :: f0
         integer :: iq, atom, imode, i, aq, k
 
-        allocate(kf(6, qp%n_irr_point, dr%n_mode))
-        kf = 0.0_r8
-        do aq=1, qp%n_full_point
-            if (mod(aq, mw%n) .ne. mw%r) cycle
-            k = qp%ap(aq)%operation_from_irreducible
-            iq = qp%ap(aq)%irreducible_index
-            do imode=1, dr%n_mode
-                buf = lo_operate_on_secondorder_tensor(uc%sym%op(k), dr%iq(iq)%kappa(:, :, imode))
-                kf(1, iq, imode) = kf(1, iq, imode) + buf(1, 1)
-                kf(2, iq, imode) = kf(2, iq, imode) + buf(2, 2)
-                kf(3, iq, imode) = kf(3, iq, imode) + buf(3, 3)
-                kf(4, iq, imode) = kf(4, iq, imode) + buf(2, 3)
-                kf(5, iq, imode) = kf(5, iq, imode) + buf(1, 3)
-                kf(6, iq, imode) = kf(6, iq, imode) + buf(1, 2)
-            end do
-        end do
-        call mw%allreduce('sum', kf)
-
+        ! First we flatten the thermal conductivity, to get it per mode and atom
+        ! Also already normalized, and in Voigt notation
         do iq=1, qp%n_irr_point
             if (mod(iq, mw%n) .ne. mw%r) cycle
             do imode=1, dr%n_mode
+                ! Get the atom projection
                 prj = 0.0_r8
                 do atom=1, uc%na
                     cv0 = dr%iq(iq)%egv((atom-1)*3+1:atom*3, imode)
                     prj(atom) = prj(atom) + abs(dot_product(conjg(cv0), cv0))
                 end do
                 prj = lo_chop(prj/sum(prj), lo_sqtol)
-                f0 = kf(:, iq, imode)
+
+                f0(1) = dr%iq(iq)%kappa(1, 1, imode) * qp%ip(iq)%integration_weight
+                f0(2) = dr%iq(iq)%kappa(2, 2, imode) * qp%ip(iq)%integration_weight
+                f0(3) = dr%iq(iq)%kappa(3, 3, imode) * qp%ip(iq)%integration_weight
+                f0(4) = dr%iq(iq)%kappa(2, 3, imode) * qp%ip(iq)%integration_weight
+                f0(5) = dr%iq(iq)%kappa(1, 3, imode) * qp%ip(iq)%integration_weight
+                f0(6) = dr%iq(iq)%kappa(1, 2, imode) * qp%ip(iq)%integration_weight
                 do atom=1, uc%na
-                    kappa_chop(iq, imode, atom, :) = f0(:) * prj(atom) / qp%n_full_point
+                    kappa_chop(iq, imode, atom, :) = f0(:) * prj(atom)
                 end do
             end do
         end do
         call mw%allreduce('sum', kappa_chop)
+        ! Compute the total thermal conductivity
         do i=1, 6
             mf%kappa_total(i) = sum(kappa_chop(:, :, :, i))
         end do
         mf%kappa_total = lo_chop(mf%kappa_total, kappatol)
-
-        deallocate(kf)
     end block chopkappa
 
     cmf: block
@@ -242,8 +232,6 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
             end do
         end do
         end do
-!       call mw%allreduce('sum', xm, xn)
-!       call mw%allreduce('sum', ym, yn)
         call mw%allreduce('sum', xm)
         call mw%allreduce('sum', ym)
 
@@ -258,9 +246,12 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         maxx = maxval(xm) * 2.0_r8
         call lo_logspace(minx, maxx, mf%mfaxis)
 
+        ctr = 0
         do imode=1, dr%n_mode
         do atom=1, uc%na
         do i=1, np
+            ctr = ctr + 1
+            if (mod(ctr, mw%n) .ne. mw%r) cycle
             if (mf%mfaxis(i) .lt. xm(1, imode, atom)*1.01_r8) then
                 f0 = 0.0_r8
             elseif (mf%mfaxis(i) .gt. xm(npts, imode, atom)*0.999_r8) then
@@ -276,6 +267,9 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         end do
         end do
         end do
+        call mw%allreduce('sum', mf%mf_kappa)
+        call mw%allreduce('sum', mf%mf_kappa_band)
+        call mw%allreduce('sum', mf%mf_kappa_atom)
 
         ! Make sure it's monotically increasing
         do i=1, np-1
