@@ -299,7 +299,7 @@ blockkappa: block
 
     ! Then the boundary scattering
     if (mw%talk) write(*, *) '... estimating kappa with boundary'
-    call mf%get_boundary_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%classical, mw, mem)
+    call mf%get_boundary_kappa(qp, dr, uc, kappa_offdiag, opts%mfppts, opts%temperature, opts%classical, mw, mem)
     call tmr_kappa%tock('boundary kappa')
 
     ! Then the spectral kappa

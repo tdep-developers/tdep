@@ -341,7 +341,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     call mem%deallocate(kappa_chop, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
 
-subroutine get_boundary_kappa(mf, qp, dr, uc, npts, temperature, classical, mw, mem)
+subroutine get_boundary_kappa(mf, qp, dr, uc, kod, npts, temperature, classical, mw, mem)
     !> The cumulative plot
     class(lo_cumulative_kappa), intent(inout) :: mf
     !> The q-grid
@@ -350,6 +350,8 @@ subroutine get_boundary_kappa(mf, qp, dr, uc, npts, temperature, classical, mw, 
     type(lo_phonon_dispersions), intent(in) :: dr
     !> The structure
     type(lo_crystalstructure), intent(in) :: uc
+    !> The off-diagonal contribution to kappa
+    real(r8), dimension(3, 3), intent(in) :: kod
     !> the number of points on the x-axis
     integer, intent(in) :: npts
     !> the current temperature
@@ -392,7 +394,7 @@ subroutine get_boundary_kappa(mf, qp, dr, uc, npts, temperature, classical, mw, 
         do ll=1, npts
             if (mod(ll, mw%n) .ne. mw%r) cycle
 
-            kappa = 0.0_r8
+            kappa = kod
             do iq=1, qp%n_irr_point
             do imode=1, dr%n_mode
                 om = dr%iq(iq)%omega(imode)
