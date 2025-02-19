@@ -73,6 +73,16 @@ initharmonic: block
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Adaptive Gaussian'
         write (*, '(1X,A40,E20.12)') 'Sigma factor for gaussian smearing      ', opts%sigma
         end select
+        write (*, '(1X,A40,2X,I4)') 'Number of mfp point for cumulative kappa ', opts%mfppts
+        write (*, '(1X,A40,2X,I4)') 'Number of freq point for spectral kappa ', opts%freqpts
+        select case (opts%dosintegrationtype)
+        case(1)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Gaussian with fixed broadening'
+        case(2)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Adaptive Gaussian'
+        case(3)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Tetrahedron'
+        end select
         write (*, '(1X,A40,I10)') 'Number of MPI ranks                     ', mw%n
         if (opts%seed .gt. 0) write(*, '(1X,A40,I10)') 'Random seed                             ', opts%seed
         write (*, *) ''
