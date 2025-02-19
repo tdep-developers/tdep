@@ -2,9 +2,11 @@
 module cumulative_kappa
 use konstanter, only: r8, lo_huge, lo_kappa_SI_to_au, lo_kappa_au_to_SI, lo_sqtol, &
                       lo_groupvel_ms_to_Hartreebohr, lo_pi, lo_tol, lo_bohr_to_m, lo_exitcode_param, &
-                      lo_frequency_hartree_to_icm, lo_frequency_hartree_to_THz, lo_frequency_hartree_to_meV
-use gottochblandat, only: lo_chop, lo_logspace, lo_linear_interpolation, qsort, lo_linspace, open_file
-use type_symmetryoperation, only: lo_operate_on_secondorder_tensor
+                      lo_frequency_hartree_to_icm, lo_frequency_hartree_to_THz, lo_frequency_hartree_to_meV, &
+                      lo_freqtol, lo_sqtol, lo_phonongroupveltol, lo_kb_Hartree
+use gottochblandat, only: lo_chop, lo_logspace, lo_linear_interpolation, qsort, lo_linspace, open_file, &
+                          lo_harmonic_oscillator_cv, lo_outerproduct
+use type_symmetryoperation, only: lo_operate_on_vector, lo_operate_on_secondorder_tensor
 use type_crystalstructure, only: lo_crystalstructure
 use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
@@ -12,6 +14,8 @@ use type_phonon_dos, only: lo_phonon_dos
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use hdf5_wrappers, only: lo_hdf5_helper
+
+use kappa, only: symmetrize_kappa
 
 implicit none
 private
@@ -32,10 +36,13 @@ type lo_cumulative_kappa
     real(r8), dimension(:, :), allocatable :: fq_kappa
     real(r8), dimension(:, :, :), allocatable :: fq_kappa_band
     real(r8), dimension(:, :, :), allocatable :: fq_kappa_atom
-
+    !> With boundary scattering
+    real(r8), dimension(:), allocatable :: boundary_xaxis
+    real(r8), dimension(:, :), allocatable :: boundary_kappa
 contains
     procedure :: get_cumulative_kappa
     procedure :: get_spectral_kappa
+    procedure :: get_boundary_kappa
     procedure :: write_to_hdf5
 end type
 
@@ -48,8 +55,6 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     class(lo_qpoint_mesh), intent(in) :: qp
     !> The dispersion
     type(lo_phonon_dispersions), intent(in) :: dr
-!   !> Phonon density of states
-!   type(lo_phonon_dos), intent(inout) :: pd
     !> The structure
     type(lo_crystalstructure), intent(in) :: uc
     !> the number of points on the x-axis
@@ -58,8 +63,6 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     real(r8), intent(in) :: temperature
     !> additional smearing for mean free path plots?
     real(r8), intent(in) :: sigma
-!   !> total kappa
-!   real(r8), dimension(3, 3) :: kappa
     !> MPI helper
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory helper
@@ -335,8 +338,108 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         call mem%deallocate(ybuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(ind, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block cmf
-
     call mem%deallocate(kappa_chop, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+end subroutine
+
+subroutine get_boundary_kappa(mf, qp, dr, uc, npts, temperature, classical, mw, mem)
+    !> The cumulative plot
+    class(lo_cumulative_kappa), intent(inout) :: mf
+    !> The q-grid
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> The dispersion
+    type(lo_phonon_dispersions), intent(in) :: dr
+    !> The structure
+    type(lo_crystalstructure), intent(in) :: uc
+    !> the number of points on the x-axis
+    integer, intent(in) :: npts
+    !> the current temperature
+    real(r8), intent(in) :: temperature
+    !> Is this the classical limit ?
+    logical, intent(in) :: classical
+    !> MPI helper
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> memory helper
+    type(lo_mem_helper), intent(inout) :: mem
+
+    real(r8), dimension(3, 3) :: kappa, v2
+    real(r8), dimension(3) :: vel, fn, v0, v1
+    real(r8) :: minx, maxx, lw, f0, f1, cv, velnorm, om
+    integer :: iq, imode, j, ll
+
+        ! First we figure out the smallest and largest scalar mean free paths
+        minx = lo_huge
+        maxx = -lo_huge
+        do iq=1, qp%n_irr_point
+        do imode=1, dr%n_mode
+            f0 = dr%iq(iq)%scalar_mfp(imode)
+            if (f0 .gt. lo_tol) then
+                minx = min(minx, f0)
+                maxx = max(maxx, f0)
+            end if
+        end do
+        end do
+        ! We rescale those value to be sure to get all scales of thermal conductivity
+        minx = max(minx*1e-1_r8, lo_phonongroupveltol)
+        maxx = maxx*1e6_r8
+
+        ! We allocate and get an axis
+        allocate(mf%boundary_xaxis(npts))
+        allocate(mf%boundary_kappa(6, npts))
+        call lo_logspace(minx, maxx, mf%boundary_xaxis)
+        mf%boundary_kappa = 0.0_r8
+
+        ! Recompute kappa with extra scattering
+        do ll=1, npts
+            if (mod(ll, mw%n) .ne. mw%r) cycle
+
+            kappa = 0.0_r8
+            do iq=1, qp%n_irr_point
+            do imode=1, dr%n_mode
+                om = dr%iq(iq)%omega(imode)
+                if (om .lt. lo_freqtol) cycle
+
+                if (classical) then
+                    cv = lo_kb_Hartree
+                else
+                    cv = lo_harmonic_oscillator_cv(temperature, om)
+                end if
+
+                vel = dr%iq(iq)%vel(:, imode)
+                fn = dr%iq(iq)%Fn(:, imode)
+                lw = dr%iq(iq)%linewidth(imode)
+                velnorm = norm2(vel)
+                ! Here we compute the linewidth due to boundaries
+                if (velnorm .gt. lo_phonongroupveltol) then
+                    f0 = velnorm / mf%boundary_xaxis(ll)
+                end if
+                ! This is an application of Mathiessen rule
+                if (lw + f0 .gt. lo_freqtol) then
+                    f1 = lw / (lw + f0)
+                else
+                    f1 = 1.0_r8
+                end if
+
+                ! We compute the thermal conductivity as usual
+                v2 = 0.0_r8
+                do j=1, uc%sym%n
+                    v0 = lo_operate_on_vector(uc%sym%op(j), fn, reciprocal=.true.)
+                    v1 = lo_operate_on_vector(uc%sym%op(j), vel, reciprocal=.true.)
+                    v2 = v2 + lo_outerproduct(v0, v1) / uc%sym%n
+                end do
+                ! But we multiply by the Mathiessen estimation of the new kappa
+                kappa = kappa + cv * v2 * qp%ip(iq)%integration_weight * f1 / uc%volume
+            end do
+            end do
+            call symmetrize_kappa(kappa, uc)
+            kappa = lo_chop(kappa, sum(abs(kappa))*1e-6_r8)
+            mf%boundary_kappa(1, ll) = kappa(1, 1)
+            mf%boundary_kappa(2, ll) = kappa(2, 2)
+            mf%boundary_kappa(3, ll) = kappa(3, 3)
+            mf%boundary_kappa(4, ll) = kappa(2, 3)
+            mf%boundary_kappa(5, ll) = kappa(1, 3)
+            mf%boundary_kappa(6, ll) = kappa(1, 2)
+        end do
+        call mw%allreduce('sum', mf%boundary_kappa)
 end subroutine
 
 subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
@@ -479,6 +582,12 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     call h5%store_data(d3*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
                        'spectral_kappa_vs_frequency_per_mode', enhet='W/m/K', dimensions='atom,frequency,xx')
     call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+    ! With respect to boundary scattering
+    call h5%store_data(mf%boundary_xaxis*lo_bohr_to_m, h5%file_id, &
+                       'boundary_scattering_lengths', enhet='m', dimensions='domainsize')
+    call h5%store_data(mf%boundary_kappa*lo_kappa_au_to_SI, h5%file_id, &
+                       'boundary_scattering_kappa', enhet='W/m/K', dimensions='xx,domainsize')
 
     call h5%close_file()
     call h5%destroy(__FILE__, __LINE__)

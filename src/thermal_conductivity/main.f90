@@ -297,6 +297,11 @@ blockkappa: block
     call mf%get_cumulative_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%sigma, mw, mem)
     call tmr_kappa%tock('cumulative kappa')
 
+    ! Then the boundary scattering
+    if (mw%talk) write(*, *) '... estimating kappa with boundary'
+    call mf%get_boundary_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%classical, mw, mem)
+    call tmr_kappa%tock('boundary kappa')
+
     ! Then the spectral kappa
     if (mw%talk) write(*, *) '... computing spectral kappa'
     call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, sigma=opts%dossigma, &
