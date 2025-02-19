@@ -630,8 +630,8 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
         d3(i, :, :) = reshape(mf%fq_angmom(i, :), [3, 3])
     end do
     d3 = d3/unitfactor
-    call h5%store_data(d3, h5%file_id, 'spectral_angmom_vs_frequency_per_direction', &
-                       enhet='dunno', dimensions='xyz,xyz,frequency')
+    call h5%store_data(d3 / lo_bohr_to_m, h5%file_id, 'generating_angmom_tensor_vs_frequency', &
+                       enhet='hbar/m/K', dimensions='xyz,xyz,frequency')
     call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! Store just the tensor
     call h5%store_data(mf%angmomalpha, h5%file_id, 'angular_momentum_tensor', &
