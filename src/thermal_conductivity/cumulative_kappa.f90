@@ -509,6 +509,7 @@ subroutine get_angular_momentum(mf, uc, qp, dr, pd, temperature, mw, mem)
     type(lo_mem_helper), intent(inout) :: mem
 
     call dr%phonon_angular_momentum_matrix(qp, uc, temperature, mf%angmomalpha, mw)
+    mf%angmomalpha = lo_chop(mf%angmomalpha, 1e-15_r8)
     call pd%spectral_angular_momentum(uc, qp, dr, temperature, mw, mem, spec_angmom=mf%fq_angmom, &
                                       spec_angmom_band=mf%fq_angmom_band, spec_angmom_atom=mf%fq_angmom_atom)
 end subroutine
