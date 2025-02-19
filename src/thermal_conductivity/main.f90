@@ -313,9 +313,9 @@ finalize_and_write: block
         call mf%write_to_hdf5(pd, uc, opts%unit, 'outfile.cumulative_thermal_conductivity.hdf5', mem)
 
         write (*, *) ''
-        write (*, '(A,A)') 'Scattering rates can be found in                   ', 'outfile.thermal_conductivity_grid.hdf5'
-        write (*, '(A,A)') 'Thermal conductivity tensor can be found in        ', 'outfile.thermal_conductivity'
-        write (*, '(A,A)') 'Cumulative and spectral thermal conductivity in    ', 'outfile.cumulativethermal_conductivity.hdf5'
+        write (*, '(A,A)') 'Scattering rates can be found in                                ', 'outfile.thermal_conductivity_grid.hdf5'
+        write (*, '(A,A)') 'Thermal conductivity tensor can be found in                     ', 'outfile.thermal_conductivity'
+        write (*, '(A,A)') 'Cumulative and spectral thermal conductivity can be found in    ', 'outfile.cumulative_thermal_conductivity.hdf5'
 
         ! Print timings
         write (*, *) ''
@@ -324,11 +324,11 @@ finalize_and_write: block
         write (*, '(1X,A41,A)') 'Method: ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
         write (*, '(1X,A41,A)') 'Iterative Boltzmann transport equation: ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
         write (*, '(1X,A41,A)') 'Algorithm: ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
-        write (*, '(1X,A41,A)') "Off-diagonal (coherences') contribution: ", 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
+        write (*, '(1X,A41,A)') 'Off-diagonal (coherences) contribution: ', 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
         write (*, '(1X,A41,A)') '                                         ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
         write (*, '(1X,A41,A)') '                                         ', 'A. Fiorentino et al., Phys Rev B 107, 054311  (2023)'
-        write (*, '(1X,A41,A52)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23), (2023)'
-        write (*, '(1X,A41,A46)') 'Theory and algorithm : ', 'A. Castellano et al, ArXiv:2411.14949 (2024)'
+        write (*, '(1X,A41,A)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23) (2023)'
+        write (*, '(1X,A41,A)') 'Theory and algorithm : ', 'A. Castellano et al, ArXiv:2411.14949 (2024)'
     end if
     call tmr_tot%tock('io')
 
