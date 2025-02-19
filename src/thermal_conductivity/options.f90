@@ -16,6 +16,7 @@ type lo_opts
     real(flyt) :: tau_boundary       !< add a constant as boundary scattering
     real(flyt) :: mfp_max            !< add a length as boundary scattering
     real(flyt) :: itertol            !< tolerance for the iterative solution
+    real(flyt) :: dossigma           !< scaling factor for the spectral integration
     integer :: itermaxsteps          !< Number of iteration for the Boltzmann equation
     logical :: classical             !< Use a classical formulation
     logical :: readiso               !< read isotope distribution from file
@@ -140,6 +141,10 @@ subroutine parse(opts)
                  help='Type of integration for the phonon spectral thermal conductivity. 1 is Gaussian, 2 adaptive Gaussian, 3 is tetrahedron', &
                  required=.false., act='store', def='3', choices='1,2,3', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--dossigma', &
+                 help='Scaling factor for the spectral thermal conductivity wth Gaussian integration. The default is determined procedurally, and scaled by this number.', &
+                 required=.false., act='store', def='1.0', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     ! hidden
     call cli%add(switch='--tau_boundary', hidden=.true., &
@@ -194,6 +199,7 @@ subroutine parse(opts)
     call cli%get(switch='--mfppts', val=opts%mfppts)
     call cli%get(switch='--dosintegrationtype', val=opts%dosintegrationtype)
     call cli%get(switch='--freqpts', val=opts%freqpts)
+    call cli%get(switch='--dossigma', val=opts%dossigma)
     ! stuff that's not really an option
     call cli%get(switch='--notr', val=dumlog)
     opts%timereversal = .not. dumlog

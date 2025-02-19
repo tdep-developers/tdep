@@ -83,6 +83,7 @@ initharmonic: block
         case(3)
             write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Tetrahedron'
         end select
+        write (*, '(1X,A40,E20.12)') 'Sigma factor for spectral integration   ', opts%dossigma
         write (*, '(1X,A40,I10)') 'Number of MPI ranks                     ', mw%n
         if (opts%seed .gt. 0) write(*, '(1X,A40,I10)') 'Random seed                             ', opts%seed
         write (*, *) ''
@@ -298,8 +299,8 @@ blockkappa: block
 
     ! Then the spectral kappa
     if (mw%talk) write(*, *) '... computing spectral kappa'
-    call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, &
-                     sigma=opts%sigma, n_dos_point=opts%freqpts, integrationtype=opts%dosintegrationtype)
+    call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, sigma=opts%dossigma, &
+                     n_dos_point=opts%freqpts, integrationtype=opts%dosintegrationtype)
     call mf%get_spectral_kappa(uc, qp, dr, pd, mw, mem)
     call tmr_kappa%tock('spectral kappa')
 
