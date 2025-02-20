@@ -477,11 +477,15 @@ subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
             iq = qp%ap(aq)%irreducible_index
             k = qp%ap(aq)%operation_from_irreducible
             do imode=1, dr%n_mode
-                buf = lo_operate_on_secondorder_tensor(uc%sym%op(k), dr%iq(iq)%kappa(:, :, imode))
+                ! Rotate the thermal conductivity tensor, beware of time invariance !
+                if (k .gt. 0) then
+                    buf = lo_operate_on_secondorder_tensor(uc%sym%op(k), dr%iq(iq)%kappa(:, :, imode))
+                else
+                    buf = -lo_operate_on_secondorder_tensor(uc%sym%op(abs(k)), dr%iq(iq)%kappa(:, :, imode))
+                end if
                 dr%aq(aq)%kappa(:, :, imode) = buf
             end do
         end do
-
     end block getfullgridkappa
 
     ! Now do the cumulative kappa vs frequency, with a proper tetrahedron integration.
@@ -532,6 +536,7 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     real(r8), dimension(:), allocatable :: d1
     real(r8), dimension(:, :), allocatable :: d2
     real(r8), dimension(:, :, :), allocatable :: d3
+    real(r8), dimension(:, :, :, :), allocatable :: d4
     real(r8) :: unitfactor
     integer :: i
     character(len=1000) :: spstr, omstr, dosstr
@@ -574,53 +579,117 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
 
     ! Write cumulative kappa vs mfp
     call h5%store_data(mf%mfaxis*lo_bohr_to_m, h5%file_id, 'mean_free_path_axis', enhet='m', dimensions='mfp')
-    call h5%store_data(mf%mf_kappa*lo_kappa_au_to_SI, h5%file_id, &
-                       'cumulative_kappa_vs_mean_free_path', enhet='W/m/K', dimensions='xx,mfp')
-    call h5%store_data(mf%mf_kappa_band*lo_kappa_au_to_SI, h5%file_id, &
-                       'cumulative_kappa_vs_mean_free_path_per_mode', enhet='W/m/K', dimensions='xx,mode,mfp')
-    call h5%store_data(mf%mf_kappa_atom*lo_kappa_au_to_SI, h5%file_id, &
-                       'cumulative_kappa_vs_mean_free_path_per_atom', enhet='W/m/K', dimensions='xx,atom,mfp')
+    ! From Voigt to 3x3
+    call mem%allocate(d3, [size(mf%mfaxis, 1), 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d3(:, 1, 1) = mf%mf_kappa(:, 1)
+    d3(:, 1, 2) = mf%mf_kappa(:, 6)
+    d3(:, 1, 3) = mf%mf_kappa(:, 5)
+    d3(:, 2, 1) = mf%mf_kappa(:, 6)
+    d3(:, 2, 2) = mf%mf_kappa(:, 2)
+    d3(:, 2, 3) = mf%mf_kappa(:, 4)
+    d3(:, 3, 1) = mf%mf_kappa(:, 5)
+    d3(:, 3, 2) = mf%mf_kappa(:, 4)
+    d3(:, 3, 3) = mf%mf_kappa(:, 3)
+    call h5%store_data(d3*lo_kappa_au_to_SI, h5%file_id, &
+                       'cumulative_kappa_vs_mean_free_path', enhet='W/m/K', dimensions='xyz,xyz,mfp')
+    call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
-    call mem%allocate(d2, [pd%n_dos_point, 6], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    ! Get the spectral kappa in Voigt notation
-    d2(:, 1) = mf%fq_kappa(:, 1)
-    d2(:, 2) = mf%fq_kappa(:, 5)
-    d2(:, 3) = mf%fq_kappa(:, 9)
-    d2(:, 4) = mf%fq_kappa(:, 6)
-    d2(:, 5) = mf%fq_kappa(:, 3)
-    d2(:, 6) = mf%fq_kappa(:, 2)
+    call mem%allocate(d4, [size(mf%mfaxis, 1), uc%na*3, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d4(:, :, 1, 1) = mf%mf_kappa_band(:, :, 1)
+    d4(:, :, 1, 2) = mf%mf_kappa_band(:, :, 6)
+    d4(:, :, 1, 3) = mf%mf_kappa_band(:, :, 5)
+    d4(:, :, 2, 1) = mf%mf_kappa_band(:, :, 6)
+    d4(:, :, 2, 2) = mf%mf_kappa_band(:, :, 2)
+    d4(:, :, 2, 3) = mf%mf_kappa_band(:, :, 4)
+    d4(:, :, 3, 1) = mf%mf_kappa_band(:, :, 5)
+    d4(:, :, 3, 2) = mf%mf_kappa_band(:, :, 4)
+    d4(:, :, 3, 3) = mf%mf_kappa_band(:, :, 3)
+    call h5%store_data(d4*lo_kappa_au_to_SI, h5%file_id, &
+                       'cumulative_kappa_vs_mean_free_path_per_mode', enhet='W/m/K', dimensions='xyz,xyz,mode,mfp')
+    call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(d4, [size(mf%mfaxis, 1), uc%na, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d4(:, :, 1, 1) = mf%mf_kappa_atom(:, :, 1)
+    d4(:, :, 1, 2) = mf%mf_kappa_atom(:, :, 6)
+    d4(:, :, 1, 3) = mf%mf_kappa_atom(:, :, 5)
+    d4(:, :, 2, 1) = mf%mf_kappa_atom(:, :, 6)
+    d4(:, :, 2, 2) = mf%mf_kappa_atom(:, :, 2)
+    d4(:, :, 2, 3) = mf%mf_kappa_atom(:, :, 4)
+    d4(:, :, 3, 1) = mf%mf_kappa_atom(:, :, 5)
+    d4(:, :, 3, 2) = mf%mf_kappa_atom(:, :, 4)
+    d4(:, :, 3, 3) = mf%mf_kappa_atom(:, :, 3)
+    call h5%store_data(d4*lo_kappa_au_to_SI, h5%file_id, &
+                       'cumulative_kappa_vs_mean_free_path_per_atom', enhet='W/m/K', dimensions='xyz,xyz,atom,mfp')
+    call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+    ! Write the spectral kappa
+    call mem%allocate(d3, [pd%n_dos_point, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d3(:, 1, 1) = mf%fq_kappa(:, 1)
+    d3(:, 1, 2) = mf%fq_kappa(:, 6)
+    d3(:, 1, 3) = mf%fq_kappa(:, 5)
+    d3(:, 2, 1) = mf%fq_kappa(:, 6)
+    d3(:, 2, 2) = mf%fq_kappa(:, 2)
+    d3(:, 2, 3) = mf%fq_kappa(:, 4)
+    d3(:, 3, 1) = mf%fq_kappa(:, 5)
+    d3(:, 3, 2) = mf%fq_kappa(:, 4)
+    d3(:, 3, 3) = mf%fq_kappa(:, 3)
     ! Write spectral kappa vs frequency
-    call h5%store_data(d2*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
-                       'spectral_kappa_vs_frequency', enhet='W/m/K', dimensions='xx,frequency')
-    call mem%deallocate(d2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-
-    call mem%allocate(d3, [pd%n_dos_point, 3*uc%na, 6], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    d3(:, :, 1) = mf%fq_kappa_band(:, :, 1)
-    d3(:, :, 2) = mf%fq_kappa_band(:, :, 5)
-    d3(:, :, 3) = mf%fq_kappa_band(:, :, 9)
-    d3(:, :, 4) = mf%fq_kappa_band(:, :, 6)
-    d3(:, :, 5) = mf%fq_kappa_band(:, :, 3)
-    d3(:, :, 6) = mf%fq_kappa_band(:, :, 2)
     call h5%store_data(d3*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
-                       'spectral_kappa_vs_frequency_per_mode', enhet='W/m/K', dimensions='xx,frequency,mode')
+                       'spectral_kappa_vs_frequency', enhet='W/m/K', dimensions='xyz,xyz,frequency')
     call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
-    call mem%allocate(d3, [pd%n_dos_point, uc%na, 6], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    d3(:, :, 1) = mf%fq_kappa_atom(:, :, 1)
-    d3(:, :, 2) = mf%fq_kappa_atom(:, :, 5)
-    d3(:, :, 3) = mf%fq_kappa_atom(:, :, 9)
-    d3(:, :, 4) = mf%fq_kappa_atom(:, :, 6)
-    d3(:, :, 5) = mf%fq_kappa_atom(:, :, 3)
-    d3(:, :, 6) = mf%fq_kappa_atom(:, :, 2)
-    call h5%store_data(d3*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
-                       'spectral_kappa_vs_frequency_per_mode', enhet='W/m/K', dimensions='atom,frequency,xx')
-    call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! Write the spectral kappa per mode
+    call mem%allocate(d4, [pd%n_dos_point, uc%na*3, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d4(:, :, 1, 1) = mf%fq_kappa_band(:, :, 1)
+    d4(:, :, 1, 2) = mf%fq_kappa_band(:, :, 6)
+    d4(:, :, 1, 3) = mf%fq_kappa_band(:, :, 5)
+    d4(:, :, 2, 1) = mf%fq_kappa_band(:, :, 6)
+    d4(:, :, 2, 2) = mf%fq_kappa_band(:, :, 2)
+    d4(:, :, 2, 3) = mf%fq_kappa_band(:, :, 4)
+    d4(:, :, 3, 1) = mf%fq_kappa_band(:, :, 5)
+    d4(:, :, 3, 2) = mf%fq_kappa_band(:, :, 4)
+    d4(:, :, 3, 3) = mf%fq_kappa_band(:, :, 3)
+    call h5%store_data(d4*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
+                       'spectral_kappa_vs_frequency_per_mode', enhet='W/m/K', dimensions='xyz,xyz,mode,frequency')
+    call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+    ! Write the spectral kappa per atom
+    call mem%allocate(d4, [pd%n_dos_point, uc%na, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d4(:, :, 1, 1) = mf%fq_kappa_atom(:, :, 1)
+    d4(:, :, 1, 2) = mf%fq_kappa_atom(:, :, 6)
+    d4(:, :, 1, 3) = mf%fq_kappa_atom(:, :, 5)
+    d4(:, :, 2, 1) = mf%fq_kappa_atom(:, :, 6)
+    d4(:, :, 2, 2) = mf%fq_kappa_atom(:, :, 2)
+    d4(:, :, 2, 3) = mf%fq_kappa_atom(:, :, 4)
+    d4(:, :, 3, 1) = mf%fq_kappa_atom(:, :, 5)
+    d4(:, :, 3, 2) = mf%fq_kappa_atom(:, :, 4)
+    d4(:, :, 3, 3) = mf%fq_kappa_atom(:, :, 3)
+    call h5%store_data(d4*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
+                       'spectral_kappa_vs_frequency_per_atom', enhet='W/m/K', dimensions='xyz,xyz,atom,frequency')
+    call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     ! With respect to boundary scattering
     call h5%store_data(mf%boundary_xaxis*lo_bohr_to_m, h5%file_id, &
                        'boundary_scattering_lengths', enhet='m', dimensions='domainsize')
-    call h5%store_data(mf%boundary_kappa*lo_kappa_au_to_SI, h5%file_id, &
-                       'boundary_scattering_kappa', enhet='W/m/K', dimensions='xx,domainsize')
+    call mem%allocate(d3, [size(mf%boundary_xaxis, 1), 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! First we get from Voigt to 3x3
+    d3(:, 1, 1) = mf%boundary_kappa(1, :)
+    d3(:, 1, 2) = mf%boundary_kappa(6, :)
+    d3(:, 1, 3) = mf%boundary_kappa(5, :)
+    d3(:, 2, 1) = mf%boundary_kappa(6, :)
+    d3(:, 2, 2) = mf%boundary_kappa(2, :)
+    d3(:, 2, 3) = mf%boundary_kappa(4, :)
+    d3(:, 3, 1) = mf%boundary_kappa(5, :)
+    d3(:, 3, 2) = mf%boundary_kappa(4, :)
+    d3(:, 3, 3) = mf%boundary_kappa(3, :)
+    call h5%store_data(d3*lo_kappa_au_to_SI, h5%file_id, &
+                       'boundary_scattering_kappa', enhet='W/m/K', dimensions='xyz,xyz,domainsize')
+    call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     ! And now the angular momentum
     ! Angular momentum matrix, per direction
@@ -630,11 +699,11 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
         d3(i, :, :) = reshape(mf%fq_angmom(i, :), [3, 3])
     end do
     d3 = d3/unitfactor
-    call h5%store_data(d3 / lo_bohr_to_m, h5%file_id, 'generating_angmom_tensor_vs_frequency', &
+    call h5%store_data(d3 / lo_bohr_to_m, h5%file_id, 'generating_angular_momentum_tensor_vs_frequency', &
                        enhet='hbar/m/K', dimensions='xyz,xyz,frequency')
     call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! Store just the tensor
-    call h5%store_data(mf%angmomalpha, h5%file_id, 'angular_momentum_tensor', &
+    call h5%store_data(mf%angmomalpha, h5%file_id, 'generating_angular_momentum_tensor', &
                        enhet='dunno', dimensions='xyz,xyz')
 
     call h5%close_file()

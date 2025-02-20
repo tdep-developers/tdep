@@ -233,6 +233,9 @@ blockkappa: block
         if (mw%talk) write (*, "(1X,A,F12.3,A)") '... done in ', t0, ' s'
         call tmr_kappa%tock('collective contribution')
     end if
+    ! We don't need the scattering matrix anymore, and it's a heavy
+    call sr%destroy()
+
     call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_iter)
     if (mw%talk) write (*, *) ''
     if (mw%talk) write (*, *) '... symmetrizing the thermal conductivity tensors'
@@ -365,7 +368,6 @@ finalize_and_write: block
 end block finalize_and_write
 
 ! And we are done!
-call sr%destroy()
 call mpi_barrier(mw%comm, mw%error)
 call mpi_finalize(lo_status)
 end program
