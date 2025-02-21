@@ -297,7 +297,7 @@ blockkappa: block
 
     ! First we get the cumulative kappa with the mean free path
     if (mw%talk) write(*, *) '... computing cumulative kappa'
-    call mf%get_cumulative_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%sigma, mw, mem)
+    call mf%get_cumulative_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%classical, opts%sigma, mw, mem)
     call tmr_kappa%tock('cumulative kappa')
 
     ! Then the boundary scattering

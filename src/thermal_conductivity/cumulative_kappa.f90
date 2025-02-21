@@ -55,7 +55,7 @@ end type
 
 contains
 !> Get the cumulative kappa
-subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
+subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, classical, sigma, mw, mem)
     !> The cumulative plot
     class(lo_cumulative_kappa), intent(out) :: mf
     !> The q-grid
@@ -68,6 +68,8 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     integer, intent(in) :: np
     !> the current temperature
     real(r8), intent(in) :: temperature
+    !> Is it classical ?
+    logical, intent(in) :: classical
     !> additional smearing for mean free path plots?
     real(r8), intent(in) :: sigma
     !> MPI helper
@@ -86,13 +88,55 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
     kappa_chop = 0.0_r8
     ! Chop up kappa into irreducible contributions
     chopkappa: block
-        real(r8), dimension(:, :, :), allocatable :: kappa_flat
-        real(r8), dimension(3, 3) :: buf
         complex(r8), dimension(3) :: cv0
+        real(r8), dimension(:, :, :), allocatable :: kappa_flat
+        real(r8), dimension(3, 3) :: buf, kappa_tot, v2
         real(r8), dimension(uc%na) :: prj
         real(r8), dimension(3, 3) :: k0
         real(r8), dimension(6) :: f0
-        integer :: iq, atom, imode, i, aq, k
+        real(r8), dimension(3) :: v0, v1
+        real(r8) :: om, cv
+        integer :: fq, iq, atom, imode, i, aq, k
+
+        call mem%allocate(kappa_flat, [qp%n_irr_point, dr%n_mode, 6], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        ! Here we rotate everything from the full zone to the reduced one
+        kappa_tot = 0.0_r8
+        kappa_flat = 0.0_r8
+        do fq=1, qp%n_full_point
+            if (mod(fq, mw%n) .ne. mw%r) cycle
+
+            iq = qp%ap(fq)%irreducible_index
+            k = qp%ap(fq)%operation_from_irreducible
+            do imode=1, dr%n_mode
+                om = dr%iq(iq)%omega(imode)
+                if (om .lt. lo_freqtol) cycle
+
+                if (classical) then
+                    cv = lo_kb_Hartree
+                else
+                    cv = lo_harmonic_oscillator_cv(temperature, om)
+                end if
+
+                if (k .gt. 0) then
+                    v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(iq)%Fn(:, imode), reciprocal=.true.)
+                    v1 = lo_operate_on_vector(uc%sym%op(k), dr%iq(iq)%vel(:, imode), reciprocal=.true.)
+                else
+                    v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(iq)%Fn(:, imode), reciprocal=.true.)
+                    v1 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(iq)%vel(:, imode), reciprocal=.true.)
+                end if
+                v2 = lo_outerproduct(v0, v1)
+                buf = cv * v2 / uc%volume
+                kappa_flat(iq, imode, 1) = kappa_flat(iq, imode, 1) + buf(1, 1)
+                kappa_flat(iq, imode, 2) = kappa_flat(iq, imode, 2) + buf(2, 2)
+                kappa_flat(iq, imode, 3) = kappa_flat(iq, imode, 3) + buf(3, 3)
+                kappa_flat(iq, imode, 4) = kappa_flat(iq, imode, 4) + buf(2, 3)
+                kappa_flat(iq, imode, 5) = kappa_flat(iq, imode, 5) + buf(1, 3)
+                kappa_flat(iq, imode, 6) = kappa_flat(iq, imode, 6) + buf(1, 2)
+                kappa_tot = kappa_tot + buf / qp%n_full_point
+            end do
+        end do
+        call mw%allreduce('sum', kappa_tot)
+        call mw%allreduce('sum', kappa_flat)
 
         ! First we flatten the thermal conductivity, to get it per mode and atom
         ! Also already normalized, and in Voigt notation
@@ -106,15 +150,8 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
                     prj(atom) = prj(atom) + abs(dot_product(conjg(cv0), cv0))
                 end do
                 prj = lo_chop(prj/sum(prj), lo_sqtol)
-
-                f0(1) = dr%iq(iq)%kappa(1, 1, imode) * qp%ip(iq)%integration_weight
-                f0(2) = dr%iq(iq)%kappa(2, 2, imode) * qp%ip(iq)%integration_weight
-                f0(3) = dr%iq(iq)%kappa(3, 3, imode) * qp%ip(iq)%integration_weight
-                f0(4) = dr%iq(iq)%kappa(2, 3, imode) * qp%ip(iq)%integration_weight
-                f0(5) = dr%iq(iq)%kappa(1, 3, imode) * qp%ip(iq)%integration_weight
-                f0(6) = dr%iq(iq)%kappa(1, 2, imode) * qp%ip(iq)%integration_weight
                 do atom=1, uc%na
-                    kappa_chop(iq, imode, atom, :) = f0(:) * prj(atom)
+                    kappa_chop(iq, imode, atom, :) = kappa_flat(iq, imode, :) * prj(atom) / qp%n_full_point
                 end do
             end do
         end do
@@ -124,6 +161,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
             mf%kappa_total(i) = sum(kappa_chop(:, :, :, i))
         end do
         mf%kappa_total = lo_chop(mf%kappa_total, kappatol)
+        call mem%deallocate(kappa_flat, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block chopkappa
 
     cmf: block
