@@ -311,7 +311,7 @@ blockkappa: block
 
     ! Then the spectral kappa
     if (mw%talk) write(*, *) '... computing spectral kappa'
-    call mf%get_spectral_kappa(uc, qp, dr, pd, mw, mem)
+    call mf%get_spectral_kappa(uc, qp, dr, pd, opts%temperature, opts%classical, mw, mem)
     call tmr_kappa%tock('spectral kappa')
 
     ! And finally the angular momentum

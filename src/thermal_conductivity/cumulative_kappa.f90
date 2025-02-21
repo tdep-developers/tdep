@@ -460,7 +460,7 @@ subroutine get_boundary_kappa(mf, qp, dr, uc, kod, npts, temperature, classical,
         call mw%allreduce('sum', mf%boundary_kappa)
 end subroutine
 
-subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
+subroutine get_spectral_kappa(mf, uc, qp, dr, pd, temperature, classical, mw, mem)
     !> The cumulative plot
     class(lo_cumulative_kappa), intent(inout) :: mf
     !> The structure
@@ -471,13 +471,19 @@ subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
     type(lo_phonon_dispersions), intent(inout) :: dr
     !> Phonon density of states
     type(lo_phonon_dos), intent(inout) :: pd
+    !> The temperature
+    real(r8), intent(in) :: temperature
+    !> Are we in the classical case ?
+    logical, intent(in) :: classical
     !> MPI helper
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory helper
     type(lo_mem_helper), intent(inout) :: mem
 
     getfullgridkappa: block
-        real(r8), dimension(3, 3) :: buf
+        real(r8), dimension(3, 3) :: buf, v2, kk
+        real(r8), dimension(3) :: v0, v1
+        real(r8) :: om, cv
         integer :: aq, iq, k, imode
 
         ! We need to allocate and get the thermal and conductivity on the full grid
@@ -486,12 +492,25 @@ subroutine get_spectral_kappa(mf, uc, qp, dr, pd, mw, mem)
             iq = qp%ap(aq)%irreducible_index
             k = qp%ap(aq)%operation_from_irreducible
             do imode=1, dr%n_mode
-                ! Rotate the thermal conductivity tensor, beware of time invariance !
-                if (k .gt. 0) then
-                    buf = lo_operate_on_secondorder_tensor(uc%sym%op(k), dr%iq(iq)%kappa(:, :, imode))
+                om = dr%iq(iq)%omega(imode)
+                if (om .lt. lo_freqtol) cycle
+
+                if (classical) then
+                    cv = lo_kb_hartree
                 else
-                    buf = -lo_operate_on_secondorder_tensor(uc%sym%op(abs(k)), dr%iq(iq)%kappa(:, :, imode))
+                    cv = lo_harmonic_oscillator_cv(temperature, om)
                 end if
+
+                if (k .gt. 0) then
+                    v0 = lo_operate_on_vector(uc%sym%op(k), dr%iq(iq)%Fn(:, imode), reciprocal=.true.)
+                    v1 = lo_operate_on_vector(uc%sym%op(k), dr%iq(iq)%vel(:, imode), reciprocal=.true.)
+                else
+                    v0 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(iq)%Fn(:, imode), reciprocal=.true.)
+                    v1 = -lo_operate_on_vector(uc%sym%op(abs(k)), dr%iq(iq)%vel(:, imode), reciprocal=.true.)
+                end if
+                v2 = lo_outerproduct(v0, v1)
+
+                buf = cv * v2 / uc%volume
                 dr%aq(aq)%kappa(:, :, imode) = buf
             end do
         end do
