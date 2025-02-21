@@ -210,6 +210,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
             call qsort(x, ind)
             ! We sort it for each directions
             do ii=1, 6
+                if (mf%kappa_total(ii) .lt. kappatol) cycle
                 y(:, ii) = ybuf(ind, ii)
             end do
             minx = minval(x, x > lo_tol) * 0.1_r8
@@ -268,6 +269,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
                 f0(:) = ym(npts, imode, atom, :)
             else
                 do ii=1, 6
+                    if (mf%kappa_total(ii) .lt. kappatol) cycle
                     f0(ii) = lo_linear_interpolation(xm(:, imode, atom), ym(:, imode, atom, ii), mf%mfaxis(i))
                 end do
             end if
@@ -284,6 +286,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         ! Make sure it's monotically increasing
         do i=1, np-1
             do ii=1, 6
+                if (mf%kappa_total(ii) .lt. kappatol) cycle
                 if (mf%mf_kappa(i+1, ii) .lt. mf%mf_kappa(i, ii)) then
                     mf%mf_kappa(i+1, ii) = mf%mf_kappa(i, ii)
                 end if
@@ -303,6 +306,7 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         ! Fix site degeneracy
         call mem%allocate(sitebuf, [np, uc%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         do ii=1, 6
+            if (mf%kappa_total(ii) .lt. kappatol) cycle
             sitebuf = 0.0_r8
             do i=1, uc%na
                 do j=1, uc%sym%degeneracy(i)
@@ -315,8 +319,13 @@ subroutine get_cumulative_kappa(mf, qp, dr, uc, np, temperature, sigma, mw, mem)
         call mem%deallocate(sitebuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         ! Now make sure everything is normalized properly
+        do ii=1, 6
+            if (mf%kappa_total(ii) .lt. kappatol) cycle
+            mf%mf_kappa(:, ii) = mf%mf_kappa(:, ii) * mf%kappa_total(ii) / mf%mf_kappa(np, ii)
+        end do
         do i=1, np
             do ii=1, 6
+                if (mf%kappa_total(ii) .lt. kappatol) cycle
                 ! Fix the band decomposed
                 f1 = sum(mf%mf_kappa_band(i, :, ii))
                 f2 = mf%mf_kappa(i, ii)
@@ -628,14 +637,14 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     call mem%allocate(d3, [pd%n_dos_point, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! First we get from Voigt to 3x3
     d3(:, 1, 1) = mf%fq_kappa(:, 1)
-    d3(:, 1, 2) = mf%fq_kappa(:, 6)
-    d3(:, 1, 3) = mf%fq_kappa(:, 5)
-    d3(:, 2, 1) = mf%fq_kappa(:, 6)
-    d3(:, 2, 2) = mf%fq_kappa(:, 2)
-    d3(:, 2, 3) = mf%fq_kappa(:, 4)
-    d3(:, 3, 1) = mf%fq_kappa(:, 5)
-    d3(:, 3, 2) = mf%fq_kappa(:, 4)
-    d3(:, 3, 3) = mf%fq_kappa(:, 3)
+    d3(:, 1, 2) = mf%fq_kappa(:, 2)
+    d3(:, 1, 3) = mf%fq_kappa(:, 3)
+    d3(:, 2, 1) = mf%fq_kappa(:, 4)
+    d3(:, 2, 2) = mf%fq_kappa(:, 5)
+    d3(:, 2, 3) = mf%fq_kappa(:, 6)
+    d3(:, 3, 1) = mf%fq_kappa(:, 7)
+    d3(:, 3, 2) = mf%fq_kappa(:, 8)
+    d3(:, 3, 3) = mf%fq_kappa(:, 9)
     ! Write spectral kappa vs frequency
     call h5%store_data(d3*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
                        'spectral_kappa_vs_frequency', enhet='W/m/K', dimensions='xyz,xyz,frequency')
@@ -645,14 +654,14 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     call mem%allocate(d4, [pd%n_dos_point, uc%na*3, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! First we get from Voigt to 3x3
     d4(:, :, 1, 1) = mf%fq_kappa_band(:, :, 1)
-    d4(:, :, 1, 2) = mf%fq_kappa_band(:, :, 6)
-    d4(:, :, 1, 3) = mf%fq_kappa_band(:, :, 5)
-    d4(:, :, 2, 1) = mf%fq_kappa_band(:, :, 6)
-    d4(:, :, 2, 2) = mf%fq_kappa_band(:, :, 2)
-    d4(:, :, 2, 3) = mf%fq_kappa_band(:, :, 4)
-    d4(:, :, 3, 1) = mf%fq_kappa_band(:, :, 5)
-    d4(:, :, 3, 2) = mf%fq_kappa_band(:, :, 4)
-    d4(:, :, 3, 3) = mf%fq_kappa_band(:, :, 3)
+    d4(:, :, 1, 2) = mf%fq_kappa_band(:, :, 2)
+    d4(:, :, 1, 3) = mf%fq_kappa_band(:, :, 3)
+    d4(:, :, 2, 1) = mf%fq_kappa_band(:, :, 4)
+    d4(:, :, 2, 2) = mf%fq_kappa_band(:, :, 5)
+    d4(:, :, 2, 3) = mf%fq_kappa_band(:, :, 6)
+    d4(:, :, 3, 1) = mf%fq_kappa_band(:, :, 7)
+    d4(:, :, 3, 2) = mf%fq_kappa_band(:, :, 8)
+    d4(:, :, 3, 3) = mf%fq_kappa_band(:, :, 9)
     call h5%store_data(d4*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
                        'spectral_kappa_vs_frequency_per_mode', enhet='W/m/K', dimensions='xyz,xyz,mode,frequency')
     call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -661,14 +670,14 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     call mem%allocate(d4, [pd%n_dos_point, uc%na, 3, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! First we get from Voigt to 3x3
     d4(:, :, 1, 1) = mf%fq_kappa_atom(:, :, 1)
-    d4(:, :, 1, 2) = mf%fq_kappa_atom(:, :, 6)
-    d4(:, :, 1, 3) = mf%fq_kappa_atom(:, :, 5)
-    d4(:, :, 2, 1) = mf%fq_kappa_atom(:, :, 6)
-    d4(:, :, 2, 2) = mf%fq_kappa_atom(:, :, 2)
-    d4(:, :, 2, 3) = mf%fq_kappa_atom(:, :, 4)
-    d4(:, :, 3, 1) = mf%fq_kappa_atom(:, :, 5)
-    d4(:, :, 3, 2) = mf%fq_kappa_atom(:, :, 4)
-    d4(:, :, 3, 3) = mf%fq_kappa_atom(:, :, 3)
+    d4(:, :, 1, 2) = mf%fq_kappa_atom(:, :, 2)
+    d4(:, :, 1, 3) = mf%fq_kappa_atom(:, :, 3)
+    d4(:, :, 2, 1) = mf%fq_kappa_atom(:, :, 4)
+    d4(:, :, 2, 2) = mf%fq_kappa_atom(:, :, 5)
+    d4(:, :, 2, 3) = mf%fq_kappa_atom(:, :, 6)
+    d4(:, :, 3, 1) = mf%fq_kappa_atom(:, :, 7)
+    d4(:, :, 3, 2) = mf%fq_kappa_atom(:, :, 8)
+    d4(:, :, 3, 3) = mf%fq_kappa_atom(:, :, 9)
     call h5%store_data(d4*lo_kappa_au_to_SI/unitfactor, h5%file_id, &
                        'spectral_kappa_vs_frequency_per_atom', enhet='W/m/K', dimensions='xyz,xyz,atom,frequency')
     call mem%deallocate(d4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -704,7 +713,7 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
     call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     ! Store just the tensor
     call h5%store_data(mf%angmomalpha, h5%file_id, 'generating_angular_momentum_tensor', &
-                       enhet='dunno', dimensions='xyz,xyz')
+                       enhet='hbar/m/K', dimensions='xyz,xyz')
 
     call h5%close_file()
     call h5%destroy(__FILE__, __LINE__)
