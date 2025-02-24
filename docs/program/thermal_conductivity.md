@@ -63,12 +63,28 @@ Optional switches:
     Tolerance for the iterative solution.
 
 * `--iterative_maxsteps`
-    default 200
+    default value 200
     Max number of iterations for the iterative solution.
 
 * `--seed`
-    default -1
+    default value -1
     Positive integer to seed the random number generator for the Monte-Carlo grids.
+
+* `--mfppts`
+    default value 1000
+    Number of mean free paths points for the cumulative thermal conductivity
+
+* `--freqpts`
+    default value 1000
+    Number of frequency points for the spectral thermal conductivity
+
+* `--dosintegrationtype`
+    default value 3
+    Type of integration for the phonon spectral thermal conductivity. 1 is Gaussian, 2 adaptive Gaussian, 3 is tetrahedron
+
+* `--dossigma`
+    default value 1.0
+    Scaling factor for the spectral thermal conductivity wth Gaussian integration. The default is determined procedurally, and scaled by this number.
 
 * `--help`, `-h`  
     Print this help message
@@ -470,6 +486,13 @@ subplot(1,3,3); hold on; box on;
     ylabel('Mean free paths (m)')
 
 ```
+
+#### `outfile.cumulative_thermal_conductivity.hdf5`
+
+This file contains the cumulative thermal conductivity with respect to the mean free paths, as well as the frequency resolved thermal conductivity tensor and an estimation of the thermal conductivity limited by boundary scattering for a range of boundary lengths.
+For this last quantity, the limitation due to boundary scattering is estimated using Matthiessen's rule and might be inappropriate for cases when collective contributions are important.
+Note that all quantities in this file do not include the off-diagonal coherence contribution.
+
 
 [^Castellano2024]: [Castellano, A & Batista, J. P. & Verstraete, M. J. (2024). Mode-coupling theory of heat transport in anharmonic materials](https://doi.org/10.48550/arXiv.2411.14949)
 
