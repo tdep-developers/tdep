@@ -67,6 +67,16 @@ and the respective publications for the algorithms that were used:
 
 `thermal_conductivity`
 
+- Theory and implementation [A. Castellano *et al.*, ArXiv:2411.14949](https://doi.org/10.48550/arXiv.2411.14949)
+
+`lineshape`
+
+- [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
+- [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
+- Grid mode for spectral transport: [Đ. Dangić *et al.*, Npj Comput Mater **7**, 57 (2021)](https://www.nature.com/articles/s41524-021-00523-7)
+
+`thermal_conductivity_2023`
+
 - Method: [D. A. Broido *et al.*, Appl Phys Lett **91**, 231922 (2007)](https://doi.org/10.1063/1.2822891)
 
 - Implementation: [O. Hellman and D.A. Broido, Phys. Rev. B **90**, 134309 (2014)](https://dx.doi.org/10.1103/physrevb.90.134309)
@@ -75,13 +85,6 @@ and the respective publications for the algorithms that were used:
     - [Simoncelli, M. & Marzari, N. & Mauri, F. (2019), Nat. Phys. **15** 803-819](https://doi.org/10.1038/s41567-019-0520-x)
     - [Isaeva, L & Barbalinardo, G. & Donadio, D. & Baroni, S., Nat. Comm. **10** 3853 (2019)](https://doi.org/10.1038/s41467-019-11572-4)
     - [Fiorentino, A. & Baroni, S, Phys. Rev. B, **107**, 054311 (2023)](https://doi.org/10.1103/PhysRevB.107.054311)
-
-
-`lineshape`
-
-- [A. H. Romero *et al.*, Phys Rev B **91**, 214310 (2015)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310)
-- [N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. **119**, 185901 (2017)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901)
-- Grid mode for spectral transport: [Đ. Dangić *et al.*, Npj Comput Mater **7**, 57 (2021)](https://www.nature.com/articles/s41524-021-00523-7)
 
 ## Troubleshooting
 
