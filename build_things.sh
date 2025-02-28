@@ -28,8 +28,17 @@ case $i in
     --nthreads_make)
     shift
     NTHREADS_MAKE=$1
-# would be cleaner if we checked this was an integer
+    ;;
+    # would be cleaner if we checked this was an integer
     shift
+    ;;
+    --make_shared)
+    shift
+    MAKE_SHARED=YES
+    ;;
+    --install)
+    shift
+    INSTALL=NO
     ;;
     *)
             # unknown option
@@ -244,6 +253,45 @@ do
     # link it to bin?
     [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
 done
+
+if [ ${MAKE_SHARED} = "YES" ]
+then
+    echo " "
+    echo "building libolle shared library"
+    cd src/libolle
+    make -f Makefile.shared -j ${NTHREADS_MAKE}
+fi
+
+if [ ${INSTALL} = "YES" ]
+then
+    prefix="${prefix:-/usr/local}"
+    bindir="$prefix/bin"
+    libdir="$prefix/lib"
+
+    # Detect OS to set dynamic library extension
+    unamestr=$(uname -s)
+    if [[ "$unamestr" == "Darwin" ]]; then
+        dlext="dylib"
+    else
+        dlext="so"
+    fi
+
+    echo "Installing binaries to $bindir..."
+    mkdir -p "$bindir"
+    for prog in $listofcodes; do
+        echo " - Installing $prog -> $bindir/$prog"
+        install -m 755 "../../build/$prog/$prog" "$bindir/$prog"
+    done
+
+    if [ ${MAKE_SHARED} = "YES" ]
+    then
+        echo "Installing shared library as libolle.$dlext to $libdir..."
+        mkdir -p "$libdir"
+        install -m 644 "../../lib/libolle.so" "$libdir/libolle.$dlext"
+    fi
+
+    echo "Installation to $prefix complete."
+fi
 
 basedir=`pwd`
 tdep_bin_dir=${basedir}/bin
