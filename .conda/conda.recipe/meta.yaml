@@ -1,0 +1,46 @@
+{% set version = "24.09" %}
+
+package:
+  name: tdep
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/tdep-developers/tdep.git
+  git_rev: fk_conda_build
+  # git_depth: 1
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('fortran') }} 
+    # - gfortran
+    - openmpi
+    - openmpi-mpifort 
+    - scalapack 
+    - fftw 
+    - hdf5 
+    - openblas
+  host:
+    - openmpi
+    - openmpi-mpifort 
+    - scalapack 
+    - hdf5 
+    - fftw 
+    - openblas
+  run:
+    - scalapack 
+    - openmpi-mpifort 
+    - hdf5 
+    - fftw 
+    - openblas
+
+about:
+  home: https://github.com/tdep-developers/tdep
+  license: MIT
+  summary: 'TDEP'
+  description: "Proper phonons made in Sweden."
+  dev_url: https://github.com/tdep-developers/tdep
+  doc_url: https://tdep-developers.github.io/tdep/
+  doc_source_url: https://github.com/tdep-developers/tdep/blob/main/README.md
