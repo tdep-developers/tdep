@@ -161,9 +161,23 @@ endif
 OBJS = $(OBJSf) $(OBJSa) $(OBJScg)
 
 # rules to make the actual library
-libolle.a: $(OBJS)
+static: $(OBJS)
 	-rm $(DEST_PATH)libolle.a
 	ar rc $(DEST_PATH)libolle.a $(OBJS)
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+    LIB_EXT = dylib
+    OSFLAGS = -dynamiclib -install_name @rpath/libolle.$(dlext)
+else ifeq ($(UNAME_S),Linux)
+    LIB_EXT = so
+    OSFLAGS = -shared
+endif
+
+shared: $(OBJS)
+	-rm $(DEST_PATH)libolle.$(LIB_EXT)
+	$(FC) $(OSFLAGS) -o $(DEST_PATH)libolle.$(LIB_EXT) $(OBJS) $(LDFLAGS) $(LIBS)
 
 # Stuff written in C
 $(OBJECT_PATH)type_ipi_sockets.o:
