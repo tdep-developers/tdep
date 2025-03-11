@@ -334,7 +334,7 @@ subroutine read_ddb_file(filelist, uc, dynmat, qvecs, born_effective_charges, di
             write(*,*) "inverse_prtorder" , inverse_prtorder
             do i=1,nq
                 read(u,*)
-                read(u, '(a32,12x,i8)' )name,nelem
+                read(u, '(a32,12x,i12)' )name,nelem
                 if(name==' 2nd derivatives (non-stat.)  - ' .or. name==' 2rd derivatives(non-stat.)  - ')then
                     block_type(i)=1
                 else if(name==' 2nd derivatives (stationary) - ' .or. name==' 2rd derivatives(stationary) - ')then
