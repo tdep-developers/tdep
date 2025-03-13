@@ -49,6 +49,13 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     !> buff to keep the off diagonal scattering matrix elements
     real(r8), dimension(:, :), allocatable :: od_terms
 
+    real(r8), dimension(3, 3) :: reclat
+    real(r8), dimension(3) :: w
+
+    do i=1, 3
+        reclat(:, i) = uc%reciprocal_latticevectors(:, i) / mcg%full_dims(i)
+    end do
+
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -107,8 +114,13 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                                  sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
                                  sr%sigsq(qp%ap(q3)%irreducible_index, b3))
                 case (6)
-                    sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), &
-                                                 dr%default_smearing(b3), smearing)
+!                   sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), &
+!                                                dr%default_smearing(b3), smearing)
+
+                    do i=1, 3
+                        w(i) = dot_product(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), reclat(:, i))**2
+                    end do
+                    sigma = sqrt(maxval(w) * 0.5_r8)
                 end select
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
