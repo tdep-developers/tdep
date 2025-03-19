@@ -169,7 +169,7 @@ UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
     LIB_EXT = dylib
-    OSFLAGS = -dynamiclib -install_name @rpath/libolle.$(dlext)
+    OSFLAGS = -dynamiclib -install_name @rpath/libolle.$(LIB_EXT)
 else ifeq ($(UNAME_S),Linux)
     LIB_EXT = so
     OSFLAGS = -shared
