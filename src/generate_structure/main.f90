@@ -7,7 +7,7 @@ use geometryfunctions, only: lo_inscribed_sphere_in_box
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use type_forcemap, only: lo_forcemap
 use type_crystalstructure, only: lo_crystalstructure
-use type_sqs, only: lo_sqs
+! use type_sqs, only: lo_sqs
 
 use options, only: lo_opts
 ! use magneticdisorder, only: lo_magdisorder
@@ -19,7 +19,7 @@ type(lo_opts) :: opts
 type(lo_crystalstructure) :: uc, ss, p
 type(lo_forcemap) :: map
 ! type(lo_magdisorder) :: mag
-type(lo_sqs) :: sqs
+! type(lo_sqs) :: sqs
 
 ! Set some options and parse input file
 init: block
