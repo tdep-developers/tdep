@@ -23,8 +23,8 @@ clean:
 
 $(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o $(OBJECT_PATH)magneticdisorder.o $(OBJECT_PATH)autocell.o 
 	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
-$(OBJECT_PATH)magneticdisorder.o:
-	$(F90) $(F90FLAGS) -c magneticdisorder.f90 $(LIBS) -o $@
+# $(OBJECT_PATH)magneticdisorder.o:
+# 	$(F90) $(F90FLAGS) -c magneticdisorder.f90 $(LIBS) -o $@
 $(OBJECT_PATH)autocell.o:
 	$(F90) $(F90FLAGS) -c autocell.f90 $(LIBS) -o $@
 $(OBJECT_PATH)options.o:
