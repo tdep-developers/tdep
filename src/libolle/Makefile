@@ -116,12 +116,7 @@ $(OBJECT_PATH)type_phonon_dispersions.o \
 $(OBJECT_PATH)type_phonon_dispersions_generation.o \
 $(OBJECT_PATH)type_phonon_dos.o \
 $(OBJECT_PATH)type_phonon_dos_integrations.o \
-$(OBJECT_PATH)type_sqs.o \
 $(OBJECT_PATH)type_symmetryoperation.o \
-$(OBJECT_PATH)type_symmetrylist.o \
-$(OBJECT_PATH)type_symmetrylist_helper.o \
-$(OBJECT_PATH)type_symmetrylist_unique.o \
-$(OBJECT_PATH)type_symmetrylist_coefficientmatrix.o \
 $(OBJECT_PATH)type_effective_hamiltonian.o \
 $(OBJECT_PATH)type_forcemap.o \
 $(OBJECT_PATH)type_forcemap_generate.o \
