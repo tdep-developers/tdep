@@ -364,7 +364,7 @@ contains
 !     !> Talk a lot?
 !     integer, intent(in) :: verbosity
 !
-    type(lo_sqs) :: sqs
+    ! type(lo_sqs) :: sqs
 !     type(lo_mersennetwister) :: tw
 !     type(lo_crystalstructure) :: ss
 !     type(lo_forceconstant_secondorder) :: fcss
