@@ -29,7 +29,8 @@ case $i in
     ;;
     --make_shared)
     shift
-    MAKE_SHARED=YES
+    MAKE_SHARED=$1
+    shift
     ;;
     --install)
     shift
