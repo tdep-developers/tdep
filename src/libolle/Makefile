@@ -701,50 +701,6 @@ $(OBJECT_PATH)lo_phonon_bandstructure_on_path.o:\
 	$(OBJECT_PATH)type_qpointmesh.o
 	$(FC) $(FFLAGS) -c lo_phonon_bandstructure_on_path.f90 -o $@
 
-$(OBJECT_PATH)type_symmetrylist.o:\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)gottochblandat.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_helper.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist_helper.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_coefficientmatrix.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist_coefficientmatrix.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_unique.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS_LOW) -c type_symmetrylist_unique.f90 -o $@
-
-$(OBJECT_PATH)type_sqs.o:\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)gottochblandat.o\
-    $(OBJECT_PATH)lo_randomnumbers.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_symmetrylist.o
-	$(FC) $(FFLAGS) -c type_sqs.f90 -o $@
 $(OBJECT_PATH)type_forceconstant_alloy_secondorder.o:\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)type_crystalstructure.o\
@@ -806,7 +762,6 @@ $(OBJECT_PATH)type_forcemap.o:\
     $(OBJECT_PATH)type_forceconstant_fourthorder.o\
 	$(OBJECT_PATH)lo_dielectric_interaction.o\
     $(OBJECT_PATH)type_jij_secondorder.o\
-	$(OBJECT_PATH)type_symmetrylist.o\
 	$(OBJECT_PATH)lo_symmetry_of_interactions.o
 	$(FC) $(FFLAGS) -c type_forcemap.f90 -o $@
 $(OBJECT_PATH)type_forcemap_generate.o:\
