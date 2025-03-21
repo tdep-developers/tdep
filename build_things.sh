@@ -77,6 +77,7 @@ source important_settings
 echo "parsed the important settings"
 
 # ok, that's a decent start. Start by building the main library, that's the tricky part
+rootdir=`pwd`
 cd src/libolle
 
 # make the git information accessible so that it can be added during compilation
@@ -278,6 +279,7 @@ if [ ${MAKE_SHARED} = "YES" ]; then
     # make -f Makefile.shared -j ${NTHREADS_MAKE}
 fi
 
+tdep_bin_dir=""
 if [ ${INSTALL} = "YES" ]; then
 
     prefix="${prefix:-/usr/local}"
@@ -307,17 +309,19 @@ if [ ${INSTALL} = "YES" ]; then
     fi
 
     echo "Installation to $prefix complete."
+    tdep_bin_dir=${bindir}
+else
+    cd "../../"
+    tdep_bin_dir=${rootdir}/bin
 fi
 
-basedir=`pwd`
-tdep_bin_dir=${basedir}/bin
 
 echo " "
 echo "Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely"
 
 cat>bashrc_tdep<<EOF
-MANPATH=\$MANPATH:${basedir}/man
-PATH=\$PATH:${basedir}/bin
+MANPATH=\$MANPATH:${rootdir}/man
+PATH=\$PATH:${tdep_bin_dir}
 TDEP_BIN_DIR=${tdep_bin_dir}
 export MANPATH
 export PATH
