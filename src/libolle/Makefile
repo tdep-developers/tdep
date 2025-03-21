@@ -165,14 +165,20 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
     LIB_EXT = dylib
     OSFLAGS = -dynamiclib -install_name @rpath/libolle.$(LIB_EXT)
+    LOAD_CMD = -all_load
 else ifeq ($(UNAME_S),Linux)
-    LIB_EXT = so
     OSFLAGS = -shared
+    LIB_EXT = so
+    LOAD_CMD = -Wl,--whole-archive
+    END_LOAD_CMD = -Wl,--no-whole-archive
 endif
+
+# Get rid of all the other flags on there
+COMPILER = $(shell echo $(FC) | cut -d' ' -f1)
 
 shared: $(OBJS)
 	-rm $(DEST_PATH)libolle.$(LIB_EXT)
-	$(FC) $(OSFLAGS) -o $(DEST_PATH)libolle.$(LIB_EXT) $(OBJS) $(LDFLAGS) $(LIBS)
+	$(COMPILER) $(OSFLAGS) -o $(DEST_PATH)libolle.$(LIB_EXT) $(LOAD_CMD) $(DEST_PATH)libolle.a $(END_LOAD_CMD) $(LDFLAGS) $(LPATH) $(LIBS)
 
 # Stuff written in C
 $(OBJECT_PATH)type_ipi_sockets.o:
