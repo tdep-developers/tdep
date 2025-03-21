@@ -162,7 +162,17 @@ Run
 ./build_things.sh --nthreads_make 4
 ```
 
-This should be it.
+The `build_things.sh` script also provides a `--install` flag which will install the TDEP binaries and library to the directory specified by the `prefix` environment variable. If no `prefix` is set but `--install` is passed to `build_things.sh` TDEP is installed to `/usr/local`.
+
+# Shared library
+
+By default TDEP will build a shared version of the libolle library which contains the core routines necessary for TDEP. Casual users should will never need to interact with this build product, but it can be useful if you want to build your own library on top of TDEP and call TDEP routines from your own code.
+
+For example,
+```bash
+export prefix="/home/myhome/tdep_install_dir"
+./build_things.sh --install
+```
 
 # Troubleshooting
 
