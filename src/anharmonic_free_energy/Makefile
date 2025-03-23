@@ -7,7 +7,7 @@ OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o $(OBJECT_PATH)energy.o $(OBJ
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHhdf) $(incIPATHmpi)
-LIBS = -lolle -lflap $(blaslapackLIBS) $(incLIBShdf) $(incLIBSmpi)
+LIBS = -l:libolle.a -lflap $(blaslapackLIBS) $(incLIBShdf) $(incLIBSmpi)
 
 #OPT = -O0 -fbacktrace -fcheck=all -Wall
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH)

@@ -10,6 +10,8 @@ set -e
 CLEAN=YES
 MANPAGE=YES
 NTHREADS_MAKE=1
+MAKE_SHARED=YES
+INSTALL=NO
 for i in "$@"
 do
 case $i in
@@ -25,11 +27,20 @@ case $i in
     MANPAGE=NO
     shift # past argument with no value
     ;;
+    --make_shared)
+    shift
+    MAKE_SHARED=$1
+    shift
+    ;;
+    --install)
+    shift
+    INSTALL=YES
+    ;;
     --nthreads_make)
     shift
     NTHREADS_MAKE=$1
-# would be cleaner if we checked this was an integer
     shift
+    # would be cleaner if we checked this was an integer
     ;;
     *)
             # unknown option
@@ -38,6 +49,7 @@ esac
 done
 echo "clean everything? ${CLEAN}"
 echo "number of threads: ${NTHREADS_MAKE}"
+echo "build shared library: ${MAKE_SHARED}"
 
 # Grab wich branch we are on, and which revision
 gitbranch=`git rev-parse --abbrev-ref HEAD`
@@ -65,6 +77,7 @@ source important_settings
 echo "parsed the important settings"
 
 # ok, that's a decent start. Start by building the main library, that's the tricky part
+rootdir=`pwd`
 cd src/libolle
 
 # make the git information accessible so that it can be added during compilation
@@ -79,6 +92,19 @@ then
     echo "Ok, will try to include the CGAL stuff"
     PRECOMPILER_FLAGS="${PRECOMPILER_FLAGS} -Dusecgal"
 fi
+
+if [ "${MAKE_SHARED}" = "YES" ]; then
+    case "$FCFLAGS" in
+        *-fPIC*)
+            # -fPIC already present; do nothing.
+            ;;
+        *)
+            # Append -fPIC since it's not present.
+            export FCFLAGS="${FCFLAGS} -fPIC"
+            ;;
+    esac
+fi
+
 # paste a file with all the Machine-specific info
 cat>Makefile.inc<<EOF
 # Specify fortran compiler
@@ -178,9 +204,9 @@ generate_kpoints
 # now, in theory, everything should be in place to compile
 echo " "
 echo "building libolle"
-if [ ${CLEAN} = "YES" ]
+if [ "${CLEAN}" = "YES" ]
 then
-    make clean && make -j ${NTHREADS_MAKE}
+    make clean && make static -j ${NTHREADS_MAKE}
 else
     make -j ${NTHREADS_MAKE}
 fi
@@ -245,15 +271,57 @@ do
     [ -f build/${code}/${code} ] && ln -sf ../build/${code}/${code} bin/${code}
 done
 
-basedir=`pwd`
-tdep_bin_dir=${basedir}/bin
+if [ ${MAKE_SHARED} = "YES" ]; then
+    echo " "
+    echo "building libolle shared library"
+    cd src/libolle
+    make shared -j ${NTHREADS_MAKE}
+    # make -f Makefile.shared -j ${NTHREADS_MAKE}
+fi
+
+tdep_bin_dir=""
+if [ ${INSTALL} = "YES" ]; then
+
+    prefix="${prefix:-/usr/local}"
+    bindir="$prefix/bin"
+    libdir="$prefix/lib"
+
+    # Detect OS to set dynamic library extension
+    # Only supports Linux/Mac for now
+    unamestr=$(uname -s)
+    if [[ "$unamestr" == "Darwin" ]]; then
+        dlext="dylib"
+    else
+        dlext="so"
+    fi
+
+    echo "Installing binaries to $bindir..."
+    mkdir -p "$bindir"
+    for prog in $listofcodes; do
+        echo " - Installing $prog -> $bindir/$prog"
+        install -m 755 "../../build/$prog/$prog" "$bindir/$prog"
+    done
+
+    if [ ${MAKE_SHARED} = "YES" ]; then
+        echo "Installing shared library as libolle.$dlext to $libdir..."
+        mkdir -p "$libdir"
+        install -m 644 "../../lib/libolle.$dlext" "$libdir/libolle.$dlext"
+    fi
+
+    echo "Installation to $prefix complete."
+    tdep_bin_dir=${bindir}
+else
+    cd "../../"
+    tdep_bin_dir=${rootdir}/bin
+fi
+
 
 echo " "
 echo "Printing bashrc_tdep, append these lines to your .bashrc for stuff to work nicely"
 
 cat>bashrc_tdep<<EOF
-MANPATH=\$MANPATH:${basedir}/man
-PATH=\$PATH:${basedir}/bin
+MANPATH=\$MANPATH:${rootdir}/man
+PATH=\$PATH:${tdep_bin_dir}
 TDEP_BIN_DIR=${tdep_bin_dir}
 export MANPATH
 export PATH
