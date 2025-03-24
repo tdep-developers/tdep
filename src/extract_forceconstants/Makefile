@@ -9,7 +9,7 @@ $(OBJECT_PATH)options.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incLPATHhdf) $(incIPATHmpi)
-LIBS = -l:libolle.a -lflap $(blaslapackLIBS) ${incIPATHhdf} $(incLIBShdf) $(incLIBSmpi)
+LIBS = ../../lib/libolle.a -lflap $(blaslapackLIBS) ${incIPATHhdf} $(incLIBShdf) $(incLIBSmpi)
 
 #OPT = -O0 -fcheck=all -fbacktrace -finit-real=nan -finit-derived -fmax-errors=10
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH)

@@ -13,7 +13,7 @@ $(OBJECT_PATH)mfp.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHmpi) $(incLPATHhdf)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHmpi) $(incIPATHhdf)
-LIBS = -l:libolle.a -lflap $(blaslapackLIBS) $(incLIBSmpi) $(incLIBShdf)
+LIBS = ../../lib/libolle.a -lflap $(blaslapackLIBS) $(incLIBSmpi) $(incLIBShdf)
 
 #OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
