@@ -5,23 +5,21 @@ use konstanter, only: flyt, lo_pi, lo_sqtol, lo_A_to_bohr
 use gottochblandat, only: open_file, tochar, lo_determ, lo_chop, lo_get_axis_angles
 use geometryfunctions, only: lo_inscribed_sphere_in_box
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
-use type_symmetrylist, only: lo_symlist
 use type_forcemap, only: lo_forcemap
 use type_crystalstructure, only: lo_crystalstructure
-use type_sqs, only: lo_sqs
+! use type_sqs, only: lo_sqs
 
 use options, only: lo_opts
-use magneticdisorder, only: lo_magdisorder
+! use magneticdisorder, only: lo_magdisorder
 use autocell, only: return_supercellmatrix
 implicit none
 
 type(lo_mpi_helper) :: mw
 type(lo_opts) :: opts
 type(lo_crystalstructure) :: uc, ss, p
-type(lo_symlist) :: sl
 type(lo_forcemap) :: map
-type(lo_magdisorder) :: mag
-type(lo_sqs) :: sqs
+! type(lo_magdisorder) :: mag
+! type(lo_sqs) :: sqs
 
 ! Set some options and parse input file
 init: block
