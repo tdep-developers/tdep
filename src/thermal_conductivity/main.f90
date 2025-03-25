@@ -355,7 +355,7 @@ finalize_and_write: block
         write (*, '(1X,A41,A)') '                                         ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
         write (*, '(1X,A41,A)') '                                         ', 'A. Fiorentino et al., Phys Rev B 107, 054311  (2023)'
         write (*, '(1X,A41,A)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23) (2023)'
-        write (*, '(1X,A41,A)') 'Theory and algorithm : ', 'A. Castellano et al, ArXiv:2411.14949 (2024)'
+        write (*, '(1X,A41,A)') 'Theory and algorithm : ', 'A. Castellano et al, Phys. Rev. B, 111 094306 (2025)'
     end if
     call tmr_tot%tock('io')
 

@@ -67,7 +67,7 @@ and the respective publications for the algorithms that were used:
 
 `thermal_conductivity`
 
-- Theory and implementation [A. Castellano *et al.*, ArXiv:2411.14949](https://doi.org/10.48550/arXiv.2411.14949)
+- Theory and implementation [A. Castellano *et al.*, Phys. Rev. B **111**, 094306](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.111.094306)
 
 `lineshape`
 

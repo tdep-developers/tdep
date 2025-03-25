@@ -494,7 +494,7 @@ For this last quantity, the limitation due to boundary scattering is estimated u
 Note that all quantities in this file do not include the off-diagonal coherence contribution.
 
 
-[^Castellano2024]: [Castellano, A & Batista, J. P. & Verstraete, M. J. (2024). Mode-coupling theory of heat transport in anharmonic materials](https://doi.org/10.48550/arXiv.2411.14949)
+[^Castellano2024]: [Castellano, A & Batista, J. P. & Verstraete, M. J. (2025). Mode-coupling theory of heat transport in anharmonic materials. Physical Review B, 111, 094306](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.111.094306)
 
 [^peierls1929]: Peierls, R. E. (1929). Annalen der Physik, 3, 1055
 
