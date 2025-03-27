@@ -42,6 +42,9 @@ Makefile.inc
 tests/test*/extract_forceconstants
 tests/test*/*.m
 tests/test*/disprel_xtck
+tests/canonical_configuration/canonical_configuration.dat
+tests/generate_structure/generate_structure.log
+tests/thermal_conductivity/infile.forceconstant*
 
 # things in the staging area
 staging/
