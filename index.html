@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="media/matematico_favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
     
     
       
@@ -22,7 +22,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.50c56a3b.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.7e359304.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
@@ -456,16 +456,16 @@
       
         
       
-    
-    
-    
-    
-      
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
         
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
@@ -484,7 +484,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -574,6 +574,27 @@
   
   <span class="md-ellipsis">
     Phonon dispersion relations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="program/thermal_conductivity_2023/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Thermal conductivity 2023
   </span>
   
 
@@ -945,7 +966,9 @@
 <h1 id="temperature-dependent-effective-potentials-tdep">Temperature Dependent Effective Potentials (TDEP)</h1>
 <p><a href="https://doi.org/10.21105/joss.06150"><img alt="DOI" src="https://joss.theoj.org/papers/10.21105/joss.06150/status.svg" /></a>
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/tdep-developers/tdep" />
-<img alt="GitHub License" src="https://img.shields.io/github/license/tdep-developers/tdep" /></p>
+<img alt="GitHub License" src="https://img.shields.io/github/license/tdep-developers/tdep" />
+<a href="https://github.com/tdep-developers/tdep/actions/workflows/ci_simple_compilation_and_test.yml"><img alt="Compile TDEP and test binaries" src="https://github.com/tdep-developers/tdep/actions/workflows/ci_simple_compilation_and_test.yml/badge.svg" /></a>
+<a href="https://doi.org/10.5281/zenodo.10589894"><img alt="DOI" src="https://zenodo.org/badge/650052667.svg" /></a></p>
 <p>Briefly summarized, the package provides all the tools you need to build accurate model Hamiltonians for finite temperature lattice dynamics from first principles. TDEP includes several programs for different tasks:</p>
 <ul>
 <li>
@@ -961,10 +984,13 @@
 <p><code>phonon_dispersion_relations</code>: Calculate phonon dispersion relations and related harmonic thermodynamic properties from the second-order force constants.</p>
 </li>
 <li>
-<p><code>thermal_conductivity</code>: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity.</p>
+<p><code>thermal_conductivity</code>: Compute thermal transport in the mode-coupling formalism including third- and fourth-order anharmonicity.</p>
 </li>
 <li>
 <p><code>lineshape</code>: Compute phonon spectral functions including lifetime broadening and shifts for single q-points, q-point meshes, or q-point paths in the Brillouin zone. The grid mode computes <em>spectral</em> thermal transport properties as well.</p>
+</li>
+<li>
+<p><code>thermal_conductivity_2023</code>: Compute thermal transport by solving the phonon Boltzmann transport equation with perturbative treatment of third-order anharmonicity. Legacy implementation, the significantly improved program thermal_conductivity should be used!</p>
 </li>
 </ul>
 <p>More details, examples, and theoretical background can be found in the <a href="https://tdep-developers.github.io/tdep/program">online documentation</a>. See <a href="#how-to-cite">below</a> which references should be cited for which program.</p>
@@ -1001,6 +1027,16 @@
 </ul>
 <p><code>thermal_conductivity</code></p>
 <ul>
+<li>Theory and implementation <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.111.094306">A. Castellano <em>et al.</em>, Phys. Rev. B <strong>111</strong>, 094306</a></li>
+</ul>
+<p><code>lineshape</code></p>
+<ul>
+<li><a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310">A. H. Romero <em>et al.</em>, Phys Rev B <strong>91</strong>, 214310 (2015)</a></li>
+<li><a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901">N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. <strong>119</strong>, 185901 (2017)</a></li>
+<li>Grid mode for spectral transport: <a href="https://www.nature.com/articles/s41524-021-00523-7">Đ. Dangić <em>et al.</em>, Npj Comput Mater <strong>7</strong>, 57 (2021)</a></li>
+</ul>
+<p><code>thermal_conductivity_2023</code></p>
+<ul>
 <li>
 <p>Method: <a href="https://doi.org/10.1063/1.2822891">D. A. Broido <em>et al.</em>, Appl Phys Lett <strong>91</strong>, 231922 (2007)</a></p>
 </li>
@@ -1014,12 +1050,6 @@
 <li><a href="https://doi.org/10.1103/PhysRevB.107.054311">Fiorentino, A. &amp; Baroni, S, Phys. Rev. B, <strong>107</strong>, 054311 (2023)</a></li>
 </ul>
 </li>
-</ul>
-<p><code>lineshape</code></p>
-<ul>
-<li><a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.91.214310">A. H. Romero <em>et al.</em>, Phys Rev B <strong>91</strong>, 214310 (2015)</a></li>
-<li><a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.119.185901">N. Shulumba, O. Hellman, and A. J. Minnich, Phys. Rev. Lett. <strong>119</strong>, 185901 (2017)</a></li>
-<li>Grid mode for spectral transport: <a href="https://www.nature.com/articles/s41524-021-00523-7">Đ. Dangić <em>et al.</em>, Npj Comput Mater <strong>7</strong>, 57 (2021)</a></li>
 </ul>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p>Some common issues:</p>
@@ -1079,10 +1109,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.sticky", "navigation.instant", "navigation.indexes"], "search": "assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.sticky", "navigation.instant", "navigation.indexes"], "search": "assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.d7c377c4.min.js"></script>
+      <script src="assets/javascripts/bundle.bd41221c.min.js"></script>
       
         <script src="javascripts/mathjax.js"></script>
       
