@@ -1,6 +1,6 @@
 #include "precompilerdefinitions"
 module options
-use konstanter, only: r8, lo_hugeint, lo_huge, lo_author, lo_version, lo_licence, lo_tiny, lo_status, lo_exitcode_baddim, lo_exitcode_param  
+use konstanter, only: flyt, r8, lo_hugeint, lo_huge, lo_author, lo_version, lo_licence, lo_tiny, lo_status, lo_exitcode_baddim, lo_exitcode_param  
 use gottochblandat, only: lo_stop_gracefully
 use flap, only: command_line_interface
 implicit none
@@ -11,7 +11,7 @@ type lo_opts
     integer :: verbosity = -lo_hugeint
     logical :: thirdorder = .false.
     logical :: fourthorder = .false.
-    integer :: stride = 1
+    integer :: stride = 1 !! TODO CURRENTLY STRIDE IS IGNORED WHEN PARSING infile.positions
     integer :: nconf = -1
     logical :: quantum = .false.
     real(flyt) :: temperature = -lo_huge
@@ -50,11 +50,11 @@ subroutine parse(opts)
                  help='Compute fourth order anharmonic correction to the free energy', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--stride', switch_ab='s' &
+    call cli%add(switch='--stride', switch_ab='s', &
                  help='Use every N configuration instead of all.', &
                  required=.false., act='store', def='1', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--nconf', switch_ab='-s' &
+    call cli%add(switch='--nconf', switch_ab='-s', &
         help='Automatically generate configurations, as done by the canonical configurations command. If not passed, an infile.positions is required.', &
         required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
@@ -62,7 +62,7 @@ subroutine parse(opts)
         help='If using --nconf, generate quantum or classical configurations.', &
         required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--temperature', switch_ab='-t' &
+    call cli%add(switch='--temperature', switch_ab='-t', &
         help='If using --nconf, generate configurations at this temperature.', &
         required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop

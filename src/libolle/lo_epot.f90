@@ -1,4 +1,4 @@
-module epot
+module lo_epot
     !! Deal with many kinds of potential energy differences
     use konstanter, only: r8, lo_pi, lo_twopi, lo_tol, lo_sqtol, lo_status, lo_Hartree_to_eV, lo_kb_hartree
     use gottochblandat, only: tochar, walltime, lo_chop, lo_trueNtimes, lo_progressbar_init, &
@@ -6,7 +6,6 @@ module epot
                               lo_points_on_sphere, lo_mean, lo_stddev
     use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
     use lo_memtracker, only: lo_mem_helper
-    !use geometryfunctions, only: lo_inscribed_sphere_in_box
     use type_crystalstructure, only: lo_crystalstructure
     use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
     use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
@@ -55,16 +54,13 @@ module epot
         integer, intent(in) :: verbosity
     
         type(lo_crystalstructure) :: p
-        integer :: nstep, ctr, i
+        integer :: ctr, i
         real(r8), dimension(:, :), allocatable, intent(out) :: ebuf
         real(r8), dimension(:, :), allocatable :: f2, f3, f4, fp
         real(r8) :: e2, e3, e4, ep, tomev, emean
     
         ! Copy of structure to work with
         p = ss
-    
-        ! Total number of steps we are doing?
-        nstep = ninner*nouter
     
         ! Some helper space
         call mem%allocate(ebuf, [nstep, 4], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -79,9 +75,7 @@ module epot
         f3 = 0.0_r8
         f4 = 0.0_r8
         fp = 0.0_r8
-    
-        tomev = lo_Hartree_to_eV*1000
-    
+        
         ctr = 0
         do i = 1, nstep
 
@@ -97,13 +91,11 @@ module epot
             ! Calculate the energy
             call pot%energies_and_forces(p%u, e2, e3, e4, ep, f2, f3, f4, fp)
 
-            ebuf(i, 1) = e2
-            ebuf(i, 2) = e3
-            ebuf(i, 3) = e4
-            ebuf(i, 4) = ep
+            ebuf(i, 1) = e2 / ss%na
+            ebuf(i, 2) = e3 / ss%na
+            ebuf(i, 3) = e4 / ss%na
+            ebuf(i, 4) = ep / ss%na
         end do
-
-        call mw%barrier() ! needed?
             
         call mem%deallocate(f2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(f3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
