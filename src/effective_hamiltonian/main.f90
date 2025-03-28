@@ -6,7 +6,7 @@ use konstanter, only: r8, lo_tol, lo_kb_hartree, lo_bohr_to_A, lo_frequency_Hart
 use mpi_wrappers, only: lo_mpi_helper
 use lo_memtracker, only: lo_mem_helper
 use gottochblandat, only: tochar, walltime, lo_stop_gracefully, open_file, lo_progressbar_init, &
-                            lo_progressbar, lo_does_file_exist, lo_trueNtimes
+                            lo_progressbar, lo_does_file_exist, lo_trueNtimes, lo_mean
 
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
@@ -31,7 +31,8 @@ type(lo_forceconstant_fourthorder) :: fc4
 
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
-real(r8), dimension(:, :), allocatable :: ebuf
+real(r8), dimension(:, :), allocatable :: pebuf
+! real(r8), dimension(:), allocatable :: kebuf
 
 logical :: generate_configs = .false.
 
@@ -83,7 +84,7 @@ init: block
         if (mw%talk .and. opts%quantum) write (*, *) '... will generate classical configurations'
     end if
 
-    call pot%setup(uc, ss, fc2, fc3, fc4, mw, opts%verbosity)
+    call pot%setup(uc, ss, fc2, fc3, fc4, mw, opts%verbosity + 1)
     if (mw%talk) write (*, *) '... setup potential energy calculator'
 
     if (.not. generate_configs) then
@@ -91,66 +92,8 @@ init: block
         if (lo_does_file_exist('infile.sim.hdf5')) then
             call sim%read_from_hdf5('infile.sim.hdf5', verbosity=opts%verbosity + 2, stride=opts%stride)
         else 
-            ! Just read the infile.positions/ infile.meta dont need forces or stat files
-            ! Will need to populate some fields of sim manually
-
-            ! should I just do sim%readfromfile? would let me calculate things like U0 and other cumulants
-            ! to get infile.positions you need to run MD anyway and might as well dump the others
-
-            sim%crystalstructure = ss ! pretty sure this copies, but oh well its not a lot of data
-
-
-            ! We are reading on one rank, then broadcasting
-            readrank = 0
-            if (mw%r .eq. readrank) then
-                readonthisrank = .true.
-            else
-                readonthisrank = .false.
-            end if
-
-
-            if (readonthisrank) then
-                f = open_file('in', 'infile.meta')
-                read (f, *) sim%na
-                read (f, *) sim%nt
-                close (f)
-            end if
-
-            lo_allocate(sim%r(3, sim%na, sim%nt))
-            sim%r = 0.0_r8
-            
-            if (readonthisrank) then
-                t0 = walltime()
-                if (opts%verbosity .gt. 0) call lo_progressbar_init()
-                f = open_file('in', 'infile.positions')
-                i = 0
-                do l = 1, sim%nt
-
-                    i = i + 1
-                    do j = 1, sim%na
-                        read (f, *) sim%r(:, j, i)
-                    end do
-
-                    if (opts%verbosity .gt. 0) then
-                    if (lo_trueNtimes(l, 25, sim%nt)) then
-                        call lo_progressbar('... reading positions', l, sim%nt, walltime() - t0)
-                    end if
-                    end if
-                end do
-                close (f)
-            end if
-
-            call mw%bcast(sim%r, readrank, __FILE__, __LINE__)
-            call mw%bcast(sim%na, readrank, __FILE__, __LINE__)
-            call mw%bcast(sim%nt, readrank, __FILE__, __LINE__)
-
-            ! get non-pbc positions
-            call sim%get_nonpbc_positions()
-            if (opts%verbosity .gt. 0) write (*, *) '... unwrapped positions'
-            ! get displacements
-            call sim%get_displacements()
-            if (opts%verbosity .gt. 0) write (*, *) '... got displacements'
-
+            call sim%read_from_file(verbosity = opts%verbosity + 2, stride = opts%stride, &
+                                     magnetic=.false., dielectric=.false., nrand=-1, mw=mw)
         end if
         if (mw%talk) write (*, *) '... parsed simulation data'
     end if
@@ -162,16 +105,25 @@ end block init
 
 energy : block
 
-    integer :: ctr, i
+    integer :: i, u 
     real(r8), dimension(:, :), allocatable :: f2, f3, f4, fp
-    real(r8) :: e2, e3, e4, ep
+    real(r8) :: e2, e3, e4, ep, total_energy, to_ev_per_atom
 
-    call mem%allocate(ebuf, [opts%nconf, 4], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    ebuf = 0.0_r8
 
     if (generate_configs) then
-        call pot%statistical_sampling(uc, ss, fc2, opts%nconf, opts%temperature, ebuf, mw, mem, opts%verbosity)
+
+        call mem%allocate(pebuf, [opts%nconf, 4], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        ! call mem%allocate(kebuf, [opts%nconf], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        pebuf = 0.0_r8
+        ! kebuf = 0.0_r8
+
+        call pot%statistical_sampling(uc, ss, fc2, opts%nconf, opts%temperature, pebuf, mw, mem, opts%verbosity)
     else
+
+        call mem%allocate(pebuf, [sim%nt, 4], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        ! call mem%allocate(kebuf, [sim%nt], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        pebuf = 0.0_r8
+        ! kebuf = 0.0_r8
 
         ! Dummy space for force
         call mem%allocate(f2, [3, ss%na], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -184,51 +136,124 @@ energy : block
         fp = 0.0_r8
         
         ! how do I add a progress bar here without race condition?
-        ctr = 0
-        do i = 1, sim%nt  !! TODO SKIP BASED ON STRIDE??
+        do i = 1, sim%nt 
 
-            ctr = ctr + 1
-            if (mod(ctr, mw%n) .ne. mw%r) cycle
+            if (mod(i, mw%n) .ne. mw%r) cycle
 
             ! Calculate the energy, e2/e3/e4/ep are zeroed inside of this call
             call pot%energies_and_forces(sim%u(:,:,i), e2, e3, e4, ep, f2, f3, f4, fp)
 
-            ebuf(i, 1) = e2
-            ebuf(i, 2) = e3
-            ebuf(i, 3) = e4
-            ebuf(i, 4) = ep
+            pebuf(i, 1) = e2
+            pebuf(i, 2) = e3
+            pebuf(i, 3) = e4
+            pebuf(i, 4) = ep
         end do
     end if
-    if (mw%talk) write (*, *) '... calculated energies'
 
+    call mw%allreduce('sum', pebuf)
+
+    if (mw%talk) write (*, *) '... calculated energies'
 
 end block energy
 
-
-io : block
-
+! Modified from anharmonic_free_energy
+epotthings: block
+    real(r8), dimension(3, 5) :: cumulant
+    real(r8), dimension(:, :), allocatable :: ediff
+    real(r8) :: inverse_kbt, T_actual, U0, total_energy, to_ev_per_atom
     integer :: i, u
-    real(r8) :: total_energy
 
-    ! file for the energies
-    u = open_file('out', 'outfile.energies')
-    write (u, '(A,A)') '# Unit:      ', 'eV/atom'
-    write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
-    write (u, "(A)") '#  conf    Etotal                  Epolar                &
-        &Epair                 Etriplet              Equartet'
+    if (generate_configs) then
+        T_actual = opts%temperature
+    else
+        T_actual = sim%temperature_thermostat
+    end if
+
+    ! Calculate the baseline energy
+    allocate (ediff(sim%nt, 5))
+    ediff = 0.0_r8
 
     do i = 1, sim%nt
-        total_energy = sum(ebuf(i,:))
-        write (u, "(1X,I5,5(2X,E20.12))") i, total_energy*lo_Hartree_to_eV, ebuf(i, 4)*lo_Hartree_to_eV, &
-                                            ebuf(i, 1)*lo_Hartree_to_eV, ebuf(i, 2)*lo_Hartree_to_eV, &
-                                            ebuf(i, 3)*lo_Hartree_to_eV
+        if (mod(i, mw%n) .ne. mw%r) cycle
+        ediff(i, 1) = sim%stat%potential_energy(i)
+        ediff(i, 2) = sim%stat%potential_energy(i) -  pebuf(i, 1)
+        ediff(i, 3) = sim%stat%potential_energy(i) -  pebuf(i, 1) - pebuf(i, 4)
+        ediff(i, 4) = sim%stat%potential_energy(i) -  pebuf(i, 1) - pebuf(i, 4) - pebuf(i, 2)
+        ediff(i, 5) = sim%stat%potential_energy(i) -  pebuf(i, 1) - pebuf(i, 4) - pebuf(i, 2) - pebuf(i, 3)
+    end do
+    call mw%allreduce('sum', ediff)
+
+    if (T_actual .gt. 1E-5_r8) then
+        inverse_kbt = 1.0_r8/lo_kb_Hartree/T_actual
+    else
+        inverse_kbt = 0.0_r8
+    end if
+
+    ! Compute the first and second order cumulants
+    do i = 1, 5
+        cumulant(1, i) = lo_mean(ediff(:, i))
+        cumulant(2, i) = lo_mean((ediff(:, i) - cumulant(1, i))**2)
+        cumulant(2, i) = cumulant(2, i)*inverse_kbt*0.5_r8
+        cumulant(3, i) = lo_mean((ediff(:, i) - cumulant(1, i))**3)
+        cumulant(3, i) = cumulant(3, i)*inverse_kbt**2/6.0_r8
     end do
 
-    ! close outfile.energies
-    write (*, '(A)') ' ... energies writen to `outfile.energies`'
-    close (u)
+    ! And normalize it to be per atom
+    cumulant = cumulant/real(ss%na, r8)
+    if (mw%talk) then
+        u = open_file('out', 'outfile.cumulants')
 
-end block io
+        write (u, *) 'Temperature (K) : ', T_actual
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, *) 'Potential energy [eV / atom]:'
+        write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E): ', cumulant(1, 1)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 1)*lo_Hartree_to_eV
+        write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E-E2): ', cumulant(1, 2)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 2)*lo_Hartree_to_eV
+        write (u, "(1X,A,E21.14,1X,A,F21.14)") '            mean(E-E2-Epolar): ', cumulant(1, 3)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 3)*lo_Hartree_to_eV
+        if (opts%thirdorder) then
+            write (u, "(1X,A,E21.14,1X,A,F21.14)") '        mean(E-E2-Epolar-E3): ', cumulant(1, 4)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 4)*lo_Hartree_to_eV
+        end if
+        if (opts%fourthorder) then
+            write (u, "(1X,A,E21.14,1X,A,F21.14)") '    mean(E-E2-Epolar-E3-E4): ', cumulant(1, 5)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 5)*lo_Hartree_to_eV
+        end if
+
+        close(u)
+         write (*, '(A)') ' ... cumulants writen to `outfile.cumulants`'
+    end if
+
+    if(opts%thirdorder .and. (.not. opts%fourthorder)) then
+        U0 = cumulant(1,4)*lo_Hartree_to_eV
+    else if(opts%fourthorder) then
+        U0 = cumulant(1,5)*lo_Hartree_to_eV
+    else
+        U0 = cumulant(1,3)*lo_Hartree_to_eV
+    end if
+
+    ! Now that we have U0 we can get E_total_tdep
+    if (mw%talk) then
+        u = open_file('out', 'outfile.energies')
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, *) 'U0 [eV/atom]: ', U0
+        write (u, "(A)") '#  conf      Etotal_actual            Etotal_tdep                Epolar              &
+            &Epair               Etriplet            Equartet'
+
+
+        to_ev_per_atom = lo_Hartree_to_eV / ss%na
+        
+        do i = 1, sim%nt
+            total_energy = sum(pebuf(i,:)) + U0
+            write (u, "(1X,I5,6(2X,E20.12))") i, sim%stat%potential_energy(i)*to_ev_per_atom, total_energy*to_ev_per_atom, pebuf(i, 4)*to_ev_per_atom, &
+                                                pebuf(i, 1)*to_ev_per_atom, pebuf(i, 2)*to_ev_per_atom, &
+                                                pebuf(i, 3)*to_ev_per_atom
+        end do
+
+        ! close outfile.energies
+        close (u)
+
+        write (*, '(A)') ' ... energies writen to `outfile.energies`'
+    end if
+
+end block epotthings
 
 call mw%destroy()
 

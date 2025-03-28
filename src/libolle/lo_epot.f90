@@ -91,10 +91,10 @@ module lo_epot
             ! Calculate the energy
             call pot%energies_and_forces(p%u, e2, e3, e4, ep, f2, f3, f4, fp)
 
-            ebuf(i, 1) = e2 / ss%na
-            ebuf(i, 2) = e3 / ss%na
-            ebuf(i, 3) = e4 / ss%na
-            ebuf(i, 4) = ep / ss%na
+            ebuf(i, 1) = e2
+            ebuf(i, 2) = e3
+            ebuf(i, 3) = e4
+            ebuf(i, 4) = ep
         end do
             
         call mem%deallocate(f2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

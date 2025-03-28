@@ -37,17 +37,22 @@ subroutine parse(opts)
                   version=lo_version, &
                   license=lo_licence, &
                   help='Usage: ', &
-                  description='Calculates the TDEP effective Hamiltonian from force constants. By default only the potential energy component is calculated.', &
-                  examples=["mpirun effective_hamiltonian --thirdorder --fourthorder"], &
+                  description='Calculates the TDEP effective Hamiltonian from force constants. &
+                                &By default this command will attempt to load results form an MD simulation. &
+                                &Either from the result of pack_simulation or the unpacked results of an MD simulation. &
+                                &If the nconf flag is set then MD data will be ignored and configuratoins will be genereated &
+                                &from a harmonic distribution according to the quantum and temperature flags.', &
+                  examples=["mpirun effective_hamiltonian --thirdorder --fourthorder            ", &
+                            "mpirun effective_hamiltonian --thirdorder --fourthorder --nconf 200"], &
                   epilog=new_line('a')//"...")
 
     ! Specify some options
     call cli%add(switch='--thirdorder', &
-                 help='Compute third order anharmonic correction to the free energy', &
+                 help='Compute third order contribution to the potential energy', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--fourthorder', &
-                 help='Compute fourth order anharmonic correction to the free energy', &
+                 help='Compute fourth order contribution to the potential energy', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--stride', switch_ab='s', &
