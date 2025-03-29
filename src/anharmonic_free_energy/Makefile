@@ -24,7 +24,7 @@ clean:
 .f90.o:
 	$(F90) $(F90FLAGS) -c $< $(LIBS)
 
-$(OBJECT_PATH)main.o: main.f90 $(OBJECT_PATH)options.o $(OBJECT_PATH)energy.o $(OBJECT_PATH)epot.o
+$(OBJECT_PATH)main.o: main.f90 $(OBJECT_PATH)options.o $(OBJECT_PATH)energy.o
 	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 $(OBJECT_PATH)energy.o: $(OBJECT_PATH)options.o 
 	$(F90) $(F90FLAGS) -c energy.f90 $(LIBS) -o $@
