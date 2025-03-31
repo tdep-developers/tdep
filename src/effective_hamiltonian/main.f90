@@ -113,7 +113,7 @@ end block init
 
 energy : block
 
-    integer :: i,j, u 
+    integer :: i, u 
     real(r8), dimension(:, :), allocatable :: f2, f3, f4, fp
     real(r8) :: e2, e3, e4, ep, total_energy, to_ev_per_atom
 
@@ -170,8 +170,10 @@ end block energy
 epotthings: block
     real(r8), dimension(3, 5) :: cumulant
     real(r8), dimension(:, :), allocatable :: ediff
-    real(r8) :: inverse_kbt, T_actual, U0, total_energy, to_ev_per_atom
+    real(r8) :: inverse_kbt, T_actual, U0, total_energy, hartree_to_mev, to_mev_per_atom
     integer :: i, u
+
+    to_mev_per_atom = 1000*lo_Hartree_to_eV / real(ss%na, r8)
 
     if (generate_configs) then
         T_actual = opts%temperature
@@ -212,21 +214,21 @@ epotthings: block
         end do
 
         ! And normalize it to be per atom
-        cumulant = cumulant/real(ss%na, r8)
+        cumulant = cumulant*to_mev_per_atom
         if (mw%talk) then
             u = open_file('out', 'outfile.cumulants')
 
-            write (u, *) 'Temperature (K) : ', T_actual
+            write (u, *) '# Temperature (K) : ', T_actual
             write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
-            write (u, *) 'Potential energy [eV / atom]:'
-            write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E): ', cumulant(1, 1)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 1)*lo_Hartree_to_eV
-            write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E-E2): ', cumulant(1, 2)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 2)*lo_Hartree_to_eV
-            write (u, "(1X,A,E21.14,1X,A,F21.14)") '            mean(E-E2-Epolar): ', cumulant(1, 3)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 3)*lo_Hartree_to_eV
+            write (u, *) '# Potential energy [eV / atom]:'
+            write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E): ', cumulant(1, 1), ' upper bound:', cumulant(2, 1)
+            write (u, "(1X,A,E21.14,1X,A,F21.14)") '                  mean(E-E2): ', cumulant(1, 2), ' upper bound:', cumulant(2, 2)
+            write (u, "(1X,A,E21.14,1X,A,F21.14)") '            mean(E-E2-Epolar): ', cumulant(1, 3), ' upper bound:', cumulant(2, 3)
             if (opts%thirdorder) then
-                write (u, "(1X,A,E21.14,1X,A,F21.14)") '        mean(E-E2-Epolar-E3): ', cumulant(1, 4)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 4)*lo_Hartree_to_eV
+                write (u, "(1X,A,E21.14,1X,A,F21.14)") '        mean(E-E2-Epolar-E3): ', cumulant(1, 4), ' upper bound:', cumulant(2, 4)
             end if
             if (opts%fourthorder) then
-                write (u, "(1X,A,E21.14,1X,A,F21.14)") '    mean(E-E2-Epolar-E3-E4): ', cumulant(1, 5)*lo_Hartree_to_eV, ' upper bound:', cumulant(2, 5)*lo_Hartree_to_eV
+                write (u, "(1X,A,E21.14,1X,A,F21.14)") '    mean(E-E2-Epolar-E3-E4): ', cumulant(1, 5), ' upper bound:', cumulant(2, 5)
             end if
 
             close(u)
@@ -234,30 +236,27 @@ epotthings: block
         end if
 
         if(opts%thirdorder .and. (.not. opts%fourthorder)) then
-            U0 = cumulant(1,4)*lo_Hartree_to_eV
+            U0 = cumulant(1,4)
         else if(opts%fourthorder) then
-            U0 = cumulant(1,5)*lo_Hartree_to_eV
+            U0 = cumulant(1,5)
         else
-            U0 = cumulant(1,3)*lo_Hartree_to_eV
+            U0 = cumulant(1,3)
         end if
 
         ! Now that we have U0 we can get E_total_tdep
         if (mw%talk) then
             u = open_file('out', 'outfile.energies')
-            write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+            write (u, '(A,A)') '# Unit:      ', 'meV/atom'
             write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
-            write (u, *) 'U0 [eV/atom]: ', U0
+            write (u, *) '# U0 [meV/atom]: ', U0
             write (u, "(A)") '#  conf      Etotal_actual            Etotal_tdep                Epolar              &
                 &Epair               Etriplet            Equartet'
-
-
-            to_ev_per_atom = lo_Hartree_to_eV / ss%na
             
             do i = 1, sim%nt
-                total_energy = sum(pebuf(i,:)) + U0
-                write (u, "(1X,I5,6(2X,E20.12))") i, sim%stat%potential_energy(i)*to_ev_per_atom, total_energy*to_ev_per_atom, pebuf(i, 4)*to_ev_per_atom, &
-                                                    pebuf(i, 1)*to_ev_per_atom, pebuf(i, 2)*to_ev_per_atom, &
-                                                    pebuf(i, 3)*to_ev_per_atom
+                total_energy = sum(pebuf(i,:))*to_mev_per_atom + U0
+                write (u, "(1X,I5,6(2X,E20.12))") i, sim%stat%potential_energy(i)*to_mev_per_atom, total_energy, pebuf(i, 4)*to_mev_per_atom, &
+                                                    pebuf(i, 1)*to_mev_per_atom, pebuf(i, 2)*to_mev_per_atom, &
+                                                    pebuf(i, 3)*to_mev_per_atom
             end do
 
             ! close outfile.energies
@@ -269,18 +268,16 @@ epotthings: block
     else
         if (mw%talk) then
             u = open_file('out', 'outfile.energies')
-            write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+            write (u, '(A,A)') '# Unit:      ', 'meV/atom'
+            write (u, *) '# Temperature (K) : ', T_actual
             write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
             write (u, "(A)") '# True potential energy unknown when using canonical configs, cannot calculate U0 or other cumulants.'
             write (u, "(A)") '#  conf      Epolar              &
                 &Epair               Etriplet            Equartet'
-
-
-            to_ev_per_atom = lo_Hartree_to_eV / ss%na
             
             do i = 1, opts%nconf
-                write (u, "(1X,I5,4(2X,E20.12))") i, pebuf(i, 4)*to_ev_per_atom, pebuf(i, 1)*to_ev_per_atom, &
-                                                    pebuf(i, 2)*to_ev_per_atom, pebuf(i, 3)*to_ev_per_atom
+                write (u, "(1X,I5,4(2X,E20.12))") i, pebuf(i, 4)*to_mev_per_atom, pebuf(i, 1)*to_mev_per_atom, &
+                                                    pebuf(i, 2)*to_mev_per_atom, pebuf(i, 3)*to_mev_per_atom
             end do
 
             close (u)
