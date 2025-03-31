@@ -33,7 +33,7 @@ module lo_epot
     contains
     
     !> statistically sample
-    subroutine statistical_sampling(pot, uc, ss, fc, nstep, temperature, ebuf, mw, mem, verbosity)
+    subroutine statistical_sampling(pot, uc, ss, fc, nstep, temperature, quantum, ebuf, mw, mem, verbosity)
         !> container for potential energy differences
         class(lo_energy_differences), intent(inout) :: pot
         !> unitcell
@@ -46,6 +46,10 @@ module lo_epot
         integer, intent(in) :: nstep
         !> temperature
         real(r8), intent(in) :: temperature
+        !> quantum configurations?
+        logical :: quantum
+        !> storage for potential energies
+        real(r8), dimension(:, :), intent(out) :: ebuf
         !> MPI helper
         type(lo_mpi_helper), intent(inout) :: mw
         !> memory tracker
@@ -55,15 +59,12 @@ module lo_epot
     
         type(lo_crystalstructure) :: p
         integer :: ctr, i
-        real(r8), dimension(:, :), allocatable, intent(out) :: ebuf
         real(r8), dimension(:, :), allocatable :: f2, f3, f4, fp
-        real(r8) :: e2, e3, e4, ep, tomev, emean
+        real(r8) :: e2, e3, e4, ep
     
         ! Copy of structure to work with
         p = ss
     
-        ! Some helper space
-        call mem%allocate(ebuf, [nstep, 4], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         ebuf = 0.0_r8
     
         ! Dummy space for force
@@ -76,26 +77,28 @@ module lo_epot
         f4 = 0.0_r8
         fp = 0.0_r8
         
-        ctr = 0
         do i = 1, nstep
 
-            ctr = ctr + 1 ! does parallelizing like this create a copy of the IFCs on each rank? not ideal
-            if (mod(ctr, mw%n) .ne. mw%r) cycle
+            if (mod(i, mw%n) .ne. mw%r) cycle
 
             ! Reset structure
             p%u = 0.0_r8
             p%v = 0.0_r8
             p%r = ss%r
             ! Get new structure
-            call pot%fc2%initialize_cell(p, uc, fc, temperature, .true., .false., -1.0_r8, mw, nosync=.true.)
+            call pot%fc2%initialize_cell(p, uc, fc, temperature, quantum, .false., -1.0_r8, mw, nosync=.true.)
             ! Calculate the energy
             call pot%energies_and_forces(p%u, e2, e3, e4, ep, f2, f3, f4, fp)
+
+            ! ek = p%kinetic_energy()/(p%na)
 
             ebuf(i, 1) = e2
             ebuf(i, 2) = e3
             ebuf(i, 3) = e4
-            ebuf(i, 4) = ep
+            ebuf(i, 4) = ep            
         end do
+
+        call mw%allreduce('sum', ebuf)
             
         call mem%deallocate(f2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(f3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
