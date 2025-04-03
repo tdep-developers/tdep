@@ -59,7 +59,7 @@ init: block
         write (*, '(1X,A40,I5)') 'Stride                                  ', opts%stride
         write(*, '(1X,A40,L3)') 'Generate canonical configs               ', generate_configs
         if(generate_configs) then
-            write(*, '(1X,A40,I5)') 'Num Configs                          ', opts%nconf
+            write(*, '(1X,A40,I8)') 'Num Configs                          ', opts%nconf
             write (*, '(1X,A40,L3)') 'Quantum configurations              ', opts%quantum
             write (*, '(1X,A40,F20.12)') 'Temperature                     ', opts%temperature
         end if
@@ -181,8 +181,7 @@ epotthings: block
         T_actual = sim%temperature_thermostat
     end if
 
-    ! Don't have sim%stat%potential energy when generating canonical_configs
-    ! So we cannot get U0 or cumulants
+
     if (.not. generate_configs) then
         ! Calculate the baseline energy
         allocate (ediff(sim%nt, 5))
@@ -254,7 +253,7 @@ epotthings: block
             
             do i = 1, sim%nt
                 total_energy = sum(pebuf(i,:))*to_mev_per_atom + U0
-                write (u, "(1X,I5,6(2X,E20.12))") i, sim%stat%potential_energy(i)*to_mev_per_atom, total_energy, pebuf(i, 4)*to_mev_per_atom, &
+                write (u, "(1X,I8,6(2X,E20.12))") i, sim%stat%potential_energy(i)*to_mev_per_atom, total_energy, pebuf(i, 4)*to_mev_per_atom, &
                                                     pebuf(i, 1)*to_mev_per_atom, pebuf(i, 2)*to_mev_per_atom, &
                                                     pebuf(i, 3)*to_mev_per_atom
             end do
@@ -264,7 +263,9 @@ epotthings: block
 
             write (*, '(A)') ' ... energies writen to `outfile.energies`'
         end if
-
+    
+    ! Don't have sim%stat%potential energy when generating canonical_configs
+    ! So we cannot get U0 or cumulants
     else
         if (mw%talk) then
             u = open_file('out', 'outfile.energies')
@@ -276,7 +277,7 @@ epotthings: block
                 &Epair               Etriplet            Equartet'
             
             do i = 1, opts%nconf
-                write (u, "(1X,I5,4(2X,E20.12))") i, pebuf(i, 4)*to_mev_per_atom, pebuf(i, 1)*to_mev_per_atom, &
+                write (u, "(1X,I8,4(2X,E20.12))") i, pebuf(i, 4)*to_mev_per_atom, pebuf(i, 1)*to_mev_per_atom, &
                                                     pebuf(i, 2)*to_mev_per_atom, pebuf(i, 3)*to_mev_per_atom
             end do
 
