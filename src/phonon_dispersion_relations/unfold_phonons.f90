@@ -16,7 +16,7 @@ use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
 use options, only: lo_opts
 use type_fast_interpolation, only: lo_fancy_deltri_box
 use type_forcemap, only: lo_forcemap
-use type_symmetrylist, only: lo_symlist
+!use type_symmetrylist, only: lo_symlist
 use type_sqs, only: lo_sqs
 implicit none
 

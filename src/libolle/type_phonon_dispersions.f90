@@ -79,6 +79,8 @@ type lo_phonon_dispersions_qpoint
     real(r8), dimension(:), allocatable :: thermal_prefactor
     !> pyroelectric amplitude
     real(r8), dimension(:), allocatable :: pyroelectric_amplitude
+    !> angular momentum
+    real(r8), dimension(:,:), allocatable :: angular_momentum
 
     !> how degenerate is the mode?
     integer, dimension(:), allocatable :: degeneracy
@@ -970,6 +972,116 @@ subroutine phonon_angular_momentum_matrix(dr, qp, uc, temperature, alpha, mw)
     end block calc
 end subroutine
 
+!> calculate phonon angular momentum matrix
+subroutine phonon_angular_momentum(ompoint,uc)
+    !> point in the dispersions
+    class(lo_phonon_dispersions_qpoint), intent(inout) :: ompoint
+    !> crystal structure
+    type(lo_crystalstructure), intent(in) :: uc
+
+    complex(r8), dimension(3, 3) :: Mx, My, Mz
+
+    ! Some initial things
+    init: block
+        ! Representation of the angular momentum operator
+        Mx = 0.0_r8
+        My = 0.0_r8
+        Mz = 0.0_r8
+        Mx(2, 3) = 1
+        Mx(3, 2) = -1
+        My(1, 3) = -1
+        My(3, 1) = 1
+        Mz(1, 2) = 1
+        Mz(2, 1) = -1
+        Mx = -Mx*lo_imag
+        My = -My*lo_imag
+        Mz = -Mz*lo_imag
+
+        if ( .not.allocated(ompoint%angular_momentum) ) then
+            allocate(ompoint%angular_momentum(3,uc%na*3))
+            ompoint%angular_momentum=0.0_r8
+        endif
+    end block init
+
+    ! Calculate actual angular momentum thingy
+    calc: block
+        complex(r8), dimension(3) :: cv0, cv1, cv2
+        real(r8), dimension(3) :: v0, v1, w0, w1
+        real(r8) :: f0
+        integer :: i, j, k, l, o
+
+        ompoint%angular_momentum=0.0_r8
+        do j=1,size(ompoint%omega)
+            cv0=0.0_r8
+            do k=1,uc%na
+                ! part of the eigenvector for this atom
+                cv1 = ompoint%egv((k - 1)*3 + 1:k*3, j)
+                cv2 = matmul(Mx, cv1)
+                cv0(1) = cv0(1) + dot_product(cv1, cv2)
+                cv2 = matmul(My, cv1)
+                cv0(2) = cv0(2) + dot_product(cv1, cv2)
+                cv2 = matmul(Mz, cv1)
+                cv0(3) = cv0(3) + dot_product(cv1, cv2)
+            enddo
+            ompoint%angular_momentum(:,j)=real(cv0)
+        enddo
+
+        ! alpha = 0.0_r8
+        ! l = 0
+        ! do i = 1, qp%n_full_point
+        ! do j = 1, dr%n_mode
+        !     l = l + 1
+        !     if (mod(l, mw%n) .ne. mw%r) cycle
+        !     ! Skip acoustic
+        !     if (dr%aq(i)%omega(j) .lt. lo_freqtol) cycle
+        !     ! Get the weird rotation guy
+        !     cv0 = 0.0_r8
+        !     do k = 1, uc%na
+        !         cv1 = dr%aq(i)%egv((k - 1)*3 + 1:k*3, j)
+        !         cv2 = matmul(Mx, cv1)
+        !         cv0(1) = cv0(1) + dot_product(cv1, cv2)
+        !         cv2 = matmul(My, cv1)
+        !         cv0(2) = cv0(2) + dot_product(cv1, cv2)
+        !         cv2 = matmul(Mz, cv1)
+        !         cv0(3) = cv0(3) + dot_product(cv1, cv2)
+        !     end do
+        !     ! Now average over the small group. Seems sensible? Yes no maybe.
+        !     v0 = 0.0_r8
+        !     w0 = 0.0_r8
+        !     v1 = real(cv0)
+        !     w1 = dr%aq(i)%vel(:, j)
+        !     do k = 1, qp%ap(i)%n_invariant_operation
+        !         o = qp%ap(i)%invariant_operation(k)
+        !         v0 = v0 + matmul(uc%sym%op(o)%m, v1)
+        !         w0 = w0 + matmul(uc%sym%op(o)%m, w1)
+        !     end do
+        !     v0 = v0/real(qp%ap(i)%n_invariant_operation, r8)
+        !     w0 = w0/real(qp%ap(i)%n_invariant_operation, r8)
+
+        !     ! dn/dT
+        !     f0 = lo_harmonic_oscillator_cv(temperature, dr%aq(i)%omega(j))/dr%aq(i)%omega(j)
+
+        !     f0 = f0*qp%ap(i)%integration_weight
+        !     if (havetau) then
+        !         ! This is divided by tau
+        !         k = qp%ap(i)%irreducible_index
+        !         f0 = f0/(2.0_r8*dr%iq(k)%linewidth(j))
+        !     else
+        !         ! This is divided by random constant number
+        !         f0 = f0*faketau
+        !     end if
+        !     alpha = alpha + lo_outerproduct(v0, w0)*f0
+        ! end do
+        ! end do
+        ! call mw%allreduce('sum', alpha)
+        ! And finally scale with volume. I should really do a
+        ! dimensionality analysis on this to figure out the unit.
+        ! alpha = alpha/uc%volume
+        ! f0 = norm2(alpha)
+        ! alpha = lo_chop(alpha, f0*1E-10_r8)
+    end block calc
+end subroutine
+
 !> Calculate the thermal displacement covariance matrix
 subroutine thermal_displacement_matrix(dr, qp, uc, temperature, sigma, mw, mem)
     !> dispersion relations
@@ -1255,6 +1367,10 @@ subroutine harmonic_things_for_single_point(ompoint, fc, p, mem, qpoint, qvec, q
             ompoint%invariance_fixer = I3
         end if
 
+        ! And we can get the angular momentum perhaps?
+        call phonon_angular_momentum(ompoint,p)
+
+
         ! Cleanup
         ! call mem%deallocate(Dqq,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
         call mem%deallocate(Dq, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -1323,6 +1439,7 @@ function phonon_dispersions_qpoint_size_in_mem(p) result(mem)
     if (allocated(p%degeneracy)) mem = mem + storage_size(p%degeneracy)*size(p%degeneracy)
     if (allocated(p%degenmode)) mem = mem + storage_size(p%degenmode)*size(p%degenmode)
     if (allocated(p%pyroelectric_amplitude)) mem = mem + storage_size(p%pyroelectric_amplitude)*size(p%pyroelectric_amplitude)
+    if (allocated(p%angular_momentum)) mem = mem + storage_size(p%angular_momentum)*size(p%angular_momentum)
     mem = mem/8
 end function
 
@@ -1333,7 +1450,7 @@ pure function phonon_dispersions_qpoint_size_packed(p) result(mem)
     !> memory in bytes
     integer :: mem
 
-    logical, dimension(23) :: fld
+    logical, dimension(24) :: fld
     fld = .false.
 
     mem = 0
@@ -1361,6 +1478,7 @@ pure function phonon_dispersions_qpoint_size_packed(p) result(mem)
     if (allocated(p%degeneracy)) mem = mem + storage_size(p%degeneracy)*size(p%degeneracy)/8
     if (allocated(p%degenmode)) mem = mem + storage_size(p%degenmode)*size(p%degenmode)/8
     if (allocated(p%pyroelectric_amplitude)) mem = mem + storage_size(p%pyroelectric_amplitude)*size(p%pyroelectric_amplitude)/8
+    if (allocated(p%angular_momentum)) mem = mem + storage_size(p%angular_momentum)*size(p%angular_momentum)/8
 end function
 
 !> pack a phonon dispersion q-point to mpi character buffer
@@ -1374,7 +1492,7 @@ subroutine pack_phonon_dispersions_qpoint(p, buf, pos, mw)
     !> MPI helper
     type(lo_mpi_helper), intent(inout) :: mw
 
-    logical, dimension(23) :: fld
+    logical, dimension(24) :: fld
 
     ! Figure out the relevant fields?
     fld = .false.
@@ -1401,6 +1519,7 @@ subroutine pack_phonon_dispersions_qpoint(p, buf, pos, mw)
     if (allocated(p%degeneracy)) fld(21) = .true.
     if (allocated(p%degenmode)) fld(22) = .true.
     if (allocated(p%pyroelectric_amplitude)) fld(23) = .true.
+    if (allocated(p%angular_momentum)) fld(24) = .true.
 
     ! Pack the list of fields
     call mw%pack(fld, buf, pos)
@@ -1429,6 +1548,7 @@ subroutine pack_phonon_dispersions_qpoint(p, buf, pos, mw)
     if (fld(21)) call mw%pack(p%degeneracy, buf, pos)
     if (fld(22)) call mw%pack(p%degenmode, buf, pos)
     if (fld(23)) call mw%pack(p%pyroelectric_amplitude, buf, pos)
+    if (fld(24)) call mw%pack(p%angular_momentum, buf, pos)
 end subroutine
 
 !> pack a phonon dispersion q-point to mpi character buffer
@@ -1442,7 +1562,7 @@ subroutine unpack_phonon_dispersions_qpoint(p, buf, pos, mw)
     !> MPI helper
     type(lo_mpi_helper), intent(inout) :: mw
 
-    logical, dimension(23) :: fld
+    logical, dimension(24) :: fld
     ! Unpack the list of fields
     call mw%unpack(fld, buf, pos)
     ! Then unpack the relevant fields
@@ -1469,6 +1589,7 @@ subroutine unpack_phonon_dispersions_qpoint(p, buf, pos, mw)
     if (fld(21)) call mw%unpack(p%degeneracy, buf, pos)
     if (fld(22)) call mw%unpack(p%degenmode, buf, pos)
     if (fld(23)) call mw%unpack(p%pyroelectric_amplitude, buf, pos)
+    if (fld(24)) call mw%unpack(p%angular_momentum, buf, pos)
 end subroutine
 
 !> destroy

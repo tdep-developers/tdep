@@ -637,6 +637,7 @@ $(OBJECT_PATH)type_embeddedatom.o:\
 	$(FC) $(FFLAGS) -c type_embeddedatom.f90 -o $@
 
 $(OBJECT_PATH)type_phonon_dispersions.o:\
+	type_phonon_dispersions.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)mpi_wrappers.o\
@@ -675,6 +676,7 @@ $(OBJECT_PATH)type_phonon_dos_integrations.o:\
 	$(FC) $(FFLAGS) -c type_phonon_dos_integrations.f90 -o $@
 
 $(OBJECT_PATH)lo_phonon_bandstructure_on_path.o:\
+	lo_phonon_bandstructure_on_path.f90\
     $(OBJECT_PATH)konstanter.o\
 	$(OBJECT_PATH)gottochblandat.o\
 	$(OBJECT_PATH)mpi_wrappers.o\

@@ -166,12 +166,14 @@ contains
                 allocate (bs%p(i)%vel(3, bs%n_mode))
                 allocate (bs%p(i)%degeneracy(bs%n_mode))
                 allocate (bs%p(i)%degenmode(bs%n_mode, bs%n_mode))
+                allocate (bs%p(i)%angular_momentum(3, bs%n_mode))
                 if (gruneisen) allocate (bs%p(i)%gruneisen(bs%n_mode))
                 bs%p(i)%omega = 0.0_r8
                 bs%p(i)%egv = 0.0_r8
                 bs%p(i)%vel = 0.0_r8
                 bs%p(i)%degeneracy = 0
                 bs%p(i)%degenmode = 0
+                bs%p(i)%angular_momentum = 0.0_r8
                 if (gruneisen) bs%p(i)%gruneisen = 0.0_r8
             end do
         end block initandheuristics
@@ -219,6 +221,8 @@ contains
                 if (gruneisen) then
                     call fct%mode_gruneisen_parameter(p, bs%q(q), bs%p(q)%omega, bs%p(q)%egv, bs%p(q)%gruneisen)
                 end if
+                ! Might as well calculate the angular momentum thingy
+
                 ! and report?
                 if (verbosity .gt. 0) then
                     if (lo_trueNtimes(q, 127, nq)) call lo_progressbar('... calculating frequencies', lq, nq, walltime() - timer)
@@ -595,6 +599,16 @@ contains
                 d3(:, :, i) = lo_chop(bs%p(i)%vel, lo_sqtol)*lo_groupvel_hartreebohr_to_ms
             end do
             call h5%store_data(d3, h5%file_id, 'group_velocities', enhet='m/s', dimensions='q-point,mode,xyz')
+            call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        end if
+
+        if (allocated(bs%p(1)%angular_momentum)) then
+            call mem%allocate(d3, [3, bs%n_mode, bs%n_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            d3 = 0.0_r8
+            do i = 1, bs%n_point
+                d3(:, :, i) = bs%p(i)%angular_momentum
+            end do
+            call h5%store_data(d3, h5%file_id, 'angular_momentum', enhet='dunno', dimensions='q-point,mode,xyz')
             call mem%deallocate(d3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         end if
 
