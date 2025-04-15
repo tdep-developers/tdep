@@ -625,10 +625,6 @@ module subroutine write_to_qe(fc,uc,mw,mem)
         end do
         supercelldim=supercelldim+2
 
-        if ( mw%talk ) then
-            write(*,*) 'decided on supercell dimensions:',supercelldim
-        endif
-
         ! build the supercell
         call uc%build_supercell(ss,dimensions=supercelldim)
         ! establish mapping between unit and supercell
@@ -698,8 +694,6 @@ module subroutine write_to_qe(fc,uc,mw,mem)
         real(r8) :: f0
         integer :: u,i,j,a1,a2,ii,jj,kk
 
-write(*,*) 'MASSFACTOR',lo_emu_to_amu
-
         u = open_file('out','outfile.qe_fc.xml')
             ! Let's start with the header
             write(u,"(A)") '<?xml version="1.0" encoding="UTF-8"?>'
@@ -726,14 +720,20 @@ write(*,*) 'MASSFACTOR',lo_emu_to_amu
             write(u,"(A)") '     <UNIT_CELL_VOLUME_AU>'//tochar(uc%volume)//'</UNIT_CELL_VOLUME_AU>'
             do i=1,uc%nelements
                 write(u,"(A)") '    <TYPE_NAME.'//tochar(i)//'>'//trim(uc%atomic_symbol(i))//'</TYPE_NAME.'//tochar(i)//'>'
-                f0=uc%isotope(i)%mean_mass*lo_emu_to_amu
+                f0=-1.0_r8
+                do j=1,uc%na
+                    if ( uc%species(j) .eq. i ) then
+                        f0=uc%isotope(j)%mean_mass*lo_emu_to_amu
+                        exit
+                    endif
+                enddo
+
                 write(u,"(A)") '    <MASS.'//tochar(i)//'>'//trim( tochar(f0,13) )//'</MASS.'//tochar(i)//'>'
             enddo
             do i=1,uc%na
                 j=uc%species(i)
                 str0='    <ATOM.'//tochar(i)//' SPECIES="'//trim(uc%atomic_symbol(j))//'" INDEX="'//tochar(j)//'" TAU="'
-                !write(str1,"(3(1X,F22.13))") uc%r(:,i)
-                write(str1,"(3(1X,F22.13))") uc%rcart(:,i) !*0.5_r8
+                write(str1,"(3(1X,F22.13))") uc%rcart(:,i)
                 str0=trim(str0)//trim(str1)//'"/>'
                 write(u,"(A)") trim(str0)
             enddo
