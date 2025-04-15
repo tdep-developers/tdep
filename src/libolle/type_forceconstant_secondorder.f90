@@ -157,6 +157,8 @@ contains
     procedure :: fake_forceconstant
     !> dump the forceconstant in Abinit anaddb format
     procedure :: write_to_anaddb
+    !> dump forceconstants into QE format
+    procedure :: write_to_qe
     !> Set parameters for Ewald summation and enforce hermiticity of Born effective charges
     procedure :: set_ewald_and_enforce_borncharge_hermiticity
     !> Return a dynamical matrix
@@ -283,6 +285,14 @@ interface
         class(lo_forceconstant_secondorder), intent(inout) :: fc
         type(lo_crystalstructure), intent(inout) :: uc
         integer, dimension(3), intent(in) :: qgrid
+        type(lo_mpi_helper), intent(inout) :: mw
+        type(lo_mem_helper), intent(inout) :: mem
+    end subroutine
+    module subroutine write_to_qe(fc,uc,mw,mem)
+        !> forceconstant
+        class(lo_forceconstant_secondorder), intent(inout) :: fc
+        !> unitcell
+        type(lo_crystalstructure), intent(inout) :: uc
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine

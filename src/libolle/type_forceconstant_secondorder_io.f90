@@ -1,7 +1,8 @@
 submodule(type_forceconstant_secondorder) type_forceconstant_secondorder_io
 use konstanter, only: lo_forceconstant_2nd_HartreeBohr_to_eVA, lo_forceconstant_2nd_eVA_to_HartreeBohr, lo_emu_to_amu, &
-                      lo_exitcode_io, lo_bohr_to_A
+                      lo_exitcode_io, lo_bohr_to_A, lo_emu_to_amu
 use gottochblandat, only: open_file
+use geometryfunctions, only: lo_inscribed_sphere_in_box
 use type_qpointmesh, only: lo_qpoint_mesh,lo_generate_qmesh
 use type_voronoi_distancetable, only: lo_voronoi_distancetable
 use mpi_wrappers, only: lo_mpi_helper
@@ -266,51 +267,51 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
     ! Abinit wants dynamical matrices, I have forceconstants. I need to generate a q-mesh
     ! tight enough to ensure that there is no information loss. Will probably pad it a little
     ! to be on the safe side.
-!    findqmesh: block
-!        type(lo_voronoi_distancetable) :: dt
-!        real(r8), dimension(3) :: v0
-!        real(r8) :: cutoff
-!        integer, dimension(:,:), allocatable :: supercells
-!        integer, dimension(3) :: dims
-!        integer :: i,j,k,l,nq
-!
-!        ! I always screw up the cutoff, do it again here to be on the safe side
-!        cutoff=0.0_r8
-!        do i=1,fc%na
-!        do j=1,fc%atom(i)%n
-!            cutoff=max(cutoff,norm2(fc%atom(i)%pair(j)%r))
-!        enddo
-!        enddo
-!        ! Get a bunch of reasonable supercells
-!!        call generate_possible_supercells(uc,cutoff,supercells)
-!!        ! Find one large enough to fit the forceconstant
-!!        ssl1: do i=1,size(supercells,2)
-!!            call dt%generate_wzcutoff( uc%r,uc%latticevectors,supercells(:,i) )
-!!            if ( does_forceconstant_fit(fc,dt) ) then
-!!                dims=supercells(:,i)
-!!                exit ssl1
-!!            endif
-!!        enddo ssl1
-!        dims=(/6,6,6/)
-!        ! add a little safety margin to the dimensions, not like it actually costs anything
-!        dims=dims+2
-!
-!        ! build the list of qvectors
-!        nq=product(dims)
-!        allocate(qvectors(3,nq))
-!        l=0
-!        do i=1,dims(1)
-!        do j=1,dims(2)
-!        do k=1,dims(3)
-!            l=l+1
-!            v0(1)=(i-1.0_r8)/(1.0_r8*dims(1))
-!            v0(2)=(j-1.0_r8)/(1.0_r8*dims(2))
-!            v0(3)=(k-1.0_r8)/(1.0_r8*dims(3))
-!            qvectors(:,l)=uc%fractional_to_cartesian(v0,reciprocal=.true.)
-!        enddo
-!        enddo
-!        enddo
-!    end block findqmesh
+    !    findqmesh: block
+    !        type(lo_voronoi_distancetable) :: dt
+    !        real(r8), dimension(3) :: v0
+    !        real(r8) :: cutoff
+    !        integer, dimension(:,:), allocatable :: supercells
+    !        integer, dimension(3) :: dims
+    !        integer :: i,j,k,l,nq
+    !
+    !        ! I always screw up the cutoff, do it again here to be on the safe side
+    !        cutoff=0.0_r8
+    !        do i=1,fc%na
+    !        do j=1,fc%atom(i)%n
+    !            cutoff=max(cutoff,norm2(fc%atom(i)%pair(j)%r))
+    !        enddo
+    !        enddo
+    !        ! Get a bunch of reasonable supercells
+    !!        call generate_possible_supercells(uc,cutoff,supercells)
+    !!        ! Find one large enough to fit the forceconstant
+    !!        ssl1: do i=1,size(supercells,2)
+    !!            call dt%generate_wzcutoff( uc%r,uc%latticevectors,supercells(:,i) )
+    !!            if ( does_forceconstant_fit(fc,dt) ) then
+    !!                dims=supercells(:,i)
+    !!                exit ssl1
+    !!            endif
+    !!        enddo ssl1
+    !        dims=(/6,6,6/)
+    !        ! add a little safety margin to the dimensions, not like it actually costs anything
+    !        dims=dims+2
+    !
+    !        ! build the list of qvectors
+    !        nq=product(dims)
+    !        allocate(qvectors(3,nq))
+    !        l=0
+    !        do i=1,dims(1)
+    !        do j=1,dims(2)
+    !        do k=1,dims(3)
+    !            l=l+1
+    !            v0(1)=(i-1.0_r8)/(1.0_r8*dims(1))
+    !            v0(2)=(j-1.0_r8)/(1.0_r8*dims(2))
+    !            v0(3)=(k-1.0_r8)/(1.0_r8*dims(3))
+    !            qvectors(:,l)=uc%fractional_to_cartesian(v0,reciprocal=.true.)
+    !        enddo
+    !        enddo
+    !        enddo
+    !    end block findqmesh
 
     ! Now I have a decent list of q-vectors. For each of those, I need a dynamical matrix.
     getdynmat: block
@@ -323,20 +324,20 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
            mw=mw,mem=mem,verbosity=1)
         nq = qp%n_irr_point
 
-!nq = 12
-!abiqpts =reshape ((/ & 
-!  0.00000000E+00,  0.00000000E+00,  0.00000000E+00,  &
-!  2.50000000E-01,  0.00000000E+00,  0.00000000E+00, & 
-!  5.00000000E-01,  0.00000000E+00,  0.00000000E+00, & 
-!  2.50000000E-01,  2.50000000E-01,  0.00000000E+00, & 
-!  0.00000000E+00,  0.00000000E+00,  2.50000000E-01, & 
-!  2.50000000E-01,  0.00000000E+00,  2.50000000E-01, & 
-!  5.00000000E-01,  0.00000000E+00,  2.50000000E-01, & 
-!  2.50000000E-01,  2.50000000E-01,  2.50000000E-01, & 
-!  0.00000000E+00,  0.00000000E+00,  5.00000000E-01, & 
-!  2.50000000E-01,  0.00000000E+00,  5.00000000E-01, & 
-!  5.00000000E-01,  0.00000000E+00,  5.00000000E-01, & 
-!  2.50000000E-01,  2.50000000E-01,  5.00000000E-01  /), (/3,12/) )
+        !nq = 12
+        !abiqpts =reshape ((/ &
+        !  0.00000000E+00,  0.00000000E+00,  0.00000000E+00,  &
+        !  2.50000000E-01,  0.00000000E+00,  0.00000000E+00, &
+        !  5.00000000E-01,  0.00000000E+00,  0.00000000E+00, &
+        !  2.50000000E-01,  2.50000000E-01,  0.00000000E+00, &
+        !  0.00000000E+00,  0.00000000E+00,  2.50000000E-01, &
+        !  2.50000000E-01,  0.00000000E+00,  2.50000000E-01, &
+        !  5.00000000E-01,  0.00000000E+00,  2.50000000E-01, &
+        !  2.50000000E-01,  2.50000000E-01,  2.50000000E-01, &
+        !  0.00000000E+00,  0.00000000E+00,  5.00000000E-01, &
+        !  2.50000000E-01,  0.00000000E+00,  5.00000000E-01, &
+        !  5.00000000E-01,  0.00000000E+00,  5.00000000E-01, &
+        !  2.50000000E-01,  2.50000000E-01,  5.00000000E-01  /), (/3,12/) )
 
         allocate(dynmat(nb,nb,nq))
         allocate(Dq(nb,nb,3))
@@ -344,9 +345,9 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
         do i=1,nq
             qvectors(:,i) = uc%cartesian_to_fractional(qp%ip(i)%r,reciprocal=.true.)
 
-!qvectors(:,i) = abiqpts(:,i)
-!qp%ip(i)%r = uc%fractional_to_cartesian(abiqpts(:,i), reciprocal=.true.)
-!print *, 'iq qpt ', i, qvectors(:,i)
+            !qvectors(:,i) = abiqpts(:,i)
+            !qp%ip(i)%r = uc%fractional_to_cartesian(abiqpts(:,i), reciprocal=.true.)
+            !print *, 'iq qpt ', i, qvectors(:,i)
             call fc%dynamicalmatrix(uc,qp%ip(i),dynmat(:,:,i),mem,Dq,qdirection=(/1.0d0,0.0d0,0.0d0/),skipnonanalytical=.true.)
         enddo
         deallocate(Dq)
@@ -369,14 +370,14 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
          &9,   10,  11,  12,  13,  14,  15,  16, 17, 18, 19, 20, 21, 22, 23, 24, 11,&
               &12,  13,  14,  15,  16,  17,  18, 19, 12, 13, 14, 15, 16,  7,  8,&
          &9,   10,  11,  12,  13,  14,  15,  16, 17, 18, 19, 20, 21, 22, 23, 24, 11]
-!       &'H ',                                                                                                   'He',&
-!       &'Li', 'Be',                                                               'B ', 'C ', 'N ', 'O ', 'F ', 'Ne',&
-!       &'Na', 'Mg',                                                               'Al', 'Si', 'P ', 'S ', 'Cl', 'Ar',&
-!       &'K ', 'Ca',  'Sc', 'Ti', 'V ', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn',  'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr',&
-!       &'Rb', 'Sr',  'Y ', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd',  'In', 'Sn', 'Sb', 'Te', 'I ', 'Xe',&
-!       &'Cs', 'Ba',  'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy',  'Ho', 'Er', 'Tm', 'Yb', 'Lu', &
-!       &                   'Hf', 'Ta', 'W ', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg',  'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',&
-!       &'Fr', 'Ra',  'Ac', 'Th', 'Pa', 'U ', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',  'Es', 'Fm', 'Md', 'No', 'Lr']
+        !       &'H ',                                                                                                   'He',&
+        !       &'Li', 'Be',                                                               'B ', 'C ', 'N ', 'O ', 'F ', 'Ne',&
+        !       &'Na', 'Mg',                                                               'Al', 'Si', 'P ', 'S ', 'Cl', 'Ar',&
+        !       &'K ', 'Ca',  'Sc', 'Ti', 'V ', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn',  'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr',&
+        !       &'Rb', 'Sr',  'Y ', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd',  'In', 'Sn', 'Sb', 'Te', 'I ', 'Xe',&
+        !       &'Cs', 'Ba',  'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy',  'Ho', 'Er', 'Tm', 'Yb', 'Lu', &
+        !       &                   'Hf', 'Ta', 'W ', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg',  'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',&
+        !       &'Fr', 'Ra',  'Ac', 'Th', 'Pa', 'U ', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',  'Es', 'Fm', 'Md', 'No', 'Lr']
 
         integer, dimension(18) :: ngfft
         integer :: i,j,a1,a2,ii,jj,x,y,nb
@@ -476,7 +477,7 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
 
     end block printstuff
 
-    printdm : block 
+    printdm : block
         complex(r8), dimension(:,:), allocatable :: dmt
         real(r8), dimension(:,:), allocatable :: rotmat
         real(r8), dimension(3,3) :: bec
@@ -581,6 +582,232 @@ module subroutine write_to_anaddb(fc,uc,qgrid,mw,mem)
     end block printdm
     deallocate(dynmat)
     deallocate(qvectors)
+end subroutine
+
+module subroutine write_to_qe(fc,uc,mw,mem)
+    !> forceconstant
+    class(lo_forceconstant_secondorder), intent(inout) :: fc
+    !> unitcell
+    type(lo_crystalstructure), intent(inout) :: uc
+    type(lo_mpi_helper), intent(inout) :: mw
+    type(lo_mem_helper), intent(inout) :: mem
+
+    type(lo_forceconstant_secondorder) :: fcss
+    real(r8), dimension(:,:,:,:), allocatable :: fc_shortrange
+    real(r8), dimension(:,:,:,:), allocatable :: fc_longrange
+    real(r8), dimension(:,:,:,:,:,:,:), allocatable :: rm1
+    integer, dimension(3) :: supercelldim
+
+    init: block
+        real(r8), parameter :: safety_margin_for_cutoff=0.1_r8
+        type(lo_crystalstructure) :: ss
+
+        real(r8), dimension(:,:,:,:), allocatable :: rm0
+
+        real(r8), dimension(3,3) :: m0
+        real(r8), dimension(3) :: v0,v1,v2
+        real(r8) :: f0
+        integer, dimension(3) :: gi,gj
+        integer :: i,j,k,a1,a2,ii,jj
+
+        ! So ... first step would be to find a (diagonal) supercell that safely bounds
+        ! the TDEP forceconstant with some margin.
+
+
+        supercelldim=1
+        do
+            do i = 1, 3
+                m0(:, i) = uc%latticevectors(:,i)*supercelldim(i)
+            end do
+            f0 = lo_inscribed_sphere_in_box(m0)
+            if (f0 .gt. fc%cutoff+safety_margin_for_cutoff ) exit
+            supercelldim = increment_dimensions(supercelldim, uc%latticevectors)
+        end do
+        supercelldim=supercelldim+2
+
+        if ( mw%talk ) then
+            write(*,*) 'decided on supercell dimensions:',supercelldim
+        endif
+
+        ! build the supercell
+        call uc%build_supercell(ss,dimensions=supercelldim)
+        ! establish mapping between unit and supercell
+        call ss%classify('supercell', uc)
+        ! remap the forceconstant so that it is defined for the supercell
+        call fc%remap(uc, ss, fcss)
+        ! Dummy-define the supercell forceconstant the way I like it?
+        allocate(fc_shortrange(3,3,ss%na,ss%na))
+        fc_shortrange=0.0_r8
+        do a1=1,ss%na
+            do i=1,fcss%atom(a1)%n
+                a2 = fcss%atom(a1)%pair(i)%i2
+                f0 = ss%invsqrtmass(a1)*ss%invsqrtmass(a2)
+                fc_shortrange(:,:,a1,a2)=fc_shortrange(:,:,a1,a2) + fcss%atom(a1)%pair(i)%m !*f0
+            enddo
+        enddo
+
+        ! I might want to have this in (xyz,xyz,n_a,sx,sy,sz) instead.
+        ! So, let's give this a shot. Might have to think a little.
+        allocate(rm1(3,3,uc%na,uc%na,supercelldim(1),supercelldim(2),supercelldim(3)))
+        rm1=0.0_r8
+
+        k=0 ! counter for matches
+        do i=1,ss%na
+            gi=ss%info%cellindex(:,i)
+            if ( sum(abs(gi-[1,1,1])) .ne. 0 ) cycle
+            a1=ss%info%index_in_unitcell(i)
+            do j=1,ss%na
+                a2=ss%info%index_in_unitcell(j)
+                gj=ss%info%cellindex(:,j)
+
+                ! vector between atoms, fractional supercell coordinates
+                v0=ss%r(:,j)-ss%r(:,i)
+                !v0=ss%r(:,i)-ss%r(:,j)
+                ! adjust with pbc? Think so
+                v0=lo_clean_fractional_coordinates(v0+0.5_r8)-0.5_r8
+                ! to Cartesian
+                v0=matmul(ss%latticevectors,v0)
+
+                ! This should be matched to a TDEP ifc!
+
+                do ii=1,fc%atom(a1)%n
+                    if ( fc%atom(a1)%pair(ii)%i2 .ne. a2 ) cycle
+                    if ( norm2(v0 -fc%atom(a1)%pair(ii)%r) .lt. 1E-5_r8 ) then
+                        k=k+1
+                        ! we have a match! This should be enough I think.
+                        !rm1(:,:,a1,a2,gj(1),gj(2),gj(3)) = transpose( fc%atom(a1)%pair(ii)%m )
+                        rm1(:,:,a2,a1,gj(1),gj(2),gj(3)) = transpose( fc%atom(a1)%pair(ii)%m )
+                    endif
+                enddo
+            enddo
+        enddo
+
+        ! Sanity check that all pairs got matched. Or at least the correct numbers
+        jj=0
+        do a1=1,fc%na
+            jj=jj+fc%atom(a1)%n
+        enddo
+        if ( jj .ne. k ) call lo_stop_gracefully(['Did not match all pairs'],lo_exitcode_symmetry,__FILE__,__LINE__)
+
+
+    end block init
+
+    if ( mw%talk ) then
+    dumpstuff: block
+        character(len=1000) :: str0,str1
+        real(r8) :: f0
+        integer :: u,i,j,a1,a2,ii,jj,kk
+
+write(*,*) 'MASSFACTOR',lo_emu_to_amu
+
+        u = open_file('out','outfile.qe_fc.xml')
+            ! Let's start with the header
+            write(u,"(A)") '<?xml version="1.0" encoding="UTF-8"?>'
+            write(u,"(A)") '<Root>'
+            write(u,"(A)") '    <GEOMETRY_INFO>'
+            write(u,"(A)") '    <NUMBER_OF_TYPES>'//tochar(uc%nelements)//'</NUMBER_OF_TYPES>'
+            write(u,"(A)") '    <NUMBER_OF_ATOMS>'//tochar(uc%na)//'</NUMBER_OF_ATOMS>'
+            write(u,"(A)") '    <BRAVAIS_LATTICE_INDEX>0</BRAVAIS_LATTICE_INDEX>'
+            write(u,"(A)") '    <SPIN_COMPONENTS>1</SPIN_COMPONENTS>'
+            write(u,"(A)") '    <CELL_DIMENSIONS>'
+            write(u,"(A)") '    1.0E+00   0.000000000000000E+00   0.000000000000000E+00'
+            write(u,"(A)") '    0.000000000000000E+00   0.000000000000000E+00   0.000000000000000E+00'
+            write(u,"(A)") '    </CELL_DIMENSIONS>'
+            write(u,"(A)") '    <AT>'
+            write(u,*) uc%latticevectors(:,1)
+            write(u,*) uc%latticevectors(:,2)
+            write(u,*) uc%latticevectors(:,3)
+            write(u,"(A)") '     </AT>'
+            write(u,"(A)") '    <BG>'
+            write(u,*) uc%reciprocal_latticevectors(:,1)
+            write(u,*) uc%reciprocal_latticevectors(:,2)
+            write(u,*) uc%reciprocal_latticevectors(:,3)
+            write(u,"(A)") '     </BG>'
+            write(u,"(A)") '     <UNIT_CELL_VOLUME_AU>'//tochar(uc%volume)//'</UNIT_CELL_VOLUME_AU>'
+            do i=1,uc%nelements
+                write(u,"(A)") '    <TYPE_NAME.'//tochar(i)//'>'//trim(uc%atomic_symbol(i))//'</TYPE_NAME.'//tochar(i)//'>'
+                f0=uc%isotope(i)%mean_mass*lo_emu_to_amu
+                write(u,"(A)") '    <MASS.'//tochar(i)//'>'//trim( tochar(f0,13) )//'</MASS.'//tochar(i)//'>'
+            enddo
+            do i=1,uc%na
+                j=uc%species(i)
+                str0='    <ATOM.'//tochar(i)//' SPECIES="'//trim(uc%atomic_symbol(j))//'" INDEX="'//tochar(j)//'" TAU="'
+                !write(str1,"(3(1X,F22.13))") uc%r(:,i)
+                write(str1,"(3(1X,F22.13))") uc%rcart(:,i) !*0.5_r8
+                str0=trim(str0)//trim(str1)//'"/>'
+                write(u,"(A)") trim(str0)
+            enddo
+            write(u,"(A)") '    <NUMBER_OF_Q>6</NUMBER_OF_Q>'
+            write(u,"(A)") '    </GEOMETRY_INFO>'
+
+            ! post header is dielectric stuff
+            if ( fc%polar ) then
+                write(u,"(A)") '    <DIELECTRIC_PROPERTIES epsil="true" zstar="true" raman="false">'
+                write(u,"(A)") '    <EPSILON>'
+                do i=1,3
+                    write(u,*) fc%loto%eps(i,:)
+                enddo
+                write(u,"(A)") '    </EPSILON>'
+                write(u,"(A)") '    <ZSTAR>'
+                do i=1,fc%na
+                    write(u,"(A)") '    <Z_AT_.'//tochar(i)//'>'
+                    do j=1,3
+                        write(u,*) fc%loto%born_effective_charges(j,:,i) !*0.5_r8
+                    enddo
+                    write(u,"(A)") '    </Z_AT_.'//tochar(i)//'>'
+                enddo
+                write(u,"(A)") '    </ZSTAR>'
+                write(u,"(A)") '    </DIELECTRIC_PROPERTIES>'
+            else
+                write(u,"(A)") '    <DIELECTRIC_PROPERTIES epsil="false" zstar="false" raman="false">'
+                write(u,"(A)") '    </DIELECTRIC_PROPERTIES>'
+            endif
+
+            ! Now we start with the actual force constants! In some units and some convention.
+            write(u,"(A)") '    <INTERATOMIC_FORCE_CONSTANTS>'
+
+            write(u,"(A)") '    <MESH_NQ1_NQ2_NQ3>'
+            write(u,*) supercelldim
+            write(u,"(A)") '    </MESH_NQ1_NQ2_NQ3>'
+            if ( fc%polar ) then
+                f0=fc%ew%lambda
+                f0=(f0/lo_twopi)**2
+                ! Maybe it should be 1/, sqrt, or sth
+                write(u,"(A)") '    <alpha_ewald>'//tochar(f0,12)//'</alpha_ewald>'
+            else
+                write(u,"(A)") '    <alpha_ewald>1E-300</alpha_ewald>'
+            endif
+            ! Now for the actual IFCs.
+
+
+                do a1=1,uc%na
+                do a2=1,uc%na
+
+                    do kk=1,supercelldim(3)
+                    do jj=1,supercelldim(2)
+                    do ii=1,supercelldim(1)
+
+                    str0="s_s1_m1_m2_m3."//tochar(a1)//"."//tochar(a2)//"."//tochar(ii)//"."//tochar(jj)//"."//tochar(kk)
+                    write(u,"(A)") '        <'//trim(str0)//'>'
+                    write(u,"(A)") '        <IFC>'
+                    do i=1,3
+                        write(u,*) rm1(:,i,a1,a2,ii,jj,kk)*2.0_r8
+                        !write(u,*) rm1(i,:,a1,a2,ii,jj,kk)*2.0_r8
+                    enddo
+                    write(u,"(A)") '        </IFC>'
+                    write(u,"(A)") '        </'//trim(str0)//'>'
+                enddo
+                enddo
+                enddo
+            enddo
+            enddo
+            write(u,"(A)") '    </INTERATOMIC_FORCE_CONSTANTS>'
+            write(u,"(A)") '</Root>'
+            write(u,"(A)") ''
+        close(u)
+    end block dumpstuff
+    endif
+
 end subroutine
 
 !> mini-version of my dynamical matrix calculator, repeated here to avoid circular dependencies
@@ -932,5 +1159,50 @@ subroutine ddb_io_out(dscrpt, filnam, matom, mband,&
         name(1) = '         '
     end do
 end subroutine ddb_io_out
+
+function increment_dimensions(dimin, box) result(dimut)
+    integer, dimension(3), intent(in) :: dimin
+    real(r8), dimension(3, 3), intent(in) :: box
+    integer, dimension(3) :: dimut
+    !
+    real(r8), dimension(3, 3) :: m0
+    integer, dimension(3) :: di
+    integer :: i, j, k
+    real(r8) :: f0, f1, ff0
+
+    ! try with the sphere thing. First get a baseline
+    do j = 1, 3
+        m0(:, j) = box(:, j)*(2*dimin(j) + 1)
+    end do
+    ff0 = lo_inscribed_sphere_in_box(m0)
+    ! Increment the dimension that gives the biggest increase in radii
+    f0 = 0.0_r8
+    dimut = 0
+    do i = 1, 3
+        di = dimin
+        di(i) = di(i) + 1
+        do j = 1, 3
+            m0(:, j) = box(:, j)*(2*di(j) + 1)
+        end do
+        f1 = lo_inscribed_sphere_in_box(m0)
+        if (f1 .gt. f0 .and. abs(f1 - ff0) .gt. lo_tol) then
+            dimut = di
+            f0 = f1
+        end if
+    end do
+
+    ! if nothing helped, increment the lowest number
+    if (dimut(1) .eq. 0) then
+        j = lo_hugeint
+        do i = 1, 3
+            if (di(i) .lt. j) then
+                j = di(i)
+                k = i
+            end if
+        end do
+        dimut = dimin
+        dimut(k) = dimut(k) + 1
+    end if
+end function
 
 end submodule

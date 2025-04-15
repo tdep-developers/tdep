@@ -349,6 +349,9 @@ getfc: block
                 write (*, "(6(3X,F15.5))") lo_chop((fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
         end if
+
+        !@FIXME add a proper option once it works
+        call fc2%write_to_qe(uc,mw,mem)
     end if
     if (map%have_fc_triplet) then
         call map%get_thirdorder_forceconstant(uc, fc3)
