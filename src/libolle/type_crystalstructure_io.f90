@@ -378,6 +378,8 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             call writetofile_aims(p,filename,write_velocities)
         case(5) ! Siesta 
             call writetofile_siesta(p,filename,write_velocities)
+        case(6) ! QE
+            call writetofile_qe(p,filename,write_velocities)
         case default
             call lo_stop_gracefully(['Unknown output format: '//tochar(output_format)],lo_exitcode_io,__FILE__,__LINE__)
     end select
@@ -821,6 +823,43 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         do i=1,p%na
             write(u,opf) p%species(i), symbol_to_z(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol), lo_chop(p%v(:,i),lo_sqtol)
         enddo
+    end subroutine
+
+    !> Writes a structure to QE output file or stdout
+    subroutine writetofile_qe(p,filename,write_velocities)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> filename
+        character(len=*), intent(in) :: filename
+        !> should be written. Default false.
+        logical, intent(in), optional :: write_velocities
+        ! local
+        integer :: i
+
+        real(flyt) :: latpar
+        character(len=1000) :: opf
+        integer :: u
+
+        ! file or stdout
+        if ( filename .eq. 'stdout' ) then
+            u=0
+        else
+            u=open_file('out',filename)
+        endif
+        write(u,*) "    nat             = ", tochar(p%na)
+        write(u,*) "    ntyp            = ", tochar(p%nelements)
+        write(u,*) "/"
+        write(u,*) "CELL_PARAMETERS bohr"
+        write(u,*) lo_choplarge(p%latticevectors(:,1),lo_sqtol)
+        write(u,*) lo_choplarge(p%latticevectors(:,2),lo_sqtol)
+        write(u,*) lo_choplarge(p%latticevectors(:,3),lo_sqtol)
+        write(u,*) " "
+        write(u,*) "ATOMIC_POSITIONS bohr"
+        opf="(1X,a,2X,3F18.9))"
+        do i=1, p%na
+          write(u,opf) trim(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol)
+        enddo
+        if ( filename .ne. 'stdout' ) close(u)
     end subroutine
 end subroutine
 
