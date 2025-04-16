@@ -255,7 +255,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
     normalize: block
         real(r8), parameter :: integraltol = 1E-13_r8
         real(r8), dimension(:), allocatable :: yim, yre, ysf
-        real(r8) :: f0, f1, f2
+        real(r8) :: f0, f1, f2, f3
         integer :: imode
 
         call mem%allocate(yim, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -282,7 +282,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             call find_spectral_function_max_and_fwhm(wp%omega(imode), dr%omega_max, se%energy_axis, yim, yre, se%xmid(imode), se%xlo(imode), se%xhi(imode))
             ! Integrate every which way to get normalization.
             call integrate_spectral_function(se%energy_axis, wp%omega(imode), yim, yre, se%xmid(imode), se%xlo(imode), se%xhi(imode), &
-                                             1.0_r8, opts%temperature, integraltol, f0, f1, f2)
+                                             1.0_r8, opts%temperature, integraltol, 1.0_r8, f0, f1, f2, f3)
             se%scalingfactor(imode) = 1.0_r8/f0
             se%tau(imode) = f1
         end do

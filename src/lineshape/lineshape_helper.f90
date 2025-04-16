@@ -958,7 +958,7 @@ subroutine find_spectral_function_max_and_fwhm(omega, maxomega, energy, sigmaIm,
 end subroutine
 
 !> Integrate spectral function in a semi-smart way
-subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xhi, scalefactor, temperature, tolerance, integrated_spectralfunction, integrated_sf_squared, integrated_sf_nn)
+subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xhi, scalefactor, temperature, tolerance, thermodynamic_lambda, integrated_spectralfunction, integrated_sf_squared, integrated_sf_nn, integrated_spectral_F)
     !> rough x-axis
     real(r8), dimension(:), intent(in) :: x
     !> harmonic frequency
@@ -979,12 +979,16 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
     real(r8), intent(in) :: temperature
     !> relative tolerance to integrate to?
     real(r8), intent(in) :: tolerance
+    !> thermodynamic integration lambda
+    real(r8), intent(in) :: thermodynamic_lambda
     !> integral of spectral function
     real(r8), intent(out) :: integrated_spectralfunction
     !> integrated pi*sf^2
     real(r8), intent(out) :: integrated_sf_squared
     !> integrated sf^2*n*(n+1)
     real(r8), intent(out) :: integrated_sf_nn
+    !> integrated sf^2*n*(n+1)
+    real(r8), intent(out) :: integrated_spectral_F
 
     integer, parameter :: maxiter = 50
     integer, parameter :: maxintervals = 10000
@@ -993,19 +997,19 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
     integer, parameter :: nhi = 11
     real(r8), dimension(2, nlo) :: gqlo
     real(r8), dimension(2, nhi) :: gqhi
-    real(r8), dimension(nlo) :: lo_sf, lo_sq, lo_kp
-    real(r8), dimension(nhi) :: hi_sf, hi_sq, hi_kp
+    real(r8), dimension(nlo) :: lo_sf, lo_sq, lo_kp, lo_F
+    real(r8), dimension(nhi) :: hi_sf, hi_sq, hi_kp, hi_F
 
     real(r8), dimension(:), allocatable :: current_nodes, next_nodes
-    real(r8), dimension(:), allocatable :: current_sf, current_sq, current_kp
-    real(r8), dimension(:), allocatable :: next_sf, next_sq, next_kp
+    real(r8), dimension(:), allocatable :: current_sf, current_sq, current_kp, current_F
+    real(r8), dimension(:), allocatable :: next_sf, next_sq, next_kp, next_F
     logical, dimension(:), allocatable :: current_ok, next_ok
     logical :: segmentok
     real(r8) :: xmax, f0, f1, x0
-    real(r8) :: int_sf, int_sq, int_kp
-    real(r8) :: err_sf, err_sq, err_kp
-    real(r8) :: vlo_sf, vlo_sq, vlo_kp
-    real(r8) :: vhi_sf, vhi_sq, vhi_kp
+    real(r8) :: int_sf, int_sq, int_kp, int_F
+    real(r8) :: err_sf, err_sq, err_kp, err_F
+    real(r8) :: vlo_sf, vlo_sq, vlo_kp, vlo_F
+    real(r8) :: vhi_sf, vhi_sq, vhi_kp, vhi_F
     integer :: n, n_curr
     integer :: iter, i, j, ctr, ctrok, ctrnew
 
@@ -1026,11 +1030,13 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
     allocate (current_sf(n_curr))
     allocate (current_sq(n_curr))
     allocate (current_kp(n_curr))
+    allocate (current_F(n_curr))
     current_nodes = 0.0_r8
     current_ok = .false.
     current_sf = 0.0_r8
     current_sq = 0.0_r8
     current_kp = 0.0_r8
+    current_F = 0.0_r8
 
     ! Select some sensible starting nodes.
     current_nodes(1) = 0.0_r8
@@ -1050,18 +1056,23 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
         allocate (next_sf(2*n_curr))
         allocate (next_sq(2*n_curr))
         allocate (next_kp(2*n_curr))
+        allocate (next_f(2*n_curr))
         next_nodes = -1.0_r8
         next_ok = .false.
         next_sf = 0.0_r8
         next_sq = 0.0_r8
         next_kp = 0.0_r8
+        next_f = 0.0_r8
 
         err_sf = 0.0_r8
         err_sq = 0.0_r8
         err_kp = 0.0_r8
+        err_f = 0.0_r8
+
         int_sf = 0.0_r8
         int_sq = 0.0_r8
         int_kp = 0.0_r8
+        int_f = 0.0_r8
 
         ctrok = 0
         ctrnew = 0
@@ -1075,17 +1086,33 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                 int_sf = int_sf + current_sf(i)
                 int_sq = int_sq + current_sq(i)
                 int_kp = int_kp + current_kp(i)
+                int_F  = int_F  + current_F(i)
             else
                 ! We have to actually check. Evaluate functions and integrate.
                 call lo_gaussianquadrature(nlo, current_nodes(i), current_nodes(i + 1), gqlo)
                 call lo_gaussianquadrature(nhi, current_nodes(i), current_nodes(i + 1), gqhi)
+
+                ! So, <AA> = -i (n+1) Im G^R (possibly)
+                ! <BB>-<AA> = -(w^2-O^2)/w^2 (n(O)+1) J(O)
+
                 do j = 1, nlo
                     x0 = gqlo(1, j)
                     f0 = interpolated_spectral_function(x, sigmaIm, sigmaRe, omega, scalefactor, x0)
                     f1 = lo_planck(temperature, x0)
+                    ! normal spectral function
                     lo_sf(j) = f0
+                    ! squared spectral function*pi
                     lo_sq(j) = f0*f0*lo_pi
+                    ! thermal transport square thing
                     lo_kp(j) = f0*f0*f1*(f1 + 1.0_r8)
+                    ! and finally, free energy lambda integration thing
+                    f0 = interpolated_spectral_function(x, sigmaIm*thermodynamic_lambda, sigmaRe*thermodynamic_lambda, omega, scalefactor, x0)
+                    lo_F(j) = (x0**2 - omega**2)/omega**2
+                    lo_F(j) = lo_F(j)*(f1+1.0_r8)
+                    lo_F(j) = lo_F(j)*f0
+                    lo_F(j) = lo_F(j)*omega
+
+                    ! lo_F(j) = f1
                 end do
                 do j = 1, nhi
                     x0 = gqhi(1, j)
@@ -1094,13 +1121,26 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                     hi_sf(j) = f0
                     hi_sq(j) = f0*f0*lo_pi
                     hi_kp(j) = f0*f0*f1*(f1 + 1.0_r8)*x0*x0
+
+                    f0 = interpolated_spectral_function(x, sigmaIm*thermodynamic_lambda, sigmaRe*thermodynamic_lambda, omega, scalefactor, x0)
+                    hi_F(j) = (x0**2 - omega**2)/omega**2
+                    hi_F(j) = hi_F(j)*(f1+1.0_r8)
+                    hi_F(j) = hi_F(j)*f0
+                    hi_F(j) = hi_F(j)*omega
+
+                    !hi_F(j) = f1
                 end do
+
+
                 vlo_sf = sum(lo_sf*gqlo(2, :))
                 vlo_sq = sum(lo_sq*gqlo(2, :))
                 vlo_kp = sum(lo_kp*gqlo(2, :))
+                vlo_F  = sum(lo_F *gqlo(2, :))
+
                 vhi_sf = sum(hi_sf*gqhi(2, :))
                 vhi_sq = sum(hi_sq*gqhi(2, :))
                 vhi_kp = sum(hi_kp*gqhi(2, :))
+                vhi_F  = sum(hi_F *gqhi(2, :))
 
                 ! Check if fine:
                 !if ( abs(f0-f1) .lt. tolerance ) then
@@ -1108,6 +1148,7 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                     current_sf(i) = vhi_sf
                     current_sq(i) = vhi_sq
                     current_kp(i) = vhi_kp
+                    current_F(i)  = vhi_F
                     segmentok = .true.
                 else
                     segmentok = .false.
@@ -1116,10 +1157,12 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                 int_sf = int_sf + vhi_sf
                 int_sq = int_sq + vhi_sq
                 int_kp = int_kp + vhi_kp
+                int_F  = int_F  + vhi_F
 
                 err_sf = err_sf + abs(vhi_sf - vlo_sf)
                 err_sq = err_sq + abs(vhi_sq - vlo_sq)
                 err_kp = err_kp + abs(vhi_kp - vlo_kp)
+                err_F  = err_F  + abs(vhi_F  - vlo_F )
             end if
 
             if (segmentok) then
@@ -1130,6 +1173,7 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                 next_sf(ctr) = current_sf(i)
                 next_sq(ctr) = current_sq(i)
                 next_kp(ctr) = current_kp(i)
+                next_F (ctr) = current_F (i)
                 ctrok = ctrok + 1
             else
                 ! Split in half? Seems sensible.
@@ -1139,12 +1183,14 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
                 next_sf(ctr) = 0.0_r8
                 next_sq(ctr) = 0.0_r8
                 next_kp(ctr) = 0.0_r8
+                next_F (ctr) = 0.0_r8
                 ctr = ctr + 1
                 next_nodes(ctr) = (current_nodes(i) + current_nodes(i + 1))*0.5_r8
                 next_ok(ctr) = .false.
                 next_sf(ctr) = 0.0_r8
                 next_sq(ctr) = 0.0_r8
                 next_kp(ctr) = 0.0_r8
+                next_F (ctr) = 0.0_r8
                 ! make a note I added a segment
                 ctrnew = ctrnew + 1
             end if
@@ -1160,33 +1206,39 @@ subroutine integrate_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xh
         deallocate (current_sf)
         deallocate (current_sq)
         deallocate (current_kp)
+        deallocate (current_F )
         n_curr = ctr + 1
         allocate (current_nodes(n_curr))
         allocate (current_ok(n_curr))
         allocate (current_sf(n_curr))
         allocate (current_sq(n_curr))
         allocate (current_kp(n_curr))
+        allocate (current_F (n_curr))
         current_nodes = 0.0_r8
         current_ok = .false.
         current_sf = 0.0_r8
         current_sq = 0.0_r8
         current_kp = 0.0_r8
+        current_F  = 0.0_r8
         current_nodes(1:ctr) = next_nodes(1:ctr)
         current_nodes(ctr + 1) = xmax
         current_ok(1:ctr) = next_ok(1:ctr)
         current_sf(1:ctr) = next_sf(1:ctr)
         current_sq(1:ctr) = next_sq(1:ctr)
         current_kp(1:ctr) = next_kp(1:ctr)
+        current_F(1:ctr)  = next_F(1:ctr)
         deallocate (next_nodes)
         deallocate (next_ok)
         deallocate (next_sf)
         deallocate (next_sq)
         deallocate (next_kp)
+        deallocate (next_F)
     end do iterloop
 
     integrated_spectralfunction = int_sf
     integrated_sf_squared = int_sq
     integrated_sf_nn = int_kp
+    integrated_spectral_F = int_F
 
     ! A little bit of cleanup?
     !deallocate(current_nodes)

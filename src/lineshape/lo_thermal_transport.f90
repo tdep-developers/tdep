@@ -6,7 +6,7 @@ module lo_thermal_transport
 use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_sqtol, lo_exitcode_symmetry, lo_twopi, &
                       lo_bohr_to_A, lo_freqtol, lo_exitcode_param, lo_pi, lo_imag, lo_groupvel_ms_to_Hartreebohr, &
                       lo_kappa_au_to_SI, lo_frequency_Hartree_to_THz, lo_frequency_Hartree_to_icm, lo_frequency_Hartree_to_meV, &
-                      lo_kb_hartree, lo_groupvel_Hartreebohr_to_ms, lo_time_au_to_s, lo_tol
+                      lo_kb_hartree, lo_groupvel_Hartreebohr_to_ms, lo_time_au_to_s, lo_tol, lo_Hartree_to_eV
 use gottochblandat, only: tochar, walltime, lo_chop, &
                           lo_real_nullspace_coefficient_matrix, lo_transpositionmatrix, lo_real_pseudoinverse, &
                           lo_flattentensor, lo_trapezoid_integration, lo_linspace, lo_outerproduct, lo_planck, &
@@ -55,6 +55,9 @@ type lo_thermal_conductivity
     real(r8), dimension(:, :, :, :, :), allocatable :: kappa
     !> Imaginary self-energy at harmonic frequency (mode,qpoint)
     real(r8), dimension(:, :), allocatable :: diagonal_imaginary_selfenergy
+
+    ! Placeholder that has the exact free energy maybe, keep here for now!
+    real(r8), dimension(:), allocatable :: delta_free_energy
 contains
     !> set up thermal conductivity container
     procedure :: init
@@ -117,7 +120,12 @@ subroutine init(tc, dr, n_energy, maxf, temperature, mw)
         tc%kappa = 0.0_r8
         tc%lifetime = 0.0_r8
         tc%diagonal_imaginary_selfenergy = 0.0_r8
+
+        allocate(tc%delta_free_energy(tc%n_local_qpoint))
+        tc%delta_free_energy = 0.0_r8
     end if
+
+
 end subroutine
 
 !> accumulate data from a single q-point on a grid.
@@ -381,7 +389,7 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
         real(r8), dimension(:, :, :, :), allocatable :: buf_kappa
         real(r8), dimension(:, :), allocatable :: buf_lifetime
         real(r8), dimension(:), allocatable :: buf_thermal, buf0
-        real(r8) :: pref, f0, f1, f2
+        real(r8) :: pref, f0, f1, f2, f3
         integer :: imode, jmode, ie, ctr
 
         ! Smaller buffers for spectral kappa
@@ -414,7 +422,8 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
             if (imode .eq. jmode) then
                 ! Diagonal part. Can use the easy way of doing things.
                 call integrate_spectral_function(tc%omega, dr%iq(iq)%omega(imode), sigmaIm(:, imode), sigmaRe(:, imode), xmid(imode), xlo(imode), xhi(imode), &
-                                                 scalefactor(imode), tc%temperature, integraltol, f0, f1, f2)
+                                                 scalefactor(imode), tc%temperature, integraltol, 1.0_r8,&
+                                                 f0, f1, f2, f3)
             else
                 ! Nondiagonal, trickier integral I suppose.
                 call integrate_two_spectral_functions(tc%omega, &
@@ -440,10 +449,14 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
             do ie = 2, tc%n_energy
                 buf_spectral(ie, :, :, imode, jmode) = buf_spectral(ie, :, :, imode, jmode) + buf_velsq(:, :, imode, jmode)*buf0(ie)*qp%ip(iq)%integration_weight
             end do
+
+            ! Also accumulate the change in free energy? Yes no maybe
+
         end do
         end do
         call mw%allreduce('sum', buf_lifetime)
         call mw%allreduce('sum', buf_kappa)
+        call mw%allreduce('sum', buf_spectral)
         call mw%allreduce('sum', buf_spectral)
 
         ! And store things on the corret rank.
@@ -463,6 +476,46 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
         call mem%deallocate(buf_lifetime, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_spectral, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block integrate
+
+    lambdaintegral: block
+        real(r8), parameter :: integraltol = 1E-13_8
+        integer, parameter :: n_lambda=20
+        real(r8), dimension(2,n_lambda) :: gq
+        real(r8), dimension(n_lambda) :: y0
+        real(r8) :: f0,f1,f2,f3,buf_F
+        integer :: i,imode,ctr
+
+        ! Get a lambda-quadrature
+        call lo_gaussianquadrature(n_lambda,0.0_r8,1.0_r8,gq)
+
+        ctr=0
+        buf_F=0.0_r8
+        do imode = 1, dr%n_mode ! Make faster if needed.
+            if (dr%iq(iq)%omega(imode) .lt. lo_freqtol) cycle
+            ctr = ctr + 1
+            if (mod(ctr, mw%n) .ne. mw%r) cycle
+
+            ! Diagonal part. Can use the easy way of doing things.
+            y0=0.0_r8
+            do i=1,n_lambda
+                call integrate_spectral_function(tc%omega, dr%iq(iq)%omega(imode), sigmaIm(:, imode), sigmaRe(:, imode), xmid(imode), xlo(imode), xhi(imode), &
+                scalefactor(imode), tc%temperature, integraltol, gq(1,i),&
+                f0, f1, f2, f3)
+                y0(i)=f3
+            enddo
+
+            buf_F = buf_F + sum( gq(2,:)*y0 )*qp%ip(iq)%integration_weight
+
+        enddo
+        call mw%allreduce('sum',buf_F)
+
+        if (mw%r .eq. storerank) then
+            tc%delta_free_energy(tc%ctr) = buf_F
+        end if
+
+    end block lambdaintegral
+
+    ! Do some kind of
 
     ! t1=walltime()
     ! write(*,*) 'integrals:',tochar(t1-t0),'s'
@@ -496,6 +549,7 @@ subroutine report(tc, qp, mw)
     type(lo_mpi_helper), intent(inout) :: mw
 
     real(r8), dimension(3, 3) :: m0, m1, m2
+    real(r8) :: f0
     integer :: i, iq, s1, s2, ix
     ! Simple integration
 
@@ -524,6 +578,9 @@ subroutine report(tc, qp, mw)
     m1 = lo_chop(m1*lo_kappa_au_to_SI, 1E-10_r8)
     m2 = lo_chop(m2*lo_kappa_au_to_SI, 1E-10_r8)
 
+    f0=sum( tc%delta_free_energy )
+    call mw%allreduce('sum', f0)
+
     if (mw%talk) then
         write (*, *) 'total:'
         do ix = 1, 3
@@ -537,6 +594,8 @@ subroutine report(tc, qp, mw)
         do ix = 1, 3
             write (*, "(1X,3(1X,F17.7))") m1(:, ix)
         end do
+
+        write(*,*) 'Delta Free energy: ',f0,f0*lo_Hartree_to_eV
     end if
 end subroutine
 
@@ -737,6 +796,10 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
             do i = 1, 3
                 write (*, *) m2(:, i)*lo_kappa_au_to_SI
             end do
+
+            write(*,*) ''
+            write(*,*) 'Delta Free energy (eV): ',f0*lo_Hartree_to_eV
+            write(*,*) ''
         end if
 
         ! Store things to file. Can add more things later, if needed.
