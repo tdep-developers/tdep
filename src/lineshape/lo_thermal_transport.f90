@@ -499,9 +499,9 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
             y0=0.0_r8
             do i=1,n_lambda
                 call integrate_spectral_function(tc%omega, dr%iq(iq)%omega(imode), sigmaIm(:, imode), sigmaRe(:, imode), xmid(imode), xlo(imode), xhi(imode), &
-                scalefactor(imode), tc%temperature, integraltol, gq(1,i),&
+                scalefactor(imode), tc%temperature, integraltol, gq(1,i)**3,&
                 f0, f1, f2, f3)
-                y0(i)=f3
+                y0(i)=f3/gq(1,i)
             enddo
 
             buf_F = buf_F + sum( gq(2,:)*y0 )*qp%ip(iq)%integration_weight
@@ -595,7 +595,7 @@ subroutine report(tc, qp, mw)
             write (*, "(1X,3(1X,F17.7))") m1(:, ix)
         end do
 
-        write(*,*) 'Delta Free energy: ',f0,f0*lo_Hartree_to_eV
+        !write(*,*) 'Delta Free energy: ',f0,f0*lo_Hartree_to_eV
     end if
 end subroutine
 
@@ -918,6 +918,9 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         end do
         call mw%allreduce('sum', bf2)
         tc%spectral_kappa = bf2
+
+        f0=sum( tc%delta_free_energy )
+        call mw%allreduce('sum', f0)
 
         ! Write some spectral things to file
         if (mw%talk) then
