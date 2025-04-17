@@ -212,7 +212,7 @@ dumpconf: block
             call p%writetofile(trim(fname), opts%output_format, write_velocities=.true.)
         case (6) ! QE output
             fname = 'qe_conf'//tochar(iconf, 4)
-            call p%writetofile(trim(fname), opts%output_format, write_velocities=.true.)
+            call p%writetofile(trim(fname), opts%output_format, write_velocities=.false.)
         end select
 
         ! just measure some stuff, for no good reason.

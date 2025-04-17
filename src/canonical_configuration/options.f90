@@ -67,8 +67,8 @@ subroutine parse(opts)
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--output_format', switch_ab='-of', &
-                 help='Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta. Default 1.', &
-                 required=.false., act='store', def='1', choices='1,2,4,5', error=lo_status)
+                 help='Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta, 6 is Quantum ESPRESSO. Default 1.', &
+                 required=.false., act='store', def='1', choices='1,2,4,5,6', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--mindist', &
                  help='What is the smallest distance between two atoms allowed, in units of the nearest neighbour distance.', &
