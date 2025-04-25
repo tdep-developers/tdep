@@ -4,7 +4,7 @@ implicit none
 contains
 
 !> dump the q-point mesh to file
-module subroutine write_to_file(qp,p,filename,mem,verbosity)
+module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
     !> q-point mesh
     class(lo_qpoint_mesh), intent(in) :: qp
     !> crystal structure
@@ -15,6 +15,8 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity)
     type(lo_mem_helper), intent(inout) :: mem
     !> talk a lot?
     integer, intent(in) :: verbosity
+    !> write to a specific unit
+    integer(HID_T), intent(in), optional :: input_id
 
     type(lo_hdf5_helper) :: h5
     real(r8) :: timer
@@ -31,8 +33,12 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity)
     endif
 
     ! Open the file
-    call h5%init(__FILE__,__LINE__)
-    call h5%open_file('write',trim(filename))
+    if ( present(input_id) ) then
+        h5%file_id=input_id
+    else
+        call h5%init(__FILE__,__LINE__)
+        call h5%open_file('write',trim(filename))
+    endif
 
     ! some metadata first:
     select type(qp)
@@ -145,14 +151,19 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity)
     call mem%deallocate(r1d,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     call mem%deallocate(i2d,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
 
-    call h5%close_file()
-    call h5%destroy()
+    if ( present(input_id) ) then
+        ! Do nothing
+    else
+        call h5%close_file()
+        call h5%destroy()
+    endif
+
     if ( verbosity .gt. 0 ) write(lo_iou,*) '... stored points and tetrahedrons'
     if ( verbosity .gt. 0 ) write(lo_iou,*) 'Finished writing mesh to file (',tochar(walltime()-timer),'s)'
 end subroutine
 
 !> read q-mesh from file, and initiate the type.
-module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity)
+module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
     !> the q-point mesh
     class(lo_qpoint_mesh), intent(out), allocatable :: qp
     !> the crystal structure
@@ -163,6 +174,8 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity)
     type(lo_mem_helper), intent(inout) :: mem
     !> how much to talk
     integer, intent(in) :: verbosity
+    !> write to a specific unit
+    integer(HID_T), intent(in), optional :: input_id
 
     type(lo_hdf5_helper) :: h5
     real(r8), dimension(:,:), allocatable :: r2d
@@ -178,8 +191,12 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity)
     t0=walltime()
     call mem%tick()
 
-    call h5%init(__FILE__,__LINE__)
-    call h5%open_file('read',trim(filename))
+    if ( present(input_id) ) then
+        h5%file_id=input_id
+    else
+        call h5%init(__FILE__,__LINE__)
+        call h5%open_file('read',trim(filename))
+    endif
 
     ! Decide on meshtype
     call h5%read_attribute(i,h5%file_id,'mesh_type')
@@ -459,8 +476,12 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity)
         qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/qp%griddensity(3)
     end select
     ! And everything should be done!
-    call h5%close_file()
-    call h5%destroy()
+    if ( present(input_id) ) then
+        ! Do nothing
+    else
+        call h5%close_file()
+        call h5%destroy()
+    endif
     ! Check that I did not waste any memory.
     call mem%tock(__FILE__,__LINE__)
     if ( verbosity .gt. 0 ) write(*,*) 'Finished reading q-mesh from file (',tochar(walltime()-t0),'s)'

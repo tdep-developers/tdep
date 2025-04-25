@@ -601,6 +601,7 @@ $(OBJECT_PATH)type_mdsim.o:\
 	$(FC) $(FFLAGS) -c type_mdsim.f90 -o $@
 
 $(OBJECT_PATH)type_qpointmesh.o:\
+	type_qpointmesh.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)mpi_wrappers.o\
     $(OBJECT_PATH)lo_memtracker.o\
@@ -635,6 +636,7 @@ $(OBJECT_PATH)type_qpointmesh_commensurate.o:\
     $(OBJECT_PATH)type_qpointmesh.o
 	$(FC) $(FFLAGS) -c type_qpointmesh_commensurate.f90 -o $@
 $(OBJECT_PATH)type_qpointmesh_io.o:\
+	type_qpointmesh_io.f90\
     $(OBJECT_PATH)hdf5_wrappers.o\
     $(OBJECT_PATH)type_qpointmesh.o
 	$(FC) $(FFLAGS_LOW) -c type_qpointmesh_io.f90 -o $@

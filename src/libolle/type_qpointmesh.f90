@@ -337,19 +337,21 @@ end interface
 
 ! interfaces to type_qpointmesh_io
 interface
-    module subroutine write_to_file(qp,p,filename,mem,verbosity)
+    module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
         class(lo_qpoint_mesh), intent(in) :: qp
         type(lo_crystalstructure), intent(in) :: p
         character(len=*), intent(in) :: filename
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
+        integer(HID_T), intent(in), optional :: input_id
     end subroutine
-    module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity)
+    module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         class(lo_qpoint_mesh), intent(out), allocatable :: qp
         type(lo_crystalstructure), intent(inout) :: p
         character(len=*), intent(in) :: filename
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
+        integer(HID_T), intent(in), optional :: input_id
     end subroutine
     module subroutine write_metadata_to_hdf5(qp,filename,input_id)
         class(lo_qpoint_mesh), intent(in) :: qp
