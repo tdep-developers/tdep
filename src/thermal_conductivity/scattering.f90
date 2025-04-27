@@ -40,6 +40,10 @@ type lo_scattering_rates
     real(r8), dimension(:, :), allocatable :: be, sigsq
     !> The scattering matrix
     real(r8), dimension(:, :), allocatable :: Xi
+    !> The reciprocal lattice vectors scaled by the qgrid, for adaptive broadening
+    real(r8), dimension(3, 3) :: reclat = -lo_huge
+    !> The smearing parameter
+    real(r8) :: sigma
 
 contains
     !> Generate the scattering amplitudes
@@ -92,6 +96,12 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         real(r8) :: sigma
         integer, dimension(3) :: fq, fqp
 
+        real(r8), dimension(3) :: v0
+        real(r8), dimension(:, :), allocatable :: allsig
+        real(r8), dimension(:), allocatable :: sigsort, sigmin, sigmax
+        real(r8) :: f0
+        integer :: i25, i75
+
         ! grid dimensions
         select type (qp)
         class is (lo_fft_mesh)
@@ -123,72 +133,70 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         allocate (sr%be(qp%n_irr_point, dr%n_mode))
         allocate (sr%sigsq(qp%n_irr_point, dr%n_mode))
         call mem%allocate(sigavg, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(bla, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(allsig, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(sigsort, qp%n_irr_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(sigmin, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(sigmax, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+        sigavg = 0.0_r8
+        allsig = 0.0_r8
+        sigsort = 0.0_r8
+        sigmin = lo_huge
+        sigmax = -lo_huge
+
         sr%be = 0.0_r8
         sr%sigsq = 0.0_r8
-        bla = 0.0_r8
-        sigavg = 0.0_r8
+        sr%sigma = opts%sigma * lo_frequency_THz_to_Hartree
         do j=1, 3
-            reclat(:, j) = uc%reciprocal_latticevectors(:, j) / dims(j)
+            sr%reclat(:, j) = uc%reciprocal_latticevectors(:, j) / dims(j)
         end do
         do q1 = 1, qp%n_irr_point
             do b1 = 1, dr%n_mode
+                ! Skip gamma point
+                if (dr%iq(q1)%omega(b1) .lt. lo_freqtol) cycle
+
                 if (opts%classical) then
                     sr%be(q1, b1) = lo_kb_hartree*opts%temperature/dr%iq(q1)%omega(b1)
                 else
                     sr%be(q1, b1) = lo_planck(opts%temperature, dr%iq(q1)%omega(b1))
                 end if
+                sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), 1.0_r8)**2
 
-                do j=1, 3
-                    w(j) = dot_product(dr%iq(q1)%vel(:, b1), reclat(:, j))**2
-                end do
-!               sigma = sum(w(1:3))
-                sigma = maxval(w(1:3))
+!               sigma = norm2(dr%iq(q1)%vel(:, b1)) * qp%ip(q1)%radius * lo_twopi / sqrt(2.0_r8)
+!               sr%sigsq(q1, b1) = sigma**2
+
+                v0 = matmul(abs(dr%iq(q1)%vel(:, b1)), sr%reclat)**2
+                sigma = maxval(v0*0.5_r8)
                 sr%sigsq(q1, b1) = sigma
-                if (sigma .gt. 0) then
-                    sigavg(b1) = sigavg(b1) + sigma * qp%ip(q1)%integration_weight
-                    bla(b1) = bla(b1) + 1.0_r8
+
+                f0 = norm2(dr%iq(q1)%vel(:, b1)) * qp%ip(q1)%radius * lo_twopi / sqrt(2.0_r8)
+                if (f0 .gt. 0.0_r8) then
+                    sigmin(b1) = min(sigmin(b1), f0**2)
+                    sigmax(b1) = max(sigmax(b1), f0**2)
+                    sigavg(b1) = sigavg(b1) + f0**2 * qp%ip(q1)%integration_weight
                 end if
-
-                fq = singlet_to_triplet(qp%ip(q1)%full_index, dims(2), dims(3))
-                do j=1, 3
-                    fqp = fq
-                    fqp(j) = mod(fqp(j) + 1, dims(j))
-                    if (fqp(j) .eq. 0) fqp(j) = dims(j)
-                    q2 = triplet_to_singlet(fqp, dims(2), dims(3))
-!                   w(j) = dot_product(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b1), reclat(:, j))**2
-!                   w(j) = sum((dr%iq(q1)%vel(j, b1) * reclat(:, j))**2)
-                    w(j) = 0.5_r8 * (dr%iq(q1)%omega(b1) - dr%aq(q2)%omega(b1))
-
-                    fqp = fq
-                    fqp(j) = fqp(j) - 1
-                    if (fqp(j) .eq. 0) fqp(j) = dims(j)
-                    q2 = triplet_to_singlet(fqp, dims(2), dims(3))
-!                   w(j+3) = dot_product(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b1), reclat(:, j))**2
-!                   w(j+3) = sum((dr%iq(q1)%vel(j, b1) * reclat(:, j))**2)
-                    w(j+3) = 0.5_r8 * (dr%iq(q1)%omega(b1) - dr%aq(q2)%omega(b1))
-
-                end do
-!               sigma = (sum(w * lo_twopi / sqrt(2.0_r8)) / 6.0_r8)**2
-                sigma = sum(w)**2 / 6.0_r8
-!               sigma = norm2(dr%iq(q1)%vel(:, b1)) * qp%ip(q1)%radius
-!               sigma = sigma**2
-!               sigma = maxval(w(1:3))
-                sigavg(b1) = sigavg(b1) + sigma * qp%ip(q1)%integration_weight
-                sr%sigsq(q1, b1) = sigma
-
-!               sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), minval(dr%default_smearing), opts%sigma)**2
-!               sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), opts%sigma)**2
             end do
         end do
-        sigavg = sigavg / bla
+
+        do b1=1, dr%n_mode
+!           sigavg(b1) = max(sigavg(b1) - 1.5_r8 * (sigmax(b1) - sigmin(b1)), sigmin(b1))
+            sigavg(b1) = sigavg(b1)
+        end do
+
         do q1=1, qp%n_irr_point
             do b1=1, dr%n_mode
-                if (sqrt(sr%sigsq(q1, b1)) .lt. lo_freqtol) sr%sigsq(q1, b1) = sigavg(b1)
+                if (sr%sigsq(q1, b1) .lt. 1e-20_r8) then
+                sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), (0.25_r8 * dr%default_smearing(b1))**2)
+!               sr%sigsq(q1, b1) = min(sr%sigsq(q1, b1), 4.0_r8 * dr%default_smearing(b1))
+!               sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), sigavg(b1))
+!               sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), sigmin(b1))
+                end if
             end do
         end do
+
         if (mw%talk) write(*, *) dr%default_smearing * lo_frequency_Hartree_to_meV
         if (mw%talk) write(*, *) sqrt(sigavg) * lo_frequency_Hartree_to_meV
+        if (mw%talk) write(*, *) sqrt(sigmin) * lo_frequency_Hartree_to_meV
         call mem%deallocate(sigavg, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         if (mw%talk) write (*, *) '... distributing q-point/modes on MPI ranks'
@@ -413,4 +421,39 @@ function sr_size_in_mem(sr) result(mem)
     if (allocated(sr%sigsq)) mem = mem + storage_size(sr%sigsq)*size(sr%sigsq)
     mem = mem/8
 end function
+
+subroutine approximate_hessian(q1, b1, qp, dims, hess)
+    !> The qpoint-mesh
+    type(lo_qpoint_mesh), intent(in) :: qp
+    !> The qpoint
+    integer, intent(in) :: q1
+    !> The mode
+    integer, intent(in) :: b1
+    !> The dimension of the grid
+    integer, dimension(3), intent(in) :: dims
+    !> The Hessian
+    real(r8), dimension(3, 3), intent(out) :: hess
+
+!   fq = qp%ip(q1)%full_index
+!   om1 = dr%iq(q1)%omega(b1)
+!   vel1 = dr%iq(q1)%vel(:, b1)
+!   qtriplet = singlet_to_triplet(q1, dims(2), dims(3))
+
+!   hess = 0.0_r8
+!   do i=1, 3
+!       qt2 = qtriplet
+!       qt2(i) = qt2(i) + 1
+!       if (qt2(i) .gt. dims(i)) qt2(i) = 1
+!       q2 = triplet_to_singlet(qt2, dims(2), dims(3))
+!       vel2 = dr%aq(q2)%vel(:, b2)
+
+!       dq = norm2(qp%ap(q2)%r - qp%ap(fq)%r)
+
+!       do j=1, 3
+!           hess(i, j) = hess(i, j) + (vel2(i) - vel1(i)) / dq
+!       end do
+!   end do
+!   hess = hess / 3.0_r8
+
+end subroutine
 end module
