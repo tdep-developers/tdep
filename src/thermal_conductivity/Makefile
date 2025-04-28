@@ -8,10 +8,11 @@ $(OBJECT_PATH)main.o\
 $(OBJECT_PATH)options.o\
 $(OBJECT_PATH)scattering.o\
 $(OBJECT_PATH)kappa.o\
+$(OBJECT_PATH)cumulative_kappa.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHmpi) $(incLPATHhdf)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHmpi) $(incIPATHhdf)
-LIBS = -lolle -lflap $(blaslapackLIBS) $(incLIBSmpi) $(incLIBShdf)
+LIBS = ../../lib/libolle.a -lflap $(blaslapackLIBS) $(incLIBSmpi) $(incLIBShdf)
 
 #OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
@@ -28,7 +29,8 @@ clean:
 $(OBJECT_PATH)main.o: \
 $(OBJECT_PATH)options.o\
 $(OBJECT_PATH)scattering.o\
-$(OBJECT_PATH)kappa.o
+$(OBJECT_PATH)kappa.o\
+$(OBJECT_PATH)cumulative_kappa.o
 	$(F90) $(OPT) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 $(OBJECT_PATH)scattering.o:
 	$(F90) $(OPT) $(F90FLAGS) -c scattering.f90 $(LIBS) -o $@
@@ -36,5 +38,8 @@ $(OBJECT_PATH)kappa.o:\
 	kappa.f90\
 	$(OBJECT_PATH)scattering.o
 	$(F90) $(OPT) $(F90FLAGS) -c kappa.f90 $(LIBS) -o $@
+$(OBJECT_PATH)cumulative_kappa.o:\
+	$(OBJECT_PATH)kappa.o
+	$(F90) $(OPT) $(F90FLAGS) -c cumulative_kappa.f90 $(LIBS) -o $@
 $(OBJECT_PATH)options.o:
 	$(F90) $(OPT) $(F90FLAGS) -c options.f90 $(LIBS) -o $@

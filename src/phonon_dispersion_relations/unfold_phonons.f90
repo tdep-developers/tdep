@@ -16,8 +16,7 @@ use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
 use options, only: lo_opts
 use type_fast_interpolation, only: lo_fancy_deltri_box
 use type_forcemap, only: lo_forcemap
-use type_symmetrylist, only: lo_symlist
-use type_sqs, only: lo_sqs
+! use type_sqs, only: lo_sqs
 implicit none
 
 private
@@ -365,7 +364,7 @@ contains
 !     !> Talk a lot?
 !     integer, intent(in) :: verbosity
 !
-!     type(lo_sqs) :: sqs
+    ! type(lo_sqs) :: sqs
 !     type(lo_mersennetwister) :: tw
 !     type(lo_crystalstructure) :: ss
 !     type(lo_forceconstant_secondorder) :: fcss

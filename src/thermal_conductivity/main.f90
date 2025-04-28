@@ -10,11 +10,13 @@ use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_forceconstant_fourthorder, only: lo_forceconstant_fourthorder
 use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
+use type_phonon_dos, only: lo_phonon_dos
 use lo_timetracker, only: lo_timer
 
 use options, only: lo_opts
 use kappa, only: get_kappa, get_kappa_offdiag, iterative_solution, symmetrize_kappa
 use scattering, only: lo_scattering_rates
+use cumulative_kappa, only: lo_cumulative_kappa
 
 implicit none
 
@@ -24,6 +26,7 @@ type(lo_forceconstant_secondorder) :: fc
 type(lo_forceconstant_thirdorder) :: fct
 type(lo_forceconstant_fourthorder) :: fcf
 type(lo_phonon_dispersions) :: dr
+type(lo_phonon_dos) :: pd
 type(lo_crystalstructure) :: uc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
@@ -31,6 +34,7 @@ type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr_init, tmr_scat, tmr_kappa, tmr_tot
 ! The scattering rates
 type(lo_scattering_rates) :: sr
+type(lo_cumulative_kappa) :: mf
 real(r8) :: t0
 
 ! Set up all harmonic properties. That involves reading all the input file,
@@ -69,6 +73,17 @@ initharmonic: block
             write (*, '(1X,A40,2X,A)') 'Integration type                        ', 'Adaptive Gaussian'
         write (*, '(1X,A40,E20.12)') 'Sigma factor for gaussian smearing      ', opts%sigma
         end select
+        write (*, '(1X,A40,2X,I4)') 'Number of mfp point for cumulative kappa ', opts%mfppts
+        write (*, '(1X,A40,2X,I4)') 'Number of freq point for spectral kappa ', opts%freqpts
+        select case (opts%dosintegrationtype)
+        case(1)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Gaussian with fixed broadening'
+        case(2)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Adaptive Gaussian'
+        case(3)
+            write (*, '(1X,A40,2X,A)') 'Integration type for spectral kappa       ', 'Tetrahedron'
+        end select
+        write (*, '(1X,A40,E20.12)') 'Sigma factor for spectral integration   ', opts%dossigma
         write (*, '(1X,A40,I10)') 'Number of MPI ranks                     ', mw%n
         if (opts%seed .gt. 0) write(*, '(1X,A40,I10)') 'Random seed                             ', opts%seed
         write (*, *) ''
@@ -218,6 +233,9 @@ blockkappa: block
         if (mw%talk) write (*, "(1X,A,F12.3,A)") '... done in ', t0, ' s'
         call tmr_kappa%tock('collective contribution')
     end if
+    ! We don't need the scattering matrix anymore, and it's a heavy
+    call sr%destroy()
+
     call get_kappa(dr, qp, uc, opts%temperature, opts%classical, kappa_iter)
     if (mw%talk) write (*, *) ''
     if (mw%talk) write (*, *) '... symmetrizing the thermal conductivity tensors'
@@ -225,7 +243,6 @@ blockkappa: block
     call symmetrize_kappa(kappa_offdiag, uc)
     call symmetrize_kappa(kappa_sma, uc)
     call tmr_kappa%tock('symmetrization')
-    call tmr_kappa%stop()
     if (mw%talk) then
         ! First we write in the standard output
         u = open_file('out', 'outfile.thermal_conductivity')
@@ -275,7 +292,32 @@ blockkappa: block
         write (u, "(1X,6(1X,E24.12))") m0(1, 1), m0(2, 2), m0(3, 3), m0(1, 2), m0(1, 3), m0(2, 3)
 
         close (u)
+        write(*, *) ''
     end if
+
+    ! First we get the cumulative kappa with the mean free path
+    if (mw%talk) write(*, *) '... computing cumulative kappa'
+    call mf%get_cumulative_kappa(qp, dr, uc, opts%mfppts, opts%temperature, opts%classical, opts%sigma, mw, mem)
+    call tmr_kappa%tock('cumulative kappa')
+
+    ! Then the boundary scattering
+    if (mw%talk) write(*, *) '... estimating kappa with boundary'
+    call mf%get_boundary_kappa(qp, dr, uc, kappa_offdiag, opts%mfppts, opts%temperature, opts%classical, mw, mem)
+    call tmr_kappa%tock('boundary kappa')
+
+    if (mw%talk) write(*, *) '... computing density of state'
+    call pd%generate(dr, qp, uc, mw, mem, verbosity=opts%verbosity, sigma=opts%dossigma, &
+                     n_dos_point=opts%freqpts, integrationtype=opts%dosintegrationtype)
+
+    ! Then the spectral kappa
+    if (mw%talk) write(*, *) '... computing spectral kappa'
+    call mf%get_spectral_kappa(uc, qp, dr, pd, opts%temperature, opts%classical, mw, mem)
+    call tmr_kappa%tock('spectral kappa')
+
+    ! And finally the angular momentum
+    if (mw%talk) write(*, *) '... computing angular momentum'
+    call mf%get_angular_momentum(uc, qp, dr, pd, opts%temperature, mw, mem)
+    call tmr_kappa%tock('angular momentum')
 
     ! In a last step, we have to add a prefactor to Fn, to have the right kappa per mode in the outfile
     do q1 = 1, qp%n_irr_point
@@ -286,6 +328,7 @@ blockkappa: block
     end do
 
     call tmr_tot%tock('thermal conductivity computation')
+    call tmr_kappa%stop()
     t0 = walltime() - t0
 end block blockkappa
 
@@ -294,10 +337,12 @@ finalize_and_write: block
         write (*, *) ''
         write (*, *) '... dumping auxiliary data to files'
         call dr%write_to_hdf5(qp, uc, 'outfile.thermal_conductivity_grid.hdf5', mem, opts%temperature)
+        call mf%write_to_hdf5(pd, uc, opts%unit, 'outfile.cumulative_thermal_conductivity.hdf5', mem)
 
         write (*, *) ''
-        write (*, '(A,A)') 'Scattering rates can be found in               ', 'outfile.thermal_conductivity.hdf5'
-        write (*, '(A,A)') 'Thermal conductivity tensor can be found in    ', 'outfile.thermal_conductivity'
+        write (*, '(A,A)') 'Scattering rates can be found in                                ', 'outfile.thermal_conductivity_grid.hdf5'
+        write (*, '(A,A)') 'Thermal conductivity tensor can be found in                     ', 'outfile.thermal_conductivity'
+        write (*, '(A,A)') 'Cumulative and spectral thermal conductivity can be found in    ', 'outfile.cumulative_thermal_conductivity.hdf5'
 
         ! Print timings
         write (*, *) ''
@@ -306,11 +351,11 @@ finalize_and_write: block
         write (*, '(1X,A41,A)') 'Method: ', 'D. A. Broido et al., Appl Phys Lett 91, 231922 (2007)'
         write (*, '(1X,A41,A)') 'Iterative Boltzmann transport equation: ', 'M. Omini et al., Phys Rev B 53, 9064 (1996)'
         write (*, '(1X,A41,A)') 'Algorithm: ', 'A. H. Romero et al., Phys Rev B 91, 214310 (2015)'
-        write (*, '(1X,A41,A)') "Off-diagonal (coherences') contribution: ", 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
+        write (*, '(1X,A41,A)') 'Off-diagonal (coherences) contribution: ', 'M. Simoncelli et al., Nat Phys 15 809-813  (2019)'
         write (*, '(1X,A41,A)') '                                         ', 'L. Isaeva et al., Nat Commun 10 3853 (2019)'
         write (*, '(1X,A41,A)') '                                         ', 'A. Fiorentino et al., Phys Rev B 107, 054311  (2023)'
-        write (*, '(1X,A41,A52)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23), (2023)'
-        write (*, '(1X,A41,A46)') 'Theory and algorithm : ', 'A. Castellano et al, ArXiv:2411.14949 (2024)'
+        write (*, '(1X,A41,A)') 'Theory : ', 'A. Castellano et al, J. Chem. Phys. 159 (23) (2023)'
+        write (*, '(1X,A41,A)') 'Theory and algorithm : ', 'A. Castellano et al, Phys. Rev. B, 111 094306 (2025)'
     end if
     call tmr_tot%tock('io')
 
@@ -323,7 +368,6 @@ finalize_and_write: block
 end block finalize_and_write
 
 ! And we are done!
-call sr%destroy()
 call mpi_barrier(mw%comm, mw%error)
 call mpi_finalize(lo_status)
 end program

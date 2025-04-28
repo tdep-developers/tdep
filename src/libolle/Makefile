@@ -116,12 +116,7 @@ $(OBJECT_PATH)type_phonon_dispersions.o \
 $(OBJECT_PATH)type_phonon_dispersions_generation.o \
 $(OBJECT_PATH)type_phonon_dos.o \
 $(OBJECT_PATH)type_phonon_dos_integrations.o \
-$(OBJECT_PATH)type_sqs.o \
 $(OBJECT_PATH)type_symmetryoperation.o \
-$(OBJECT_PATH)type_symmetrylist.o \
-$(OBJECT_PATH)type_symmetrylist_helper.o \
-$(OBJECT_PATH)type_symmetrylist_unique.o \
-$(OBJECT_PATH)type_symmetrylist_coefficientmatrix.o \
 $(OBJECT_PATH)type_effective_hamiltonian.o \
 $(OBJECT_PATH)type_forcemap.o \
 $(OBJECT_PATH)type_forcemap_generate.o \
@@ -161,9 +156,29 @@ endif
 OBJS = $(OBJSf) $(OBJSa) $(OBJScg)
 
 # rules to make the actual library
-libolle.a: $(OBJS)
+static: $(OBJS)
 	-rm $(DEST_PATH)libolle.a
 	ar rc $(DEST_PATH)libolle.a $(OBJS)
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+    LIB_EXT = dylib
+    OSFLAGS = -dynamiclib -install_name @rpath/libolle.$(LIB_EXT)
+    LOAD_CMD = -all_load
+else ifeq ($(UNAME_S),Linux)
+    OSFLAGS = -shared
+    LIB_EXT = so
+    LOAD_CMD = -Wl,--whole-archive
+    END_LOAD_CMD = -Wl,--no-whole-archive
+endif
+
+# Get rid of all the other flags on there
+COMPILER = $(shell echo $(FC) | cut -d' ' -f1)
+
+shared: $(OBJS)
+	-rm $(DEST_PATH)libolle.$(LIB_EXT)
+	$(COMPILER) $(OSFLAGS) -o $(DEST_PATH)libolle.$(LIB_EXT) $(LOAD_CMD) $(DEST_PATH)libolle.a $(END_LOAD_CMD) $(LDFLAGS) $(LPATH) $(LIBS)
 
 # Stuff written in C
 $(OBJECT_PATH)type_ipi_sockets.o:
@@ -687,50 +702,6 @@ $(OBJECT_PATH)lo_phonon_bandstructure_on_path.o:\
 	$(OBJECT_PATH)type_qpointmesh.o
 	$(FC) $(FFLAGS) -c lo_phonon_bandstructure_on_path.f90 -o $@
 
-$(OBJECT_PATH)type_symmetrylist.o:\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)gottochblandat.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_helper.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist_helper.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_coefficientmatrix.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS) -c type_symmetrylist_coefficientmatrix.f90 -o $@
-$(OBJECT_PATH)type_symmetrylist_unique.o:\
-    $(OBJECT_PATH)type_symmetrylist.o\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_distancetable.o\
-    $(OBJECT_PATH)type_voronoi_distancetable.o
-	$(FC) $(FFLAGS_LOW) -c type_symmetrylist_unique.f90 -o $@
-
-$(OBJECT_PATH)type_sqs.o:\
-    $(OBJECT_PATH)konstanter.o\
-    $(OBJECT_PATH)gottochblandat.o\
-    $(OBJECT_PATH)lo_randomnumbers.o\
-    $(OBJECT_PATH)type_crystalstructure.o\
-    $(OBJECT_PATH)type_symmetryoperation.o\
-    $(OBJECT_PATH)type_symmetrylist.o
-	$(FC) $(FFLAGS) -c type_sqs.f90 -o $@
 $(OBJECT_PATH)type_forceconstant_alloy_secondorder.o:\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)type_crystalstructure.o\
@@ -792,7 +763,6 @@ $(OBJECT_PATH)type_forcemap.o:\
     $(OBJECT_PATH)type_forceconstant_fourthorder.o\
 	$(OBJECT_PATH)lo_dielectric_interaction.o\
     $(OBJECT_PATH)type_jij_secondorder.o\
-	$(OBJECT_PATH)type_symmetrylist.o\
 	$(OBJECT_PATH)lo_symmetry_of_interactions.o
 	$(FC) $(FFLAGS) -c type_forcemap.f90 -o $@
 $(OBJECT_PATH)type_forcemap_generate.o:\
