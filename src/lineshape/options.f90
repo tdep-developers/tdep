@@ -20,6 +20,7 @@ type lo_opts
     logical :: isotopescattering = .false.
     logical :: thirdorder = .false.
     logical :: fourthorder = .false.
+    logical :: mct = .false.
     logical :: slightsmearing = .false.
     integer :: integrationtype = -lo_hugeint
     logical :: readiso = .false.
@@ -129,6 +130,10 @@ subroutine parse(opts)
                  help='Consider four-phonon contributions to the real part of the self-energy.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--modecoupling', switch_ab='-mct', &
+                 help='Remove the static contribution to the self-energy in the mode-coupling theory.', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
     call cli%add(switch='--nondiagonal', &
                  help='Consider non-diagonal contributions to the self-energy.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
@@ -233,6 +238,7 @@ subroutine parse(opts)
     call cli%get(switch='--no_thirdorder_scattering', val=dumlog)
     opts%thirdorder = .not. dumlog
     call cli%get(switch='--fourthorder', val=opts%fourthorder)
+    call cli%get(switch='--modecoupling', val=opts%mct)
     call cli%get(switch='--nondiagonal', val=dumlog)
     opts%diagonal = .not. dumlog
     call cli%get(switch='--minsmear', val=opts%minsmear)
@@ -327,6 +333,12 @@ subroutine parse(opts)
             write (*, *) '*** Makes no sense to specify --readpath when calculating on grid (--dumpgrid).'
             stop
         end if
+    end if
+
+    ! If we are in the mode-coupling approach, the real part four phonon makes no sense
+    if (opts%mct .and. opts%fourthorder) then
+        write(*, *) 'There is no real part from the fourth order in the mode-coupling approximation'
+        stop
     end if
 
     ! Not really options
