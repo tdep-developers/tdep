@@ -337,7 +337,7 @@ subroutine parse(opts)
 
     ! If we are in the mode-coupling approach, the real part four phonon makes no sense
     if (opts%mct .and. opts%fourthorder) then
-        write(*, *) 'There is no real part from the fourth order in the mode-coupling approximation'
+        write(*, *) 'There is no real part from the fourth order in the mode-coupling theory'
         stop
     end if
 
