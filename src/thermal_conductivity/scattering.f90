@@ -83,24 +83,18 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
     type(lo_montecarlo_grid) :: mcg3, mcg4
 
     init: block
+        !> The average broadening factor for each branch
+        real(r8), dimension(:), allocatable :: sigavg
+        !> A buffer for a vector
+        real(r8), dimension(3) :: v0
+        !> The calculated sigma for a mode
+        real(r8) :: sigma
         !> To initialize the random number generator and timing
         real(r8) :: rseed
         !> The q-point grid dimension
         integer, dimension(3) :: dims
         !> Some integers for the do loop/indices
         integer :: q1, q2, b1, il, j, my_nqpoints, ctr
-
-        real(r8), dimension(:), allocatable :: sigavg, bla
-        real(r8), dimension(3, 3) :: reclat
-        real(r8), dimension(6) :: w
-        real(r8) :: sigma
-        integer, dimension(3) :: fq, fqp
-
-        real(r8), dimension(3) :: v0
-        real(r8), dimension(:, :), allocatable :: allsig
-        real(r8), dimension(:), allocatable :: sigsort, sigmin, sigmax
-        real(r8) :: f0
-        integer :: i25, i75
 
         ! grid dimensions
         select type (qp)
@@ -133,23 +127,18 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         allocate (sr%be(qp%n_irr_point, dr%n_mode))
         allocate (sr%sigsq(qp%n_irr_point, dr%n_mode))
         call mem%allocate(sigavg, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(allsig, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(sigsort, qp%n_irr_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(sigmin, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(sigmax, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         sigavg = 0.0_r8
-        allsig = 0.0_r8
-        sigsort = 0.0_r8
-        sigmin = lo_huge
-        sigmax = -lo_huge
 
         sr%be = 0.0_r8
         sr%sigsq = 0.0_r8
+        ! This could be useful if integrationtype=1 -> fixed gaussian smearing
         sr%sigma = opts%sigma * lo_frequency_THz_to_Hartree
+        ! This could be useful if integrationtype=6 -> Adapative smearing from groupvel diff
         do j=1, 3
             sr%reclat(:, j) = uc%reciprocal_latticevectors(:, j) / dims(j)
         end do
+        ! And we get the values in the array
         do q1 = 1, qp%n_irr_point
             do b1 = 1, dr%n_mode
                 ! Skip gamma point
@@ -160,43 +149,26 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                 else
                     sr%be(q1, b1) = lo_planck(opts%temperature, dr%iq(q1)%omega(b1))
                 end if
-                sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), 1.0_r8)**2
-
-!               sigma = norm2(dr%iq(q1)%vel(:, b1)) * qp%ip(q1)%radius * lo_twopi / sqrt(2.0_r8)
-!               sr%sigsq(q1, b1) = sigma**2
+!               sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), 1.0_r8)**2
 
                 v0 = matmul(abs(dr%iq(q1)%vel(:, b1)), sr%reclat)**2
+                ! This allows to work around problem with 2D materials
                 sigma = maxval(v0*0.5_r8)
                 sr%sigsq(q1, b1) = sigma
 
-                f0 = norm2(dr%iq(q1)%vel(:, b1)) * qp%ip(q1)%radius * lo_twopi / sqrt(2.0_r8)
-                if (f0 .gt. 0.0_r8) then
-                    sigmin(b1) = min(sigmin(b1), f0**2)
-                    sigmax(b1) = max(sigmax(b1), f0**2)
-                    sigavg(b1) = sigavg(b1) + f0**2 * qp%ip(q1)%integration_weight
-                end if
+                ! Let's accumulate the average broadening factor for each mode, for a sanity check
+                sigavg(b1) = sigavg(b1) + sigma * qp%ip(q1)%integration_weight
             end do
         end do
 
-        do b1=1, dr%n_mode
-!           sigavg(b1) = max(sigavg(b1) - 1.5_r8 * (sigmax(b1) - sigmin(b1)), sigmin(b1))
-            sigavg(b1) = sigavg(b1)
-        end do
-
+        ! We add a little sanity check, in case a broadening factor is zero
         do q1=1, qp%n_irr_point
             do b1=1, dr%n_mode
-                if (sr%sigsq(q1, b1) .lt. 1e-20_r8) then
-                sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), (0.25_r8 * dr%default_smearing(b1))**2)
-!               sr%sigsq(q1, b1) = min(sr%sigsq(q1, b1), 4.0_r8 * dr%default_smearing(b1))
-!               sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), sigavg(b1))
-!               sr%sigsq(q1, b1) = max(sr%sigsq(q1, b1), sigmin(b1))
+                if (sr%sigsq(q1, b1) .lt. sigavg(b1) / 10.0_r8) then
+                    sr%sigsq(q1, b1) = sigavg(b1) / 10.0_r8
                 end if
             end do
         end do
-
-        if (mw%talk) write(*, *) dr%default_smearing * lo_frequency_Hartree_to_meV
-        if (mw%talk) write(*, *) sqrt(sigavg) * lo_frequency_Hartree_to_meV
-        if (mw%talk) write(*, *) sqrt(sigmin) * lo_frequency_Hartree_to_meV
         call mem%deallocate(sigavg, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         if (mw%talk) write (*, *) '... distributing q-point/modes on MPI ranks'
