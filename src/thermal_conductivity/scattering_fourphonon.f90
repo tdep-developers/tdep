@@ -341,7 +341,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
         d2 = 1.0_r8
         j = j + 1
     else
-
         if (abs(om1 - om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
             d0 = d0 + lo_gauss(om1, om2 + om3 + om4, sigma)
             j = j + 1

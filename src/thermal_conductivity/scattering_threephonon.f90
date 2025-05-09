@@ -200,7 +200,6 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         end do allq2
 
         ! And now we add things, with the normalization
-        od_terms = od_terms
         do q2 = 1, qp%n_full_point
             do b2 = 1, dr%n_mode
                 i2 = (q2 - 1)*dr%n_mode + b2

@@ -257,6 +257,7 @@ subroutine get_kappa_offdiag(dr, qp, uc, fc, temperature, classical, mem, mw, ka
                 if (dr%iq(iq)%omega(jmode) .lt. lo_freqtol) cycle
                 om1 = dr%iq(iq)%omega(jmode)
                 tau1 = dr%iq(iq)%linewidth(jmode)
+                if (tau1 .lt. lo_freqtol) cycle
                 do kmode = 1, dr%n_mode
                     if (jmode .eq. kmode) cycle  ! We only want the off diagonal contribution
                     ! Skip gamma for acoustic branches
@@ -264,6 +265,7 @@ subroutine get_kappa_offdiag(dr, qp, uc, fc, temperature, classical, mem, mw, ka
                     if (om2 .lt. lo_freqtol) cycle
 
                     tau2 = dr%iq(iq)%linewidth(kmode)
+                    if (tau2 .lt. lo_freqtol) cycle
 
                     ! This is consistent with the paper, but a bit different from QHGK
                     ! This comes from the fact that we don't work with creation/annihilation but
@@ -412,7 +414,11 @@ subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical
             do il = 1, sr%my_nqpoints
                 q1 = sr%my_qpoints(il)
                 b1 = sr%my_modes(il)
-                Fnb(:, b1, q1) = -buf(:, il)/dr%iq(q1)%qs(b1)
+                if (dr%iq(q1)%qs(b1) .lt. lo_freqtol) then
+                    Fnb(:, b1, q1) = 0.0_r8
+                else
+                    Fnb(:, b1, q1) = -buf(:, il)/dr%iq(q1)%qs(b1)
+                end if
             end do
             call mw%allreduce('sum', Fnb)
         end block applyXi
