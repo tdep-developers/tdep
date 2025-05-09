@@ -56,6 +56,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     integer, dimension(:, :), allocatable :: red_quartet
     !> The approximated dirac
     real(r8) :: d0, d1, d2, d3, d4
+    !> Can we skip the process ?
+    logical :: isok
 
     real(r8), dimension(:, :), allocatable :: od_terms
 
@@ -148,20 +150,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     n4p = n4 + 1.0_r8
                     egv4 = dr%aq(q4)%egv(:, b4)/sqrt(om4)
 
-!                   select case (integrationtype)
-!                   case (1)
-!                       sigma = smearing*lo_frequency_THz_to_Hartree
-!                   case (2)
-!                       sigma = sqrt(sr%sigsq(q1, b1) + &
-!                                    sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
-!                                    sr%sigsq(qp%ap(q3)%irreducible_index, b3) + &
-!                                    sr%sigsq(qp%ap(q4)%irreducible_index, b4))
-!                   case (6)
-!                       sigma = qp%smearingparameter(dr%aq(q3)%vel(:, b3) - dr%aq(q4)%vel(:, b4), &
-!                                                    dr%default_smearing(b3), smearing)
-!                   end select
-
-                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
+                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, isok)
+                    if (.not. isok) cycle
 
                     evp3 = 0.0_r8
                     call zgeru(dr%n_mode, dr%n_mode**3, (1.0_r8, 0.0_r8), egv4, 1, evp2, 1, evp3, dr%n_mode)
@@ -176,10 +166,6 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     plf3 = 3.0_r8*n4*n3p*n2p - n4p*n3*n2
 
                     ! Prefactors, including the matrix elements and dirac
-!                   f0 = mult0*psisq*plf0*(lo_gauss(om1, om2 + om3 + om4, sigma) - lo_gauss(om1, -om2 - om3 - om4, sigma))
-!                   f1 = mult1*psisq*plf1*(lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma))
-!                   f2 = mult2*psisq*plf2*(lo_gauss(om1, -om3 + om2 + om4, sigma) - lo_gauss(om1, om3 - om2 - om4, sigma))
-!                   f3 = mult3*psisq*plf3*(lo_gauss(om1, -om4 + om3 + om2, sigma) - lo_gauss(om1, om4 - om3 - om2, sigma))
                     f0 = mult0*psisq*plf0*d0
                     f1 = mult1*psisq*plf1*d1
                     f2 = mult2*psisq*plf2*d2
@@ -278,7 +264,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     call mem%deallocate(od_terms, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, isok)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -293,13 +279,15 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     integer, intent(in) :: integrationtype
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1, d2, d3
+    !> Can we skip the rest of the calculation ?
+    logical, intent(out) :: isok
 
     !> The frequencies
     real(r8) :: om1, om2, om3, om4
     ! Buffer to contains all the sigmas
     real(r8), dimension(3, 6) :: allsig
     !> An integer for the do loop
-    integer :: i
+    integer :: i, j
 
     select case (integrationtype)
     ! Gaussian smearing with fixed width
@@ -344,18 +332,55 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     if (abs(om1 - om2) .lt. lo_freqtol .and. abs(om3 - om4) .lt. lo_freqtol) then
         d2 = 1.0_r8
         d3 = 1.0_r8
+        j = j + 1
     elseif (abs(om1 - om3) .lt. lo_freqtol .and. abs(om2 - om4) .lt. lo_freqtol) then
         d1 = 1.0_r8
         d3 = 1.0_r8
+        j = j + 1
     elseif (abs(om1 - om4) .lt. lo_freqtol .and. abs(om2 - om3) .lt. lo_freqtol) then
         d1 = 1.0_r8
         d2 = 1.0_r8
+        j = j + 1
     else
-        d0 = lo_gauss(om1, om2 + om3 + om4, sigma)  - lo_gauss(om1, -om2 - om3 - om4, sigma)
-        d1 = lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma)
-        d2 = lo_gauss(om1, -om3 + om2 + om4, sigma) - lo_gauss(om1, om3 - om2 - om4, sigma)
-        d3 = lo_gauss(om1, -om4 + om3 + om2, sigma) - lo_gauss(om1, om4 - om3 - om2, sigma)
+!       d0 = lo_gauss(om1, om2 + om3 + om4, sigma)  - lo_gauss(om1, -om2 - om3 - om4, sigma)
+!       d1 = lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma)
+!       d2 = lo_gauss(om1, -om3 + om2 + om4, sigma) - lo_gauss(om1, om3 - om2 - om4, sigma)
+!       d3 = lo_gauss(om1, -om4 + om3 + om2, sigma) - lo_gauss(om1, om4 - om3 - om2, sigma)
+
+        if (abs(om1 - om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
+            d0 = d0 + lo_gauss(om1, om2 + om3 + om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 + om2 + om3 + om4) .lt. 4.0_r8 * sigma) then
+            d0 = d0 - lo_gauss(om1, -om2 - om3 - om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 + om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
+            d1 = d1 + lo_gauss(om1, -om2 + om3 + om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 - om2 + om3 + om4) .lt. 4.0_r8 * sigma) then
+            d1 = d1 - lo_gauss(om1, om2 - om3 - om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 -om2 + om3 - om4) .lt. 4.0_r8 * sigma) then
+            d2 = d2 + lo_gauss(om1, om2 - om3 + om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 + om2 - om3 + om4) .lt. 4.0_r8 * sigma) then
+            d2 = d2 - lo_gauss(om1, -om2 + om3 - om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 - om2 - om3 + om4) .lt. 4.0_r8 * sigma) then
+            d3 = d3 + lo_gauss(om1, om2 + om3 - om4, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 + om2 + om3 - om4) .lt. 4.0_r8 * sigma) then
+            d3 = d3 - lo_gauss(om1, -om2 - om3 + om4, sigma)
+            j = j + 1
+        end if
     end if
+    if (j .gt. 0) isok = .true.
 end subroutine
 end subroutine
 

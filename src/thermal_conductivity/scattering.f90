@@ -152,7 +152,7 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
 !               sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), 1.0_r8)**2
 
                 v0 = matmul(abs(dr%iq(q1)%vel(:, b1)), sr%reclat)**2
-                ! This allows to work around problem with 2D materials
+                ! This allows to work around problems with 2D materials
                 sigma = maxval(v0*0.5_r8)
                 sr%sigsq(q1, b1) = sigma
 

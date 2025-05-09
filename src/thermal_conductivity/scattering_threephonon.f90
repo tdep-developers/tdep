@@ -54,6 +54,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     real(r8), dimension(3, 3) :: reclat, wig
     real(r8), dimension(3) :: w, sigsig
 
+    logical :: isok
+
     do i=1, 3
         reclat(:, i) = uc%reciprocal_latticevectors(:, i) / mcg%full_dims(i)
     end do
@@ -108,33 +110,9 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                 if (om3 .lt. lo_freqtol) cycle
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
-!               select case (integrationtype)
-!               case (1)
-!                   sigma = smearing*lo_frequency_THz_to_Hartree
-!               case (2)
-!                   sigma = sqrt(sr%sigsq(q1, b1) + &
-!                                sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
-!                                sr%sigsq(qp%ap(q3)%irreducible_index, b3))
-!               case (6)
-!                   sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), &
-!                                                dr%default_smearing(b3), smearing)
+                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, isok)
 
-!                   wig = 0.0_r8
-!                   sigsig = 0.0_r8
-!                   do i=1, 3
-!                       w(i) = dot_product(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), reclat(:, i))**2
-!                       wig(i, 1) = dot_product(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b2), reclat(:, i))**2
-!                       wig(i, 2) = dot_product(dr%iq(q1)%vel(:, b1) - dr%aq(q3)%vel(:, b3), reclat(:, i))**2
-!                       wig(i, 3) = dot_product(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), reclat(:, i))**2
-!                   end do
-!                   do i=1, 3
-!                       sigsig(i) = sqrt(maxval(wig(:, i)) * 0.5_r8)
-!                   end do
-!                   sigma = sum(sigsig) / 3.0_r8
-!                   ! sigma = sqrt(maxval(w) * 0.5_r8)
-!               end select
-
-                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
+                if (.not. isok) cycle
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
                 evp2 = 0.0_r8
@@ -251,7 +229,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     deallocate (red_triplet)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, isok)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -267,12 +245,16 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1
 
+    logical, intent(out) :: isok
+
     !> The frequencies
     real(r8) :: om1, om2, om3
     ! Buffer to contains all the sigmas
     real(r8), dimension(3, 3) :: allsig
     !> An integer for the do loop
     integer :: i
+
+    integer :: j
 
     select case (integrationtype)
     ! Gaussian smearing with fixed width
@@ -289,12 +271,13 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
         allsig(:, 1) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b2), sr%reclat)**2
         allsig(:, 2) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
         allsig(:, 3) = matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
+
         sigma = 0.0_r8
         do i=1, 3
             sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 3.0_r8
         end do
 
-        sigma = sqrt(maxval(matmul(dr%aq(q2)%vel(:, b1) - dr%aq(q3)%vel(:, b3), sr%reclat)**2) * 0.5_r8)
+!       sigma = sqrt(maxval(matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), sr%reclat)**2) * 0.5_r8)
     end select
 
     om1 = dr%iq(q1)%omega(b1)
@@ -302,13 +285,33 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     om3 = dr%aq(q3)%omega(b3)
     d0 = 0.0_r8
     d1 = 0.0_r8
+    j = 0
+    isok = .false.
     ! We cannot have interaction with same mode (or degenerate)
     if (abs(om1 - om2) .gt. lo_freqtol .and. &
         abs(om1 - om3) .gt. lo_freqtol .and. &
         abs(om2 - om3) .gt. lo_freqtol) then
-        d0 = lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma)
-        d1 = lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma)
+!       d0 = lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma)
+!       d1 = lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma)
+
+        if (abs(om1 + om2 - om3) .lt. 4.0_r8 * sigma) then
+            d0 = d0 + lo_gauss(om1, -om2 + om3, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 - om2 + om3) .lt. 4.0_r8 * sigma) then
+            d0 = d0 - lo_gauss(om1, om2 - om3, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 - om2 - om3) .lt. 4.0_r8 * sigma) then
+            d1 = d1 + lo_gauss(om1, om2 + om3, sigma)
+            j = j + 1
+        end if
+        if (abs(om1 + om2 + om3) .lt. 4.0_r8 * sigma) then
+            d1 = d1 - lo_gauss(om1, -om2 - om3, sigma)
+            j = j + 1
+        end if
     end if
+    if (j .gt. 0) isok = .true.
 end subroutine
 end subroutine
 
