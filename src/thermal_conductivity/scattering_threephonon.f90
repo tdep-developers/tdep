@@ -32,26 +32,24 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3
     !> Helper for Fourier transform of psi3
     complex(r8), dimension(:), allocatable :: ptf, evp1, evp2
+    !> buff to keep the off diagonal scattering matrix elements
+    real(r8), dimension(:, :), allocatable :: od_terms
+    !> The reducible triplet corresponding to the currently computed triplet
+    integer, dimension(:, :), allocatable :: red_triplet
     !> The full qpoint grid, to be shuffled
     integer, dimension(:), allocatable :: qgridfull
-    !> The qpoints and the dimension of the qgrid
-    real(r8), dimension(3) :: qv2, qv3
-    !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
-    real(r8) :: sigma, om1, om2, om3, n2, n3, psisq, f0, f1, plf0, plf1, perm
     !> The complex threephonon matrix element
     complex(r8) :: c0
+    !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
+    real(r8) :: sigma, om1, om2, om3, n2, n3, psisq, f0, f1, plf0, plf1, perm
+    !> The approximated dirac
+    real(r8) :: d0, d1
     !> Integers for do loops and counting
     integer :: qi, q1, q2, q3, q2p, q3p, b1, b2, b3, i
     !> Is the triplet irreducible ?
     logical :: isred
-    !> The reducible triplet corresponding to the currently computed triplet
-    integer, dimension(:, :), allocatable :: red_triplet
-    !> buff to keep the off diagonal scattering matrix elements
-    real(r8), dimension(:, :), allocatable :: od_terms
-    !> The approximated dirac
-    real(r8) :: d0, d1
     !> Do we have to compute the scattering process ?
-    logical :: isok
+    logical :: is_scatter
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -104,9 +102,9 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
                 ! Get the weight for each processes
-                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, isok)
+                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, is_scatter)
                 ! If all the weights are zero, skip the last part
-                if (.not. isok) cycle
+                if (.not. is_scatter) cycle
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
                 evp2 = 0.0_r8
@@ -148,7 +146,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         !> To keep track of the number of mode we actually add
         integer, dimension(dr%n_mode) :: nn
         !> To hold the q-point in reduced coordinates
-        real(r8), dimension(3) :: qv2p
+        real(r8), dimension(3) :: qv2, qv2p
         !> To get the index of the new triplet on the fft_grid
         integer, dimension(3) :: gi
         !> Some buffer
@@ -220,7 +218,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     if (allocated(red_triplet)) deallocate (red_triplet)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, isok)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, is_scatter)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -235,8 +233,8 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     integer, intent(in) :: integrationtype
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1
-
-    logical, intent(out) :: isok
+    !> Is there any scattering happening ?
+    logical, intent(out) :: is_scatter
 
     !> The frequencies
     real(r8) :: om1, om2, om3
@@ -265,6 +263,7 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
         do i=1, 3
             sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 3.0_r8
         end do
+        sigma = sigma + sr%thresh_sigma
     end select
 
     om1 = dr%iq(q1)%omega(b1)
@@ -273,8 +272,8 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     d0 = 0.0_r8
     d1 = 0.0_r8
     j = 0
-    isok = .false.
-    ! We cannot have interaction with same mode (or degenerate)
+    is_scatter = .false.
+    ! We cannot have interactions if two modes are degenerate (or the same)
     if (abs(om1 - om2) .gt. lo_freqtol .and. &
         abs(om1 - om3) .gt. lo_freqtol .and. &
         abs(om2 - om3) .gt. lo_freqtol) then
@@ -296,7 +295,7 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
             j = j + 1
         end if
     end if
-    if (j .gt. 0) isok = .true.
+    if (j .gt. 0) is_scatter = .true.
 end subroutine
 end subroutine
 

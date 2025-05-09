@@ -32,34 +32,32 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3, egv4
     !> Helper for Fourier transform of psi3
     complex(r8), dimension(:), allocatable :: ptf, evp1, evp2, evp3
-    !> The full qpoint grid, to be shuffled
-    integer, dimension(:), allocatable :: qgridfull1, qgridfull2
+    !> Buffer for the off-diagonal terms in the scattering matrix
+    real(r8), dimension(:, :), allocatable :: od_terms
     !> The qpoints in cartesian coordinates
     real(r8), dimension(3) :: qv2, qv3, qv4
+    !> The reducible triplet corresponding to the currently computed quartet
+    integer, dimension(:, :), allocatable :: red_quartet
+    !> The full qpoint grid, to be shuffled
+    integer, dimension(:), allocatable :: qgridfull1, qgridfull2
     !> The complex scattering amplitude
     complex(r8) :: c0
     !> Frequencies, bose-einstein occupation and scattering strength
-    real(r8) :: om1, om2, om3, om4, psisq
-    ! The gaussian integration width
-    real(r8) :: sigma
+    real(r8) :: om1, om2, om3, om4, psisq, sigma
     !> Stuff for the linewidths
     real(r8) :: n2, n3, n4, n2p, n3p, n4p, plf0, plf1, plf2, plf3
-    !> Integers for do loops
-    integer :: q1, q2, q3, q4, q2p, q3p, q4p, b1, b2, b3, b4, qi, qj, i
-    !> Is the quartet irreducible ?
-    logical :: isred
     !> If so, what is its multiplicity
     real(r8) :: mult0, mult1, mult2, mult3
     !> All the prefactors for the scattering
     real(r8) :: f0, f1, f2, f3, f4, f5, f6, f7, fall
-    !> The reducible triplet corresponding to the currently computed quartet
-    integer, dimension(:, :), allocatable :: red_quartet
     !> The approximated dirac
     real(r8) :: d0, d1, d2, d3, d4
-    !> Can we skip the process ?
-    logical :: isok
-
-    real(r8), dimension(:, :), allocatable :: od_terms
+    !> Integers for do loops
+    integer :: q1, q2, q3, q4, q2p, q3p, q4p, b1, b2, b3, b4, qi, qj, i
+    !> Is the quartet irreducible ?
+    logical :: isred
+    !> Is there any scattering happening ?
+    logical :: is_scatter
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -150,8 +148,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     n4p = n4 + 1.0_r8
                     egv4 = dr%aq(q4)%egv(:, b4)/sqrt(om4)
 
-                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, isok)
-                    if (.not. isok) cycle
+                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, is_scatter)
+                    if (.not. is_scatter) cycle
 
                     evp3 = 0.0_r8
                     call zgeru(dr%n_mode, dr%n_mode**3, (1.0_r8, 0.0_r8), egv4, 1, evp2, 1, evp3, dr%n_mode)
@@ -265,7 +263,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     if (allocated(red_quartet)) deallocate(red_quartet)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, isok)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, is_scatter)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -281,7 +279,7 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1, d2, d3
     !> Can we skip the rest of the calculation ?
-    logical, intent(out) :: isok
+    logical, intent(out) :: is_scatter
 
     !> The frequencies
     real(r8) :: om1, om2, om3, om4
@@ -374,7 +372,7 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
             j = j + 1
         end if
     end if
-    if (j .gt. 0) isok = .true.
+    if (j .gt. 0) is_scatter = .true.
 end subroutine
 end subroutine
 

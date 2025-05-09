@@ -150,21 +150,20 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                 else
                     sr%be(q1, b1) = lo_planck(opts%temperature, dr%iq(q1)%omega(b1))
                 end if
-!               sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), 1.0_r8)**2
 
                 v0 = matmul(abs(dr%iq(q1)%vel(:, b1)), sr%reclat)**2
                 ! This allows to work around problems with 2D materials
                 sigma = maxval(v0*0.5_r8)
                 sr%sigsq(q1, b1) = sigma
 
-                ! Let's accumulate the average broadening factor for each mode, for a sanity check
+                ! Let's accumulate the average broadening factor for each mode
                 sigavg(b1) = sigavg(b1) + sigma * qp%ip(q1)%integration_weight
             end do
         end do
 
-        ! We add a little baseline as a sanity check, to avoid pathological case when group velocities are near zero
+        ! We add a little baseline, to avoid pathological case when group velocities are near zero
         sr%sigsq = sr%sigsq + maxval(sigavg) * 1e-4_r8
-        ! This is to have the sanity check in memory, for integrationtype 6
+        ! This is to have a sanity check in memory, for integrationtype 6
         sr%thresh_sigma = maxval(sigavg) * 1e-4_r8
         call mem%deallocate(sigavg, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 

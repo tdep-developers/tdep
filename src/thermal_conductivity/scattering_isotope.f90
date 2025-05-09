@@ -56,10 +56,10 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
                 sigma = sigma + sr%thresh_sigma
             end select
 
+            ! The off-diagonal index in the scattering matrix
             i2 = (q2 - 1)*dr%n_mode + b2
 
             egviso(:, 2) = dr%aq(q2)%egv(:, b2)
-
             psisq = isotope_scattering_strength(uc, egviso)*prefactor
 
             f0 = psisq*om1*om2*lo_gauss(om1, om2, sigma)
