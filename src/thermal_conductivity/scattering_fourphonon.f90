@@ -327,14 +327,17 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     om4 = dr%aq(q4)%omega(b4)
     ! We can have some cases actually respecting strictly the sum rules
     if (abs(om1 - om2) .lt. lo_freqtol .and. abs(om3 - om4) .lt. lo_freqtol) then
+        d0 = 1.0_r8
         d2 = 1.0_r8
         d3 = 1.0_r8
         j = j + 1
     elseif (abs(om1 - om3) .lt. lo_freqtol .and. abs(om2 - om4) .lt. lo_freqtol) then
+        d0 = 1.0_r8
         d1 = 1.0_r8
         d3 = 1.0_r8
         j = j + 1
     elseif (abs(om1 - om4) .lt. lo_freqtol .and. abs(om2 - om3) .lt. lo_freqtol) then
+        d0 = 1.0_r8
         d1 = 1.0_r8
         d2 = 1.0_r8
         j = j + 1
