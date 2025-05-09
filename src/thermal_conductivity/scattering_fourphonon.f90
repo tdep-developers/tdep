@@ -262,6 +262,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     call mem%deallocate(qgridfull1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(qgridfull2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(od_terms, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    if (allocated(red_quartet)) deallocate(red_quartet)
 
     contains
 subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, isok)
@@ -456,6 +457,8 @@ subroutine quartet_is_irreducible(qp, uc, q1, q2, q3, q4, isred, red_quartet, mw
             newqp_sort(:, j) = qpp
             if (qpp(1) .gt. q2 .or. qpp(2) .gt. q3) isred = .true.
         end do
+
+        if (isred) return
 
         if (minval(newqp) .lt. 0) then
             do j = 1, size(newqp, 2)
