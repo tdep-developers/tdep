@@ -292,7 +292,7 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     select case (integrationtype)
     ! Gaussian smearing with fixed width
     case (1)
-        sigma = smearing * lo_frequency_THz_to_Hartree
+        sigma = sr%sigma
     ! Adaptive Gaussian smearing with smeared frequency approach
     case (2)
         sigma = sqrt(sr%sigsq(q1, b1) + &
@@ -314,10 +314,8 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
         do i=1, 6
             sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 6.0_r8
         end do
+        sigma = sigma + sr%thresh_sigma
     end select
-    ! To catch edge cases, where the sum rule is actually working
-!   if (sigma .lt. lo_freqtol) sigma = 1.0_r8 / sqrt(lo_twopi)
-!   if (sigma .lt. lo_freqtol) sigma = minval(dr%default_smearing)
 
     d0 = 0.0_r8
     d1 = 0.0_r8
@@ -342,10 +340,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
         d2 = 1.0_r8
         j = j + 1
     else
-!       d0 = lo_gauss(om1, om2 + om3 + om4, sigma)  - lo_gauss(om1, -om2 - om3 - om4, sigma)
-!       d1 = lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma)
-!       d2 = lo_gauss(om1, -om3 + om2 + om4, sigma) - lo_gauss(om1, om3 - om2 - om4, sigma)
-!       d3 = lo_gauss(om1, -om4 + om3 + om2, sigma) - lo_gauss(om1, om4 - om3 - om2, sigma)
 
         if (abs(om1 - om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
             d0 = d0 + lo_gauss(om1, om2 + om3 + om4, sigma)

@@ -43,7 +43,7 @@ type lo_scattering_rates
     !> The reciprocal lattice vectors scaled by the qgrid, for adaptive broadening
     real(r8), dimension(3, 3) :: reclat = -lo_huge
     !> The smearing parameter
-    real(r8) :: sigma
+    real(r8) :: sigma, thresh_sigma
 
 contains
     !> Generate the scattering amplitudes
@@ -138,6 +138,7 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         do j=1, 3
             sr%reclat(:, j) = uc%reciprocal_latticevectors(:, j) / dims(j)
         end do
+
         ! And we get the values in the array
         do q1 = 1, qp%n_irr_point
             do b1 = 1, dr%n_mode
@@ -161,14 +162,10 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
             end do
         end do
 
-        ! We add a little sanity check, in case a broadening factor is zero
-        do q1=1, qp%n_irr_point
-            do b1=1, dr%n_mode
-                if (sr%sigsq(q1, b1) .lt. sigavg(b1) / 10.0_r8) then
-                    sr%sigsq(q1, b1) = sigavg(b1) / 10.0_r8
-                end if
-            end do
-        end do
+        ! We add a little baseline as a sanity check, to avoid pathological case when group velocities are near zero
+        sr%sigsq = sr%sigsq + maxval(sigavg) * 1e-4_r8
+        ! This is to have the sanity check in memory, for integrationtype 6
+        sr%thresh_sigma = maxval(sigavg) * 1e-4_r8
         call mem%deallocate(sigavg, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         if (mw%talk) write (*, *) '... distributing q-point/modes on MPI ranks'
@@ -285,7 +282,8 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                 ! While we are at it, we can set other things
                 dr%iq(q1)%qs(b1) = 2.0_r8*dr%iq(q1)%linewidth(b1)
                 velnorm = norm2(dr%iq(q1)%vel(:, b1))
-                if (velnorm .gt. lo_phonongroupveltol) then
+!               if (velnorm .gt. lo_phonongroupveltol) then
+                if (dr%iq(q1)%linewidth(b1) .gt. lo_freqtol) then
                     dr%iq(q1)%mfp(:, b1) = dr%iq(q1)%vel(:, b1)/dr%iq(q1)%qs(b1)
                     dr%iq(q1)%scalar_mfp(b1) = velnorm/dr%iq(q1)%qs(b1)
                     dr%iq(q1)%F0(:, b1) = dr%iq(q1)%mfp(:, b1)

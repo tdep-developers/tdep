@@ -53,9 +53,7 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
             case (6)
                 allsig = matmul(dr%aq(q2)%vel(:, b2), sr%reclat)**2
                 sigma = sqrt(maxval(allsig) * 0.5_r8)
-                sigma = max(sigma, dr%default_smearing(b2) * 0.25_r8)
-!               sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2), &
-!                                            dr%default_smearing(b2), smearing)
+                sigma = sigma + sr%thresh_sigma
             end select
 
             i = (q2 - 1)*dr%n_mode + b2

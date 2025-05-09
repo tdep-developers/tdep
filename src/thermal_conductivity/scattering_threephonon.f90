@@ -50,15 +50,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     real(r8), dimension(:, :), allocatable :: od_terms
     !> The approximated dirac
     real(r8) :: d0, d1
-
-    real(r8), dimension(3, 3) :: reclat, wig
-    real(r8), dimension(3) :: w, sigsig
-
+    !> Do we have to compute the scattering process ?
     logical :: isok
-
-    do i=1, 3
-        reclat(:, i) = uc%reciprocal_latticevectors(:, i) / mcg%full_dims(i)
-    end do
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -110,8 +103,9 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                 if (om3 .lt. lo_freqtol) cycle
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
+                ! Get the weight for each processes
                 call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, isok)
-
+                ! If all the weights are zero, skip the last part
                 if (.not. isok) cycle
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
@@ -252,14 +246,12 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     ! Buffer to contains all the sigmas
     real(r8), dimension(3, 3) :: allsig
     !> An integer for the do loop
-    integer :: i
-
-    integer :: j
+    integer :: i, j
 
     select case (integrationtype)
     ! Gaussian smearing with fixed width
     case (1)
-        sigma = smearing * lo_frequency_THz_to_Hartree
+        sigma = sr%sigma
     ! Adaptive Gaussian smearing with smeared frequency approach
     case (2)
         sigma = sqrt(sr%sigsq(q1, b1) + &
@@ -276,8 +268,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
         do i=1, 3
             sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 3.0_r8
         end do
-
-!       sigma = sqrt(maxval(matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), sr%reclat)**2) * 0.5_r8)
     end select
 
     om1 = dr%iq(q1)%omega(b1)
@@ -291,8 +281,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     if (abs(om1 - om2) .gt. lo_freqtol .and. &
         abs(om1 - om3) .gt. lo_freqtol .and. &
         abs(om2 - om3) .gt. lo_freqtol) then
-!       d0 = lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma)
-!       d1 = lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma)
 
         if (abs(om1 + om2 - om3) .lt. 4.0_r8 * sigma) then
             d0 = d0 + lo_gauss(om1, -om2 + om3, sigma)
@@ -440,6 +428,8 @@ subroutine triplet_is_irreducible(qp, uc, q1, q2, q3, isred, red_triplet, mw, me
             ! Now I check if I can reduce this triplet
             if (qpp(1) .gt. q2) isred = .true.
         end do
+
+        if (isred) return
 
         ! For stability, replace points not on the grid with starting q-point
         ! Should not be needed if the grid respect the symmetries of the lattice though
