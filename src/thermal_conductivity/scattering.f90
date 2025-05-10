@@ -390,39 +390,4 @@ function sr_size_in_mem(sr) result(mem)
     if (allocated(sr%sigsq)) mem = mem + storage_size(sr%sigsq)*size(sr%sigsq)
     mem = mem/8
 end function
-
-subroutine approximate_hessian(q1, b1, qp, dims, hess)
-    !> The qpoint-mesh
-    type(lo_qpoint_mesh), intent(in) :: qp
-    !> The qpoint
-    integer, intent(in) :: q1
-    !> The mode
-    integer, intent(in) :: b1
-    !> The dimension of the grid
-    integer, dimension(3), intent(in) :: dims
-    !> The Hessian
-    real(r8), dimension(3, 3), intent(out) :: hess
-
-!   fq = qp%ip(q1)%full_index
-!   om1 = dr%iq(q1)%omega(b1)
-!   vel1 = dr%iq(q1)%vel(:, b1)
-!   qtriplet = singlet_to_triplet(q1, dims(2), dims(3))
-
-!   hess = 0.0_r8
-!   do i=1, 3
-!       qt2 = qtriplet
-!       qt2(i) = qt2(i) + 1
-!       if (qt2(i) .gt. dims(i)) qt2(i) = 1
-!       q2 = triplet_to_singlet(qt2, dims(2), dims(3))
-!       vel2 = dr%aq(q2)%vel(:, b2)
-
-!       dq = norm2(qp%ap(q2)%r - qp%ap(fq)%r)
-
-!       do j=1, 3
-!           hess(i, j) = hess(i, j) + (vel2(i) - vel1(i)) / dq
-!       end do
-!   end do
-!   hess = hess / 3.0_r8
-
-end subroutine
 end module
