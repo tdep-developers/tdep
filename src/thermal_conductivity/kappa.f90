@@ -22,7 +22,6 @@ public :: get_kappa
 public :: get_kappa_offdiag
 public :: iterative_solution
 public :: symmetrize_kappa
-public :: get_viscosity
 contains
 
 !> Calculate the thermal conductivity
@@ -493,61 +492,5 @@ subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical
     call mem%deallocate(Fnb, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(Fbb, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-end subroutine
-
-!> Calculate the thermal conductivity
-subroutine get_viscosity(dr, qp, uc, temperature, classical, mu)
-    !> dispersions
-    type(lo_phonon_dispersions), intent(inout) :: dr
-    !> q-mesh
-    class(lo_qpoint_mesh), intent(in) :: qp
-    !> structure
-    type(lo_crystalstructure), intent(in) :: uc
-    !> temperature
-    real(r8), intent(in) :: temperature
-    !> Are we in the classical limit ?
-    logical, intent(in) :: classical
-    !> thermal conductivity tensor
-    real(r8), dimension(3, 3, 3, 3), intent(out) :: mu
-
-    real(r8), dimension(3) :: v0, v1, kr
-    real(r8) :: om1, cv, pref, n
-    integer :: j
-
-    integer :: q1, b1, iq, a, b, c, d, iop
-    real(r8), dimension(3, 3) :: v2, buf
-
-    mu = 0.0_r8
-    do q1=1, qp%n_full_point
-        iq = qp%ap(q1)%irreducible_index
-        kr = qp%ap(q1)%r * lo_twopi
-        iop = qp%ap(q1)%operation_from_irreducible
-        do b1=1, dr%n_mode
-            om1 = dr%aq(q1)%omega(b1)
-            if (om1 .lt. lo_freqtol) cycle
-            n = lo_planck(temperature, om1)
-            pref = n * (n + 1.0_r8) / uc%volume / lo_kb_hartree / temperature
-            v2 = 0.0_r8
-            if (iop .gt. 0) then
-                v0 = lo_operate_on_vector(uc%sym%op(iop), dr%iq(iq)%Fn(:, b1))
-                v1 = lo_operate_on_vector(uc%sym%op(iop), dr%iq(iq)%vel(:, b1))
-            else
-                v0 = -lo_operate_on_vector(uc%sym%op(abs(iop)), dr%iq(iq)%Fn(:, b1))
-                v1 = -lo_operate_on_vector(uc%sym%op(abs(iop)), dr%iq(iq)%vel(:, b1))
-            end if
-            v2 = lo_outerproduct(v0, v1)
-            do a=1, 3
-            do b=1, 3
-            do c=1, 3
-            do d=1, 3
-                mu(a, b, c, d) = mu(a, b, c, d) + pref * kr(a) * v0(b) * kr(c) * v1(d) / qp%n_full_point
-!               mu(a, b, c, d) = mu(a, b, c, d) + pref * v2(a, b) * kr(c) * kr(d) / qp%n_full_point
-            end do
-            end do
-            end do
-            end do
-        end do
-    end do
-    mu = lo_chop(mu, sum(abs(mu))*1e-6_r8)
 end subroutine
 end module
