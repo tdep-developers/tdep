@@ -130,7 +130,10 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
         call tmr%start()
         do iq=1,dqp%n_irr_point
 
-            if ( mw%talk ) write(*,*) '... evaluating qpoint '//tochar(iq)//' out of '//tochar(dqp%n_irr_point)
+            if ( mw%talk ) then
+                write(*,*) '... evaluating qpoint '//tochar(iq)//' out of '//tochar(dqp%n_irr_point)
+                write(*,*) '... qv:',dqp%ip(iq)%r
+            endif
 
             call se%generate(&
                 dqp%ip(iq), qdir, ddr%iq(iq), uc, fc, fct, fcf, ise, qp, dr, &

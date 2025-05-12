@@ -18,9 +18,9 @@ public :: lo_listofscatteringrates
 
 type lo_listofscatteringrates
     !> frequency at q''
-    real(r8), dimension(:, :), allocatable :: omega3
+    !real(r8), dimension(:, :), allocatable :: omega3
     !> group velocity at q''
-    real(r8), dimension(:, :, :), allocatable :: vel3
+    !real(r8), dimension(:, :, :), allocatable :: vel3
     !> three-phonon matrix elements, not squared (mode1,mode2,mode3,q)
     complex(r8), dimension(:, :, :, :), allocatable :: psi_3ph
     !> isotope matrix elements (mode1,mode2,q)
@@ -31,11 +31,12 @@ type lo_listofscatteringrates
     !> q-vectors are needed for evaluation of spectral functions
     real(r8), dimension(:, :), allocatable :: qvec3
     !> eigenvectors are needed for spectral functions
-    complex(r8), dimension(:, :, :), allocatable :: egv3
-
-contains
-    !> calculate matrix elements
-    procedure :: generate
+    !complex(r8), dimension(:, :, :), allocatable :: egv3
+    !> harmonic properties at the third q-vector
+    type(lo_phonon_dispersions_qpoint), dimension(:), allocatable :: wp3
+    contains
+        !> calculate matrix elements
+        procedure :: generate
 end type
 
 !> build a flattened helper to make things fast
@@ -82,10 +83,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
     !> how much to talk
     integer, intent(in) :: verbosity
 
-    ! Just keep a list of q3, temporarily
     type(flathelper) :: fh
-    real(r8), dimension(:, :), allocatable :: qvec3
-    complex(r8), dimension(:, :, :), allocatable :: egv3
     real(r8) :: timer, t0, t1
     integer :: ind_gamma_full, ind_gamma_irr
 
@@ -129,28 +127,33 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
     if (.not. sr%atgamma) then
         thirdfreq: block
             type(lo_phonon_dispersions_qpoint) :: op3
+            complex(r8), dimension(:, :, :), allocatable :: egv3
             real(r8), dimension(:, :), allocatable :: omega3
             real(r8), dimension(:, :, :), allocatable :: vel3
             real(r8), dimension(3) :: qv1, qv2, qv3, v0
             integer, dimension(:,:,:), allocatable :: degenmode3
             integer, dimension(:,:), allocatable :: degeneracy3
-            integer :: q, jq
+            integer :: q, jq, j
 
             ! Make some space
-            allocate (sr%omega3(dr%n_mode, qp%n_full_point))
-            allocate (sr%vel3(3, dr%n_mode, qp%n_full_point))
+            allocate (sr%qvec3(3, qp%n_full_point))
+            sr%qvec3=0.0_r8
 
             call mem%allocate(egv3, [dr%n_mode, dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-            call mem%allocate(qvec3, [3, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(omega3, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(vel3, [3,dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(degenmode3, [6,dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(degeneracy3, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            egv3=0.0_r8
+            omega3=0.0_r8
+            vel3=0.0_r8
+            degenmode3=0
+            degeneracy3=0
 
-            sr%omega3 = 0.0_r8
-            sr%vel3 = 0.0_r8
-            egv3 = 0.0_r8
-            qvec3 = 0.0_r8
+            ! sr%omega3 = 0.0_r8
+            ! sr%vel3 = 0.0_r8
+            ! egv3 = 0.0_r8
+            ! qvec3 = 0.0_r8
 
             ! Calculate all the frequencies and stuff for the third q-point
             do q = 1, qp%n_full_point
@@ -165,10 +168,13 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     qv3 = matmul(uc%inv_reciprocal_latticevectors, qv3)
                     qv3 = lo_clean_fractional_coordinates(qv3)
                     jq = index_on_grid(qp, qv3)
-                    sr%omega3(:, q) = dr%aq(jq)%omega
-                    sr%vel3(:, :, q) = dr%aq(jq)%vel
+                    omega3(:, q) = dr%aq(jq)%omega
+                    vel3(:, :, q) = dr%aq(jq)%vel
                     egv3(:, :, q) = dr%aq(jq)%egv
-                    qvec3(:, q) = -qv1 - qv2
+                    sr%qvec3(:, q) = -qv1 - qv2
+                    j=size(dr%aq(jq)%degenmode,1)
+                    degenmode3(1:j,:,q) = dr%aq(jq)%degenmode(1:j,:)
+                    degeneracy3(:,q) = dr%aq(jq)%degeneracy(:)
                 else
                     ! Not a closed grid, just fetch everything.
                     ! Get the q-vectors
@@ -178,26 +184,61 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     ! Get harmonic things
                     call op3%generate(fc, uc, mem, qvec=qv3)
                     ! Store some harmonic things
-                    sr%omega3(:, q) = op3%omega
-                    sr%vel3(:, :, q) = op3%vel
-                    egv3(:, :, q) = op3%egv
-                    qvec3(:, q) = qv3
+
 
                     v0 = matmul(uc%inv_reciprocal_latticevectors, qv3)
                     if (sum(abs(v0 - anint(v0))) .lt. lo_sqtol) then
                         ! we are at Gamma. Replace with proper Gamma.
-                        qvec3(:, q) = 0.0_r8
+                        sr%qvec3(:, q) = 0.0_r8
                         egv3(:, :, q) = gpoint%egv
-                        sr%vel3(:, :, q) = gpoint%vel
-                        sr%omega3(:, q) = gpoint%omega
+                        vel3(:, :, q) = gpoint%vel
+                        omega3(:, q)  = gpoint%omega
+                        j=size(gpoint%degenmode,1)
+                        degenmode3(1:j,:,q) = gpoint%degenmode(1:j,:)
+                        degeneracy3(:,q)    = gpoint%degeneracy(:)
+                    else
+                        ! Not at gamma, continue normally
+                        omega3(:, q) = op3%omega
+                        vel3(:, :, q) = op3%vel
+                        egv3(:, :, q) = op3%egv
+                        sr%qvec3(:, q) = qv3
+                        j=size(op3%degenmode,1)
+                        degenmode3(1:j,:,q) = op3%degenmode(1:j,:)
+                        degeneracy3(:,q)    = op3%degeneracy(:)
                     end if
                 end if
             end do
             ! sync
-            call mw%allreduce('sum', sr%omega3)
-            call mw%allreduce('sum', sr%vel3)
+            call mw%allreduce('sum', sr%qvec3)
+            call mw%allreduce('sum', omega3)
             call mw%allreduce('sum', egv3)
-            call mw%allreduce('sum', qvec3)
+            call mw%allreduce('sum', vel3)
+            call mw%allreduce('sum', degeneracy3)
+            call mw%allreduce('sum', degenmode3)
+
+            ! Store as proper dispersions q-point object?
+            allocate(sr%wp3(qp%n_full_point))
+            do q=1,qp%n_full_point
+                allocate(sr%wp3(q)%omega(uc%na*3))
+                allocate(sr%wp3(q)%egv(uc%na*3,uc%na*3))
+                allocate(sr%wp3(q)%vel(3,uc%na*3))
+                allocate(sr%wp3(q)%degeneracy(uc%na*3))
+                j=maxval(degeneracy3(:,q))
+                allocate(sr%wp3(q)%degenmode(j,uc%na*3))
+                sr%wp3(q)%omega = omega3(:,q)
+                sr%wp3(q)%egv = egv3(:,:,q)
+                sr%wp3(q)%vel = vel3(:,:,q)
+                sr%wp3(q)%degeneracy = degeneracy3(:,q)
+                sr%wp3(q)%degenmode = degenmode3(1:j,:,q)
+            enddo
+
+            ! Intermediate cleanup
+            call mem%deallocate(omega3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(vel3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(degeneracy3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(degenmode3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
             if (verbosity .gt. 0) then
                 t1 = walltime()
                 write (*, *) ''
@@ -310,8 +351,8 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     if (mod(ctr, mw%n) .ne. mw%r) cycle
 
                     ! Third guy
-                    if (sr%omega3(imode, iq) .gt. lo_freqtol) then
-                        f0 = 1.0_r8/sqrt(sr%omega3(imode, iq))
+                    if (sr%wp3(iq)%omega(imode) .gt. lo_freqtol) then
+                        f0 = 1.0_r8/sqrt( sr%wp3(iq)%omega(imode) )
                     else
                         f0 = 0.0_r8
                     end if
@@ -319,7 +360,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                         f1 = uc%invsqrtmass(iatom)
                         do ix = 1, 3
                             ialpha = (iatom - 1)*3 + ix
-                            fh%ugv3(ialpha, imode, iq) = egv3(ialpha, imode, iq)*f0*f1
+                            fh%ugv3(ialpha, imode, iq) = sr%wp3(iq)%egv(ialpha,imode)*f0*f1
                         end do
                     end do
 
@@ -378,6 +419,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
     end if
 
     call tmr%tock("eigenvector scaling")
+
 
     ! Then the isotope scattering rates
     if (isoscatter) then
@@ -522,7 +564,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                 do q = 1, qp%n_full_point
                     ! fetch q-vectors
                     qv2 = qp%ap(q)%r
-                    qv3 = qvec3(:, q)
+                    qv3 = sr%qvec3(:, q)
                     ! do the half-transform
                     call pretransform_phi(fct, qv2, qv3, fh%ptf_phi)
                     !call fct%pretransform(qv2,qv3,fh%ptf_phi)
@@ -555,17 +597,13 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
 
             end if
 
-            ! DEBUG
-            ! fkdev write info for 1 qpoint
-            ! if (mw%talk) then
-            !     do b1 = 1, dr%n_mode
-            !     do b2 = 1, dr%n_mode
-            !     do b3 = 1, dr%n_mode
-            !         write (*, *) 'fkdev b1, b2, b3, sr%psi_3ph  :    ', sr%psi_3ph(b1, b2, b3, 1), b1, b2, b3
-            !     end do
-            !     end do
-            !     end do
-            ! end if
+            ! Cleanup
+            if ( allocated(fh%ugv1   ) ) deallocate(fh%ugv1   )
+            if ( allocated(fh%ugv2   ) ) deallocate(fh%ugv2   )
+            if ( allocated(fh%ugv3   ) ) deallocate(fh%ugv3   )
+            if ( allocated(fh%ptf_phi) ) deallocate(fh%ptf_phi)
+            if ( allocated(fh%evp1   ) ) deallocate(fh%evp1   )
+            if ( allocated(fh%evp2   ) ) deallocate(fh%evp2   )
 
             if (verbosity .gt. 0) then
                 t1 = walltime()
@@ -575,158 +613,13 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
         end block threephsc2
 
         call tmr%tock("three-phonon matrix elements")
-
-        ! threephsc: block
-        !     complex(r8), dimension(:,:), allocatable :: egv
-        !     real(r8), dimension(3) :: qv1,qv2,qv3,omega
-        !     integer :: q,b1,b2,b3,l,k
-        !
-        !     ! Some space
-        !
-        !     ! slight buffer space
-        !     call mem%allocate(egv,[dr%n_mode,3],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        !     egv=0.0_r8
-        !
-        !     if ( allocated(sr%psi_3ph) ) deallocate(sr%psi_3ph)
-        !
-        !     t0=walltime()
-        !     if ( verbosity .gt. 0 ) call lo_progressbar_init()
-        !
-        !     if ( sr%atgamma ) then
-        !         ! special version if we are at Gamma, can use symmetry and lookups
-        !         allocate(sr%psi_3ph(dr%n_mode,dr%n_mode,dr%n_mode,qp%n_irr_point))
-        !         k=0
-        !         l=0
-        !         sr%psi_3ph=0.0_r8
-        !         do q=1,qp%n_irr_point
-        !             qv1=0.0_r8
-        !             qv2=-qp%ip(q)%r*lo_twopi
-        !             qv3=-qv2
-        !             do b1=1,dr%n_mode
-        !             do b2=1,dr%n_mode
-        !             do b3=1,dr%n_mode
-        !                 ! MPI division
-        !                 l=l+1
-        !                 if ( mod(l,mw%n) .ne. mw%r ) cycle
-        !                 omega(1)=ompoint%omega(b1)
-        !                 omega(2)=dr%iq(q)%omega(b2)
-        !                 omega(3)=dr%iq(q)%omega(b3)
-        !                 ! prefetch eigenvectors
-        !                 egv(:,1)=ompoint%egv(:,b1)
-        !                 egv(:,2)=dr%iq(q)%egv(:,b2)
-        !                 egv(:,3)=conjg(dr%iq(q)%egv(:,b3))
-        !                 ! To finally get the scattering rates
-        !                 if ( minval(omega) .gt. dr%omega_min*0.5_r8 ) then
-        !                     sr%psi_3ph(b1,b2,b3,q)=fct%scatteringamplitude(omega,egv,qv2,qv3)
-        !                 else
-        !                     sr%psi_3ph(b1,b2,b3,q)=0.0_r8
-        !                 endif
-        !             enddo
-        !             enddo
-        !             if ( verbosity .gt. 0 ) then
-        !                 k=k+1
-        !                 if ( lo_trueNtimes(k,127,qp%n_irr_point*dr%n_mode) ) call lo_progressbar(' ... threephonon matrixelements',k,qp%n_irr_point*dr%n_mode)
-        !             endif
-        !             enddo
-        !         enddo
-        !     else
-        !         allocate(sr%psi_3ph(dr%n_mode,dr%n_mode,dr%n_mode,qp%n_full_point))
-        !         sr%psi_3ph=0.0_r8
-        !         ! normal version, loop over all
-        !         l=0
-        !         k=0
-        !         do q=1,qp%n_full_point
-        !             qv1=-qpoint%r*lo_twopi
-        !             qv2=-qp%ap(q)%r*lo_twopi
-        !             qv3=-qv2 ! qvec3(:,q)*lo_twopi
-        !             do b1=1,dr%n_mode
-        !             do b2=1,dr%n_mode
-        !             do b3=1,dr%n_mode
-        !                 ! MPI division
-        !                 l=l+1
-        !                 if ( mod(l,mw%n) .ne. mw%r ) cycle
-        !                 omega(1)=ompoint%omega(b1)
-        !                 omega(2)=dr%aq(q)%omega(b2)
-        !                 omega(3)=dr%aq(q)%omega(b3)
-        !                 !omega(3)=sr%omega3(b3,q)
-        !                 ! prefetch eigenvectors
-        !                 egv(:,1)=ompoint%egv(:,b1)
-        !                 egv(:,2)=dr%aq(q)%egv(:,b2)
-        !                 egv(:,3)=conjg(dr%aq(q)%egv(:,b3))
-        !                 !egv(:,3)=egv3(:,b3,q)
-        !                 ! To finally get the scattering rates
-        !                 if ( minval(omega) .gt. dr%omega_min*0.5_r8 ) then
-        !                     sr%psi_3ph(b1,b2,b3,q)=fct%scatteringamplitude(omega,egv,qv2,qv3)
-        !                 else
-        !                     sr%psi_3ph(b1,b2,b3,q)=0.0_r8
-        !                 endif
-        !             enddo
-        !             enddo
-        !             if ( verbosity .gt. 0 ) then
-        !                 k=k+1
-        !                 if ( lo_trueNtimes(k,127,qp%n_full_point*dr%n_mode) ) call lo_progressbar(' ... threephonon matrixelements',k,qp%n_full_point*dr%n_mode)
-        !             endif
-        !             enddo
-        !         enddo
-        !
-        !         ! do q=1,qp%n_full_point
-        !         !     qv1=-qpoint%r*lo_twopi
-        !         !     qv2=-qp%ap(q)%r*lo_twopi
-        !         !     qv3=-qvec3(:,q)*lo_twopi
-        !         !     do b1=1,dr%n_mode
-        !         !     do b2=1,dr%n_mode
-        !         !     do b3=1,dr%n_mode
-        !         !         ! MPI division
-        !         !         l=l+1
-        !         !         if ( mod(l,mw%n) .ne. mw%r ) cycle
-        !         !         omega(1)=ompoint%omega(b1)
-        !         !         omega(2)=dr%aq(q)%omega(b2)
-        !         !         omega(3)=sr%omega3(b3,q)
-        !         !         ! prefetch eigenvectors
-        !         !         egv(:,1)=ompoint%egv(:,b1)
-        !         !         egv(:,2)=dr%aq(q)%egv(:,b2)
-        !         !         egv(:,3)=egv3(:,b3,q)
-        !         !         ! To finally get the scattering rates
-        !         !         if ( minval(omega) .gt. dr%omega_min*0.5_r8 ) then
-        !         !             sr%psi_3ph(b1,b2,b3,q)=fct%scatteringamplitude(omega,egv,qv2,qv3)
-        !         !         else
-        !         !             sr%psi_3ph(b1,b2,b3,q)=0.0_r8
-        !         !         endif
-        !         !     enddo
-        !         !     enddo
-        !         !     if ( verbosity .gt. 0 ) then
-        !         !         k=k+1
-        !         !         if ( lo_trueNtimes(k,127,qp%n_full_point*dr%n_mode) ) call lo_progressbar(' ... threephonon matrixelements',k,qp%n_full_point*dr%n_mode)
-        !         !     endif
-        !         !     enddo
-        !         ! enddo
-        !     endif
-        !     ! sum it up
-        !     call mw%allreduce('sum',sr%psi_3ph)
-        !     if ( verbosity .gt. 0 ) call lo_progressbar(' ... threephonon matrixelements',qp%n_full_point*dr%n_mode,qp%n_full_point*dr%n_mode,walltime()-t0)
-        !
-        !     call mem%deallocate(egv,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-        ! end block threephsc
-    end if
-
-    ! Some cleanup
-    if (threephononscatter) then
-    if (.not. sr%atgamma) then
-        ! Actually keep them if needed?
-        allocate (sr%qvec3(3, qp%n_full_point))
-        sr%qvec3 = qvec3
-
-        if (eigenvectors) then
-            allocate (sr%egv3(dr%n_mode, dr%n_mode, qp%n_full_point))
-            sr%egv3 = egv3
-        end if
-
-        call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(qvec3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    end if
     end if
 
     call mem%tock(__FILE__, __LINE__, mw%comm)
+
+    ! if ( mw%talk ) write(*,*) 'done here for now ',__FILE__,__LINE__
+    ! call mw%destroy()
+    ! stop
 end subroutine
 
 !> isotope scattering strength

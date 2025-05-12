@@ -17,7 +17,7 @@ use lo_timetracker, only: lo_timer
 
 !use dielscatter, only: lo_dielectric_response
 use options, only: lo_opts
-!use lo_thermal_transport, only: lo_thermal_conductivity
+use lo_thermal_transport, only: lo_thermal_conductivity
 use lineshape_helper, only: lo_spectralfunction_helper, evaluate_spectral_function
 use scf_helper, only: return_new_bare_phonons
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
@@ -37,7 +37,7 @@ type(lo_forceconstant_fourthorder) :: fc4
 !type(lo_spectralfunction_helper) :: sf
 
 type(lo_phonon_dispersions) :: dr,ddr
-!type(lo_phonon_dos) :: pd
+
 class(lo_qpoint_mesh), allocatable :: qp,dqp
 
 real(r8) :: timer_init, timer_total
@@ -120,6 +120,9 @@ end block init
 firstiteration: block
     type(lo_interpolated_selfenergy_grid) :: ise
     type(lo_phonon_bandstructure) :: bs
+    type(lo_phonon_dos) :: pd
+    type(lo_thermal_conductivity) :: tc
+    integer :: iter
 
     ! This is the zeroth iteration, or whatever I should call it. Here we always
     ! use adaptive Gaussian integration, because why not.
@@ -139,31 +142,41 @@ firstiteration: block
     ! Get spectral function on a path?
     call ise%spectral_function_along_path(bs,uc,mw,mem)
 
-    if (mw%talk) then
-        write (*, *) '... writing output'
-        call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations.hdf5', mem)
-        call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function.hdf5')
-    end if
-
-    ! Then I guess the next step is to get the self-energy again, but this time using
-    ! a convolution integration instead?
-    call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
-        opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
-        opts%isotopescattering, opts%thirdorder, opts%fourthorder, .false.,&
-        mw, mem, opts%verbosity)
-
-    ! Make sure the interpolated self-energy is nothing
-    call ise%destroy()
-    ! Read it from file?
-    call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
-    ! Get spectral function on a path?
-    call ise%spectral_function_along_path(bs,uc,mw,mem)
+    ! Maybe get the spectral function on a grid? A third q-grid you say? Why not.
+    call ise%spectral_function_on_grid(uc,fc2,[12,12,12],opts%sigma,opts%temperature,tc,pd,mw,mem)
+    if ( mw%talk ) then
+        call pd%write_to_hdf5(uc,opts%enhet,'outfile.phonon_dos.hdf5',mem)
+    endif
 
     if (mw%talk) then
         write (*, *) '... writing output'
         call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations.hdf5', mem)
-        call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function.hdf5')
+        call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_0.hdf5')
     end if
+
+    ! do iter=1,3
+    !     ! Then I guess the next step is to get the self-energy again, but this time using
+    !     ! a convolution integration instead?
+    !     call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
+    !         opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
+    !         opts%isotopescattering, opts%thirdorder, opts%fourthorder, .false.,&
+    !         mw, mem, opts%verbosity)
+
+    !     ! Make sure the interpolated self-energy is nothing
+    !     call ise%destroy()
+    !     ! Read it from file?
+    !     call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+    !     ! Get spectral function on a path?
+    !     call bs%destroy()
+    !     call bs%generate(uc, fc2, timereversal=.true., mw=mw, mem=mem, verbosity=opts%verbosity, npts=100, readpathfromfile=.false.)
+    !     call ise%spectral_function_along_path(bs,uc,mw,mem)
+
+    !     if (mw%talk) then
+    !         write (*, *) '... writing output'
+    !         call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations.hdf5', mem)
+    !         call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_'//tochar(iter)//'.hdf5')
+    !     end if
+    ! enddo
 
 
 end block firstiteration

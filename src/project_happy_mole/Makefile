@@ -16,7 +16,9 @@ OBJS = $(OBJECT_PATH)main.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_evaluate.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_path.o\
+ $(OBJECT_PATH)lo_selfenergy_interpolation_grid.o\
  $(OBJECT_PATH)scf_helper.o\
+ $(OBJECT_PATH)lo_thermal_transport.o\
  $(OBJECT_PATH)create_selfenergy_interpolation.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi) $(incLPATHfft)
@@ -45,6 +47,7 @@ $(OBJECT_PATH)main.o:\
 	$(OBJECT_PATH)scf_helper.o\
 	$(OBJECT_PATH)create_selfenergy_interpolation.o\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o\
+	$(OBJECT_PATH)lo_thermal_transport.o\
 	$(OBJECT_PATH)lo_selfenergy_interpolation.o
 	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 
@@ -66,6 +69,12 @@ $(OBJECT_PATH)scf_helper.o:\
 	$(OBJECT_PATH)lineshape_helper.o
 	$(F90) $(F90FLAGS) -c scf_helper.f90 $(LIBS) -o $@
 
+$(OBJECT_PATH)lo_thermal_transport.o:\
+	lo_thermal_transport.f90\
+	$(OBJECT_PATH)lo_thermal_transport.o\
+	$(OBJECT_PATH)lineshape_helper.o
+	$(F90) $(F90FLAGS) -c lo_thermal_transport.f90 $(LIBS) -o $@
+
 $(OBJECT_PATH)create_selfenergy_interpolation.o:\
 	create_selfenergy_interpolation.f90\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o\
@@ -78,7 +87,8 @@ $(OBJECT_PATH)lo_tetrahedron_interpolation.o:\
 
 $(OBJECT_PATH)lo_selfenergy_interpolation.o:\
 	lo_selfenergy_interpolation.f90\
-	$(OBJECT_PATH)lo_tetrahedron_interpolation.o
+	$(OBJECT_PATH)lo_tetrahedron_interpolation.o\
+	$(OBJECT_PATH)lo_thermal_transport.o
 	$(F90) $(F90FLAGS) -c lo_selfenergy_interpolation.f90 $(LIBS) -o $@
 $(OBJECT_PATH)lo_selfenergy_interpolation_evaluate.o:\
 	lo_selfenergy_interpolation_evaluate.f90\
@@ -88,6 +98,10 @@ $(OBJECT_PATH)lo_selfenergy_interpolation_path.o:\
 	lo_selfenergy_interpolation_path.f90\
 	$(OBJECT_PATH)lo_selfenergy_interpolation.o
 	$(F90) $(F90FLAGS) -c lo_selfenergy_interpolation_path.f90 $(LIBS) -o $@
+$(OBJECT_PATH)lo_selfenergy_interpolation_grid.o:\
+	lo_selfenergy_interpolation_grid.f90\
+	$(OBJECT_PATH)lo_selfenergy_interpolation.o
+	$(F90) $(F90FLAGS) -c lo_selfenergy_interpolation_grid.f90 $(LIBS) -o $@
 
 $(OBJECT_PATH)lo_evaluate_phonon_self_energy.o:\
 	lo_evaluate_phonon_self_energy.f90\

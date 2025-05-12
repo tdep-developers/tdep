@@ -167,7 +167,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
 
     ! ! Then three-phonon things
     if (se%thirdorder_scattering) then
-        call threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,temperature,mw,mem,verbosity)
+        call threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,uc,temperature,mw,mem,verbosity)
         call tmr%tock('three-phonon integrals')
     end if
 
@@ -204,7 +204,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     ! Kramers-Kronig-transform the imaginary part to get the real.
     if (se%thirdorder_scattering) then
         kktransform: block
-            real(r8) :: pref = 2.0_r8/lo_pi
+            real(r8), parameter :: pref = 2.0_r8/lo_pi
             complex(r8), dimension(:), allocatable :: z0
             complex(r8) :: eta
             real(r8), dimension(:), allocatable :: x, xs, y0
@@ -244,6 +244,12 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             call mw%allreduce('sum', se%re_3ph)
             se%re_3ph = se%re_3ph*pref
 
+            ! Here we can add a shift so that Re(0)=0. Maybe a good idea?
+            do imode=1,se%n_mode
+                xp=se%re_3ph(1,imode)
+                se%re_3ph(:,imode) = se%re_3ph(:,imode)-xp
+            enddo
+
             call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -273,6 +279,8 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         do imode = 1, dr%n_mode
             if (wp%omega(imode) .lt. lo_freqtol) cycle
             if (mod(imode, mw%n) .ne. mw%r) cycle
+
+
 
             ! Evaluate rough spectral function
             yim = se%im_3ph(:, imode) + se%im_iso(:, imode)

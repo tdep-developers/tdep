@@ -4,7 +4,7 @@ implicit none
 contains
 
 !> evaluate phonon self-energy at arbitrary point
-module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im)
+module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mw)
     !> self-energy interpolation
     class(lo_interpolated_selfenergy_grid), intent(in) :: ise
     !> crystal structure
@@ -17,6 +17,8 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im)
     real(r8), dimension(:,:), intent(out) :: sigma_Re
     !> imaginary part of self-energy
     real(r8), dimension(:,:), intent(out) :: sigma_Im
+    !> perhaps we try to make it parallel?
+    type(lo_mpi_helper), intent(inout), optional :: mw
 
     complex(r8), dimension(:,:), allocatable :: cm0,cm1,cm2
     real(r8), dimension(:,:,:), allocatable :: buf_re,buf_im
@@ -30,26 +32,26 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im)
     !write(*,*) 'EVALUATE',matmul(p%inv_reciprocal_latticevectors,qv)
 
     call ise%box%indices_and_weights(ise%qp,p,qv,weight,ind)
-
-    !write(*,*) 'weight',weight
-    !write(*,*) 'ind',ind
-
     n_mode=size(wp%omega)
 
     ! Actuall allocate
     allocate(buf_re(n_mode,n_mode,ise%n_energy))
     allocate(buf_im(n_mode,n_mode,ise%n_energy))
+    allocate(cm0(n_mode,n_mode))
+    allocate(cm1(n_mode,n_mode))
+    allocate(cm2(n_mode,n_mode))
     buf_re=0.0_r8
     buf_im=0.0_r8
+    cm0=0.0_r8
+    cm1=0.0_r8
+    cm2=0.0_r8
+
     do i=1,4
         iq=ind(i)
         buf_re(:,:,:)=buf_re(:,:,:) + weight(i)*ise%sigma_Re(:,:,:,iq)
         buf_im(:,:,:)=buf_im(:,:,:) + weight(i)*ise%sigma_Im(:,:,:,iq)
     enddo
 
-    allocate(cm0(n_mode,n_mode))
-    allocate(cm1(n_mode,n_mode))
-    allocate(cm2(n_mode,n_mode))
     cm0=0.0_r8
     do imode=1,n_mode
         if ( wp%omega(imode) .gt. lo_freqtol ) then
@@ -57,21 +59,44 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im)
         endif
     enddo
 
-    do ie=1,ise%n_energy
-        cm1 = buf_re(:,:,ie)
-        cm2 = matmul( conjg(transpose(cm0)),cm1 )
-        cm1 = matmul(cm2,cm0)
-        do imode=1,n_mode
-            sigma_re(ie,imode)=real( cm1(imode,imode),r8)
-        enddo
+    if ( present(mw) ) then
+        sigma_re=0.0_r8
+        sigma_im=0.0_r8
+        do ie=1,ise%n_energy
+            if ( mod(ie,mw%n) .ne. mw%r ) cycle
+            cm1 = buf_re(:,:,ie)
+            cm2 = matmul( conjg(transpose(cm0)),cm1 )
+            cm1 = matmul(cm2,cm0)
+            do imode=1,n_mode
+                sigma_re(ie,imode)=real( cm1(imode,imode),r8)
+            enddo
 
-        cm1 = buf_im(:,:,ie)
-        cm2 = matmul( conjg(transpose(cm0)),cm1 )
-        cm1 = matmul(cm2,cm0)
-        do imode=1,n_mode
-            sigma_im(ie,imode)=real( cm1(imode,imode),r8)
+            cm1 = buf_im(:,:,ie)
+            cm2 = matmul( conjg(transpose(cm0)),cm1 )
+            cm1 = matmul(cm2,cm0)
+            do imode=1,n_mode
+                sigma_im(ie,imode)=real( cm1(imode,imode),r8)
+            enddo
         enddo
-    enddo
+        call mw%allreduce('sum',sigma_Im)
+        call mw%allreduce('sum',sigma_Re)
+    else
+        do ie=1,ise%n_energy
+            cm1 = buf_re(:,:,ie)
+            cm2 = matmul( conjg(transpose(cm0)),cm1 )
+            cm1 = matmul(cm2,cm0)
+            do imode=1,n_mode
+                sigma_re(ie,imode)=real( cm1(imode,imode),r8)
+            enddo
+
+            cm1 = buf_im(:,:,ie)
+            cm2 = matmul( conjg(transpose(cm0)),cm1 )
+            cm1 = matmul(cm2,cm0)
+            do imode=1,n_mode
+                sigma_im(ie,imode)=real( cm1(imode,imode),r8)
+            enddo
+        enddo
+    endif
 
     deallocate(cm0)
     deallocate(cm1)

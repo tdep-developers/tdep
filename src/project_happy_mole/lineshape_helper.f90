@@ -236,6 +236,8 @@ subroutine convolute_to_sfun(ch, imode, jmode, sigma, sfun)
     ! Add the planck factor thing
     sfun = sfun*ch%inv_planck_plus_one(0:ch%n)
     !sfun=sfun / ch%planck_plus_one(0:ch%n)
+
+    ! Make sure it's positive
     sfun = max(0.0_r8, sfun)
     sfun(1) = 0
     ! Smear it
@@ -345,8 +347,8 @@ function interpolated_spectral_function(x, yim, yre, omega, scalefactor, xi) res
 
     ! This should put us in the right interval.
     ilo = floor(n*xi/xhi) + 1
-    !ilo=max(ilo,1)
-    !ilo=min(ilo,n-1)
+    ! ilo=max(ilo,1)
+    ! ilo=min(ilo,n-1)
     ihi = ilo + 1
     ! evaluate imaginary and real self-energy
     f0 = (x(ihi) - xi)/(x(ihi) - x(ilo))

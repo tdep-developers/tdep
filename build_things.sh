@@ -9,7 +9,7 @@ set -e
 #should everything be cleaned? I keep this in place since I might want more options in the future.
 CLEAN=YES
 MANPAGE=YES
-NTHREADS_MAKE=1
+NTHREADS_MAKE=4
 MAKE_SHARED=YES
 INSTALL=NO
 for i in "$@"

@@ -140,13 +140,14 @@ interface
         type(lo_mem_helper), intent(inout) :: mem
         integer, intent(in) :: verbosity
     end subroutine
-    module subroutine threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,temperature,mw,mem,verbosity)
+    module subroutine threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,p,temperature,mw,mem,verbosity)
         type(lo_phonon_dispersions_qpoint), intent(in) :: wp
         type(lo_phonon_selfenergy), intent(inout) :: se
         class(lo_qpoint_mesh), intent(in) :: qp
         type(lo_phonon_dispersions), intent(in) :: dr
         type(lo_listofscatteringrates), intent(in) :: sr
         type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        type(lo_crystalstructure), intent(in) :: p
         real(r8), intent(in) :: temperature
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem

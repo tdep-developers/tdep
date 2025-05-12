@@ -4,14 +4,14 @@ use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_sqtol, lo_exitcode_sym
                       lo_bohr_to_A, lo_freqtol, lo_exitcode_param, lo_pi, lo_imag, lo_groupvel_ms_to_Hartreebohr
 use gottochblandat, only: tochar, walltime, lo_progressbar_init, lo_progressbar, lo_chop, &
                           lo_linear_least_squares, lo_rsquare, lo_linspace, lo_linear_interpolation, lo_trapezoid_integration,&
-                          lo_clean_fractional_coordinates, lo_cross
+                          lo_clean_fractional_coordinates, lo_cross, lo_mean
 use geometryfunctions, only: lo_inscribed_sphere_in_box, lo_plane
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use hdf5_wrappers, only: lo_hdf5_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
-use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh, lo_wedge_mesh, lo_qpoint, lo_read_qmesh_from_file
+use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh, lo_wedge_mesh, lo_qpoint, lo_read_qmesh_from_file, lo_generate_qmesh
 use type_phonon_dispersions, only: lo_phonon_dispersions, lo_phonon_dispersions_qpoint
 use lo_symmetry_of_interactions, only: lo_interaction_tensors
 use type_symmetryoperation, only: lo_eigenvector_transformation_matrix
@@ -19,8 +19,10 @@ use type_blas_lapack_wrappers, only: lo_gemm, lo_dgels
 use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
 
 
-use lineshape_helper, only: lo_spectralfunction_helper,evaluate_spectral_function
+use lineshape_helper, only: lo_spectralfunction_helper,evaluate_spectral_function,taperfn_im,gaussian_smear_spectral_function,find_spectral_function_max_and_fwhm,integrate_spectral_function
 use lo_tetrahedron_interpolation, only: lo_linear_tetrahedron_interpolation
+use type_phonon_dos, only: lo_phonon_dos
+use lo_thermal_transport, only: lo_thermal_conductivity
 implicit none
 
 private
@@ -44,22 +46,18 @@ type lo_interpolated_selfenergy_grid
         procedure :: evaluate=>evaluate_self_energy
         procedure :: destroy=>destroy_interpolated_selfenergy
         procedure :: spectral_function_along_path=>spectral_function_path_interp
+        procedure :: spectral_function_on_grid=>spectral_function_grid_interp
 end type
 
 interface ! to evaluate
-    module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im)
-        !> self-energy interpolation
+    module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mw)
         class(lo_interpolated_selfenergy_grid), intent(in) :: ise
         type(lo_crystalstructure), intent(in) :: p
-
-        !> q-point
         real(r8), dimension(3), intent(in) :: qv
-        !> harmonic phonon properties at this q
         type(lo_phonon_dispersions_qpoint), intent(in) :: wp
-        !> real part of self-energy
         real(r8), dimension(:,:), intent(out) :: sigma_Re
-        !> imaginary part of self-energy
         real(r8), dimension(:,:), intent(out) :: sigma_Im
+        type(lo_mpi_helper), intent(inout), optional :: mw
     end subroutine
 end interface
 
@@ -68,6 +66,18 @@ interface ! to path
         class(lo_interpolated_selfenergy_grid), intent(in) :: ise
         type(lo_phonon_bandstructure), intent(inout) :: bs
         type(lo_crystalstructure), intent(inout) :: uc
+        type(lo_mpi_helper), intent(inout) :: mw
+        type(lo_mem_helper), intent(inout) :: mem
+    end subroutine
+    module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smearing_prefactor, temperature, tc, pd, mw, mem)
+        class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        type(lo_crystalstructure), intent(inout) :: uc
+        type(lo_forceconstant_secondorder), intent(inout) :: fc
+        integer, dimension(3), intent(in) :: grid_density
+        real(r8), intent(in) :: smearing_prefactor
+        real(r8), intent(in) :: temperature
+        type(lo_thermal_conductivity), intent(out) :: tc
+        type(lo_phonon_dos), intent(out) :: pd
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
@@ -157,7 +167,6 @@ subroutine destroy_interpolated_selfenergy(ise)
     call ise%box%destroy()
     if ( allocated(ise%qp) ) then
         call ise%qp%destroy(ise%qp)
-        deallocate(ise%qp)
     endif
     ise%n_energy=-lo_hugeint
     if ( allocated(ise%omega   ) ) deallocate(ise%omega   )
