@@ -48,8 +48,6 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     integer :: qi, q1, q2, q3, q2p, q3p, b1, b2, b3, i
     !> Is the triplet irreducible ?
     logical :: isred
-    !> Do we have to compute the scattering process ?
-    logical :: is_scatter
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -90,6 +88,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         do b2 = 1, dr%n_mode
             om2 = dr%aq(q2)%omega(b2)
             if (om2 .lt. lo_freqtol) cycle
+            if (abs(om1 - om2) .lt. lo_freqtol) cycle
 
             egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
 
@@ -99,12 +98,11 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
             do b3 = 1, dr%n_mode
                 om3 = dr%aq(q3)%omega(b3)
                 if (om3 .lt. lo_freqtol) cycle
+                if (abs(om1 - om3) .lt. lo_freqtol .or. abs(om2 - om3) .lt. lo_freqtol) cycle
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
                 ! Get the weight for each processes
-                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, is_scatter)
-                ! If all the weights are zero, skip the last part
-                if (.not. is_scatter) cycle
+                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
                 evp2 = 0.0_r8
@@ -218,7 +216,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     if (allocated(red_triplet)) deallocate (red_triplet)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1, is_scatter)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -233,8 +231,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     integer, intent(in) :: integrationtype
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1
-    !> Is there any scattering happening ?
-    logical, intent(out) :: is_scatter
 
     !> The frequencies
     real(r8) :: om1, om2, om3
@@ -269,33 +265,9 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1
     om1 = dr%iq(q1)%omega(b1)
     om2 = dr%aq(q2)%omega(b2)
     om3 = dr%aq(q3)%omega(b3)
-    d0 = 0.0_r8
-    d1 = 0.0_r8
-    j = 0
-    is_scatter = .false.
-    ! We cannot have interactions if two modes are degenerate (or the same)
-    if (abs(om1 - om2) .gt. lo_freqtol .and. &
-        abs(om1 - om3) .gt. lo_freqtol .and. &
-        abs(om2 - om3) .gt. lo_freqtol) then
 
-        if (abs(om1 + om2 - om3) .lt. 4.0_r8 * sigma) then
-            d0 = d0 + lo_gauss(om1, -om2 + om3, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 - om2 + om3) .lt. 4.0_r8 * sigma) then
-            d0 = d0 - lo_gauss(om1, om2 - om3, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 - om2 - om3) .lt. 4.0_r8 * sigma) then
-            d1 = d1 + lo_gauss(om1, om2 + om3, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 + om2 + om3) .lt. 4.0_r8 * sigma) then
-            d1 = d1 - lo_gauss(om1, -om2 - om3, sigma)
-            j = j + 1
-        end if
-    end if
-    if (j .gt. 0) is_scatter = .true.
+    d0 = lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma)
+    d1 = lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma)
 end subroutine
 end subroutine
 

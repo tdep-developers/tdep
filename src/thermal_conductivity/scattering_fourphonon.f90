@@ -56,8 +56,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     integer :: q1, q2, q3, q4, q2p, q3p, q4p, b1, b2, b3, b4, qi, qj, i
     !> Is the quartet irreducible ?
     logical :: isred
-    !> Is there any scattering happening ?
-    logical :: is_scatter
+
+    integer, dimension(3) :: qq
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -83,6 +83,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     call mem%allocate(qgridfull2, qp%n_full_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mcg%generate_grid(qgridfull1, rng)
     call mcg%generate_grid(qgridfull2, rng)
+
+    allocate(red_quartet(3, 1))
 
     compute_loop: do qi = 1, mcg%npoints
     do qj = 1, mcg%npoints
@@ -148,8 +150,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     n4p = n4 + 1.0_r8
                     egv4 = dr%aq(q4)%egv(:, b4)/sqrt(om4)
 
-                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, is_scatter)
-                    if (.not. is_scatter) cycle
+                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
 
                     evp3 = 0.0_r8
                     call zgeru(dr%n_mode, dr%n_mode**3, (1.0_r8, 0.0_r8), egv4, 1, evp2, 1, evp3, dr%n_mode)
@@ -263,7 +264,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     if (allocated(red_quartet)) deallocate(red_quartet)
 
     contains
-subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3, is_scatter)
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
     !> The scattering amplitudes
     type(lo_scattering_rates), intent(in) :: sr
     !> The qpoint mesh
@@ -278,8 +279,6 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
     integer, intent(in) :: integrationtype
     !> The approximated dirac
     real(r8), intent(out) :: d0, d1, d2, d3
-    !> Can we skip the rest of the calculation ?
-    logical, intent(out) :: is_scatter
 
     !> The frequencies
     real(r8) :: om1, om2, om3, om4
@@ -316,66 +315,15 @@ subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype
         sigma = sigma + sr%thresh_sigma
     end select
 
-    d0 = 0.0_r8
-    d1 = 0.0_r8
-    d2 = 0.0_r8
-    d3 = 0.0_r8
-
     om1 = dr%iq(q1)%omega(b1)
     om2 = dr%aq(q2)%omega(b2)
     om3 = dr%aq(q3)%omega(b3)
     om4 = dr%aq(q4)%omega(b4)
-    ! We can have some cases actually respecting strictly the sum rules
-    if (abs(om1 - om2) .lt. lo_freqtol .and. abs(om3 - om4) .lt. lo_freqtol) then
-        d0 = 1.0_r8
-        d2 = 1.0_r8
-        d3 = 1.0_r8
-        j = j + 1
-    elseif (abs(om1 - om3) .lt. lo_freqtol .and. abs(om2 - om4) .lt. lo_freqtol) then
-        d0 = 1.0_r8
-        d1 = 1.0_r8
-        d3 = 1.0_r8
-        j = j + 1
-    elseif (abs(om1 - om4) .lt. lo_freqtol .and. abs(om2 - om3) .lt. lo_freqtol) then
-        d0 = 1.0_r8
-        d1 = 1.0_r8
-        d2 = 1.0_r8
-        j = j + 1
-    else
-        if (abs(om1 - om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
-            d0 = d0 + lo_gauss(om1, om2 + om3 + om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 + om2 + om3 + om4) .lt. 4.0_r8 * sigma) then
-            d0 = d0 - lo_gauss(om1, -om2 - om3 - om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 + om2 - om3 - om4) .lt. 4.0_r8 * sigma) then
-            d1 = d1 + lo_gauss(om1, -om2 + om3 + om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 - om2 + om3 + om4) .lt. 4.0_r8 * sigma) then
-            d1 = d1 - lo_gauss(om1, om2 - om3 - om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 -om2 + om3 - om4) .lt. 4.0_r8 * sigma) then
-            d2 = d2 + lo_gauss(om1, om2 - om3 + om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 + om2 - om3 + om4) .lt. 4.0_r8 * sigma) then
-            d2 = d2 - lo_gauss(om1, -om2 + om3 - om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 - om2 - om3 + om4) .lt. 4.0_r8 * sigma) then
-            d3 = d3 + lo_gauss(om1, om2 + om3 - om4, sigma)
-            j = j + 1
-        end if
-        if (abs(om1 + om2 + om3 - om4) .lt. 4.0_r8 * sigma) then
-            d3 = d3 - lo_gauss(om1, -om2 - om3 + om4, sigma)
-            j = j + 1
-        end if
-    end if
-    if (j .gt. 0) is_scatter = .true.
+
+    d0 = lo_gauss(om1, om2 + om3 + om4, sigma) - lo_gauss(om1, -om2 - om3 - om4, sigma)
+    d1 = lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma)
+    d2 = lo_gauss(om1, om2 - om3 + om4, sigma) - lo_gauss(om1, -om2 + om3 - om4, sigma)
+    d3 = lo_gauss(om1, om2 + om3 - om4, sigma) - lo_gauss(om1, -om2 - om3 + om4, sigma)
 end subroutine
 end subroutine
 
