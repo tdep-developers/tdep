@@ -764,20 +764,17 @@ module subroutine write_to_qe(fc,uc,mw,mem)
             endif
             ! Now for the actual IFCs.
 
-
-                do a1=1,uc%na
-                do a2=1,uc%na
-
-                    do kk=1,supercelldim(3)
-                    do jj=1,supercelldim(2)
-                    do ii=1,supercelldim(1)
+            do a1=1,uc%na
+            do a2=1,uc%na
+                do kk=1,supercelldim(3)
+                do jj=1,supercelldim(2)
+                do ii=1,supercelldim(1)
 
                     str0="s_s1_m1_m2_m3."//tochar(a1)//"."//tochar(a2)//"."//tochar(ii)//"."//tochar(jj)//"."//tochar(kk)
                     write(u,"(A)") '        <'//trim(str0)//'>'
                     write(u,"(A)") '        <IFC>'
                     do i=1,3
-                        write(u,*) rm1(:,i,a1,a2,ii,jj,kk)*2.0_r8
-                        !write(u,*) rm1(i,:,a1,a2,ii,jj,kk)*2.0_r8
+                        write(u,*) rm1(:,i,a1,a2,ii,jj,kk)*2.0_r8 ! Factor 2 because Ha->Ry
                     enddo
                     write(u,"(A)") '        </IFC>'
                     write(u,"(A)") '        </'//trim(str0)//'>'
@@ -818,23 +815,12 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
         integer :: u,i
 
         u = open_file('out','outfile.qe_dyn0')
-            ! write(u,*) qgrid
-            ! write(u,*) qp%n_irr_point
-            ! do i=1,qp%n_irr_point
-            !     !write(u,*)
-            !     v0=qp%ip(i)%r
-            !     !v0=matmul(uc%inv_reciprocal_latticevectors,qp%ip(i)%r)
-            !     write(u,*) v0
-            ! enddo
             write(u,*) qgrid
             write(u,*) qp%n_full_point
             do i=1,qp%n_full_point
-                !write(u,*)
                 v0=qp%ap(i)%r
-                !v0=matmul(uc%inv_reciprocal_latticevectors,qp%ip(i)%r)
                 write(u,*) v0
             enddo
-
         close(u)
     end block writesummary
 
@@ -847,123 +833,6 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
 
         allocate(dynamical_matrix(uc%na*3,uc%na*3))
         dynamical_matrix=0.0_r8
-
-        ! do iq=1,qp%n_irr_point
-        !     u = open_file('out','outfile.qe_dyn'//tochar(iq)//'.xml')
-        !         write(u,"(A)") '<?xml version="1.0" encoding="UTF-8"?>'
-        !         write(u,"(A)") '<Root>'
-        !         write(u,"(A)") '    <GEOMETRY_INFO>'
-        !         write(u,"(A)") '    <NUMBER_OF_TYPES>'//tochar(uc%nelements)//'</NUMBER_OF_TYPES>'
-        !         write(u,"(A)") '    <NUMBER_OF_ATOMS>'//tochar(uc%na)//'</NUMBER_OF_ATOMS>'
-        !         write(u,"(A)") '    <BRAVAIS_LATTICE_INDEX>0</BRAVAIS_LATTICE_INDEX>'
-        !         write(u,"(A)") '    <SPIN_COMPONENTS>1</SPIN_COMPONENTS>'
-        !         write(u,"(A)") '    <CELL_DIMENSIONS>'
-        !         write(u,"(A)") '    1.0E+00   0.000000000000000E+00   0.000000000000000E+00'
-        !         write(u,"(A)") '    0.000000000000000E+00   0.000000000000000E+00   0.000000000000000E+00'
-        !         write(u,"(A)") '    </CELL_DIMENSIONS>'
-        !         write(u,"(A)") '    <AT>'
-        !         write(u,*) uc%latticevectors(:,1)
-        !         write(u,*) uc%latticevectors(:,2)
-        !         write(u,*) uc%latticevectors(:,3)
-        !         write(u,"(A)") '     </AT>'
-        !         write(u,"(A)") '    <BG>'
-        !         write(u,*) uc%reciprocal_latticevectors(:,1)
-        !         write(u,*) uc%reciprocal_latticevectors(:,2)
-        !         write(u,*) uc%reciprocal_latticevectors(:,3)
-        !         write(u,"(A)") '     </BG>'
-        !         write(u,"(A)") '     <UNIT_CELL_VOLUME_AU>'//tochar(uc%volume)//'</UNIT_CELL_VOLUME_AU>'
-        !         do i=1,uc%nelements
-        !             write(u,"(A)") '    <TYPE_NAME.'//tochar(i)//'>'//trim(uc%atomic_symbol(i))//'</TYPE_NAME.'//tochar(i)//'>'
-        !             f0=-1.0_r8
-        !             do j=1,uc%na
-        !                 if ( uc%species(j) .eq. i ) then
-        !                     f0=uc%isotope(j)%mean_mass*lo_emu_to_amu
-        !                     exit
-        !                 endif
-        !             enddo
-
-        !             write(u,"(A)") '    <MASS.'//tochar(i)//'>'//trim( tochar(f0,13) )//'</MASS.'//tochar(i)//'>'
-        !         enddo
-        !         do i=1,uc%na
-        !             j=uc%species(i)
-        !             str0='    <ATOM.'//tochar(i)//' SPECIES="'//trim(uc%atomic_symbol(j))//'" INDEX="'//tochar(j)//'" TAU="'
-        !             write(str1,"(3(1X,F22.13))") uc%rcart(:,i)
-        !             str0=trim(str0)//trim(str1)//'"/>'
-        !             write(u,"(A)") trim(str0)
-        !         enddo
-        !         write(u,"(A)") '    <NUMBER_OF_Q>'//tochar(qp%ip(iq)%n_full_point)//'</NUMBER_OF_Q>'
-        !         write(u,"(A)") '    </GEOMETRY_INFO>'
-        !         if ( fc%polar ) then
-        !             write(u,"(A)") '    <DIELECTRIC_PROPERTIES epsil="true" zstar="true" raman="false">'
-        !             write(u,"(A)") '    <EPSILON>'
-        !             do i=1,3
-        !                 write(u,*) fc%loto%eps(i,:)
-        !             enddo
-        !             write(u,"(A)") '    </EPSILON>'
-        !             write(u,"(A)") '    <ZSTAR>'
-        !             do i=1,fc%na
-        !                 write(u,"(A)") '    <Z_AT_.'//tochar(i)//'>'
-        !                 do j=1,3
-        !                     write(u,*) fc%loto%born_effective_charges(j,:,i) !*0.5_r8
-        !                 enddo
-        !                 write(u,"(A)") '    </Z_AT_.'//tochar(i)//'>'
-        !             enddo
-        !             write(u,"(A)") '    </ZSTAR>'
-        !             write(u,"(A)") '    </DIELECTRIC_PROPERTIES>'
-        !         else
-        !             write(u,"(A)") '    <DIELECTRIC_PROPERTIES epsil="false" zstar="false" raman="false">'
-        !             write(u,"(A)") '    </DIELECTRIC_PROPERTIES>'
-        !         endif
-
-        !         do ii=1,qp%ip(iq)%n_full_point
-        !             jq=qp%ip(iq)%index_full_point(ii)
-        !             ! And now to write the actual q-point information
-        !             write(u,"(A)") '<DYNAMICAL_MAT_.'//tochar(ii)//'>'
-
-        !             write(u,"(A)") '<Q_POINT>'
-        !             !write(u,*) qp%ap(jq)%r
-        !             write(u,*) qp%ap(jq)%r
-        !             write(u,"(A)") '</Q_POINT>'
-
-        !             ! Ok so this is a reasonable place to actually calculate the dynamical matrix.
-        !             call fc%dynamicalmatrix(uc,qp%ip(iq),dynamical_matrix,mem,skipnonanalytical=.true.)
-
-        !             do a2=1,uc%na
-        !             do a1=1,uc%na
-        !                 cm0=dynamical_matrix( (a1-1)*3+1:a1*3, (a2-1)*3+1:a2*3  )
-        !                 cm0=cm0/(uc%invsqrtmass(a1)*uc%invsqrtmass(a2))
-        !                 cm0=cm0*2.0_r8 !*0.5_r8
-        !                 write(u,"(A)") '<PHI.'//tochar(a1)//'.'//tochar(a2)//'>'
-        !                 do j=1,3
-        !                 do i=1,3
-
-        !                     write(u,*) real(cm0(i,j),r8),-aimag(cm0(i,j))
-        !                 enddo
-        !                 enddo
-        !                 write(u,"(A)") '</PHI.'//tochar(a1)//'.'//tochar(a2)//'>'
-        !             enddo
-        !             enddo
-
-        !             write(u,"(A)") '</DYNAMICAL_MAT_.'//tochar(ii)//'>'
-        !             write(u,"(A)") '<FREQUENCIES_THZ_CMM'//tochar(ii)//'>'
-        !             do i=1,uc%na*3
-        !                 write(u,"(A)") '<OMEGA.'//tochar(i)//'>'
-        !                 write(u,*) 1.0_r8,2.0_r8
-        !                 write(u,"(A)") '</OMEGA.'//tochar(i)//'>'
-        !                 write(u,"(A)") '<DISPLACEMENT.'//tochar(i)//'>'
-        !                 do j=1,uc%na*3
-        !                     write(u,*) 3.0_r8,4.0_r8
-        !                 enddo
-        !                 write(u,"(A)") '</DISPLACEMENT.'//tochar(i)//'>'
-        !             enddo
-        !             write(u,"(A)") '</FREQUENCIES_THZ_CMM'//tochar(ii)//'>'
-        !         enddo
-
-        !         write(u,"(A)") '</Root>'
-        !         write(u,"(A)") ''
-        !     close(u)
-        ! enddo
-
 
         do iq=1,qp%n_full_point
             u = open_file('out','outfile.qe_dyn'//tochar(iq)//'.xml')
@@ -1050,7 +919,6 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
                     write(u,"(A)") '<PHI.'//tochar(a1)//'.'//tochar(a2)//'>'
                     do j=1,3
                     do i=1,3
-
                         write(u,*) real(cm0(i,j),r8),-aimag(cm0(i,j))
                     enddo
                     enddo
@@ -1076,8 +944,6 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
                 write(u,"(A)") ''
             close(u)
         enddo
-
-
     end block dumpdynmat
 
     dumpq2r: block
@@ -1090,8 +956,8 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
         close(u)
     end block dumpq2r
 
-write(*,*) 'DONE HERE FOR NOW'
-stop
+    write(*,*) 'DONE HERE FOR NOW'
+    stop
 
 end subroutine
 
