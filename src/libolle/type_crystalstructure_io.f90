@@ -769,7 +769,7 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         write(u,*) ""
         write(u,*) "# SIESTA requires the following block to be present, so we give it 0s"
         write(u,*) ""
-        write(u,*) "AtomicCoordinatesFormat   Cartesian"
+        write(u,*) "AtomicCoordinatesFormat   Ang"
         write(u,*) "%block AtomicCoordinatesAndAtomicSpecies"
         if ( p%info%alloy ) then
             call lo_stop_gracefully(['Alloys in siesta output format are not coded yet'],lo_exitcode_param)
