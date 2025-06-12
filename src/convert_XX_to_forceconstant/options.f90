@@ -15,7 +15,7 @@ type lo_opts
     !> q-mesh for the DFPT
     integer, dimension(3) :: qgrid = -lo_hugeint
     !> truncate the IFCs
-    logical :: truncate = .false.
+    logical :: truncate = .true.
     !> enforce correction of symmetries
     logical :: enforcesym = .false.
     !> manually turn off polar corrections
@@ -54,8 +54,8 @@ subroutine parse(opts)
     call cli%add(switch='--files', switch_ab='-f', &
                  help='DDB filename.', &
                  required=.false., act='store', def='', nargs='+', error=lo_status)
-    call cli%add(switch='--truncate', &
-                 help='Truncate the realspace IFCs.', &
+    call cli%add(switch='--notruncate', &
+                 help='Do not truncate the realspace IFCs.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     call cli%add(switch='--enforcesym', hidden=.true., &
                  help='Force all symmetries to be satisfied.', &
@@ -84,7 +84,8 @@ subroutine parse(opts)
     end if
     call cli%get_varying(switch='--files', val=opts%filename, error=lo_status)
     call cli%get(switch='--qpoint_grid', val=opts%qgrid, error=lo_status)
-    call cli%get(switch='--truncate', val=opts%truncate, error=lo_status)
+    call cli%get(switch='--notruncate', val=dumlog, error=lo_status)
+    opts%truncate = .not. dumlog
     call cli%get(switch='--enforcesym', val=opts%enforcesym, error=lo_status)
     call cli%get(switch='--nopolar', val=opts%forcenopolar, error=lo_status)
     call cli%get(switch='--cutoff', val=opts%cutoff, error=lo_status)
