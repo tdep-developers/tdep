@@ -64,8 +64,8 @@ subroutine parse(opts)
                  required=.false., act='store', def='5.0', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--output_format', switch_ab='-of', hidden=.false., &
-                 help='Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims and 5 Siesta', &
-                 required=.false., act='store', def='1', choices='1,2,4,5', error=lo_status)
+                 help='Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims, 5 Siesta, and 6 QE', &
+                 required=.false., act='store', def='1', choices='1,2,4,5,6', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--thirdorder_cutoff', switch_ab='-rc3', hidden=.true., &
                  help='Cutoff for the third order force constants', &

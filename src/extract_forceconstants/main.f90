@@ -348,6 +348,11 @@ getfc: block
             do i = 1, 6
                 write (*, "(6(3X,F15.5))") lo_chop((fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
+
+            if ( opts%dumpepw ) then
+                ! If desired, write IFCs in EPW format
+                call fc2%write_to_qe(uc,mw,mem)
+            endif
         end if
     end if
     if (map%have_fc_triplet) then
