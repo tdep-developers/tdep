@@ -196,7 +196,7 @@ interface
         real(r8), intent(in), optional :: maximum_frequency
         integer, intent(in), optional :: verbosity
     end subroutine
-    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
+    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert, imaginary)
         class(lo_forceconstant_secondorder), intent(inout) :: fcss
         type(lo_crystalstructure), intent(inout) :: ss
         type(lo_crystalstructure), intent(in) :: uc
@@ -209,6 +209,7 @@ interface
         logical, intent(in), optional :: nosync
         integer, intent(in), optional :: imode
         logical, intent(in), optional :: invert
+        logical, intent(in), optional :: imaginary
     end subroutine
     module subroutine setsumtozero(fc)
         class(lo_forceconstant_secondorder), intent(inout) :: fc
