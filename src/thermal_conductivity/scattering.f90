@@ -1,7 +1,8 @@
 #include "precompilerdefinitions"
 module scattering
 use konstanter, only: r8, i8, lo_freqtol, lo_twopi, lo_exitcode_param, lo_hugeint, lo_pi, lo_tol, &
-                      lo_phonongroupveltol, lo_tol, lo_frequency_THz_to_Hartree, lo_kb_hartree, lo_huge
+                      lo_phonongroupveltol, lo_tol, lo_frequency_THz_to_Hartree, lo_kb_hartree, lo_huge, &
+                      lo_frequency_Hartree_to_meV
 use gottochblandat, only: walltime, lo_trueNtimes, lo_progressbar_init, lo_progressbar, lo_gauss, lo_planck, lo_return_unique
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
@@ -39,6 +40,10 @@ type lo_scattering_rates
     real(r8), dimension(:, :), allocatable :: be, sigsq
     !> The scattering matrix
     real(r8), dimension(:, :), allocatable :: Xi
+    !> The reciprocal lattice vectors scaled by the qgrid, for adaptive broadening
+    real(r8), dimension(3, 3) :: reclat = -lo_huge
+    !> The smearing parameter
+    real(r8) :: sigma, thresh_sigma
 
 contains
     !> Generate the scattering amplitudes
@@ -78,13 +83,18 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
     type(lo_montecarlo_grid) :: mcg3, mcg4
 
     init: block
+        !> The average broadening factor for each branch
+        real(r8), dimension(:), allocatable :: sigavg
+        !> A buffer for a vector
+        real(r8), dimension(3) :: v0
+        !> The calculated sigma for a mode
+        real(r8) :: sigma
         !> To initialize the random number generator and timing
         real(r8) :: rseed
         !> The q-point grid dimension
         integer, dimension(3) :: dims
         !> Some integers for the do loop/indices
-        integer :: q1, b1, il, j, my_nqpoints, ctr
-        !> The seed for the random number generator for the Monte-Carlo integration
+        integer :: q1, q2, b1, il, j, my_nqpoints, ctr
 
         ! grid dimensions
         select type (qp)
@@ -116,19 +126,46 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
         ! We can start some precomputation
         allocate (sr%be(qp%n_irr_point, dr%n_mode))
         allocate (sr%sigsq(qp%n_irr_point, dr%n_mode))
+        call mem%allocate(sigavg, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+        sigavg = 0.0_r8
+
         sr%be = 0.0_r8
         sr%sigsq = 0.0_r8
+        ! This could be useful if integrationtype=1 -> fixed gaussian smearing
+        sr%sigma = opts%sigma * lo_frequency_THz_to_Hartree
+        ! This could be useful if integrationtype=6 -> Adapative smearing from groupvel diff
+        do j=1, 3
+            sr%reclat(:, j) = uc%reciprocal_latticevectors(:, j) / dims(j)
+        end do
+
+        ! And we get the values in the array
         do q1 = 1, qp%n_irr_point
             do b1 = 1, dr%n_mode
+                ! Skip gamma point
+                if (dr%iq(q1)%omega(b1) .lt. lo_freqtol) cycle
+
                 if (opts%classical) then
                     sr%be(q1, b1) = lo_kb_hartree*opts%temperature/dr%iq(q1)%omega(b1)
                 else
                     sr%be(q1, b1) = lo_planck(opts%temperature, dr%iq(q1)%omega(b1))
                 end if
 
-                sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), opts%sigma)**2
+                v0 = matmul(abs(dr%iq(q1)%vel(:, b1)), sr%reclat)**2
+                ! This allows to work around problems with 2D materials
+                sigma = maxval(v0*0.5_r8)
+                sr%sigsq(q1, b1) = sigma
+
+                ! Let's accumulate the average broadening factor for each mode
+                sigavg(b1) = sigavg(b1) + sigma * qp%ip(q1)%integration_weight
             end do
         end do
+
+        ! We add a little baseline, to avoid pathological case when group velocities are near zero
+        sr%sigsq = sr%sigsq + maxval(sigavg) * 1e-4_r8
+        ! This is to have a sanity check in memory, for integrationtype 6
+        sr%thresh_sigma = maxval(sigavg) * 1e-4_r8
+        call mem%deallocate(sigavg, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         if (mw%talk) write (*, *) '... distributing q-point/modes on MPI ranks'
         ctr = 0
@@ -244,7 +281,8 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                 ! While we are at it, we can set other things
                 dr%iq(q1)%qs(b1) = 2.0_r8*dr%iq(q1)%linewidth(b1)
                 velnorm = norm2(dr%iq(q1)%vel(:, b1))
-                if (velnorm .gt. lo_phonongroupveltol) then
+!               if (velnorm .gt. lo_phonongroupveltol) then
+                if (dr%iq(q1)%linewidth(b1) .gt. lo_freqtol) then
                     dr%iq(q1)%mfp(:, b1) = dr%iq(q1)%vel(:, b1)/dr%iq(q1)%qs(b1)
                     dr%iq(q1)%scalar_mfp(b1) = velnorm/dr%iq(q1)%qs(b1)
                     dr%iq(q1)%F0(:, b1) = dr%iq(q1)%mfp(:, b1)

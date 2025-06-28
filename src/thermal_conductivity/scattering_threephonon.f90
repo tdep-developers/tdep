@@ -32,22 +32,22 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3
     !> Helper for Fourier transform of psi3
     complex(r8), dimension(:), allocatable :: ptf, evp1, evp2
+    !> buff to keep the off diagonal scattering matrix elements
+    real(r8), dimension(:, :), allocatable :: od_terms
+    !> The reducible triplet corresponding to the currently computed triplet
+    integer, dimension(:, :), allocatable :: red_triplet
     !> The full qpoint grid, to be shuffled
     integer, dimension(:), allocatable :: qgridfull
-    !> The qpoints and the dimension of the qgrid
-    real(r8), dimension(3) :: qv2, qv3
-    !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
-    real(r8) :: sigma, om1, om2, om3, n2, n3, psisq, f0, f1, plf0, plf1, perm
     !> The complex threephonon matrix element
     complex(r8) :: c0
+    !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
+    real(r8) :: sigma, om1, om2, om3, n2, n3, psisq, f0, f1, plf0, plf1, perm
+    !> The approximated dirac
+    real(r8) :: d0, d1
     !> Integers for do loops and counting
     integer :: qi, q1, q2, q3, q2p, q3p, b1, b2, b3, i
     !> Is the triplet irreducible ?
     logical :: isred
-    !> The reducible triplet corresponding to the currently computed triplet
-    integer, dimension(:, :), allocatable :: red_triplet
-    !> buff to keep the off diagonal scattering matrix elements
-    real(r8), dimension(:, :), allocatable :: od_terms
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -88,6 +88,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         do b2 = 1, dr%n_mode
             om2 = dr%aq(q2)%omega(b2)
             if (om2 .lt. lo_freqtol) cycle
+            if (abs(om1 - om2) .lt. lo_freqtol) cycle
 
             egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
 
@@ -97,19 +98,11 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
             do b3 = 1, dr%n_mode
                 om3 = dr%aq(q3)%omega(b3)
                 if (om3 .lt. lo_freqtol) cycle
+                if (abs(om1 - om3) .lt. lo_freqtol .or. abs(om2 - om3) .lt. lo_freqtol) cycle
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
-                select case (integrationtype)
-                case (1)
-                    sigma = smearing*lo_frequency_THz_to_Hartree
-                case (2)
-                    sigma = sqrt(sr%sigsq(q1, b1) + &
-                                 sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
-                                 sr%sigsq(qp%ap(q3)%irreducible_index, b3))
-                case (6)
-                    sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), &
-                                                 dr%default_smearing(b3), smearing)
-                end select
+                ! Get the weight for each processes
+                call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
                 evp2 = 0.0_r8
@@ -126,8 +119,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                 ! The prefactor for the scattering
                 plf0 = n2 - n3
                 plf1 = n2 + n3 + 1.0_r8
-                f0 = perm*psisq*plf0*(lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma))
-                f1 = perm*psisq*plf1*(lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma))
+                f0 = perm*psisq*plf0*d0
+                f1 = perm*psisq*plf1*d1
 
                 ! And we add everything for each triplet equivalent to the one we are actually computing
                 do i = 1, size(red_triplet, 2)
@@ -151,7 +144,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         !> To keep track of the number of mode we actually add
         integer, dimension(dr%n_mode) :: nn
         !> To hold the q-point in reduced coordinates
-        real(r8), dimension(3) :: qv2p
+        real(r8), dimension(3) :: qv2, qv2p
         !> To get the index of the new triplet on the fft_grid
         integer, dimension(3) :: gi
         !> Some buffer
@@ -203,7 +196,6 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
         end do allq2
 
         ! And now we add things, with the normalization
-        od_terms = od_terms
         do q2 = 1, qp%n_full_point
             do b2 = 1, dr%n_mode
                 i2 = (q2 - 1)*dr%n_mode + b2
@@ -221,7 +213,62 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(qgridfull, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(od_terms, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    deallocate (red_triplet)
+    if (allocated(red_triplet)) deallocate (red_triplet)
+
+    contains
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
+    !> The scattering amplitudes
+    type(lo_scattering_rates), intent(in) :: sr
+    !> The qpoint mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> Harmonic dispersions
+    type(lo_phonon_dispersions), intent(in) :: dr
+    !> The qpoints
+    integer, intent(in) :: q1, q2, q3
+    !> The modes
+    integer, intent(in) :: b1, b2, b3
+    !> THe integration type
+    integer, intent(in) :: integrationtype
+    !> The approximated dirac
+    real(r8), intent(out) :: d0, d1
+
+    !> The frequencies
+    real(r8) :: om1, om2, om3
+    ! Buffer to contains all the sigmas
+    real(r8), dimension(3, 3) :: allsig
+    !> An integer for the do loop
+    integer :: i, j
+
+    select case (integrationtype)
+    ! Gaussian smearing with fixed width
+    case (1)
+        sigma = sr%sigma
+    ! Adaptive Gaussian smearing with smeared frequency approach
+    case (2)
+        sigma = sqrt(sr%sigsq(q1, b1) + &
+                     sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
+                     sr%sigsq(qp%ap(q3)%irreducible_index, b3))
+    ! Adaptive Gaussian smearing with velocity difference approach
+    case (6)
+        allsig = 0.0_r8
+        allsig(:, 1) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b2), sr%reclat)**2
+        allsig(:, 2) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
+        allsig(:, 3) = matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
+
+        sigma = 0.0_r8
+        do i=1, 3
+            sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 3.0_r8
+        end do
+        sigma = sigma + sr%thresh_sigma
+    end select
+
+    om1 = dr%iq(q1)%omega(b1)
+    om2 = dr%aq(q2)%omega(b2)
+    om3 = dr%aq(q3)%omega(b3)
+
+    d0 = lo_gauss(om1, -om2 + om3, sigma) - lo_gauss(om1, om2 - om3, sigma)
+    d1 = lo_gauss(om1, om2 + om3, sigma) - lo_gauss(om1, -om2 - om3, sigma)
+end subroutine
 end subroutine
 
 !> Get the Fourier transform of the third order matrix element
@@ -349,6 +396,8 @@ subroutine triplet_is_irreducible(qp, uc, q1, q2, q3, isred, red_triplet, mw, me
             ! Now I check if I can reduce this triplet
             if (qpp(1) .gt. q2) isred = .true.
         end do
+
+        if (isred) return
 
         ! For stability, replace points not on the grid with starting q-point
         ! Should not be needed if the grid respect the symmetries of the lattice though

@@ -32,30 +32,32 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3, egv4
     !> Helper for Fourier transform of psi3
     complex(r8), dimension(:), allocatable :: ptf, evp1, evp2, evp3
-    !> The full qpoint grid, to be shuffled
-    integer, dimension(:), allocatable :: qgridfull1, qgridfull2
+    !> Buffer for the off-diagonal terms in the scattering matrix
+    real(r8), dimension(:, :), allocatable :: od_terms
     !> The qpoints in cartesian coordinates
     real(r8), dimension(3) :: qv2, qv3, qv4
+    !> The reducible triplet corresponding to the currently computed quartet
+    integer, dimension(:, :), allocatable :: red_quartet
+    !> The full qpoint grid, to be shuffled
+    integer, dimension(:), allocatable :: qgridfull1, qgridfull2
     !> The complex scattering amplitude
     complex(r8) :: c0
     !> Frequencies, bose-einstein occupation and scattering strength
-    real(r8) :: om1, om2, om3, om4, psisq
-    ! The gaussian integration width
-    real(r8) :: sigma
+    real(r8) :: om1, om2, om3, om4, psisq, sigma
     !> Stuff for the linewidths
     real(r8) :: n2, n3, n4, n2p, n3p, n4p, plf0, plf1, plf2, plf3
-    !> Integers for do loops
-    integer :: q1, q2, q3, q4, q2p, q3p, q4p, b1, b2, b3, b4, qi, qj, i
-    !> Is the quartet irreducible ?
-    logical :: isred
     !> If so, what is its multiplicity
     real(r8) :: mult0, mult1, mult2, mult3
     !> All the prefactors for the scattering
     real(r8) :: f0, f1, f2, f3, f4, f5, f6, f7, fall
-    !> The reducible triplet corresponding to the currently computed quartet
-    integer, dimension(:, :), allocatable :: red_quartet
+    !> The approximated dirac
+    real(r8) :: d0, d1, d2, d3, d4
+    !> Integers for do loops
+    integer :: q1, q2, q3, q4, q2p, q3p, q4p, b1, b2, b3, b4, qi, qj, i
+    !> Is the quartet irreducible ?
+    logical :: isred
 
-    real(r8), dimension(:, :), allocatable :: od_terms
+    integer, dimension(3) :: qq
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -81,6 +83,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     call mem%allocate(qgridfull2, qp%n_full_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mcg%generate_grid(qgridfull1, rng)
     call mcg%generate_grid(qgridfull2, rng)
+
+    allocate(red_quartet(3, 1))
 
     compute_loop: do qi = 1, mcg%npoints
     do qj = 1, mcg%npoints
@@ -146,18 +150,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     n4p = n4 + 1.0_r8
                     egv4 = dr%aq(q4)%egv(:, b4)/sqrt(om4)
 
-                    select case (integrationtype)
-                    case (1)
-                        sigma = smearing*lo_frequency_THz_to_Hartree
-                    case (2)
-                        sigma = sqrt(sr%sigsq(q1, b1) + &
-                                     sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
-                                     sr%sigsq(qp%ap(q3)%irreducible_index, b3) + &
-                                     sr%sigsq(qp%ap(q4)%irreducible_index, b4))
-                    case (6)
-                        sigma = qp%smearingparameter(dr%aq(q3)%vel(:, b3) - dr%aq(q4)%vel(:, b4), &
-                                                     dr%default_smearing(b3), smearing)
-                    end select
+                    call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
 
                     evp3 = 0.0_r8
                     call zgeru(dr%n_mode, dr%n_mode**3, (1.0_r8, 0.0_r8), egv4, 1, evp2, 1, evp3, dr%n_mode)
@@ -172,10 +165,10 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                     plf3 = 3.0_r8*n4*n3p*n2p - n4p*n3*n2
 
                     ! Prefactors, including the matrix elements and dirac
-                    f0 = mult0*psisq*plf0*(lo_gauss(om1, om2 + om3 + om4, sigma) - lo_gauss(om1, -om2 - om3 - om4, sigma))
-                    f1 = mult1*psisq*plf1*(lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma))
-                    f2 = mult2*psisq*plf2*(lo_gauss(om1, -om3 + om2 + om4, sigma) - lo_gauss(om1, om3 - om2 - om4, sigma))
-                    f3 = mult3*psisq*plf3*(lo_gauss(om1, -om4 + om3 + om2, sigma) - lo_gauss(om1, om4 - om3 - om2, sigma))
+                    f0 = mult0*psisq*plf0*d0
+                    f1 = mult1*psisq*plf1*d1
+                    f2 = mult2*psisq*plf2*d2
+                    f3 = mult3*psisq*plf3*d3
 
                     fall = f0 + f1 + f2 + f3
 
@@ -268,6 +261,70 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     call mem%deallocate(qgridfull1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(qgridfull2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(od_terms, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    if (allocated(red_quartet)) deallocate(red_quartet)
+
+    contains
+subroutine get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
+    !> The scattering amplitudes
+    type(lo_scattering_rates), intent(in) :: sr
+    !> The qpoint mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> Harmonic dispersions
+    type(lo_phonon_dispersions), intent(in) :: dr
+    !> The qpoints
+    integer, intent(in) :: q1, q2, q3, q4
+    !> The modes
+    integer, intent(in) :: b1, b2, b3, b4
+    !> THe integration type
+    integer, intent(in) :: integrationtype
+    !> The approximated dirac
+    real(r8), intent(out) :: d0, d1, d2, d3
+
+    !> The frequencies
+    real(r8) :: om1, om2, om3, om4
+    ! Buffer to contains all the sigmas
+    real(r8), dimension(3, 6) :: allsig
+    !> An integer for the do loop
+    integer :: i, j
+
+    select case (integrationtype)
+    ! Gaussian smearing with fixed width
+    case (1)
+        sigma = sr%sigma
+    ! Adaptive Gaussian smearing with smeared frequency approach
+    case (2)
+        sigma = sqrt(sr%sigsq(q1, b1) + &
+                     sr%sigsq(qp%ap(q2)%irreducible_index, b2) + &
+                     sr%sigsq(qp%ap(q3)%irreducible_index, b3) + &
+                     sr%sigsq(qp%ap(q4)%irreducible_index, b4))
+    ! Adaptive Gaussian smearing with velocity difference approach
+    case (6)
+        ! We take an average to respect the symmetry of the scattering matrix
+        allsig = 0.0_r8
+
+        allsig(:, 1) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q2)%vel(:, b2), sr%reclat)**2
+        allsig(:, 2) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
+        allsig(:, 3) = matmul(dr%iq(q1)%vel(:, b1) - dr%aq(q4)%vel(:, b4), sr%reclat)**2
+        allsig(:, 4) = matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q3)%vel(:, b3), sr%reclat)**2
+        allsig(:, 5) = matmul(dr%aq(q2)%vel(:, b2) - dr%aq(q4)%vel(:, b4), sr%reclat)**2
+        allsig(:, 6) = matmul(dr%aq(q3)%vel(:, b3) - dr%aq(q4)%vel(:, b4), sr%reclat)**2
+        sigma = 0.0_r8
+        do i=1, 6
+            sigma = sigma + sqrt(maxval(allsig(:, i)) * 0.5_r8) / 6.0_r8
+        end do
+        sigma = sigma + sr%thresh_sigma
+    end select
+
+    om1 = dr%iq(q1)%omega(b1)
+    om2 = dr%aq(q2)%omega(b2)
+    om3 = dr%aq(q3)%omega(b3)
+    om4 = dr%aq(q4)%omega(b4)
+
+    d0 = lo_gauss(om1, om2 + om3 + om4, sigma) - lo_gauss(om1, -om2 - om3 - om4, sigma)
+    d1 = lo_gauss(om1, -om2 + om3 + om4, sigma) - lo_gauss(om1, om2 - om3 - om4, sigma)
+    d2 = lo_gauss(om1, om2 - om3 + om4, sigma) - lo_gauss(om1, -om2 + om3 - om4, sigma)
+    d3 = lo_gauss(om1, om2 + om3 - om4, sigma) - lo_gauss(om1, -om2 - om3 + om4, sigma)
+end subroutine
 end subroutine
 
 subroutine quartet_is_irreducible(qp, uc, q1, q2, q3, q4, isred, red_quartet, mw, mem)
@@ -348,6 +405,8 @@ subroutine quartet_is_irreducible(qp, uc, q1, q2, q3, q4, isred, red_quartet, mw
             newqp_sort(:, j) = qpp
             if (qpp(1) .gt. q2 .or. qpp(2) .gt. q3) isred = .true.
         end do
+
+        if (isred) return
 
         if (minval(newqp) .lt. 0) then
             do j = 1, size(newqp, 2)
