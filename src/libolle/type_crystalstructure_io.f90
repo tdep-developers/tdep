@@ -376,8 +376,12 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             end if
         case(4) ! FHI Aims
             call writetofile_aims(p,filename,write_velocities)
-        case(5) ! Siesta 
+        case(5) ! Siesta
             call writetofile_siesta(p,filename,write_velocities)
+        case(6) ! QE
+            call writetofile_qe(p,filename,write_velocities)
+        case(7) ! Parsec
+            call writetofile_parsec(p,filename,write_velocities)
         case default
             call lo_stop_gracefully(['Unknown output format: '//tochar(output_format)],lo_exitcode_io,__FILE__,__LINE__)
     end select
@@ -726,7 +730,7 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         ! I don't know how to write velocities in Siesta. Someone should tell me that.
         ! MJV: fixed at least partly, by putting them in XV files (pos, veloc).
         ! not sure you can add them to the main fdf input files as well...
-        ! NB: there is a flag to use the XV file MD.UseSaveXV .true. but you have to fill 
+        ! NB: there is a flag to use the XV file MD.UseSaveXV .true. but you have to fill
         !   the coordinates block anyway, so might as well fill both here.
         !   Main advantage is that you can add the velocities in XV, but for configuration
         !   generation it's not important, you just get forces out.
@@ -785,7 +789,7 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         write(u,*) "XC.functional GGA"
         write(u,*) "XC.authors    PBE"
         write(u,*)
- 
+
         write(u,*) "%block kgrid_Monkhorst_Pack"
         write(u,*) "   1   0   0   0."
         write(u,*) "   0   1   0   0."
@@ -803,25 +807,114 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
 
         if ( filename .ne. 'stdout' ) close(u)
 
-! add a XV format file as well: Uses bohr for the cartesian positions.
-!    what are the units for the velocity?
-!
-! latice as 3x3 block, with additional 3x3 block of 0s after
-! natom
-! itype zatom xcoord(3) veloc(3)
-!
-! NB: I _think_ they use Angstr for the positions, needs to be checked. 
-!    for the velocities, no idea what they expect...
+        ! add a XV format file as well: Uses bohr for the cartesian positions.
+        !    what are the units for the velocity?
+        !
+        ! latice as 3x3 block, with additional 3x3 block of 0s after
+        ! natom
+        ! itype zatom xcoord(3) veloc(3)
+        !
+        ! NB: I _think_ they use Angstr for the positions, needs to be checked.
+        !    for the velocities, no idea what they expect...
         u=open_file('out',filename//".XV")
         write(u,'(3E20.10,2x,3E20.10)') lo_choplarge(p%latticevectors(:,1),lo_sqtol), 0.000000000, 0.000000000, 0.000000000
         write(u,'(3E20.10,2x,3E20.10)') lo_choplarge(p%latticevectors(:,2),lo_sqtol), 0.000000000, 0.000000000, 0.000000000
         write(u,'(3E20.10,2x,3E20.10)') lo_choplarge(p%latticevectors(:,3),lo_sqtol), 0.000000000, 0.000000000, 0.000000000
-        write(u,*) tochar(p%na) 
+        write(u,*) tochar(p%na)
         opf="(1X,2(I5),2X,2(3F18.9,'  '))"
         do i=1,p%na
             write(u,opf) p%species(i), symbol_to_z(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol), lo_chop(p%v(:,i),lo_sqtol)
         enddo
     end subroutine
+
+    !> Writes a structure to QE output file or stdout
+    subroutine writetofile_qe(p,filename,write_velocities)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> filename
+        character(len=*), intent(in) :: filename
+        !> should be written. Default false.
+        logical, intent(in), optional :: write_velocities
+        ! local
+        integer :: i
+
+        real(flyt) :: latpar
+        character(len=1000) :: opf
+        integer :: u
+
+        ! file or stdout
+        if ( filename .eq. 'stdout' ) then
+            u=0
+        else
+            u=open_file('out',filename)
+        endif
+        write(u,*) "    nat             = ", tochar(p%na)
+        write(u,*) "    ntyp            = ", tochar(p%nelements)
+        write(u,*) "/"
+        write(u,*) "CELL_PARAMETERS bohr"
+        write(u,*) lo_choplarge(p%latticevectors(:,1),lo_sqtol)
+        write(u,*) lo_choplarge(p%latticevectors(:,2),lo_sqtol)
+        write(u,*) lo_choplarge(p%latticevectors(:,3),lo_sqtol)
+        write(u,*) " "
+        write(u,*) "ATOMIC_POSITIONS bohr"
+        opf="(1X,a,2X,3F18.9))"
+        do i=1, p%na
+          write(u,opf) trim(p%atomic_symbol(p%species(i))), lo_chop(p%rcart(:,i),lo_sqtol)
+        enddo
+        if ( filename .ne. 'stdout' ) close(u)
+    end subroutine
+
+    !> Writes a structure in PARSEC format
+    subroutine writetofile_parsec(p,filename,write_velocities)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> filename
+        character(len=*), intent(in) :: filename
+        !> should velocities be written. Default false.
+        logical, intent(in), optional :: write_velocities
+        ! local
+        integer :: i
+        !
+        real(flyt) :: latpar
+        logical :: vel
+        integer :: u
+
+        ! I don't have a velocity input format in parsec yet, so later problem
+        if ( present(write_velocities) ) then
+            vel=write_velocities
+        else
+            vel=.false.
+        endif
+
+        ! file or stdout
+        if ( filename .eq. 'stdout' ) then
+            u=0
+        else
+            u=open_file('out',filename)
+        endif
+
+        write(u,*) "# comment line"
+        write(u,*) "Bulk"
+        if ( p%info%unitcell_lattice_parameter .gt. 0.0_flyt ) then
+            latpar=p%info%unitcell_lattice_parameter
+            write(u,"(2X,F21.13)") latpar*lo_bohr_to_A
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,1)/latpar,1E-12_flyt)
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,2)/latpar,1E-12_flyt)
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,3)/latpar,1E-12_flyt)
+        else
+            latpar=1.0_flyt
+            write(u,"(2X,F20.12)") latpar
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,1)/latpar,1E-12_flyt)
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,2)/latpar,1E-12_flyt)
+            write(u,"(1X,3(1X,F22.14))") lo_chop(p%latticevectors(:,3)/latpar,1E-12_flyt)
+        endif
+        do i=1,p%na
+            write(u,"(1X,3(1X,E19.12),1X,A)") p%r(:,i),trim(p%atomic_symbol( p%species(i) ))
+        enddo
+
+        if ( filename .ne. 'stdout' ) close(u)
+    end subroutine
+
 end subroutine
 
 !> Read isotope distribution from file
@@ -935,7 +1028,6 @@ module subroutine write_structure_to_hdf5(p,filename,input_id)
     !> in case I want to write it as a part of another file
     integer(HID_T), intent(in), optional :: input_id
 
-    integer :: i
     character(len=2000) :: atomnames
     type(lo_hdf5_helper) :: h5
 

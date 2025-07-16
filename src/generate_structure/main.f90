@@ -113,6 +113,13 @@ getsupercell: block
             ss%latticevectors = ss%latticevectors
             ss%inv_latticevectors = ss%inv_latticevectors
             call ss%writetofile('outfile.supercell_lammps_ipi', 3, transformationmatrix=tm)
+        case (6) ! QE
+            call ss%writetofile('outfile.supercell_qe', opts%outputformat)
+            write (*, *) '... wrote supercell in Quantum ESPRESSO format'
+        case (7) ! Parsec
+            call uc%writetofile('outfile.unitcell_parsec', opts%outputformat)
+            call ss%writetofile('outfile.supercell_parsec', opts%outputformat)
+            write (*, *) '... wrote supercell in PARSEC format'
         end select
     end if
 end block getsupercell
