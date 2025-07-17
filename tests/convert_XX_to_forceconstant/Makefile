@@ -1,2 +1,2 @@
 testfiles:
-	convert_XX_to_forceconstant 
+	convert_XX_to_forceconstant  --files infile.DDB
