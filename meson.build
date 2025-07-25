@@ -5,16 +5,15 @@ add_project_arguments('-ffree-line-length-none', language: 'fortran')
 # add_project_arguments('-std=f2008', language: 'fortran')
 add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
 
-add_project_link_arguments('-llapack', language: 'fortran')
-
 # global dependencies:
 dep_mpi = dependency('mpi', language: 'fortran')
+dep_blas = dependency('openblas')
 dep_lapack = dependency('lapack')
 dep_fftw = dependency('fftw3')
 dep_hdf5 = dependency('hdf5', language: 'fortran', version: '>1.10.7')
 dep_netcdf = dependency('netcdf', language: 'fortran')
 # dep_netcdf = dependency('netcdf', language: 'c')
-dep_all = [dep_mpi, dep_lapack, dep_fftw, dep_hdf5, dep_netcdf]
+dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5, dep_netcdf]
 
 subdir('src/libolle')
 subdir('src/libflap')
