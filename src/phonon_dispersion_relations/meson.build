@@ -9,4 +9,6 @@ executable('phonon_dispersion_relations',
            'velocitydos.f90',
            link_with: [libolle, libflap],
            include_directories: ['../libolle', '../libflap'],
-           dependencies: dep_all)
+           dependencies: dep_all,
+           install: true,
+           install_dir: meson.project_build_root() / 'bin')

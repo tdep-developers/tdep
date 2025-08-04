@@ -3,4 +3,6 @@ executable('extract_forceconstants',
            'options.f90',
            link_with: [libolle, libflap],
            include_directories: ['../libolle', '../libflap'],
-           dependencies: dep_all)
+           dependencies: dep_all,
+           install: true,
+           install_dir: meson.project_build_root() / 'bin')
