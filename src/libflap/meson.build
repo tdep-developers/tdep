@@ -6,4 +6,6 @@ libflap = library('libflap',
 'flap_object_t.f90',
 'flap_utils_m.f90',
 'penf.F90',
-dependencies: dep_all)
+dependencies: dep_all,
+install: true,
+install_dir: meson.project_build_root() / 'lib')

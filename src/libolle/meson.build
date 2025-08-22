@@ -127,4 +127,6 @@ libolle = library('libolle',
 'type_symmetryoperation.f90',
 'type_voronoi_distancetable.f90',
 'type_voronoi.f90',
-dependencies: dep_all)
+dependencies: dep_all,
+install: true,
+install_dir: meson.project_build_root() / 'lib')
