@@ -87,11 +87,15 @@ First setup the git version for the code:
 Then you can run the configuration step:
 ```meson setup build```
 And finally compile the code:
-```cd build
-meson compile```
+```
+cd build
+meson compile
+meson install
+```
 
-If some dependencies are not found, please make sure that they are in your PKG_CONFIG_PATH. For example, put something of the form in your .bashrc / .bash_profile :
+If some dependencies are not found, please make sure that they are in your PKG_CONFIG_PATH. For example, put something of the form in your `.bashrc` / `.bash_profile` :
 ```export PKG_CONFIG_PATH="/path/to/your/netcdf/:${PKG_CONFIG_PATH}"```
+Depending on the method used to install the required libraries, they may not be automatically put inside the search path (Homebrew is known to not always do it).
 You can make sure that `pkg-config` is able to find the dependencies by running: `pkg-config --libs hdf5`
 Meson will first try to find dependencies via `pkg-config`. If it does not find them, it will try to use CMake (if installed/loaded).
 
