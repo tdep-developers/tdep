@@ -19,3 +19,5 @@ executable('lineshape',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('lineshape', pointing_to: meson.project_build_root() / 'bin/lineshape', install_dir: meson.project_source_root() / 'bin')

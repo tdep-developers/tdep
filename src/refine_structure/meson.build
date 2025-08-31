@@ -12,3 +12,5 @@ executable('refine_structure',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('refine_structure', pointing_to: meson.project_build_root() / 'bin/refine_structure', install_dir: meson.project_source_root() / 'bin')

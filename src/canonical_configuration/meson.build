@@ -7,3 +7,5 @@ executable('canonical_configuration',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('canonical_configuration', pointing_to: meson.project_build_root() / 'bin/canonical_configuration', install_dir: meson.project_source_root() / 'bin')

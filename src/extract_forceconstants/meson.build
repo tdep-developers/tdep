@@ -6,3 +6,5 @@ executable('extract_forceconstants',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('extract_forceconstants', pointing_to: meson.project_build_root() / 'bin/extract_forceconstants', install_dir: meson.project_source_root() / 'bin')

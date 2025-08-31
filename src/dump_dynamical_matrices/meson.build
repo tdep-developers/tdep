@@ -6,3 +6,5 @@ executable('dump_dynamical_matrices',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('dump_dynamical_matrices', pointing_to: meson.project_build_root() / 'bin/dump_dynamical_matrices', install_dir: meson.project_source_root() / 'bin')

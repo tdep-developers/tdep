@@ -9,3 +9,5 @@ executable('thermal_conductivity',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('thermal_conductivity', pointing_to: meson.project_build_root() / 'bin/thermal_conductivity', install_dir: meson.project_source_root() / 'bin')

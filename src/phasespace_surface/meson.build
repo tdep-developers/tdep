@@ -7,3 +7,5 @@ executable('phasespace_surface',
            dependencies: dep_all,
            install: true,
            install_dir: meson.project_build_root() / 'bin')
+
+install_symlink('phasespace_surface', pointing_to: meson.project_build_root() / 'bin/phasespace_surface', install_dir: meson.project_source_root() / 'bin')
