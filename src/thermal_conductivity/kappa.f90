@@ -1,7 +1,7 @@
 #include "precompilerdefinitions"
 module kappa
 use konstanter, only: r8, lo_sqtol, lo_kb_hartree, lo_freqtol, lo_kappa_au_to_SI, &
-                      lo_groupvel_Hartreebohr_to_ms
+                      lo_groupvel_Hartreebohr_to_ms, lo_twopi
 use gottochblandat, only: lo_sqnorm, lo_planck, lo_outerproduct, lo_chop, lo_harmonic_oscillator_cv
 use mpi_wrappers, only: lo_mpi_helper
 use lo_memtracker, only: lo_mem_helper
@@ -256,6 +256,8 @@ subroutine get_kappa_offdiag(dr, qp, uc, fc, temperature, classical, mem, mw, ka
                 if (dr%iq(iq)%omega(jmode) .lt. lo_freqtol) cycle
                 om1 = dr%iq(iq)%omega(jmode)
                 tau1 = dr%iq(iq)%linewidth(jmode)
+                ! Not needed almost always, but needed for some extremely rare pathological cases
+                if (tau1 .lt. lo_freqtol) cycle
                 do kmode = 1, dr%n_mode
                     if (jmode .eq. kmode) cycle  ! We only want the off diagonal contribution
                     ! Skip gamma for acoustic branches
@@ -263,6 +265,8 @@ subroutine get_kappa_offdiag(dr, qp, uc, fc, temperature, classical, mem, mw, ka
                     if (om2 .lt. lo_freqtol) cycle
 
                     tau2 = dr%iq(iq)%linewidth(kmode)
+                    ! Not needed almost always, but needed for some extremely rare pathological cases
+                    if (tau2 .lt. lo_freqtol) cycle
 
                     ! This is consistent with the paper, but a bit different from QHGK
                     ! This comes from the fact that we don't work with creation/annihilation but
@@ -411,7 +415,12 @@ subroutine iterative_solution(sr, dr, qp, uc, temperature, niter, tol, classical
             do il = 1, sr%my_nqpoints
                 q1 = sr%my_qpoints(il)
                 b1 = sr%my_modes(il)
-                Fnb(:, b1, q1) = -buf(:, il)/dr%iq(q1)%qs(b1)
+                ! The check is needed for some extremely rare pathological cases
+                if (dr%iq(q1)%qs(b1) .lt. lo_freqtol) then
+                    Fnb(:, b1, q1) = 0.0_r8
+                else
+                    Fnb(:, b1, q1) = -buf(:, il)/dr%iq(q1)%qs(b1)
+                end if
             end do
             call mw%allreduce('sum', Fnb)
         end block applyXi

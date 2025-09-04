@@ -26,10 +26,12 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
 
     ! Eigenvectors
     complex(r8), dimension(uc%na*3, 2) :: egviso
+    !> For the broadening calculation
+    real(r8), dimension(3) :: allsig
     ! prefactor and phonon buffers
     real(r8) :: om1, om2, sigma, psisq, prefactor, f0
     ! Integers for do loops
-    integer :: q1, b1, q2, b2, i, niso
+    integer :: q1, b1, q2, b2, i2, niso
 
     q1 = sr%my_qpoints(il)
     b1 = sr%my_modes(il)
@@ -49,19 +51,20 @@ subroutine compute_isotope_scattering(il, sr, qp, dr, uc, temperature, &
                 sigma = sqrt(sr%sigsq(q1, b1) + &
                              sr%sigsq(qp%ap(q2)%irreducible_index, b2))
             case (6)
-                sigma = qp%smearingparameter(dr%aq(q2)%vel(:, b2), &
-                                             dr%default_smearing(b2), smearing)
+                allsig = matmul(dr%aq(q2)%vel(:, b2), sr%reclat)**2
+                sigma = sqrt(maxval(allsig) * 0.5_r8)
+                sigma = sigma + sr%thresh_sigma
             end select
 
-            i = (q2 - 1)*dr%n_mode + b2
+            ! The off-diagonal index in the scattering matrix
+            i2 = (q2 - 1)*dr%n_mode + b2
 
             egviso(:, 2) = dr%aq(q2)%egv(:, b2)
-
             psisq = isotope_scattering_strength(uc, egviso)*prefactor
 
             f0 = psisq*om1*om2*lo_gauss(om1, om2, sigma)
             g0 = g0 + f0
-            sr%Xi(il, i) = sr%Xi(il, i) + f0*om2/om1
+            sr%Xi(il, i2) = sr%Xi(il, i2) + f0*om2/om1
         end do
     end do
 end subroutine
