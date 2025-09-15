@@ -68,7 +68,8 @@ type lo_opts
     logical :: fake_dielectric = .false.
     ! developer mode
     logical :: devmode = .false.
-
+    ! Dump IFCs in EPW format
+    logical :: dumpepw = .false.
 contains
     procedure :: parse
 end type
@@ -248,6 +249,9 @@ subroutine parse(opts)
     call cli%add(switch='--developermode', switch_ab='-dev', hidden=.true., help='dev. mode', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--output_epw', switch_ab='-epw', hidden=.false., help='Write the (second order) interatomic force constants in XML format useable by EPW.', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     ! actually parse it
     call cli%parse(error=lo_status)
@@ -306,6 +310,7 @@ subroutine parse(opts)
     call cli%get(switch='--temperature', val=opts%temperature)
     call cli%get(switch='--fakediel', val=opts%fake_dielectric)
     call cli%get(switch='--developermode', val=opts%devmode)
+    call cli%get(switch='--output_epw', val=opts%dumpepw)
 
     if (lo_status .ne. 0) stop
 

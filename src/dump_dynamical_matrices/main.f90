@@ -78,6 +78,8 @@ call lo_generate_qmesh(qp, uc, opts%qgrid, 'fft', timereversal=.true., headranko
 
 call fc%write_to_anaddb(uc, opts%qgrid, mw, mem)
 
+call fc%write_dynmat_to_qe(uc,opts%qgrid,mw,mem)
+
 !else
 !    ! automagically generate a grid. Probably a bad idea, since my version of gridgeneration and
 !    ! Abinits might be different.
