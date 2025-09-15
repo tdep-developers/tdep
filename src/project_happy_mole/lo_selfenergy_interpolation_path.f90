@@ -7,7 +7,7 @@ contains
 !> Calculate the spectral function along a path in the BZ
 module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
     !> interpolated self-energy thing
-    class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> bandstructure, with harmonic part pre-calculated
     type(lo_phonon_bandstructure), intent(inout) :: bs
     !> crystal structure
@@ -94,7 +94,7 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
         do iq = 1, bs%n_point
             if (mod(iq, mw%n) .ne. mw%r) cycle
             ! Get self-energy
-            call ise%evaluate(uc,bs%q(iq)%r,bs%p(iq),buf_Re(:,:,iq),buf_im(:,:,iq))
+            call ise%evaluate(uc,bs%q(iq)%r,bs%p(iq),buf_Re(:,:,iq),buf_im(:,:,iq),mem)
             !call ise%diagonal_selfenergy(uc, bs%q(iq)%r, bs%p(iq)%omega, bs%p(iq)%egv, buf_re(:, :, iq), buf_im(:, :, iq))
             ! Get shift and width
             do imode = 1, bs%n_mode
@@ -144,6 +144,7 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
             ! Also put a lower limit to the imaginary self-energy. This is to make
             ! the plot look sensible, nothing else. If a peak is sharper than the distance
             ! between two pixels, everything looks wonky.
+            im_lower_limit = (ise%omega(2) - ise%omega(1))*0.25_r8
             im_lower_limit = (ise%omega(2) - ise%omega(1))*0.25_r8
 
             call mem%allocate(bufr, ise%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

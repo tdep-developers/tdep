@@ -95,7 +95,7 @@ interface
         !> fourth order force constant
         type(lo_forceconstant_fourthorder), intent(in) :: fcf
         !> tabulated and smeared spectral functions
-        type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         !> q-point mesh
         class(lo_qpoint_mesh), intent(in) :: qp
         !> harmonic properties on this mesh
@@ -146,7 +146,7 @@ interface
         class(lo_qpoint_mesh), intent(in) :: qp
         type(lo_phonon_dispersions), intent(in) :: dr
         type(lo_listofscatteringrates), intent(in) :: sr
-        type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_crystalstructure), intent(in) :: p
         real(r8), intent(in) :: temperature
         type(lo_mpi_helper), intent(inout) :: mw

@@ -1,7 +1,7 @@
-#include "precompilerdefinitions"
+!#include "precompilerdefinitions"
 module geometryfunctions
 !! Basic geometric functions and derived types for lines, planes, polygons and convex polyhedrons. Routines to calculate distances, areas, volumes, as well as more advanced ones such as slicing polyhedrons with planes.
-use konstanter, only: flyt, lo_huge, lo_hugeint, lo_status, lo_tol, lo_sqtol, lo_pi, lo_exitcode_param
+use konstanter, only: r8, lo_huge, lo_hugeint, lo_status, lo_tol, lo_sqtol, lo_pi, lo_exitcode_param
 use gottochblandat, only: walltime,tochar,qsort,lo_cross,lo_mean,lo_sqnorm,lo_index_in_periodic_array, lo_stop_gracefully, lo_return_unique
 implicit none
 private
@@ -22,6 +22,7 @@ public :: lo_rotation_matrix_from_vector_a_to_b
 public :: lo_inscribed_sphere_in_box
 public :: lo_bounding_sphere_of_box
 public :: lo_convex_hull_2d
+public :: lo_increment_dimensions
 
 !> General type for geometrical objects in R3.
 type, abstract :: lo_geometryobject
@@ -39,15 +40,15 @@ end type lo_null
 !> A point
 type, extends(lo_geometryobject) :: lo_point
     !> Point, believe it or not.
-    real(flyt), dimension(3) :: r=lo_huge
+    real(r8), dimension(3) :: r=lo_huge
 end type lo_point
 
 !> An infinite line
 type, extends(lo_geometryobject) :: lo_line
     !> First point
-    real(flyt), dimension(3) :: r1=lo_huge
+    real(r8), dimension(3) :: r1=lo_huge
     !> Second point
-    real(flyt), dimension(3) :: r2=lo_huge
+    real(r8), dimension(3) :: r2=lo_huge
     contains
         !> generate line from a set of points
         procedure :: generate => create_line_from_points
@@ -56,11 +57,11 @@ end type lo_line
 !> A line segment. Exactly the same as a line, only differs when intersections and similar are calculated.
 type, extends(lo_geometryobject) :: lo_linesegment
     !> First point
-    real(flyt), dimension(3) :: r1=lo_huge
+    real(r8), dimension(3) :: r1=lo_huge
     !> Second point
-    real(flyt), dimension(3) :: r2=lo_huge
+    real(r8), dimension(3) :: r2=lo_huge
     !> the length of the segment
-    real(flyt) :: length=lo_huge
+    real(r8) :: length=lo_huge
     contains
         !> The distance to a point
         procedure :: distance_to_point => distance_linesegment_point
@@ -71,13 +72,13 @@ end type
 !> A plane on Hessian normal form, that is $$ \hat{\mathbf{n}} \cdot \mathbf{x} + p = 0 $$ Also contains contains an orthornmal coordinate system aligned with the plane, useful for projections.
 type, extends(lo_geometryobject) :: lo_plane
     !> The plane normal
-    real(flyt), dimension(3) :: normal=lo_huge
+    real(r8), dimension(3) :: normal=lo_huge
     !> The distance from the origin
-    real(flyt) :: p=lo_huge
+    real(r8) :: p=lo_huge
     !> first vector that spans the plane. Orthogonal to the normal and v2.
-    real(flyt), dimension(3) :: v1=lo_huge
+    real(r8), dimension(3) :: v1=lo_huge
     !> second vector that spans the plane. Orthogonal to the normal and v1.
-    real(flyt), dimension(3) :: v2=lo_huge
+    real(r8), dimension(3) :: v2=lo_huge
     contains
         !> create the plane from a set of points.
         procedure :: generate => create_plane_from_points
@@ -94,11 +95,11 @@ type, extends(lo_geometryobject) :: lo_polygon
     !> How many points on this polygon?
     integer :: n=-lo_hugeint
     !> The points
-    real(flyt), dimension(:,:), allocatable :: r
+    real(r8), dimension(:,:), allocatable :: r
     !> The centroid
-    real(flyt), dimension(3) :: centroid=lo_huge
+    real(r8), dimension(3) :: centroid=lo_huge
     !> Radius of bounding sphere
-    real(flyt) :: rmax=lo_huge
+    real(r8) :: rmax=lo_huge
     !> The plane the points are confined to
     type(lo_plane) :: plane
     contains
@@ -140,72 +141,68 @@ end interface
 interface
     module subroutine createcube(polyhedron,side)
         class(lo_polyhedron), intent(inout) :: polyhedron
-        real(flyt), intent(in) :: side
+        real(r8), intent(in) :: side
     end subroutine
     module subroutine create_plane_from_points(plane,points,point,normal)
         class(lo_plane), intent(out) :: plane
-        real(flyt), dimension(3,3), intent(in), optional :: points
-        real(flyt), dimension(3), intent(in), optional :: point
-        real(flyt), dimension(3), intent(in), optional :: normal
+        real(r8), dimension(3,3), intent(in), optional :: points
+        real(r8), dimension(3), intent(in), optional :: point
+        real(r8), dimension(3), intent(in), optional :: normal
     end subroutine
     module subroutine create_line_from_points(line,point1,point2)
         class(lo_line), intent(out) :: line
-        real(flyt), dimension(3), intent(in) :: point1
-        real(flyt), dimension(3), intent(in) :: point2
+        real(r8), dimension(3), intent(in) :: point1
+        real(r8), dimension(3), intent(in) :: point2
     end subroutine
     module subroutine create_linesegment_from_points(line,point1,point2)
         class(lo_linesegment), intent(out) :: line
-        real(flyt), dimension(3), intent(in) :: point1
-        real(flyt), dimension(3), intent(in) :: point2
+        real(r8), dimension(3), intent(in) :: point1
+        real(r8), dimension(3), intent(in) :: point2
     end subroutine
     module subroutine polygon_from_points(polygon,points,plane)
         class(lo_polygon), intent(out) :: polygon
-        real(flyt), dimension(:,:), intent(in) :: points
+        real(r8), dimension(:,:), intent(in) :: points
         type(lo_plane), intent(in) :: plane
     end subroutine
 end interface
 
 ! Interfaces to type-bound things
 interface
-#ifdef AGRESSIVE_SANITY
-    module function distance_linesegment_point(linesegment,point) result(d)
-#else
     module pure function distance_linesegment_point(linesegment,point) result(d)
-#endif
         class(lo_linesegment), intent(in) :: linesegment
-        real(flyt), dimension(3), intent(in) :: point
-        real(flyt) :: d
+        real(r8), dimension(3), intent(in) :: point
+        real(r8) :: d
     end function
     module recursive subroutine translate_geometrical_object(g,translation)
         class(lo_geometryobject), intent(inout) :: g
-        real(flyt), dimension(3), intent(in) :: translation
+        real(r8), dimension(3), intent(in) :: translation
     end subroutine
     module pure function lo_plane_point_distance(plane,point) result(r)
         class(lo_plane), intent(in) :: plane
-        real(flyt), dimension(3), intent(in) :: point
-        real(flyt) :: r
+        real(r8), dimension(3), intent(in) :: point
+        real(r8) :: r
     end function
     module subroutine anglesort_with_plane(plane,points,order)
         class(lo_plane), intent(in) :: plane
-        real(flyt), dimension(:,:), intent(inout) :: points
+        real(r8), dimension(:,:), intent(inout) :: points
         integer, dimension(:), intent(out), optional :: order
     end subroutine
     module pure function reflection_matrix(plane) result(m)
         class(lo_plane), intent(in) :: plane
-        real(flyt), dimension(3,3) :: m
+        real(r8), dimension(3,3) :: m
     end function
     module pure function area_of_polygon(polygon) result(A)
         class(lo_polygon), intent(in) :: polygon
-        real(flyt) :: A
+        real(r8) :: A
     end function
     module pure function volume_of_polyhedron(polyhedron) result(V)
         class(lo_polyhedron), intent(in) :: polyhedron
-        real(flyt) :: V
+        real(r8) :: V
     end function
     module pure function is_point_inside_polyhedron(polyhedron,point,tol) result(inside)
         class(lo_polyhedron), intent(in) :: polyhedron
-        real(flyt), dimension(3), intent(in) :: point
-        real(flyt), intent(in) :: tol
+        real(r8), dimension(3), intent(in) :: point
+        real(r8), intent(in) :: tol
         logical :: inside
     end function
 end interface
@@ -213,155 +210,111 @@ end interface
 contains
 
 !> Angle between two vectors. Returns the (unsigned) angle between the vectors in radians.
-#ifdef AGRESSIVE_SANITY
-function lo_angle_between_vectors(a,b) result(angle)
-#else
 pure function lo_angle_between_vectors(a,b) result(angle)
-#endif
     !> first vector
-    real(flyt), dimension(3), intent(in) :: a
+    real(r8), dimension(3), intent(in) :: a
     !> second vector
-    real(flyt), dimension(3), intent(in) :: b
+    real(r8), dimension(3), intent(in) :: b
     !> the angle
-    real(flyt) :: angle
-
-#ifdef AGRESSIVE_SANITY
-    if ( norm2(a) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate angles between vectors, but first vector is too short'],lo_exitcode_param)
-    endif
-    if ( norm2(b) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate angles between vectors, but second vector is too short'],lo_exitcode_param)
-    endif
-#endif
-
+    real(r8) :: angle
     angle=acos(dot_product(a,b)/(norm2(a)*norm2(b)))
 end function
 
 !> Returns a rotation matrix. Defined as rotation about an axis u with angle alpha. Returns 3x3 rotation matrix. Use as `matmul(rotationmatrix,vector)`.
-#ifdef AGRESSIVE_SANITY
-function lo_rotation_matrix_from_axis_and_angle(u,alpha) result(m)
-#else
 pure function lo_rotation_matrix_from_axis_and_angle(u,alpha) result(m)
-#endif
     !> the axis
-    real(flyt), dimension(3), intent(in) :: u
+    real(r8), dimension(3), intent(in) :: u
     !> the angle, in radians
-    real(flyt), intent(in) :: alpha
+    real(r8), intent(in) :: alpha
     !> the rotation matrix
-    real(flyt), dimension(3,3) :: m
+    real(r8), dimension(3,3) :: m
     !
-    real(flyt) :: st,ct,a,b,c,invnrm
+    real(r8) :: st,ct,a,b,c,invnrm
 
     invnrm=norm2(u)
-#ifdef AGRESSIVE_SANITY
-    if ( invnrm .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate rotation matrix around axis, but the axis is really short.'],lo_exitcode_param)
-    endif
-#endif
     ! If the vector is really tiny, I can get strange stuff.  makes little sense if the vector is supersmall
     ! not sure what to do there.
     if ( invnrm .gt. lo_tol ) then
-        invnrm=1.0_flyt/invnrm
+        invnrm=1.0_r8/invnrm
         a=u(1)*invnrm
         b=u(2)*invnrm
         c=u(3)*invnrm
     else
-        a=0.0_flyt
-        b=0.0_flyt
-        c=0.0_flyt
+        a=0.0_r8
+        b=0.0_r8
+        c=0.0_r8
     endif
     !
     st=sin(alpha)
     ct=cos(alpha)
     ! Apparently it's called Rodriguez formula.
-    m(1,1)=ct+a*a*(1.0_flyt-ct)
-    m(1,2)=a*b*(1.0_flyt-ct)-c*st
-    m(1,3)=a*c*(1.0_flyt-ct)+b*st
+    m(1,1)=ct+a*a*(1.0_r8-ct)
+    m(1,2)=a*b*(1.0_r8-ct)-c*st
+    m(1,3)=a*c*(1.0_r8-ct)+b*st
     !
-    m(2,1)=b*a*(1.0_flyt-ct)+c*st
-    m(2,2)=ct+b*b*(1.0_flyt-ct)
-    m(2,3)=b*c*(1.0_flyt-ct)-a*st
+    m(2,1)=b*a*(1.0_r8-ct)+c*st
+    m(2,2)=ct+b*b*(1.0_r8-ct)
+    m(2,3)=b*c*(1.0_r8-ct)-a*st
     !
-    m(3,1)=a*c*(1.0_flyt-ct)-b*st
-    m(3,2)=c*b*(1.0_flyt-ct)+a*st
-    m(3,3)=ct+c*c*(1.0_flyt-ct)
+    m(3,1)=a*c*(1.0_r8-ct)-b*st
+    m(3,2)=c*b*(1.0_r8-ct)+a*st
+    m(3,3)=ct+c*c*(1.0_r8-ct)
 end function
 
 !> Returns an improper rotation matrix. Defined as rotation about an axis u with angle alpha, followed by reflection through the origin. Use as `matmul(rotationmatrix,vector)`.
-#ifdef AGRESSIVE_SANITY
-function lo_improper_rotation_matrix_from_axis_and_angle(u,alpha) result(m)
-#else
 pure function lo_improper_rotation_matrix_from_axis_and_angle(u,alpha) result(m)
-#endif
     !> the axis
-    real(flyt), dimension(3), intent(in) :: u
+    real(r8), dimension(3), intent(in) :: u
     !> the angle, in radians
-    real(flyt), intent(in) :: alpha
+    real(r8), intent(in) :: alpha
     !> the rotation matrix
-    real(flyt), dimension(3,3) :: m
+    real(r8), dimension(3,3) :: m
     !
-    real(flyt) :: st,ct,a,b,c,invnrm
+    real(r8) :: st,ct,a,b,c,invnrm
 
     invnrm=norm2(u)
-#ifdef AGRESSIVE_SANITY
-    if ( invnrm .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate improper matrix around axis, but the axis is really short.'],lo_exitcode_param)
-    endif
-#endif
     ! If the vector is really tiny, I can get strange stuff.  makes little sense if the vector is supersmall
     ! not sure what to do there. Now I return NaN perhaps?
     if ( invnrm .gt. lo_tol ) then
-        invnrm=1.0_flyt/invnrm
+        invnrm=1.0_r8/invnrm
         a=u(1)*invnrm
         b=u(2)*invnrm
         c=u(3)*invnrm
     else
-        a=0.0_flyt
-        b=0.0_flyt
-        c=0.0_flyt
+        a=0.0_r8
+        b=0.0_r8
+        c=0.0_r8
     endif
     !
     st=sin(alpha)
     ct=cos(alpha)
     ! quarternion thing from wikipedia
-    m(1,1)=ct-a*a*(1.0_flyt+ct)
-    m(1,2)=-a*b*(1.0_flyt+ct)-c*st
-    m(1,3)=-a*c*(1.0_flyt+ct)+b*st
+    m(1,1)=ct-a*a*(1.0_r8+ct)
+    m(1,2)=-a*b*(1.0_r8+ct)-c*st
+    m(1,3)=-a*c*(1.0_r8+ct)+b*st
     !
-    m(2,1)=-b*a*(1.0_flyt+ct)+c*st
-    m(2,2)=ct-b*b*(1.0_flyt+ct)
-    m(2,3)=-b*c*(1.0_flyt+ct)-a*st
+    m(2,1)=-b*a*(1.0_r8+ct)+c*st
+    m(2,2)=ct-b*b*(1.0_r8+ct)
+    m(2,3)=-b*c*(1.0_r8+ct)-a*st
     !
-    m(3,1)=-a*c*(1.0_flyt+ct)-b*st
-    m(3,2)=-c*b*(1.0_flyt+ct)+a*st
-    m(3,3)=ct-c*c*(1.0_flyt+ct)
+    m(3,1)=-a*c*(1.0_r8+ct)-b*st
+    m(3,2)=-c*b*(1.0_r8+ct)+a*st
+    m(3,3)=ct-c*c*(1.0_r8+ct)
 end function
 
 !> Rotation matrix that takes vector a to vector b. Returns a 3x3 rotation matrix, use as `matmul(rotmat,vector)`. The rotation matrix satisifes rotmat*a-b=0 in the special case when |a|=|b|, otherwise rotmat*a || b.
-#ifdef AGRESSIVE_SANITY
-function lo_rotation_matrix_from_vector_a_to_b(a,b) result(m)
-#else
 pure function lo_rotation_matrix_from_vector_a_to_b(a,b) result(m)
-#endif
     !> vector a
-    real(flyt), dimension(3), intent(in) :: a
+    real(r8), dimension(3), intent(in) :: a
     !> vector b
-    real(flyt), dimension(3), intent(in) :: b
+    real(r8), dimension(3), intent(in) :: b
     !> the rotation matrix
-    real(flyt), dimension(3,3) :: m
+    real(r8), dimension(3,3) :: m
     !
-    real(flyt), dimension(3) :: axis,v0,v1
-    real(flyt) :: angle
+    real(r8), dimension(3) :: axis,v0,v1
+    real(r8) :: angle
     integer :: i
 
-#ifdef AGRESSIVE_SANITY
-    if ( norm2(a) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate rotation matrix between vectors, but first vector is too short'],lo_exitcode_param,__FILE__,__LINE__)
-    endif
-    if ( norm2(b) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate rotation matrix between vectors, but second vector is too short'],lo_exitcode_param,__FILE__,__LINE__)
-    endif
-#endif
     ! Get the rotation axis
     v0=a/norm2(a)
     v1=b/norm2(b)
@@ -369,9 +322,9 @@ pure function lo_rotation_matrix_from_vector_a_to_b(a,b) result(m)
     ! sanity check
     if ( norm2(axis) .lt. lo_sqtol ) then
         ! the rotation is too small, just return the identity matrix
-        m=0.0_flyt
+        m=0.0_r8
         do i=1,3
-            m(i,i)=1.0_flyt
+            m(i,i)=1.0_r8
         enddo
     else ! get the actual rotation matrix
         axis=axis/norm2(axis)
@@ -383,32 +336,18 @@ pure function lo_rotation_matrix_from_vector_a_to_b(a,b) result(m)
 end function
 
 !> given a parallelepiped, what is the radius of the largest sphere that fits inside?
-#ifdef AGRESSIVE_SANITY
-function lo_inscribed_sphere_in_box(box) result(r)
-#else
 pure function lo_inscribed_sphere_in_box(box) result(r)
-#endif
     !> vectors that define the box
-    real(flyt), dimension(3,3), intent(in) :: box
+    real(r8), dimension(3,3), intent(in) :: box
     !> largest sphere that fit inside box
-    real(flyt) :: r
+    real(r8) :: r
 
-    real(flyt), dimension(3) :: na,nb,nc
+    real(r8), dimension(3) :: na,nb,nc
     ! the normals of the faces of the box
     na=lo_cross(box(:,2),box(:,3))
     nb=lo_cross(box(:,3),box(:,1))
     nc=lo_cross(box(:,1),box(:,2))
-#ifdef AGRESSIVE_SANITY
-    if ( norm2(na) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate inscribed sphere, but the box seems not to be a box.'],lo_exitcode_param,__FILE__,__LINE__)
-    endif
-    if ( norm2(nb) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate inscribed sphere, but the box seems not to be a box.'],lo_exitcode_param,__FILE__,__LINE__)
-    endif
-    if ( norm2(nc) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate inscribed sphere, but the box seems not to be a box.'],lo_exitcode_param,__FILE__,__LINE__)
-    endif
-#endif
+
     na=na/norm2(na)
     nb=nb/norm2(nb)
     nc=nc/norm2(nc)
@@ -417,37 +356,23 @@ pure function lo_inscribed_sphere_in_box(box) result(r)
     r=min(r,abs(dot_product(na,box(:,1))))
     r=min(r,abs(dot_product(nb,box(:,2))))
     r=min(r,abs(dot_product(nc,box(:,3))))
-    r=r*0.5_flyt
+    r=r*0.5_r8
 end function
 
 !> given a parallelepiped, what is the radius of the smallest sphere that fits the box?
-#ifdef AGRESSIVE_SANITY
-function lo_bounding_sphere_of_box(box) result(r)
-#else
 pure function lo_bounding_sphere_of_box(box) result(r)
-#endif
     !> vectors that define the box
-    real(flyt), dimension(3,3), intent(in) :: box
+    real(r8), dimension(3,3), intent(in) :: box
     !> radius of smallest sphere that contains the box
-    real(flyt) :: r
+    real(r8) :: r
 
-    real(flyt), dimension(3) :: a,b,c,v
-    real(flyt), dimension(4) :: diags
+    real(r8), dimension(3) :: a,b,c,v
+    real(r8), dimension(4) :: diags
 
     a=box(:,1)
     b=box(:,2)
     c=box(:,3)
-#ifdef AGRESSIVE_SANITY
-    if ( norm2(a-b) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate bounding sphere, but the box seems not to be a box.'],lo_exitcode_param)
-    endif
-    if ( norm2(b-c) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate bounding sphere, but the box seems not to be a box.'],lo_exitcode_param)
-    endif
-    if ( norm2(a-c) .lt. lo_tol ) then
-        call lo_stop_gracefully(['Trying to calculate bounding sphere, but the box seems not to be a box.'],lo_exitcode_param)
-    endif
-#endif
+
     ! had to do this in an awkward way to avoid segfaults on intel compilers. Odd.
     v=a-b-c
     diags(1)=dot_product(v,v)
@@ -458,23 +383,23 @@ pure function lo_bounding_sphere_of_box(box) result(r)
     v=a+b+c
     diags(4)=dot_product(v,v)
     r=maxval(diags)
-    r=sqrt(r)*0.5_flyt
+    r=sqrt(r)*0.5_r8
 end function
 
 !> Calculates the convex hull for a set of 2d points. The algorithm is a Graham scan @cite Graham1972a and checks for counterclockwise turns within a tolerance. The output is an index array to the points on the hull, and optionally an additional array with the points inside the hull.
 subroutine lo_convex_hull_2d(points,tol,points_on_hull,points_in_hull)
     !> the points
-    real(flyt), dimension(:,:), intent(in) :: points
+    real(r8), dimension(:,:), intent(in) :: points
     !> the tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
     !> the points on the hull
     integer, dimension(:), allocatable, intent(out) :: points_on_hull
     !> points inside the hull
     integer, dimension(:), allocatable, intent(out), optional :: points_in_hull
 
-    real(flyt), dimension(:,:), allocatable :: dum
-    real(flyt), dimension(:), allocatable :: d1
-    real(flyt), dimension(2) :: p0
+    real(r8), dimension(:,:), allocatable :: dum
+    real(r8), dimension(:), allocatable :: d1
+    real(r8), dimension(2) :: p0
     integer, dimension(:), allocatable :: ind_y,ind_angle,ind_tot,ind_on
     integer :: i,k,l,np,ii
 
@@ -489,12 +414,12 @@ subroutine lo_convex_hull_2d(points,tol,points_on_hull,points_in_hull)
         return
     endif
     ! Sort points according to y-coordinate
-    lo_allocate(d1(np))
-    lo_allocate(ind_y(np))
+    allocate(d1(np))
+    allocate(ind_y(np))
     d1=points(2,:)
     call qsort(d1,ind_y)
     ! calculate angle to first point
-    lo_allocate(dum(2,np))
+    allocate(dum(2,np))
     dum=points(:,ind_y)
     p0=dum(:,1)
     do i=1,np
@@ -502,18 +427,18 @@ subroutine lo_convex_hull_2d(points,tol,points_on_hull,points_in_hull)
     enddo
 
     ! sort according do this angle.
-    lo_allocate(ind_angle(np))
+    allocate(ind_angle(np))
     call qsort(d1,ind_angle)
     ! get the total sorting-index-mapping-thing
-    lo_allocate(ind_tot(np))
+    allocate(ind_tot(np))
     ind_tot=ind_y(ind_angle)
     ! clean a bit
-    lo_deallocate(ind_y)
-    lo_deallocate(ind_angle)
+    deallocate(ind_y)
+    deallocate(ind_angle)
 
     ! start the actual algorithm
-    lo_allocate(ind_on(np))
-    dum=0.0_flyt
+    allocate(ind_on(np))
+    dum=0.0_r8
     dum(:,1)=points(:,ind_tot(1))
     ind_on(1)=ind_tot(1)
     l=1
@@ -539,12 +464,12 @@ subroutine lo_convex_hull_2d(points,tol,points_on_hull,points_in_hull)
     enddo
 
     ! Return the hull
-    lo_allocate(points_on_hull(l))
+    allocate(points_on_hull(l))
     points_on_hull=ind_on(1:l)
     if ( present(points_in_hull) ) then
         ! Returning the points inside the hull.
         k=np-l
-        lo_allocate(points_in_hull(k))
+        allocate(points_in_hull(k))
         ! reusing this dummy array to create a flat list of indices
         do i=1,np
             ind_tot(i)=i
@@ -563,40 +488,85 @@ subroutine lo_convex_hull_2d(points,tol,points_on_hull,points_in_hull)
         enddo
     endif
     ! cleanup
-    lo_deallocate(ind_on)
-    lo_deallocate(ind_tot)
-    lo_deallocate(dum)
+    deallocate(ind_on)
+    deallocate(ind_tot)
+    deallocate(dum)
 
     contains
     !> Check if three points make a clockwise or counterclockwise turn
     function cross2d(p1,p2,p3,tolerance) result(r)
         !> first point
-        real(flyt), dimension(2), intent(in) :: p1
+        real(r8), dimension(2), intent(in) :: p1
         !> second point
-        real(flyt), dimension(2), intent(in) :: p2
+        real(r8), dimension(2), intent(in) :: p2
         !> third point
-        real(flyt), dimension(2), intent(in) :: p3
+        real(r8), dimension(2), intent(in) :: p3
         !> tolerance for what is 0
-        real(flyt), intent(in) :: tolerance
+        real(r8), intent(in) :: tolerance
         !> A value < 0 means it's counterclockwise, > 0 clockwise and 0 that the points are on the same line.
         integer :: r
 
-        real(flyt), dimension(2) :: v1,v2
-        real(flyt) :: alpha
+        real(r8), dimension(2) :: v1,v2
+        real(r8) :: alpha
 
         v1=p2-p1
         v2=p2-p3
         ! signed angle between vectors
-        alpha=( atan2(v2(2),v2(1))-atan2(v1(2),v1(1)) )*180.0_flyt/lo_pi
-        alpha=mod(alpha+360.0_flyt,360.0_flyt)
-        if ( abs(alpha-180.0_flyt) .lt. tolerance .or. abs(alpha) .lt. tolerance ) then
+        alpha=( atan2(v2(2),v2(1))-atan2(v1(2),v1(1)) )*180.0_r8/lo_pi
+        alpha=mod(alpha+360.0_r8,360.0_r8)
+        if ( abs(alpha-180.0_r8) .lt. tolerance .or. abs(alpha) .lt. tolerance ) then
             r=0
-        elseif ( alpha .gt. 180_flyt ) then
+        elseif ( alpha .gt. 180_r8 ) then
             r=1
         else
             r=-1
         endif
     end function
 end subroutine
+
+function lo_increment_dimensions(dimin, box) result(dimut)
+    integer, dimension(3), intent(in) :: dimin
+    real(r8), dimension(3, 3), intent(in) :: box
+    integer, dimension(3) :: dimut
+    !
+    real(r8), dimension(3, 3) :: m0
+    integer, dimension(3) :: di
+    integer :: i, j, k
+    real(r8) :: f0, f1, ff0
+
+    ! try with the sphere thing. First get a baseline
+    do j = 1, 3
+        m0(:, j) = box(:, j)*(2*dimin(j) + 1)
+    end do
+    ff0 = lo_inscribed_sphere_in_box(m0)
+    ! Increment the dimension that gives the biggest increase in radii
+    f0 = 0.0_r8
+    dimut = 0
+    do i = 1, 3
+        di = dimin
+        di(i) = di(i) + 1
+        do j = 1, 3
+            m0(:, j) = box(:, j)*(2*di(j) + 1)
+        end do
+        f1 = lo_inscribed_sphere_in_box(m0)
+        if (f1 .gt. f0 .and. abs(f1 - ff0) .gt. lo_tol) then
+            dimut = di
+            f0 = f1
+        end if
+    end do
+
+    ! if nothing helped, increment the lowest number
+    if (dimut(1) .eq. 0) then
+        j = lo_hugeint
+        do i = 1, 3
+            if (di(i) .lt. j) then
+                j = di(i)
+                k = i
+            end if
+        end do
+        dimut = dimin
+        dimut(k) = dimut(k) + 1
+    end if
+end function
 
 end module

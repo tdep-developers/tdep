@@ -48,7 +48,7 @@ end type
 contains
 
 !> return linear interpolation weights and indices to irreducible qpoints
-subroutine indices_and_weights(box,qp,uc,r,weight,ind)
+subroutine indices_and_weights(box,qp,uc,r,weight,irreducible_ind,full_ind)
     !> the box with useful stuff
     class(lo_linear_tetrahedron_interpolation), intent(in) :: box
     !> q-point mesh
@@ -60,7 +60,9 @@ subroutine indices_and_weights(box,qp,uc,r,weight,ind)
     !> weight per points
     real(r8), dimension(4), intent(out) :: weight
     !> index to irreducible q-points
-    integer, dimension(4), intent(out) :: ind
+    integer, dimension(4), intent(out) :: irreducible_ind
+    !> index to full q-points
+    integer, dimension(4), intent(out) :: full_ind
 
     real(r8), dimension(3,3) :: tmatrix,itmatrix
     real(r8), dimension(3,4) :: tc
@@ -93,7 +95,8 @@ subroutine indices_and_weights(box,qp,uc,r,weight,ind)
     weight=lo_chop(weight,1E-12_r8)
 
     do i=1,4
-        ind(i) = qp%at(ti)%irreducible_index(i)
+        irreducible_ind(i) = qp%at(ti)%irreducible_index(i)
+        full_ind(i) = qp%at(ti)%full_index(i)
     enddo
 
 end subroutine

@@ -5,7 +5,7 @@ use konstanter, only: flyt,lo_huge,lo_hugeint,lo_tol,lo_sqtol,&
                       lo_status,lo_exitcode_param,lo_exitcode_symmetry
 use gottochblandat, only: tochar,walltime,lo_clean_fractional_coordinates,lo_chop,qsort,lo_stop_gracefully,&
                           lo_sqnorm,lo_cross,lo_invert3x3matrix
-use geometryfunctions, only: lo_inscribed_sphere_in_box,lo_bounding_sphere_of_box,lo_plane
+use geometryfunctions, only: lo_inscribed_sphere_in_box,lo_bounding_sphere_of_box,lo_plane,lo_increment_dimensions
 use mpi_wrappers, only: lo_mpi_helper
 use type_blas_lapack_wrappers, only: lo_gemm
 implicit none
@@ -144,7 +144,7 @@ subroutine generate(dt,particles,basis,cutoff,verbosity,mw,tolerance)
                     m0(:,i)=basis(:,i)*(2*nrep(i)+1)
                 enddo
                 if ( lo_inscribed_sphere_in_box(m0)-lo_bounding_sphere_of_box(basis) .gt. cutoff+cutoffbuf ) exit
-                nrep=increment_dimensions(nrep,basis)
+                nrep=lo_increment_dimensions(nrep,basis)
             enddo
         endif
 
@@ -1173,53 +1173,6 @@ subroutine prune(dt,cutoff_per_particle)
         dt%particle(i)%n=n
     enddo
 end subroutine
-
-!> increase supercell dimensions in reasonably clever way
-function increment_dimensions(dimin,box) result(dimut)
-    integer, dimension(3), intent(in) :: dimin
-    real(flyt), dimension(3,3), intent(in) :: box
-    integer, dimension(3) :: dimut
-    !
-    real(flyt), dimension(3,3) :: m0
-    integer, dimension(3) :: di
-    integer :: i,j,k
-    real(flyt) :: f0,f1,ff0
-
-    ! try with the sphere thing. First get a baseline
-    do j=1,3
-        m0(:,j)=box(:,j)*(2*dimin(j)+1)
-    enddo
-    ff0=lo_inscribed_sphere_in_box(m0)
-    ! Increment the dimension that gives the biggest increase in radii
-    f0=0.0_flyt
-    dimut=0
-    do i=1,3
-        di=dimin
-        di(i)=di(i)+1
-        do j=1,3
-            m0(:,j)=box(:,j)*(2*di(j)+1)
-        enddo
-        f1=lo_inscribed_sphere_in_box(m0)
-        if ( f1 .gt. f0 .and. abs(f1-ff0) .gt. lo_tol ) then
-            dimut=di
-            f0=f1
-        endif
-    enddo
-
-    ! if nothing helped, increment the lowest number
-    if ( dimut(1) .eq. 0 ) then
-        j=lo_hugeint
-        k=0
-        do i=1,3
-            if ( di(i) .lt. j ) then
-                j=di(i)
-                k=i
-            endif
-        enddo
-        dimut=dimin
-        dimut(k)=dimut(k)+1
-    endif
-end function
 
 !> Count the number of neighbours per atom within a certain cutoff. Not including itself.
 subroutine count_neighbours_within_cutoff(dt,cutoff,ctr)

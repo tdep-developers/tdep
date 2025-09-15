@@ -292,6 +292,7 @@ $(OBJECT_PATH)lo_symmetry_of_interactions.o:\
     $(OBJECT_PATH)gottochblandat.o
 	$(FC) $(FFLAGS) -c lo_symmetry_of_interactions.f90 -o $@
 $(OBJECT_PATH)lo_symmetry_of_interactions_helpers.o:\
+	lo_symmetry_of_interactions_helpers.f90 \
     $(OBJECT_PATH)lo_symmetry_of_interactions.o \
 	$(OBJECT_PATH)type_blas_lapack_wrappers.o
 	$(FC) $(FFLAGS) -c lo_symmetry_of_interactions_helpers.f90 -o $@
@@ -338,6 +339,7 @@ $(OBJECT_PATH)type_linkedlist.o:\
 	$(FC) $(FFLAGS_LOW) -c type_linkedlist.f90 -o $@
 
 $(OBJECT_PATH)geometryfunctions.o: \
+	geometryfunctions.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o
 	$(FC) $(FFLAGS) -c geometryfunctions.f90 -o $@
@@ -668,6 +670,7 @@ $(OBJECT_PATH)type_phonon_dispersions.o:\
     $(OBJECT_PATH)hdf5_wrappers.o
 	$(FC) $(FFLAGS) -c type_phonon_dispersions.f90 -o $@
 $(OBJECT_PATH)type_phonon_dispersions_generation.o:\
+	type_phonon_dispersions_generation.f90\
     $(OBJECT_PATH)type_phonon_dispersions.o
 	$(FC) $(FFLAGS) -c type_phonon_dispersions_generation.f90 -o $@
 

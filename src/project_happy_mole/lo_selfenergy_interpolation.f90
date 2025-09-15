@@ -1,6 +1,6 @@
 module lo_selfenergy_interpolation
 !! Allows us to evaluate the phonon self-energy at arbitrary q-points
-use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_sqtol, lo_exitcode_symmetry, lo_twopi, &
+use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_tol, lo_sqtol, lo_exitcode_symmetry, lo_twopi, &
                       lo_bohr_to_A, lo_freqtol, lo_exitcode_param, lo_pi, lo_imag, lo_groupvel_ms_to_Hartreebohr
 use gottochblandat, only: tochar, walltime, lo_progressbar_init, lo_progressbar, lo_chop, &
                           lo_linear_least_squares, lo_rsquare, lo_linspace, lo_linear_interpolation, lo_trapezoid_integration,&
@@ -11,7 +11,7 @@ use lo_memtracker, only: lo_mem_helper
 use hdf5_wrappers, only: lo_hdf5_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
-use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh, lo_wedge_mesh, lo_qpoint, lo_read_qmesh_from_file, lo_generate_qmesh
+use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh, lo_wedge_mesh, lo_qpoint, lo_read_qmesh_from_file, lo_generate_qmesh, lo_get_small_group_of_qpoint
 use type_phonon_dispersions, only: lo_phonon_dispersions, lo_phonon_dispersions_qpoint
 use lo_symmetry_of_interactions, only: lo_interaction_tensors
 use type_symmetryoperation, only: lo_eigenvector_transformation_matrix
@@ -41,6 +41,10 @@ type lo_interpolated_selfenergy_grid
     real(r8), dimension(:,:,:,:), allocatable :: sigma_Re
     !> imaginary part of self-energy (xyz,xyz,energy,q)
     real(r8), dimension(:,:,:,:), allocatable :: sigma_Im
+    !> Auxiliary IFCs for interpolation
+    type(lo_forceconstant_secondorder) :: aux_fc
+    !> Is this a polar material?
+    logical :: polar=.false.
     contains
         procedure :: read_from_hdf5=>read_interpolated_selfenergy_from_hdf5
         procedure :: evaluate=>evaluate_self_energy
@@ -50,27 +54,28 @@ type lo_interpolated_selfenergy_grid
 end type
 
 interface ! to evaluate
-    module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mw)
-        class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
+        class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_crystalstructure), intent(in) :: p
         real(r8), dimension(3), intent(in) :: qv
         type(lo_phonon_dispersions_qpoint), intent(in) :: wp
         real(r8), dimension(:,:), intent(out) :: sigma_Re
         real(r8), dimension(:,:), intent(out) :: sigma_Im
+        type(lo_mem_helper), intent(inout) :: mem
         type(lo_mpi_helper), intent(inout), optional :: mw
     end subroutine
 end interface
 
 interface ! to path
     module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
-        class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_phonon_bandstructure), intent(inout) :: bs
         type(lo_crystalstructure), intent(inout) :: uc
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
     module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smearing_prefactor, temperature, tc, pd, mw, mem)
-        class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+        class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_crystalstructure), intent(inout) :: uc
         type(lo_forceconstant_secondorder), intent(inout) :: fc
         integer, dimension(3), intent(in) :: grid_density
@@ -103,12 +108,14 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,filename,mw,mem,verbosit
     readfile: block
         real(r8), dimension(:,:,:), allocatable :: rbuf
         type(lo_hdf5_helper) :: h5
-        integer :: iq
+        complex(r8), dimension(3,3) :: cm0,cm1
+        integer :: iq,jq,ie,a1,a2
 
         if ( verbosity .gt. 0 ) then
             write(*,*) ''
             write(*,*) 'Reading interpolated self-energy from file'
         endif
+
 
         call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
@@ -117,6 +124,14 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,filename,mw,mem,verbosit
         call h5%open_group('read','qmesh')
         call lo_read_qmesh_from_file(ise%qp,p,'null',mem,0,h5%group_id)
         call h5%close_group()
+
+        ! Read some auxiliary data
+        call h5%read_attribute(ise%polar,h5%file_id,'polar')
+
+        ! Read the auxiliary IFC from separate file, will put into hdf5 if it works
+        if ( ise%polar ) then
+            call ise%aux_fc%readfromfile(p,'outfile.aux_forceconstant',mem,-1)
+        endif
 
         if ( verbosity .gt. 0 ) then
             write(*,*) '... read q-mesh'

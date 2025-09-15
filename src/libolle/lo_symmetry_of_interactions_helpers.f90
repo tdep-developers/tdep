@@ -40,12 +40,13 @@ module subroutine check_cutoff(ss,cutoff,tol,dt,wraparound,mw)
         if ( ctr .eq. 0 ) then
             exit
         else
-            if ( mw%talk ) then
-                write(lo_iou,*) 'WARNING: cutoff coincides with a coordination shell, increasing it:'
-                write(lo_iou,*) '    from:',cutoff
-                cutoff=cutoff+4*tol
-                write(lo_iou,*) '      to:',cutoff
-            endif
+            cutoff=cutoff+4*tol
+            ! if ( mw%talk ) then
+            !     write(lo_iou,*) 'WARNING: cutoff coincides with a coordination shell, increasing it:'
+            !     write(lo_iou,*) '    from:',cutoff
+            !     cutoff=cutoff+4*tol
+            !     write(lo_iou,*) '      to:',cutoff
+            ! endif
         endif
     enddo
 end subroutine

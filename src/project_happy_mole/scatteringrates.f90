@@ -17,10 +17,6 @@ private
 public :: lo_listofscatteringrates
 
 type lo_listofscatteringrates
-    !> frequency at q''
-    !real(r8), dimension(:, :), allocatable :: omega3
-    !> group velocity at q''
-    !real(r8), dimension(:, :, :), allocatable :: vel3
     !> three-phonon matrix elements, not squared (mode1,mode2,mode3,q)
     complex(r8), dimension(:, :, :, :), allocatable :: psi_3ph
     !> isotope matrix elements (mode1,mode2,q)
@@ -30,8 +26,6 @@ type lo_listofscatteringrates
 
     !> q-vectors are needed for evaluation of spectral functions
     real(r8), dimension(:, :), allocatable :: qvec3
-    !> eigenvectors are needed for spectral functions
-    !complex(r8), dimension(:, :, :), allocatable :: egv3
     !> harmonic properties at the third q-vector
     type(lo_phonon_dispersions_qpoint), dimension(:), allocatable :: wp3
     contains
@@ -142,7 +136,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
             call mem%allocate(egv3, [dr%n_mode, dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(omega3, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(vel3, [3,dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-            call mem%allocate(degenmode3, [6,dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(degenmode3, [dr%n_mode,dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(degeneracy3, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             egv3=0.0_r8
             omega3=0.0_r8
@@ -183,9 +177,8 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     qv3 = -qv1 - qv2
                     ! Get harmonic things
                     call op3%generate(fc, uc, mem, qvec=qv3)
+
                     ! Store some harmonic things
-
-
                     v0 = matmul(uc%inv_reciprocal_latticevectors, qv3)
                     if (sum(abs(v0 - anint(v0))) .lt. lo_sqtol) then
                         ! we are at Gamma. Replace with proper Gamma.
@@ -198,10 +191,10 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                         degeneracy3(:,q)    = gpoint%degeneracy(:)
                     else
                         ! Not at gamma, continue normally
+                        sr%qvec3(:, q) = qv3
                         omega3(:, q) = op3%omega
                         vel3(:, :, q) = op3%vel
                         egv3(:, :, q) = op3%egv
-                        sr%qvec3(:, q) = qv3
                         j=size(op3%degenmode,1)
                         degenmode3(1:j,:,q) = op3%degenmode(1:j,:)
                         degeneracy3(:,q)    = op3%degeneracy(:)
@@ -305,43 +298,8 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
             ! Pre-multiply eigenvectors with masses and frequencies
             if (sr%atgamma) then
                 ! Case that will use symmetry eventually
-                ctr = 0
-                do iq = 1, qp%n_irr_point
-                do imode = 1, dr%n_mode
-                    ctr = ctr + 1
-                    if (mod(ctr, mw%n) .ne. mw%r) cycle
-                    if (iq .eq. ind_gamma_irr) then
-                        if (gpoint%omega(imode) .gt. lo_freqtol) then
-                            f0 = 1.0_r8/sqrt(gpoint%omega(imode))
-                        else
-                            f0 = 0.0_r8
-                        end if
-
-                        do iatom = 1, uc%na
-                            f1 = uc%invsqrtmass(iatom)
-                            do ix = 1, 3
-                                ialpha = (iatom - 1)*3 + ix
-                                fh%ugv2(ialpha, imode, iq) = gpoint%egv(ialpha, imode)*f0*f1
-                            end do
-                        end do
-                    else
-                        if (dr%iq(iq)%omega(imode) .gt. lo_freqtol) then
-                            f0 = 1.0_r8/sqrt(dr%iq(iq)%omega(imode))
-                        else
-                            f0 = 0.0_r8
-                        end if
-
-                        do iatom = 1, uc%na
-                            f1 = uc%invsqrtmass(iatom)
-                            do ix = 1, 3
-                                ialpha = (iatom - 1)*3 + ix
-                                fh%ugv2(ialpha, imode, iq) = dr%iq(iq)%egv(ialpha, imode)*f0*f1
-                            end do
-                        end do
-                    end if
-                end do
-                end do
-                call mw%allreduce('sum', fh%ugv2)
+                write(*,*) 'ATGAMMA'
+                stop
             else
                 ! Case that will not use symmetry
                 ctr = 0
@@ -429,22 +387,24 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
             if (verbosity .gt. 0) call lo_progressbar_init()
 
             if (sr%atgamma) then
-                allocate (sr%psi_iso(dr%n_mode, dr%n_mode, qp%n_irr_point))
-                sr%psi_iso = 0.0_r8
-                l = 0
-                do q = 1, qp%n_irr_point
-                    do b1 = 1, dr%n_mode
-                    do b2 = 1, dr%n_mode
-                        l = l + 1
-                        ! this is how I distribute over MPI
-                        if (mod(l, mw%n) .ne. mw%r) cycle
-                        sr%psi_iso(b1, b2, q) = isotope_scattering_strength(uc, ompoint%egv(:, b1), dr%iq(q)%egv(:, b2), ompoint%omega(b1), dr%iq(q)%omega(b2))
-                    end do
-                    end do
-                    if (verbosity .gt. 0) then
-                        if (lo_trueNtimes(q, 127, qp%n_full_point)) call lo_progressbar('... isotope matrixelements', q, qp%n_full_point)
-                    end if
-                end do
+                write(*,*) 'ATGAMMA'
+                stop
+                ! allocate (sr%psi_iso(dr%n_mode, dr%n_mode, qp%n_irr_point))
+                ! sr%psi_iso = 0.0_r8
+                ! l = 0
+                ! do q = 1, qp%n_irr_point
+                !     do b1 = 1, dr%n_mode
+                !     do b2 = 1, dr%n_mode
+                !         l = l + 1
+                !         ! this is how I distribute over MPI
+                !         if (mod(l, mw%n) .ne. mw%r) cycle
+                !         sr%psi_iso(b1, b2, q) = isotope_scattering_strength(uc, ompoint%egv(:, b1), dr%iq(q)%egv(:, b2), ompoint%omega(b1), dr%iq(q)%omega(b2))
+                !     end do
+                !     end do
+                !     if (verbosity .gt. 0) then
+                !         if (lo_trueNtimes(q, 127, qp%n_full_point)) call lo_progressbar('... isotope matrixelements', q, qp%n_full_point)
+                !     end if
+                ! end do
             else
                 allocate (sr%psi_iso(dr%n_mode, dr%n_mode, qp%n_full_point))
                 sr%psi_iso = 0.0_r8
@@ -486,73 +446,75 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
             if (verbosity .gt. 0) call lo_progressbar_init()
 
             if (sr%atgamma) then
-                ! At Gamma, we can use symmetry and only calculate a couple of matrix elements.
-                ! Space for matrix elements
-                allocate (sr%psi_3ph(dr%n_mode, dr%n_mode, dr%n_mode, qp%n_irr_point))
-                sr%psi_3ph = 0.0_r8
+                write(*,*) 'ATGAMMA'
+                stop
+                ! ! At Gamma, we can use symmetry and only calculate a couple of matrix elements.
+                ! ! Space for matrix elements
+                ! allocate (sr%psi_3ph(dr%n_mode, dr%n_mode, dr%n_mode, qp%n_irr_point))
+                ! sr%psi_3ph = 0.0_r8
 
-                ! temporary array for scattering rates
-                allocate (psi_3ph_tmp(dr%n_mode, dr%n_mode, dr%n_mode))
-                psi_3ph_tmp = 0.0_r8
+                ! ! temporary array for scattering rates
+                ! allocate (psi_3ph_tmp(dr%n_mode, dr%n_mode, dr%n_mode))
+                ! psi_3ph_tmp = 0.0_r8
 
-                ctr = 0
-                l = 0
-                do q = 1, qp%n_irr_point
+                ! ctr = 0
+                ! l = 0
+                ! do q = 1, qp%n_irr_point
 
-                    ! fkdev check for l overflow
-                    if (l < 0) then
-                        write (*, *) 'FIXME MPI: l overflow in lineshape/scatteringrates.f90'
-                        stop
-                    end if
+                !     ! fkdev check for l overflow
+                !     if (l < 0) then
+                !         write (*, *) 'FIXME MPI: l overflow in lineshape/scatteringrates.f90'
+                !         stop
+                !     end if
 
-                    ! fetch q-vectors
-                    qv2 = qp%ip(q)%r
-                    qv3 = -qv2
-                    ! do the half-transform
-                    call pretransform_phi(fct, qv2, qv3, fh%ptf_phi)
-                    !call fct%pretransform(qv2,qv3,fh%ptf_phi)
+                !     ! fetch q-vectors
+                !     qv2 = qp%ip(q)%r
+                !     qv3 = -qv2
+                !     ! do the half-transform
+                !     call pretransform_phi(fct, qv2, qv3, fh%ptf_phi)
+                !     !call fct%pretransform(qv2,qv3,fh%ptf_phi)
 
-                    ! get matrix elements for all modes
-                    psi_3ph_tmp = 0.0_r8
-                    do b1 = 1, dr%n_mode
+                !     ! get matrix elements for all modes
+                !     psi_3ph_tmp = 0.0_r8
+                !     do b1 = 1, dr%n_mode
 
-                        do b2 = 1, dr%n_mode
-                            ! MPI division
-                            l = l + 1
-                            if (mod(l, mw%n) .ne. mw%r) cycle
-                            fh%evp1 = 0.0_r8
-                            call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
+                !         do b2 = 1, dr%n_mode
+                !             ! MPI division
+                !             l = l + 1
+                !             if (mod(l, mw%n) .ne. mw%r) cycle
+                !             fh%evp1 = 0.0_r8
+                !             call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
 
-                            do b3 = 1, dr%n_mode
-                                fh%evp2 = 0.0_r8
-                                ! complicated conjugation thingy compared with the unsymmetric below.
-                                call zgerc(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
-                                psi_3ph_tmp(b1, b2, b3) = dot_product(fh%evp2, fh%ptf_phi)
-                            end do
-                        end do
+                !             do b3 = 1, dr%n_mode
+                !                 fh%evp2 = 0.0_r8
+                !                 ! complicated conjugation thingy compared with the unsymmetric below.
+                !                 call zgerc(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
+                !                 psi_3ph_tmp(b1, b2, b3) = dot_product(fh%evp2, fh%ptf_phi)
+                !             end do
+                !         end do
 
-                        if (verbosity .gt. 0) then
-                            ctr = ctr + 1
-                            if (lo_trueNtimes(ctr, 127, qp%n_irr_point*dr%n_mode)) then
-                                call lo_progressbar('... threephonon matrixelements', ctr, qp%n_irr_point*dr%n_mode, walltime() - t0)
-                            end if
-                        end if
-                    end do
+                !         if (verbosity .gt. 0) then
+                !             ctr = ctr + 1
+                !             if (lo_trueNtimes(ctr, 127, qp%n_irr_point*dr%n_mode)) then
+                !                 call lo_progressbar('... threephonon matrixelements', ctr, qp%n_irr_point*dr%n_mode, walltime() - t0)
+                !             end if
+                !         end if
+                !     end do
 
-                    ! fkdev: MPI barrier here to avoid parallelizing over q
-                    ! fixed a bug for certain q-meshes on Dardel
-                    call mw%allreduce('sum', psi_3ph_tmp)
-                    sr%psi_3ph(:, :, :, q) = psi_3ph_tmp
+                !     ! fkdev: MPI barrier here to avoid parallelizing over q
+                !     ! fixed a bug for certain q-meshes on Dardel
+                !     call mw%allreduce('sum', psi_3ph_tmp)
+                !     sr%psi_3ph(:, :, :, q) = psi_3ph_tmp
 
-                    ! fkdev: report on scattering times
-                    if ((mw%talk) .and. (verbosity .gt. 0)) then
-                        t_up = walltime() - t0
-                        t_tot = t_up/q*qp%n_irr_point
-                        write (*, '(A,I7,A,I7,A,F10.1,A,F10.1,A)') &
-                            ' ... 3ph scattering: ', q, ' of ', qp%n_irr_point, ' qpoints done, time: ', t_up, 's , projected total time: ', t_tot, 's'
-                    end if
-                end do
-                deallocate (psi_3ph_tmp)
+                !     ! fkdev: report on scattering times
+                !     if ((mw%talk) .and. (verbosity .gt. 0)) then
+                !         t_up = walltime() - t0
+                !         t_tot = t_up/q*qp%n_irr_point
+                !         write (*, '(A,I7,A,I7,A,F10.1,A,F10.1,A)') &
+                !             ' ... 3ph scattering: ', q, ' of ', qp%n_irr_point, ' qpoints done, time: ', t_up, 's , projected total time: ', t_tot, 's'
+                !     end if
+                ! end do
+                ! deallocate (psi_3ph_tmp)
             else
                 ! Not at Gamma, have to calculate all of them
                 ! Space for matrix elements

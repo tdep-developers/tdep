@@ -1,4 +1,4 @@
-#include "precompilerdefinitions"
+!#include "precompilerdefinitions"
 submodule (geometryfunctions) geometryfunctions_slicingroutines
 implicit none
 contains
@@ -51,13 +51,13 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     integer :: i,j,l,n
     integer :: prev,curr,nmax
     integer, dimension(:), allocatable :: above,below,on,slice,ind
-    real(flyt) :: t0
-    real(flyt), dimension(3) :: v0
-    real(flyt), dimension(3,2) :: slicedpoints
-    real(flyt), dimension(:,:), allocatable :: dum
+    real(r8) :: t0
+    real(r8), dimension(3) :: v0
+    real(r8), dimension(3,2) :: slicedpoints
+    real(r8), dimension(:,:), allocatable :: dum
     type(lo_line) :: line
     !
-    t0=0.0_flyt
+    t0=0.0_r8
     if ( verbosity .gt. 0 ) then
         t0=walltime()
         write(*,*) 'slice_polygon_with_plane'
@@ -75,10 +75,10 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     !
     nmax=polygon%n+2
     ! make some space for the classifiers
-    lo_allocate(above(nmax))
-    lo_allocate(below(nmax))
-    lo_allocate(on(nmax))
-    lo_allocate(slice(nmax))
+    allocate(above(nmax))
+    allocate(below(nmax))
+    allocate(on(nmax))
+    allocate(slice(nmax))
     ! sort the points into above, on and below.
     on=0
     above=0
@@ -146,8 +146,8 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     endif
     ! Everything above
     if ( sum(above) .eq. polygon%n ) then
-        lo_allocate(lo_null::belowplane)
-        lo_allocate(lo_null::onplane)
+        allocate(lo_null::belowplane)
+        allocate(lo_null::onplane)
         allocate(aboveplane,source=polygon,stat=lo_status)
         if ( lo_status .ne. 0 ) then
             write(*,*) 'failed allocation in slicing routine'
@@ -163,8 +163,8 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
             write(*,*) 'failed allocation in slicing routine'
             stop
         endif
-        lo_allocate(lo_null::onplane)
-        lo_allocate(lo_null::aboveplane)
+        allocate(lo_null::onplane)
+        allocate(lo_null::aboveplane)
         modifications=.false.
         return
     endif
@@ -176,28 +176,28 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
             write(*,*) 'failed allocation in slicing routine'
             stop
         endif
-        lo_allocate(lo_null::onplane)
-        lo_allocate(lo_null::aboveplane)
+        allocate(lo_null::onplane)
+        allocate(lo_null::aboveplane)
         modifications=.false.
         return
     endif
     ! Everything on the plane
     if ( sum(on) .eq. polygon%n ) then
-        lo_allocate(lo_null::belowplane)
+        allocate(lo_null::belowplane)
         allocate(onplane,source=polygon,stat=lo_status)
         if ( lo_status .ne. 0 ) then
             write(*,*) 'falied allocation in slicing routine'
             stop
         endif
-        lo_allocate(lo_null::aboveplane)
+        allocate(lo_null::aboveplane)
         modifications=.false.
         return
     endif
 
     ! Get a list of all the points
     n=polygon%n+sum(slice)
-    lo_allocate(dum(3,n))
-    lo_allocate(ind(n))
+    allocate(dum(3,n))
+    allocate(ind(n))
     dum(:,1:polygon%n)=polygon%r
     if ( sum(slice) .gt. 0 ) then
         do i=1,sum(slice)
@@ -221,7 +221,7 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     if ( l .gt. 0 ) then
         call object_from_planar_points(belowplane,dum(:,ind(1:l)),polygon%plane)
     else
-        lo_allocate(lo_null::belowplane)
+        allocate(lo_null::belowplane)
     endif
 
     ! Get points on:
@@ -236,7 +236,7 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     if ( l .gt. 0 ) then
         call object_from_planar_points(onplane,dum(:,ind(1:l)),plane)
     else
-        lo_allocate(lo_null::onplane)
+        allocate(lo_null::onplane)
     endif
 
     ! Get points above:
@@ -251,7 +251,7 @@ subroutine slice_polygon_with_plane(polygon,plane,aboveplane,onplane,belowplane,
     if ( l .gt. 0 ) then
         call object_from_planar_points(aboveplane,dum(:,ind(1:l)),polygon%plane)
     else
-        lo_allocate(lo_null::aboveplane)
+        allocate(lo_null::aboveplane)
     endif
 
     ! If I reached this point, something has changed
@@ -267,14 +267,14 @@ end subroutine
 ! 0 is on the plane, -1 below and +1 above.
 pure function planecondition(plane,point) result(cnd)
     type(lo_plane), intent(in) :: plane
-    real(flyt), dimension(3), intent(in) :: point
+    real(r8), dimension(3), intent(in) :: point
     integer :: cnd
     !
-    real(flyt) :: f0
+    real(r8) :: f0
     f0=plane%distance_to_point(point)
     if ( abs(f0) .lt. lo_tol ) then
         cnd=0
-    elseif ( f0 .gt. 0.0_flyt ) then
+    elseif ( f0 .gt. 0.0_r8 ) then
         cnd=1
     else
         cnd=-1
@@ -286,10 +286,10 @@ end function
 pure function quick_intersection(plane,line) result(point)
     type(lo_plane), intent(in) :: plane
     type(lo_line), intent(in) :: line
-    real(flyt), dimension(3) :: point
+    real(r8), dimension(3) :: point
     !
-    real(flyt), dimension(3) :: dv
-    real(flyt) :: f0,f1
+    real(r8), dimension(3) :: dv
+    real(r8) :: f0,f1
     dv=line%r2-line%r1
     f0=dot_product(dv,plane%normal)
     f1=-(plane%p+dot_product(line%r1,plane%normal))
@@ -299,12 +299,12 @@ end function
 !> Create point,linesegment or polygon from a set of points in the same plane.
 subroutine object_from_planar_points(g,r,plane)
     class(lo_geometryobject), intent(out), allocatable :: g
-    real(flyt), dimension(:,:), intent(in) :: r
+    real(r8), dimension(:,:), intent(in) :: r
     type(lo_plane), intent(in) :: plane
 
     integer :: n
 #ifdef AGRESSIVE_SANITY
-    real(flyt), dimension(:,:), allocatable :: dum
+    real(r8), dimension(:,:), allocatable :: dum
     integer :: i
     do i=1,size(r,2)
         if ( abs(plane%distance_to_point(r(:,i))) .gt. lo_tol ) then

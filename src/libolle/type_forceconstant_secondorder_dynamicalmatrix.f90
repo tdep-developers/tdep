@@ -121,7 +121,7 @@ module subroutine frequencies_eigenvectors_groupvelocities(fc, dynamical_matrix,
             call lo_zheev(wEigenvector, wEigenval, jobz='V', info=i)
             if (i .ne. 0) call lo_stop_gracefully(['zheev exit status '//tochar(i)], lo_exitcode_blaslapack, __FILE__, __LINE__)
             ! Orthogonalize the eigenvectors
-            call lo_complex_gram_schmidt(wEigenvector)
+            !call lo_complex_gram_schmidt(wEigenvector)
         else
             ! Non-hermitian routine
             call mem%allocate(wV, nb, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

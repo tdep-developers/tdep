@@ -2,7 +2,7 @@ submodule(type_forceconstant_secondorder) type_forceconstant_secondorder_io
 use konstanter, only: lo_forceconstant_2nd_HartreeBohr_to_eVA, lo_forceconstant_2nd_eVA_to_HartreeBohr, lo_emu_to_amu, &
                       lo_exitcode_io, lo_bohr_to_A, lo_emu_to_amu
 use gottochblandat, only: open_file
-use geometryfunctions, only: lo_inscribed_sphere_in_box
+use geometryfunctions, only: lo_inscribed_sphere_in_box, lo_increment_dimensions
 use type_qpointmesh, only: lo_qpoint_mesh,lo_generate_qmesh
 use type_voronoi_distancetable, only: lo_voronoi_distancetable
 use mpi_wrappers, only: lo_mpi_helper
@@ -616,7 +616,7 @@ module subroutine write_to_qe(fc,uc,mw,mem)
             end do
             f0 = lo_inscribed_sphere_in_box(m0)
             if (f0 .gt. fc%cutoff+safety_margin_for_cutoff ) exit
-            supercelldim = increment_dimensions(supercelldim, uc%latticevectors)
+            supercelldim = lo_increment_dimensions(supercelldim, uc%latticevectors)
         end do
         supercelldim=supercelldim+2
 
@@ -955,10 +955,6 @@ module subroutine write_dynmat_to_qe(fc,uc,qgrid,mw,mem)
             write(u,"(A)") "/"
         close(u)
     end block dumpq2r
-
-    write(*,*) 'DONE HERE FOR NOW'
-    stop
-
 end subroutine
 
 !> mini-version of my dynamical matrix calculator, repeated here to avoid circular dependencies
@@ -1310,50 +1306,5 @@ subroutine ddb_io_out(dscrpt, filnam, matom, mband,&
         name(1) = '         '
     end do
 end subroutine ddb_io_out
-
-function increment_dimensions(dimin, box) result(dimut)
-    integer, dimension(3), intent(in) :: dimin
-    real(r8), dimension(3, 3), intent(in) :: box
-    integer, dimension(3) :: dimut
-    !
-    real(r8), dimension(3, 3) :: m0
-    integer, dimension(3) :: di
-    integer :: i, j, k
-    real(r8) :: f0, f1, ff0
-
-    ! try with the sphere thing. First get a baseline
-    do j = 1, 3
-        m0(:, j) = box(:, j)*(2*dimin(j) + 1)
-    end do
-    ff0 = lo_inscribed_sphere_in_box(m0)
-    ! Increment the dimension that gives the biggest increase in radii
-    f0 = 0.0_r8
-    dimut = 0
-    do i = 1, 3
-        di = dimin
-        di(i) = di(i) + 1
-        do j = 1, 3
-            m0(:, j) = box(:, j)*(2*di(j) + 1)
-        end do
-        f1 = lo_inscribed_sphere_in_box(m0)
-        if (f1 .gt. f0 .and. abs(f1 - ff0) .gt. lo_tol) then
-            dimut = di
-            f0 = f1
-        end if
-    end do
-
-    ! if nothing helped, increment the lowest number
-    if (dimut(1) .eq. 0) then
-        j = lo_hugeint
-        do i = 1, 3
-            if (di(i) .lt. j) then
-                j = di(i)
-                k = i
-            end if
-        end do
-        dimut = dimin
-        dimut(k) = dimut(k) + 1
-    end if
-end function
 
 end submodule

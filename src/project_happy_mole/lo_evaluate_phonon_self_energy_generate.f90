@@ -24,7 +24,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     !> fourth order force constant
     type(lo_forceconstant_fourthorder), intent(in) :: fcf
     !> pre-calculated self-energies
-    type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> q-point mesh
     class(lo_qpoint_mesh), intent(in) :: qp
     !> harmonic properties on this mesh
@@ -216,8 +216,8 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             call mem%allocate(z0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(y0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
-            x = se%energy_axis                  ! copy of x-axis
-            xs = x**2                           ! x^2, precalculated
+            x = se%energy_axis                    ! copy of x-axis
+            xs = x**2                             ! x^2, precalculated
             dlx = x(2) - x(1)                     ! prefactor for riemann integral
             eta = lo_imag*(x(2) - x(1))*1E-8_r8   ! small imaginary thing to avoid divergence
 
@@ -245,10 +245,10 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             se%re_3ph = se%re_3ph*pref
 
             ! Here we can add a shift so that Re(0)=0. Maybe a good idea?
-            do imode=1,se%n_mode
-                xp=se%re_3ph(1,imode)
-                se%re_3ph(:,imode) = se%re_3ph(:,imode)-xp
-            enddo
+            ! do imode=1,se%n_mode
+            !     xp=se%re_3ph(1,imode)
+            !     se%re_3ph(:,imode) = se%re_3ph(:,imode)-xp
+            ! enddo
 
             call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -279,8 +279,6 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         do imode = 1, dr%n_mode
             if (wp%omega(imode) .lt. lo_freqtol) cycle
             if (mod(imode, mw%n) .ne. mw%r) cycle
-
-
 
             ! Evaluate rough spectral function
             yim = se%im_3ph(:, imode) + se%im_iso(:, imode)

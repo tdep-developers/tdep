@@ -1,4 +1,4 @@
-#include "precompilerdefinitions"
+!#include "precompilerdefinitions"
 submodule (geometryfunctions) geometryfunctions_generatingfunctions
 implicit none
 contains
@@ -8,16 +8,16 @@ module subroutine createcube(polyhedron,side)
     !> The polyhedron
     class(lo_polyhedron), intent(inout) :: polyhedron
     !> Side of cube
-    real(flyt), intent(in) :: side
+    real(r8), intent(in) :: side
     !
-    real(flyt), dimension(3,8) :: corners
-    real(flyt), dimension(3,6) :: normals
+    real(r8), dimension(3,8) :: corners
+    real(r8), dimension(3,6) :: normals
     integer, dimension(4,6) :: faces
     integer :: i,j,k,l
 
     ! a cube has 6 faces
     polyhedron%n=6
-    lo_allocate(polyhedron%face( polyhedron%n ) )
+    allocate(polyhedron%face( polyhedron%n ) )
 
     ! Get the corners
     l=0
@@ -25,7 +25,7 @@ module subroutine createcube(polyhedron,side)
     do j=0,1
     do k=0,1
         l=l+1
-        corners(:,l)=((/i,j,k/)*1.0_flyt-0.5_flyt)*side
+        corners(:,l)=((/i,j,k/)*1.0_r8-0.5_r8)*side
     enddo
     enddo
     enddo
@@ -37,17 +37,17 @@ module subroutine createcube(polyhedron,side)
     faces(:,4)=[5,6,7,8]
     faces(:,5)=[3,4,7,8]
     faces(:,6)=[2,4,6,8]
-    normals(:,1)=[-1.0_flyt, 0.0_flyt, 0.0_flyt]
-    normals(:,2)=[ 0.0_flyt,-1.0_flyt, 0.0_flyt]
-    normals(:,3)=[ 0.0_flyt, 0.0_flyt,-1.0_flyt]
-    normals(:,4)=[ 1.0_flyt, 0.0_flyt, 0.0_flyt]
-    normals(:,5)=[ 0.0_flyt, 1.0_flyt, 0.0_flyt]
-    normals(:,6)=[ 0.0_flyt, 0.0_flyt, 1.0_flyt]
+    normals(:,1)=[-1.0_r8, 0.0_r8, 0.0_r8]
+    normals(:,2)=[ 0.0_r8,-1.0_r8, 0.0_r8]
+    normals(:,3)=[ 0.0_r8, 0.0_r8,-1.0_r8]
+    normals(:,4)=[ 1.0_r8, 0.0_r8, 0.0_r8]
+    normals(:,5)=[ 0.0_r8, 1.0_r8, 0.0_r8]
+    normals(:,6)=[ 0.0_r8, 0.0_r8, 1.0_r8]
 
     do i=1,polyhedron%n
         ! store the points
         polyhedron%face(i)%n=4
-        lo_allocate(polyhedron%face(i)%r(3,4))
+        allocate(polyhedron%face(i)%r(3,4))
         polyhedron%face(i)%r=corners(:,faces(:,i))
         ! get the plane that the planes are on
         call polyhedron%face(i)%plane%generate(normal=normals(:,i),point=corners(:,faces(1,i)))
@@ -67,20 +67,20 @@ module subroutine create_plane_from_points(plane,points,point,normal)
     !> The plane
     class(lo_plane), intent(out) :: plane
     !> Three points defining a plane
-    real(flyt), dimension(3,3), intent(in), optional :: points
+    real(r8), dimension(3,3), intent(in), optional :: points
     !> Point in the plane
-    real(flyt), dimension(3), intent(in), optional :: point
+    real(r8), dimension(3), intent(in), optional :: point
     !> Normal of the plane
-    real(flyt), dimension(3), intent(in), optional :: normal
+    real(r8), dimension(3), intent(in), optional :: normal
     !
-    real(flyt), dimension(3) :: v0,v1
-    real(flyt), dimension(3,6), parameter :: stupidpoints=reshape([&
-        1.0_flyt,0.0_flyt,0.0_flyt, &
-        0.0_flyt,1.0_flyt,0.0_flyt, &
-        0.0_flyt,0.0_flyt,1.0_flyt, &
-        0.0_flyt,0.7071067811865475_flyt,0.7071067811865475_flyt,&
-        0.7071067811865475_flyt,0.0_flyt,0.7071067811865475_flyt,&
-        0.7071067811865475_flyt,0.7071067811865475_flyt,0.0_flyt],[3,6])
+    real(r8), dimension(3) :: v0,v1
+    real(r8), dimension(3,6), parameter :: stupidpoints=reshape([&
+        1.0_r8,0.0_r8,0.0_r8, &
+        0.0_r8,1.0_r8,0.0_r8, &
+        0.0_r8,0.0_r8,1.0_r8, &
+        0.0_r8,0.7071067811865475_r8,0.7071067811865475_r8,&
+        0.7071067811865475_r8,0.0_r8,0.7071067811865475_r8,&
+        0.7071067811865475_r8,0.7071067811865475_r8,0.0_r8],[3,6])
     integer :: i
 
     ! If it's defined from three points
@@ -130,9 +130,9 @@ module subroutine create_line_from_points(line,point1,point2)
     !> the resulting object
     class(lo_line), intent(out) :: line
     !> first point
-    real(flyt), dimension(3), intent(in) :: point1
+    real(r8), dimension(3), intent(in) :: point1
     !> second point
-    real(flyt), dimension(3), intent(in) :: point2
+    real(r8), dimension(3), intent(in) :: point2
     !
 #ifdef AGRESSIVE_SANITY
     if ( norm2(point1-point2) .lt. lo_tol ) then
@@ -148,9 +148,9 @@ module subroutine create_linesegment_from_points(line,point1,point2)
     !> the resulting object
     class(lo_linesegment), intent(out) :: line
     !> first point
-    real(flyt), dimension(3), intent(in) :: point1
+    real(r8), dimension(3), intent(in) :: point1
     !> second point
-    real(flyt), dimension(3), intent(in) :: point2
+    real(r8), dimension(3), intent(in) :: point2
     !
 #ifdef AGRESSIVE_SANITY
     if ( norm2(point1-point2) .lt. lo_tol ) then
@@ -167,7 +167,7 @@ module subroutine polygon_from_points(polygon,points,plane)
     !> The resulting polygon
     class(lo_polygon), intent(out) :: polygon
     !> The points on the plane. No check that they are on the plane
-    real(flyt), dimension(:,:), intent(in) :: points
+    real(r8), dimension(:,:), intent(in) :: points
     !> The plane that the points lie on.
     type(lo_plane), intent(in) :: plane
     !
@@ -192,7 +192,7 @@ module subroutine polygon_from_points(polygon,points,plane)
     do i=1,3
         polygon%centroid(i)=lo_mean(polygon%r(i,:))
     enddo
-    polygon%rmax=0.0_flyt
+    polygon%rmax=0.0_r8
     do i=1,polygon%n
         polygon%rmax=max(polygon%rmax,norm2(polygon%centroid-polygon%r(:,i)))
     enddo

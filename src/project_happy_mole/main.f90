@@ -142,15 +142,15 @@ firstiteration: block
     ! Get spectral function on a path?
     call ise%spectral_function_along_path(bs,uc,mw,mem)
 
-    ! Maybe get the spectral function on a grid? A third q-grid you say? Why not.
-    call ise%spectral_function_on_grid(uc,fc2,[12,12,12],opts%sigma,opts%temperature,tc,pd,mw,mem)
-    if ( mw%talk ) then
-        call pd%write_to_hdf5(uc,opts%enhet,'outfile.phonon_dos.hdf5',mem)
-    endif
+    ! ! Maybe get the spectral function on a grid? A third q-grid you say? Why not.
+    ! call ise%spectral_function_on_grid(uc,fc2,[12,12,12],opts%sigma,opts%temperature,tc,pd,mw,mem)
+    ! if ( mw%talk ) then
+    !     call pd%write_to_hdf5(uc,opts%enhet,'outfile.phonon_dos.hdf5',mem)
+    ! endif
 
     if (mw%talk) then
         write (*, *) '... writing output'
-        call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations.hdf5', mem)
+        call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_0.hdf5', mem)
         call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_0.hdf5')
     end if
 

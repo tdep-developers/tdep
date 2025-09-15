@@ -15,7 +15,7 @@ module subroutine threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,p,temperat
     !> scattering rates
     type(lo_listofscatteringrates), intent(in) :: sr
     !> self-energy interpolation
-    type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> structure
     type(lo_crystalstructure), intent(in) :: p
     !> temperature
@@ -266,18 +266,18 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
     call mw%allreduce('sum', se%im_3ph)
 
     ! Fix degeneracies?
-    do b1 = 1, dr%n_mode
-        buf = 0.0_r8
-        do i = 1, wp%degeneracy(b1)
-            b2 = wp%degenmode(i, b1)
-            buf = buf + se%im_3ph(:, b2)
-        end do
-        buf = buf/real(wp%degeneracy(b1), r8)
-        do i = 1, wp%degeneracy(b1)
-            b2 = wp%degenmode(i, b1)
-            se%im_3ph(:, b2) = buf
-        end do
-    end do
+    ! do b1 = 1, dr%n_mode
+    !     buf = 0.0_r8
+    !     do i = 1, wp%degeneracy(b1)
+    !         b2 = wp%degenmode(i, b1)
+    !         buf = buf + se%im_3ph(:, b2)
+    !     end do
+    !     buf = buf/real(wp%degeneracy(b1), r8)
+    !     do i = 1, wp%degeneracy(b1)
+    !         b2 = wp%degenmode(i, b1)
+    !         se%im_3ph(:, b2) = buf
+    !     end do
+    ! end do
     call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     if (verbosity .gt. 0) call lo_progressbar(' ... threephonon imaginary selfenergy', dr%n_mode*qp%n_full_point, dr%n_mode*qp%n_full_point, walltime() - t0)
 end subroutine
@@ -526,7 +526,7 @@ subroutine threephonon_imaginary_selfenergy_convolution(se, wp, qp, dr, sr, ise,
     !> scattering rates
     type(lo_listofscatteringrates), intent(in) :: sr
     !> tabulated spectral functions
-    type(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> structure
     type(lo_crystalstructure), intent(in) :: p
     !> temperature
@@ -601,8 +601,8 @@ subroutine threephonon_imaginary_selfenergy_convolution(se, wp, qp, dr, sr, ise,
                 ! So, I will need the spectral functions for qpoint 2 and 3. I think it
                 ! makes sense to evaluate them on-the-fly, as to not dramatically increase
                 ! memory usage. First we grab the self-energy:
-                call ise%evaluate(p,qp%ap(iq)%r,dr%aq(iq),buf_sre2,buf_sim2)
-                call ise%evaluate(p,sr%qvec3(:,iq),sr%wp3(iq),buf_sre3,buf_sim3)
+                call ise%evaluate(p,qp%ap(iq)%r,dr%aq(iq),buf_sre2,buf_sim2,mem)
+                call ise%evaluate(p,sr%qvec3(:,iq),sr%wp3(iq),buf_sre3,buf_sim3,mem)
                 ! Then we have to convert this to spectral functions
                 do imode=1,dr%n_mode
                     call evaluate_spectral_function(ise%omega, buf_sim2(:,imode), buf_sre2(:,imode), dr%aq(iq)%omega(imode), buf_sf2(:,imode))

@@ -7,7 +7,7 @@ use konstanter, only: r8, i8, lo_iou, lo_pi, lo_twopi, lo_huge, lo_tol, lo_hugei
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use type_crystalstructure, only: lo_crystalstructure
 use gottochblandat, only: walltime, tochar, lo_points_on_sphere, lo_determ, lo_invert3x3matrix, lo_sqnorm, lo_progressbar_init, lo_progressbar
-use geometryfunctions, only: lo_inscribed_sphere_in_box, lo_bounding_sphere_of_box
+use geometryfunctions, only: lo_inscribed_sphere_in_box, lo_bounding_sphere_of_box, lo_increment_dimensions
 use lo_brents_method, only: lo_brent_helper
 use lo_sorting, only: lo_qsort
 implicit none
@@ -277,7 +277,7 @@ subroutine lo_set_dipole_ewald_parameters(ew, p, eps, strategy, tol, verbosity, 
             end do
             f0 = lo_inscribed_sphere_in_box(m0)
             if (f0 .gt. rrad) exit
-            bd = increment_dimensions(bd, p%latticevectors)
+            bd = lo_increment_dimensions(bd, p%latticevectors)
         end do
         ! count realspace vectors
         f0 = rrad**2
@@ -332,7 +332,7 @@ subroutine lo_set_dipole_ewald_parameters(ew, p, eps, strategy, tol, verbosity, 
             end do
             f0 = lo_inscribed_sphere_in_box(m0)
             if (f0 .gt. krad) exit
-            bd = increment_dimensions(bd, p%reciprocal_latticevectors)
+            bd = lo_increment_dimensions(bd, p%reciprocal_latticevectors)
         end do
         ! count realspace vectors
         f0 = krad**2
@@ -535,53 +535,6 @@ subroutine ewald_dipole_k_r(lambda, pts, eps, inveps, p, tol, rrad, krad)
         rrad = rrad + lo_bounding_sphere_of_box(p%latticevectors)
     end block findrrad
 end subroutine
-
-! given a certain cell, and certain repetitions of it. To make it larger, I want
-! to make it larger in the direction that gets a bigger inscribed sphere in there.
-function increment_dimensions(dimin, box) result(dimut)
-    integer, dimension(3), intent(in) :: dimin
-    real(r8), dimension(3, 3), intent(in) :: box
-    integer, dimension(3) :: dimut
-    !
-    real(r8), dimension(3, 3) :: m0
-    integer, dimension(3) :: di
-    integer :: i, j, k
-    real(r8) :: f0, f1, ff0
-
-    ! try with the sphere thing. First get a baseline
-    do j = 1, 3
-        m0(:, j) = box(:, j)*(2*dimin(j) + 1)
-    end do
-    ff0 = lo_inscribed_sphere_in_box(m0)
-    ! Increment the dimension that gives the biggest increase in radii
-    f0 = 0.0_r8
-    dimut = 0
-    do i = 1, 3
-        di = dimin
-        di(i) = di(i) + 1
-        do j = 1, 3
-            m0(:, j) = box(:, j)*(2*di(j) + 1)
-        end do
-        f1 = lo_inscribed_sphere_in_box(m0)
-        if (f1 .gt. f0 .and. abs(f1 - ff0) .gt. lo_tol) then
-            dimut = di
-            f0 = f1
-        end if
-    end do
-
-    ! if nothing helped, increment the lowest number
-    if (dimut(1) .eq. 0) then
-        j = lo_hugeint
-        do i = 1, 3
-            if (di(i) .lt. j) then
-                j = di(i)
-                k = i
-            end if
-        end do
-        dimut = dimin
-        dimut(k) = dimut(k) + 1
-    end if
-end function
 
 !> measure size in memory, in bytes
 function size_in_mem(ew) result(mem)

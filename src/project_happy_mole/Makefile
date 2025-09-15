@@ -71,7 +71,6 @@ $(OBJECT_PATH)scf_helper.o:\
 
 $(OBJECT_PATH)lo_thermal_transport.o:\
 	lo_thermal_transport.f90\
-	$(OBJECT_PATH)lo_thermal_transport.o\
 	$(OBJECT_PATH)lineshape_helper.o
 	$(F90) $(F90FLAGS) -c lo_thermal_transport.f90 $(LIBS) -o $@
 
@@ -119,7 +118,7 @@ $(OBJECT_PATH)lo_evaluate_phonon_self_energy_gaussian.o:\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o
 	$(F90) $(F90FLAGS) -c lo_evaluate_phonon_self_energy_gaussian.f90 $(LIBS) -o $@
 $(OBJECT_PATH)lo_evaluate_phonon_self_energy_isotope.o:\
-	lo_evaluate_phonon_self_energy_gaussian.f90\
+	lo_evaluate_phonon_self_energy_isotope.f90\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o
 	$(F90) $(F90FLAGS) -c lo_evaluate_phonon_self_energy_isotope.f90 $(LIBS) -o $@
 $(OBJECT_PATH)lo_evaluate_phonon_self_energy_threephonon.o:\

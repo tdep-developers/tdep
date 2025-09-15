@@ -7,7 +7,7 @@ contains
 !> Calculate the spectral function along a path in the BZ
 module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smearing_prefactor, temperature, tc, pd, mw, mem)
     !> interpolated self-energy thing
-    class(lo_interpolated_selfenergy_grid), intent(in) :: ise
+    class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> crystal structure
     type(lo_crystalstructure), intent(inout) :: uc
     !> second order force constant
@@ -139,7 +139,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
             xhi = 0.0_r8
 
             ! Evaluate the self-energy at this q
-            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mw)
+            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mem,mw)
 
             if (mw%talk) then
                 t1 = walltime()
