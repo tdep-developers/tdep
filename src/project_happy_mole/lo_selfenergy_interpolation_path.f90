@@ -55,6 +55,11 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
 
         ! Also, on the head rank, make space for the final selfenergy.
         if (mw%r .eq. solrnk) then
+            if ( allocated(bs%energy_axis       ) ) deallocate(bs%energy_axis      )
+            if ( allocated(bs%spectral_function ) ) deallocate(bs%spectral_function)
+            if ( allocated(bs%selfenergy_real   ) ) deallocate(bs%selfenergy_real  )
+            if ( allocated(bs%selfenergy_imag   ) ) deallocate(bs%selfenergy_imag  )
+
             allocate (bs%energy_axis(ise%n_energy))
             allocate (bs%spectral_function(bs%n_point, ise%n_energy))
             allocate (bs%selfenergy_real(bs%n_point, ise%n_energy, bs%n_mode))
@@ -64,6 +69,9 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
             bs%selfenergy_real = 0.0_r8
             bs%selfenergy_imag = 0.0_r8
             do i = 1, bs%n_point
+                if ( allocated( bs%p(i)%linewidth) ) deallocate(bs%p(i)%linewidth)
+                if ( allocated( bs%p(i)%shift3   ) ) deallocate(bs%p(i)%shift3   )
+                if ( allocated( bs%p(i)%shift4   ) ) deallocate(bs%p(i)%shift4   )
                 allocate (bs%p(i)%linewidth(bs%n_mode))
                 allocate (bs%p(i)%shift3(bs%n_mode))
                 allocate (bs%p(i)%shift4(bs%n_mode))

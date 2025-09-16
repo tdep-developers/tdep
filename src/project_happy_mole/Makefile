@@ -17,7 +17,6 @@ OBJS = $(OBJECT_PATH)main.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_evaluate.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_path.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_grid.o\
- $(OBJECT_PATH)scf_helper.o\
  $(OBJECT_PATH)lo_thermal_transport.o\
  $(OBJECT_PATH)create_selfenergy_interpolation.o
 
@@ -25,8 +24,8 @@ LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi) $(incLPATHf
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) ${incIPATHhdf} $(incIPATHmpi) $(incIPATHfft)
 LIBS = -lolle -lflap $(blaslapackLIBS) ${incLIBShdf} $(incLIBSmpi) $(incLIBSfft)
 
-#OPT = -Ofast
-OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 -Wall -fcheck=no-recursion
+OPT = -Ofast
+#OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 -Wall -fcheck=no-recursion
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
 F90FLAGS = $(OPT) $(MODS) $(LIBS)
 
@@ -63,11 +62,6 @@ $(OBJECT_PATH)lineshape_helper.o:\
 $(OBJECT_PATH)options.o:\
 	options.f90
 	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
-
-$(OBJECT_PATH)scf_helper.o:\
-	scf_helper.f90\
-	$(OBJECT_PATH)lineshape_helper.o
-	$(F90) $(F90FLAGS) -c scf_helper.f90 $(LIBS) -o $@
 
 $(OBJECT_PATH)lo_thermal_transport.o:\
 	lo_thermal_transport.f90\

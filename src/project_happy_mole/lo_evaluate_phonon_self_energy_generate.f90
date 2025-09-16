@@ -199,6 +199,9 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         ! zero at the end
         se%im_3ph(se%n_energy, :) = 0.0_r8
         se%im_iso(se%n_energy, :) = 0.0_r8
+
+        ! Here I suppose we could add some kind of tapering function to make
+        ! sure it goes smoothly to zero at large Omega.
     end block sanity
 
     ! Kramers-Kronig-transform the imaginary part to get the real.
@@ -245,10 +248,10 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             se%re_3ph = se%re_3ph*pref
 
             ! Here we can add a shift so that Re(0)=0. Maybe a good idea?
-            ! do imode=1,se%n_mode
-            !     xp=se%re_3ph(1,imode)
-            !     se%re_3ph(:,imode) = se%re_3ph(:,imode)-xp
-            ! enddo
+            do imode=1,se%n_mode
+                xp=se%re_3ph(1,imode)
+                se%re_3ph(:,imode) = se%re_3ph(:,imode)-xp
+            enddo
 
             call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

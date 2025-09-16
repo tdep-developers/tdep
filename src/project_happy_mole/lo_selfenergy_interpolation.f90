@@ -187,6 +187,7 @@ subroutine destroy_interpolated_selfenergy(ise)
     if ( allocated(ise%omega   ) ) deallocate(ise%omega   )
     if ( allocated(ise%sigma_Re) ) deallocate(ise%sigma_Re)
     if ( allocated(ise%sigma_Im) ) deallocate(ise%sigma_Im)
+    call ise%aux_fc%destroy()
 end subroutine
 
 ! ! Consistent index flattening? Impossibru to get consistent.

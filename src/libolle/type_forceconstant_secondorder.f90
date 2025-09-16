@@ -97,6 +97,7 @@ type lo_forceconstant_secondorder_polarstuff
     real(r8) :: polariton_qmax = -lo_huge
 contains
     procedure :: size_in_mem => fc2_polar_size_in_mem
+    procedure :: destroy => fc2_polarstuff_destroy
 end type
 
 !> Secondorder forceconstant
@@ -173,10 +174,12 @@ contains
     procedure :: supercell_longrange_dynamical_matrix_at_gamma
     !> Get the commensurate modes for a supercell
     procedure :: commensurate_modes
-    !>
+    !> Write forceconstant in qe/epw format
     procedure :: write_dynmat_to_qe
     !> Size in memory, in bytes
     procedure :: size_in_mem => fc2_size_in_mem
+    !> destroy
+    procedure :: destroy => fc2_destroy
 end type
 
 ! Interfaces to type_forceconstant_secondorder_aux
@@ -678,5 +681,46 @@ function fc2_size_in_mem(f) result(mem)
         end do
     end if
 end function
+
+subroutine fc2_destroy(fc)
+    class(lo_forceconstant_secondorder), intent(inout) :: fc
+
+    fc%na = -lo_hugeint
+    fc%cutoff = lo_huge
+    fc%polar = .false.
+    fc%elastic_constants_voigt = lo_huge
+    fc%elastic_constants_tensor = lo_huge
+    fc%elastic_constants_voigt_longrange = lo_huge
+    fc%elastic_constants_tensor_longrange = lo_huge
+    fc%npairshells = -lo_hugeint
+    fc%npairop = -lo_hugeint
+    fc%nifc = -lo_hugeint
+    fc%nconstraints = -lo_hugeint
+
+    if ( allocated(fc%eigenvectors      ) ) deallocate(fc%eigenvectors      )
+    if ( allocated(fc%omega             ) ) deallocate(fc%omega             )
+    if ( allocated(fc%amplitudes        ) ) deallocate(fc%amplitudes        )
+    if ( allocated(fc%pairop            ) ) deallocate(fc%pairop            )
+    if ( allocated(fc%pairop3           ) ) deallocate(fc%pairop3           )
+    if ( allocated(fc%linear_constraints) ) deallocate(fc%linear_constraints)
+    if ( allocated(fc%atom              ) ) deallocate(fc%atom              )
+    if ( allocated(fc%pairshell         ) ) deallocate(fc%pairshell         )
+
+    call fc%loto%destroy()
+    call fc%ew%destroy()
+end subroutine
+
+subroutine fc2_polarstuff_destroy(self)
+    class(lo_forceconstant_secondorder_polarstuff), intent(inout) :: self
+
+    self%correctiontype = -lo_hugeint
+    self%eps = lo_huge
+    self%nx_Z = -lo_hugeint
+    self%polariton_qmax = -lo_huge
+    if ( allocated(self%born_effective_charges) ) deallocate(self%born_effective_charges)
+    if ( allocated(self%born_onsite_correction) ) deallocate(self%born_onsite_correction)
+    if ( allocated(self%x_Z                   ) ) deallocate(self%x_Z                   )
+    if ( allocated(self%coeff_Z               ) ) deallocate(self%coeff_Z               )
+end subroutine
 
 end module
