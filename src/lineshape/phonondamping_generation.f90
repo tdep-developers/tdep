@@ -247,8 +247,16 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(y0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+            ! If we are in the mode-coupling approximation, we need to remove the static contribution
+            if (opts%mct) then
+                do imode=1, se%n_mode
+                    se%re_3ph(:, imode) = se%re_3ph(:, imode) - se%re_3ph(1, imode)
+                end do
+            end if
         end block kktransform
         call tmr%tock('Kramers-Kronig transformation')
+
     end if
 
     ! Normalize the spectral functions
