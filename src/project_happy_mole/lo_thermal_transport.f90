@@ -1,29 +1,24 @@
 module lo_thermal_transport
-!!
 !! Container for things related to thermal transport. Not how it is actually calculated,
 !! that is generated elsewhere, but how it is stored and written to file.
-!!
-use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_sqtol, lo_exitcode_symmetry, lo_twopi, &
-                      lo_bohr_to_A, lo_freqtol, lo_exitcode_param, lo_pi, lo_imag, lo_groupvel_ms_to_Hartreebohr, &
-                      lo_kappa_au_to_SI, lo_frequency_Hartree_to_THz, lo_frequency_Hartree_to_icm, lo_frequency_Hartree_to_meV, &
-                      lo_kb_hartree, lo_groupvel_Hartreebohr_to_ms, lo_time_au_to_s, lo_tol
+use konstanter, only: r8, lo_iou, lo_hugeint, lo_huge, lo_sqtol, lo_freqtol, lo_pi, lo_exitcode_param, &
+                      lo_groupvel_Hartreebohr_to_ms, lo_kb_Hartree, lo_kappa_au_to_SI, lo_frequency_Hartree_to_THz, &
+                      lo_frequency_Hartree_to_icm, lo_frequency_Hartree_to_meV, lo_time_au_to_s, lo_bohr_to_A
 use gottochblandat, only: tochar, walltime, lo_chop, &
                           lo_real_nullspace_coefficient_matrix, lo_transpositionmatrix, lo_real_pseudoinverse, &
                           lo_flattentensor, lo_trapezoid_integration, lo_linspace, lo_outerproduct, lo_planck, &
                           lo_harmonic_oscillator_cv, lo_unflatten_2tensor, lo_linear_interpolation
-!use geometryfunctions, only: lo_inscribed_sphere_in_box
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use hdf5_wrappers, only: lo_hdf5_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
-use type_qpointmesh, only: lo_qpoint_mesh, lo_fft_mesh, lo_qpoint
-use type_phonon_dispersions, only: lo_phonon_dispersions, lo_phonon_dispersions_qpoint
+use type_qpointmesh, only: lo_qpoint_mesh
+use type_phonon_dispersions, only: lo_phonon_dispersions
 use type_symmetryoperation, only: lo_expandoperation_pair, lo_eigenvector_transformation_matrix
 use type_blas_lapack_wrappers, only: lo_gemm
 use lineshape_helper, only: evaluate_spectral_function, taperfn_im, integrate_spectral_function, integrate_two_spectral_functions
-use quadratures_stencils, only: lo_centraldifference, lo_gaussianquadrature
-use lo_brents_method, only: lo_brent_helper
+use quadratures_stencils, only: lo_centraldifference
 implicit none
 
 private
@@ -37,8 +32,6 @@ type lo_thermal_conductivity
     integer, private :: n_energy = -lo_hugeint
     !> number of q-points on this rank?
     integer, private :: n_local_qpoint = -lo_hugeint
-    !> counter for accumulating
-    integer, private :: ctr = -lo_hugeint
     !> temperature
     real(r8), private :: temperature = -lo_huge
     !> which global q-points do the local q-points correspond to?
@@ -57,7 +50,7 @@ type lo_thermal_conductivity
     real(r8), dimension(:, :), allocatable :: diagonal_imaginary_selfenergy
 contains
     !> set up thermal conductivity container
-    procedure :: init
+    procedure :: initialize
     !> accumulate data from a single q-point
     procedure :: accumulate
     !> report to screen
@@ -66,14 +59,10 @@ contains
     procedure :: write_to_hdf5
 end type
 
-! !> helper type to find ones place in an array
-! type lo_binsearch
-! end type
-
 contains
 
 !> initialize thermal conductivity container
-subroutine init(tc, dr, n_energy, maxf, temperature, mw)
+subroutine initialize(tc, dr, n_energy, maxf, temperature, mw)
     !> thermal conductivity
     class(lo_thermal_conductivity), intent(out) :: tc
     !> phonon dispersions
@@ -92,7 +81,6 @@ subroutine init(tc, dr, n_energy, maxf, temperature, mw)
     tc%n_mode = dr%n_mode
     tc%n_energy = n_energy
     tc%temperature = temperature
-    tc%ctr = 0
 
     ! arrays for everyone
     allocate (tc%omega(tc%n_energy))
@@ -121,11 +109,13 @@ subroutine init(tc, dr, n_energy, maxf, temperature, mw)
 end subroutine
 
 !> accumulate data from a single q-point on a grid.
-subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mw, mem)
+subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mw, mem)
     !> thermal conductivity
     class(lo_thermal_conductivity), intent(inout) :: tc
     !> index to irreducible q-point we are working on
     integer, intent(in) :: iq
+    !> local q-point index
+    integer, intent(in) :: local_iq
     !> q-mesh
     class(lo_qpoint_mesh), intent(in) :: qp
     !> dispersion relations
@@ -157,20 +147,10 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
 
     real(r8), dimension(:, :, :), allocatable :: buf_vel
     real(r8), dimension(:, :, :, :), allocatable :: buf_velsq
-    !real(r8), dimension(:,:), allocatable :: xaxis
-    integer :: n_energy, storerank
+    integer :: n_energy
 
-    ! Which rank should store things?
-    storerank = mod(iq, mw%n)
-    ! The other ranks will not do anything.
-    !if ( mw%r .ne. storerank ) return
-    ! Accumulate the counter, as in this is a new q-point for this rank.
-
-    if (mw%r .eq. storerank) then
-        ! Keep track of which q-point this is.
-        tc%ctr = tc%ctr + 1
-        tc%qind(tc%ctr) = iq
-    end if
+    ! Make note which q-point we are storing
+    tc%qind(local_iq)=iq
 
     ! Space for group velocity buffers
     call mem%allocate(buf_vel, [3, dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -315,65 +295,6 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
         call mem%deallocate(kronegv, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block groupvel
 
-    ! Get neat lineshapes with high resolution for integrations.
-    ! For narrow lineshapes we need some serious resolution
-    ! to get the spectral function ok. I will do that by trying to
-    ! figure out where the peak is, and refine from there.
-    ! neatlineshapes: block
-    !     real(r8), parameter :: shiftconstant=0.5_r8
-    !     real(r8), dimension(:), allocatable :: dx,bx0
-    !     real(r8) :: xmid,xlo,xhi,sh,xmax
-    !     integer :: imode,ie
-    !
-    !     ! Space for non-uniformly spaced x-axis. Much tighter spacing
-    !     ! where the function is peaked.
-    !     xmax=tc%omega(tc%n_energy)
-    !     nx=n_energy*2+1
-    !     call mem%allocate(xaxis,[nx,dr%n_mode],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    !     call mem%allocate(bx0,nx,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    !     call mem%allocate(dx,n_energy+1,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    !     xaxis=0.0_r8
-    !     bx0=0.0_r8
-    !     dx=0.0_r8
-    !
-    !     do imode=1,dr%n_mode
-    !         if ( dr%iq(iq)%omega(imode) .lt. lo_freqtol ) cycle
-    !
-    !         ! Find the maximum and fwhm of the spectral function
-    !         call find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode),tc%omega,sigmaIm(:,imode),sigmaRe(:,imode),xmid,xlo,xhi)
-    !
-    !         ! Now create a non-uniform x-axis in a neat way.
-    !         ! Start from zero to the peak:
-    !         bx0=-1
-    !
-    !         sh=(xmid-xlo)*shiftconstant
-    !         call lo_linspace(log(0.0_r8+sh),log(xmid+sh),dx)
-    !         dx=exp(dx)-sh
-    !         dx(1)=0.0_r8
-    !         dx(n_energy+1)=xmid
-    !         do ie=1,n_energy
-    !             bx0(n_energy+1-ie)=xmid-dx(ie+1)
-    !         enddo
-    !         bx0(1)=0.0_r8
-    !
-    !         ! Then from the peak to max
-    !         sh=(xhi-xmid)*shiftconstant
-    !         call lo_linspace(log(0.0_r8+sh),log(xmax-xmid+sh),dx)
-    !         dx=exp(dx)-sh+xmid
-    !         dx(1)=xmid
-    !         dx(n_energy+1)=xmax
-    !         do ie=1,n_energy+1
-    !             bx0(n_energy+ie)=dx(ie)
-    !         enddo
-    !
-    !         ! Store the x-axis
-    !         xaxis(:,imode)=bx0
-    !     enddo
-    !
-    !     call mem%deallocate(bx0,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    !     call mem%deallocate(dx,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
-    ! end block neatlineshapes
-
     ! Integrate spectral functions and get thermal transport things.
     integrate: block
         real(r8), parameter :: integraltol = 1E-13_8
@@ -382,7 +303,7 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
         real(r8), dimension(:, :), allocatable :: buf_lifetime
         real(r8), dimension(:), allocatable :: buf_thermal, buf0
         real(r8) :: pref, f0, f1, f2
-        integer :: imode, jmode, ie, ctr
+        integer :: imode, jmode, ie
 
         ! Smaller buffers for spectral kappa
         call mem%allocate(buf0, n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -403,13 +324,10 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
             buf_thermal(ie) = f0*(f0 + 1.0_r8)
         end do
 
-        ctr = 0
         do imode = 1, dr%n_mode ! Make faster if needed.
         do jmode = 1, dr%n_mode
             if (dr%iq(iq)%omega(imode) .lt. lo_freqtol) cycle
             if (dr%iq(iq)%omega(jmode) .lt. lo_freqtol) cycle
-            ctr = ctr + 1
-            if (mod(ctr, mw%n) .ne. mw%r) cycle
 
             if (imode .eq. jmode) then
                 ! Diagonal part. Can use the easy way of doing things.
@@ -442,19 +360,14 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
             end do
         end do
         end do
-        call mw%allreduce('sum', buf_lifetime)
-        call mw%allreduce('sum', buf_kappa)
-        call mw%allreduce('sum', buf_spectral)
 
         ! And store things on the corret rank.
-        if (mw%r .eq. storerank) then
-            tc%spectral_kappa = tc%spectral_kappa + buf_spectral
-            tc%lifetime(:, :, tc%ctr) = buf_lifetime
-            tc%kappa(:, :, :, :, tc%ctr) = buf_kappa
-            do imode = 1, dr%n_mode
-                tc%diagonal_imaginary_selfenergy(imode, tc%ctr) = lo_linear_interpolation(tc%omega, sigmaIm(:, imode), dr%iq(iq)%omega(imode), lo_freqtol*1E-5_r8)
-            end do
-        end if
+        tc%spectral_kappa = tc%spectral_kappa + buf_spectral
+        tc%lifetime(:, :, local_iq) = buf_lifetime
+        tc%kappa(:, :, :, :, local_iq) = buf_kappa
+        do imode = 1, dr%n_mode
+            tc%diagonal_imaginary_selfenergy(imode, local_iq) = lo_linear_interpolation(tc%omega, sigmaIm(:, imode), dr%iq(iq)%omega(imode), lo_freqtol*1E-5_r8)
+        end do
 
         ! And some cleanup
         call mem%deallocate(buf0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -464,15 +377,11 @@ subroutine accumulate(tc, iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm
         call mem%deallocate(buf_spectral, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block integrate
 
-    ! t1=walltime()
-    ! write(*,*) 'integrals:',tochar(t1-t0),'s'
-    ! t0=t1
-
     ! Cleanup
     call mem%deallocate(buf_vel, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(buf_velsq, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
-contains
+    contains
     ! Consistent index flattening? Impossibru to get consistent.
     function flattenind(a1, a2, ix, iy, nb) result(i)
         integer, intent(in) :: a1, a2, ix, iy, nb

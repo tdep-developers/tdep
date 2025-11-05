@@ -167,13 +167,14 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,filename,mw,mem,verbosit
         call h5%close_file()
         call h5%destroy()
 
+        ! Generate triangulation thingy
+        call ise%box%generate(ise%qp,p)
+
         if ( verbosity .gt. 0 ) then
             write(*,*) 'Done reading self-energy from file'
         endif
     end block readfile
 
-    ! Generate triangulation thingy
-    call ise%box%generate(ise%qp,p)
 end subroutine
 
 subroutine destroy_interpolated_selfenergy(ise)

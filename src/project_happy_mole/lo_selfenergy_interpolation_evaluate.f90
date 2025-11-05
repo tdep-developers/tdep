@@ -45,7 +45,7 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
         complex(r8), dimension(:,:,:), allocatable :: rotmat
         complex(r8), dimension(:,:), allocatable :: cm0,cm1
         real(r8), dimension(4) :: weight
-        integer, dimension(4) :: irr_ind,full_ind,operation
+        integer, dimension(4) :: irr_ind,full_ind !,operation
         integer :: i,iq,ie,ii,iop
 
         call ise%box%indices_and_weights(ise%qp,p,qv,weight,irr_ind,full_ind)
@@ -56,7 +56,11 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
         do i=1,4
             ii=full_ind(i)
             iop=ise%qp%ap(ii)%operation_from_irreducible
-            call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(iop),inverseoperation=.false.)
+            if ( iop .gt. 0 ) then
+                call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(iop),inverseoperation=.false.)
+            else
+                call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(-iop),inverseoperation=.true.)
+            endif
         enddo
 
         allocate(cm0(n_mode,n_mode))

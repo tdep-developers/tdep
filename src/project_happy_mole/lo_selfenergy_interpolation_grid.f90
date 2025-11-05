@@ -39,7 +39,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
 
     ! Set some basic things
     init: block
-        integer :: i
 
         if (mw%talk) then
             write (lo_iou, *) ''
@@ -79,7 +78,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
             t0 = t1
         end if
 
-        call tc%init(dr, ise%n_energy, pd%dosmax, temperature, mw)
+        call tc%initialize(dr, ise%n_energy, pd%dosmax, temperature, mw)
     end block init
 
     ! Calculate self-energies / spectral functions
@@ -92,7 +91,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
         real(r8), dimension(:), allocatable :: buf_taper, siteproj, normalizationfactor, xmid, xlo, xhi
         real(r8), dimension(3), parameter :: qdir = [1.0_r8, 0.0_r8, 0.0_r8]
         real(r8) :: f0, f1, f2, sigma
-        integer :: iq, imode, iatom
+        integer :: iq, imode, iatom,local_iq
 
         ! A little space for temporary buffers
         call mem%allocate(buf_spectral, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -112,19 +111,15 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
         buf_taper = 0.0_r8
         siteproj = 0.0_r8
 
+        local_iq=0
         do iq = 1, qp%n_irr_point
+            if ( mod(iq,mw%n) .ne. mw%r ) cycle
 
             if (mw%talk) then
                 t1 = walltime()
                 write (lo_iou, *) '... q-point '//tochar(iq)//' out of '//tochar(qp%n_irr_point)
                 t0 = t1
-                !write (*, '(a,i6,a,i6)') 'lineshape/phonondamping running qpt number ', iq, ' of ', qp%n_irr_point
             end if
-
-            !if (mw%talk)
-            ! get the self-energy
-            !call se%generate(qp%ip(iq), qdir, dr%iq(iq), uc, fc, fct, fcf, ise, isf, qp, dr, opts, tmr, mw, mem, verbosity=-1)
-
 
 
             ! Check the scaling factor?
@@ -139,18 +134,16 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
             xhi = 0.0_r8
 
             ! Evaluate the self-energy at this q
-            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mem,mw)
+            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mem)
 
-            if (mw%talk) then
-                t1 = walltime()
-                write (lo_iou, *) '     evaluate interpolation (', tochar(t1 - t0), 's)'
-                t0 = t1
-                !write (*, '(a,i6,a,i6)') 'lineshape/phonondamping running qpt number ', iq, ' of ', qp%n_irr_point
-            end if
+            ! if (mw%talk) then
+            !     t1 = walltime()
+            !     write (lo_iou, *) '     evaluate interpolation (', tochar(t1 - t0), 's)'
+            !     t0 = t1
+            ! end if
 
-
+            ! Evaluate spectral functions and smear and so on.
             do imode = 1, dr%n_mode
-                if (mod(imode, mw%n) .ne. mw%r) cycle
                 ! Get the spectral functions
                 if (dr%iq(iq)%omega(imode) .gt. lo_freqtol) then
                     ! Taper self-energy
@@ -161,6 +154,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
                     call find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode), dr%omega_max, ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
                     call integrate_spectral_function(ise%omega, dr%iq(iq)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
                     1.0_r8, temperature, integraltol, f0, f1, f2)
+
                     normalizationfactor(imode)=1.0_r8/f0
 
                     call evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
@@ -184,43 +178,26 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
                     do iatom = 1, uc%na
                         pd%pdos_site(:, iatom) = pd%pdos_site(:, iatom) + buf_spectral_smeared(:, imode)*siteproj(iatom)*qp%ip(iq)%integration_weight
                     end do
-
                 else
                     buf_spectral(:, imode) = 0.0_r8
                     buf_spectral_smeared(:, imode) = 0.0_r8
                 end if
             end do
 
-            if (mw%talk) then
-                t1 = walltime()
-                write (lo_iou, *) '     integrals and normalization (', tochar(t1 - t0), 's)'
-                t0 = t1
-                !write (*, '(a,i6,a,i6)') 'lineshape/phonondamping running qpt number ', iq, ' of ', qp%n_irr_point
-            end if
+            ! if (mw%talk) then
+            !     t1 = walltime()
+            !     write (lo_iou, *) '     integrals and normalization (', tochar(t1 - t0), 's)'
+            !     t0 = t1
+            ! end if
 
-            call mw%allreduce('sum', buf_spectral)
-            call mw%allreduce('sum', buf_spectral_smeared)
-            call mw%allreduce('sum', buf_sigmaIm)
-            call mw%allreduce('sum', buf_sigmaRe)
-            call mw%allreduce('sum', normalizationfactor)
-            call mw%allreduce('sum', xmid)
-            call mw%allreduce('sum', xlo)
-            call mw%allreduce('sum', xhi)
+            ! Accumulate thermal transport data
+            local_iq=local_iq+1
+            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mw, mem)
 
-            ! Accumulate thermal transport data, can get it for free here anyway.
-            call tc%accumulate(iq, qp, dr, fc, uc, buf_spectral, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mw, mem)
-
-            if (mw%talk) then
-                t1 = walltime()
-                write (lo_iou, *) '     kappa accumulation (', tochar(t1 - t0), 's)'
-                t0 = t1
-                !write (*, '(a,i6,a,i6)') 'lineshape/phonondamping running qpt number ', iq, ' of ', qp%n_irr_point
-            end if
-
-
-            ! ! Report
-            ! if (verbosity .gt. 0) then
-            !     write (*, *) '    did', iq, 'out of', qp%n_irr_point
+            ! if (mw%talk) then
+            !     t1 = walltime()
+            !     write (lo_iou, *) '     kappa accumulation (', tochar(t1 - t0), 's)'
+            !     t0 = t1
             ! end if
         end do
 
@@ -245,9 +222,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
         call mem%deallocate(xmid, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(xlo, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(xhi, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-
     end block specfun
-
 
     ! Now fix the DOS so that it looks nice.
     makenice: block

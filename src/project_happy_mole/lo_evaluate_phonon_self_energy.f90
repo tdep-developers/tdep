@@ -26,6 +26,8 @@ use lineshape_helper, only: evaluate_spectral_function, taperfn_im, gaussian_sme
                             lo_convolution_helper, gaussian_smear_distribution
 use type_blas_lapack_wrappers, only: lo_gemm
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
+use lo_brents_method, only: lo_brent_helper
+use quadratures_stencils, only: lo_centraldifference, lo_gaussianquadrature
 implicit none
 
 private
@@ -42,7 +44,7 @@ type lo_phonon_selfenergy
     ! Imaginary part of self energy (energy,mode)
     real(r8), dimension(:, :), allocatable :: im_3ph, im_iso
     ! Real part of self energy (energy,mode)
-    real(r8), dimension(:, :), allocatable :: re_3ph, re_4ph
+    real(r8), dimension(:, :), allocatable :: re !re_3ph, re_4ph
     !> Direction of probe
     real(r8), dimension(3) :: qdir
     ! Smearing parameters
@@ -62,8 +64,8 @@ type lo_phonon_selfenergy
     real(r8), dimension(:), allocatable :: xlo
     !> right fwhm:
     real(r8), dimension(:), allocatable :: xhi
-    !> scaling  factor (per mode) to get proper normalization
-    real(r8), dimension(:), allocatable :: scalingfactor
+    !> before normalization, how far are we from being correct
+    real(r8), dimension(:), allocatable :: normalization_residual
     contains
         procedure :: generate
 end type
@@ -170,6 +172,27 @@ interface
     end subroutine
 end interface
 
+interface ! to helpers
+    module subroutine tapering_function(x,y)
+        real(r8), dimension(:), intent(in) :: x
+        real(r8), dimension(:), intent(out) :: y
+    end subroutine
+    module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,initial_residual,mw)
+        !> harmonic frequencies
+        real(r8), dimension(:), intent(in) :: omega
+        !> real part of self-energy
+        real(r8), dimension(:,:), intent(inout) :: sigmare
+        !> imaginary part of self-energy
+        real(r8), dimension(:,:), intent(inout) :: sigmaim
+        !> energy axis
+        real(r8), dimension(:), intent(in) :: x
+        !> spectral function residual
+        real(r8), dimension(:), intent(out) :: initial_residual
+        !> mpi helper
+        type(lo_mpi_helper), intent(inout) :: mw
+    end subroutine
+end interface
+
 contains
 
 !> size in memory, in bytes
@@ -185,12 +208,13 @@ function se_size_in_mem(se) result(mem)
     if (allocated(se%energy_axis)) mem = mem + storage_size(se%energy_axis)*size(se%energy_axis)
     if (allocated(se%im_3ph)) mem = mem + storage_size(se%im_3ph)*size(se%im_3ph)
     if (allocated(se%im_iso)) mem = mem + storage_size(se%im_iso)*size(se%im_iso)
-    if (allocated(se%re_3ph)) mem = mem + storage_size(se%re_3ph)*size(se%re_3ph)
-    if (allocated(se%re_4ph)) mem = mem + storage_size(se%re_4ph)*size(se%re_4ph)
+    if (allocated(se%re)) mem = mem + storage_size(se%re)*size(se%re)
+    !if (allocated(se%re_3ph)) mem = mem + storage_size(se%re_3ph)*size(se%re_3ph)
+    !if (allocated(se%re_4ph)) mem = mem + storage_size(se%re_4ph)*size(se%re_4ph)
     if (allocated(se%xmid)) mem = mem + storage_size(se%xmid)*size(se%xmid)
     if (allocated(se%xlo)) mem = mem + storage_size(se%xlo)*size(se%xlo)
     if (allocated(se%xhi)) mem = mem + storage_size(se%xhi)*size(se%xhi)
-    if (allocated(se%scalingfactor)) mem = mem + storage_size(se%scalingfactor)*size(se%scalingfactor)
+    if (allocated(se%normalization_residual)) mem = mem + storage_size(se%normalization_residual)*size(se%normalization_residual)
     mem = mem/8
 end function
 

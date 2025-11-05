@@ -12,6 +12,7 @@ OBJS = $(OBJECT_PATH)main.o\
  $(OBJECT_PATH)lo_evaluate_phonon_self_energy_isotope.o\
  $(OBJECT_PATH)lo_evaluate_phonon_self_energy_threephonon.o\
  $(OBJECT_PATH)lo_evaluate_phonon_self_energy_fourphonon.o\
+ $(OBJECT_PATH)lo_evaluate_phonon_self_energy_helpers.o\
  $(OBJECT_PATH)lo_tetrahedron_interpolation.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation.o\
  $(OBJECT_PATH)lo_selfenergy_interpolation_evaluate.o\
@@ -24,10 +25,11 @@ LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi) $(incLPATHf
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) ${incIPATHhdf} $(incIPATHmpi) $(incIPATHfft)
 LIBS = -lolle -lflap $(blaslapackLIBS) ${incLIBShdf} $(incLIBSmpi) $(incLIBSfft)
 
-OPT = -Ofast
+OPT = -Ofast #-fbacktrace
 #OPT = -O0 -fbacktrace -fcheck=all -finit-real=nan -finit-derived -fmax-errors=10 -Wall -fcheck=no-recursion
 F90 = $(FC) $(LPATH) $(IPATH) $(MODULE_FLAG) $(OBJECT_PATH) #$(warnings_gcc)
 F90FLAGS = $(OPT) $(MODS) $(LIBS)
+F90FLAGS_LOW = -O0 $(MODS) $(LIBS)
 
 all: $(PROG)
 
@@ -61,7 +63,7 @@ $(OBJECT_PATH)lineshape_helper.o:\
 
 $(OBJECT_PATH)options.o:\
 	options.f90
-	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
+	$(F90) $(F90FLAGS_LOW) -c options.f90 $(LIBS) -o $@
 
 $(OBJECT_PATH)lo_thermal_transport.o:\
 	lo_thermal_transport.f90\
@@ -76,7 +78,7 @@ $(OBJECT_PATH)create_selfenergy_interpolation.o:\
 
 $(OBJECT_PATH)lo_tetrahedron_interpolation.o:\
 	lo_tetrahedron_interpolation.f90
-	$(F90) $(F90FLAGS) -c lo_tetrahedron_interpolation.f90 $(LIBS) -o $@
+	$(F90) $(F90FLAGS_LOW) -c lo_tetrahedron_interpolation.f90 $(LIBS) -o $@
 
 $(OBJECT_PATH)lo_selfenergy_interpolation.o:\
 	lo_selfenergy_interpolation.f90\
@@ -123,3 +125,8 @@ $(OBJECT_PATH)lo_evaluate_phonon_self_energy_fourphonon.o:\
 	lo_evaluate_phonon_self_energy_fourphonon.f90\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o
 	$(F90) $(F90FLAGS) -c lo_evaluate_phonon_self_energy_fourphonon.f90 $(LIBS) -o $@
+$(OBJECT_PATH)lo_evaluate_phonon_self_energy_helpers.o:\
+	lo_evaluate_phonon_self_energy_helpers.f90\
+	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o
+	$(F90) $(F90FLAGS) -c lo_evaluate_phonon_self_energy_helpers.f90 $(LIBS) -o $@
+

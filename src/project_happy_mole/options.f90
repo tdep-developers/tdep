@@ -12,6 +12,7 @@ type lo_opts
     integer :: nf = -lo_hugeint
     integer, dimension(3) :: qgrid = -lo_hugeint
     integer, dimension(3) :: qgrid_sigma = -lo_hugeint
+    integer, dimension(3) :: qgrid_kappa = -lo_hugeint
     real(r8) :: temperature = -lo_huge
     real(r8) :: sigma = -lo_huge
     real(r8) :: maxf = -lo_huge
@@ -80,6 +81,10 @@ subroutine parse(opts)
                  help='Mesh the self-energy is evaluated on.', &
                  nargs='3', required=.false., act='store', def='4 4 4', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--kappa_qpoint_grid',hidden=.false., &
+                 help='Mesh the thermal conductivity is evaluated on.', &
+                 nargs='3', required=.false., act='store', def='12 12 12', error=lo_status)
+    if (lo_status .ne. 0) stop
     call cli%add(switch='--max_energy', &
                  help='Maximum energy where the output is cut off, in multiples of the maximum harmonic frequency.', &
                  required=.false., act='store', def='1.4', error=lo_status)
@@ -130,6 +135,7 @@ subroutine parse(opts)
     call cli%get(switch='--unit', val=opts%enhet)
     call cli%get(switch='--qpoint_grid', val=opts%qgrid)
     call cli%get(switch='--sigma_qpoint_grid', val=opts%qgrid_sigma)
+    call cli%get(switch='--kappa_qpoint_grid', val=opts%qgrid_kappa)
     call cli%get(switch='--sigma', val=opts%sigma)
     call cli%get(switch='--integrationtype', val=opts%integrationtype)
     call cli%get(switch='--temperature', val=opts%temperature, error=lo_status)

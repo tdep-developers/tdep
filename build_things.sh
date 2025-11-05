@@ -10,7 +10,7 @@ set -e
 CLEAN=YES
 MANPAGE=YES
 NTHREADS_MAKE=4
-MAKE_SHARED=YES
+MAKE_SHARED=NO
 INSTALL=NO
 for i in "$@"
 do
@@ -176,6 +176,7 @@ refine_structure
 thermal_conductivity
 thermal_conductivity_2023
 anharmonic_free_energy
+project_happy_mole
 "
 
 # only when we have cgal

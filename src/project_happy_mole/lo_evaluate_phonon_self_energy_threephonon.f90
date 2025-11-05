@@ -713,14 +713,14 @@ subroutine threephonon_imaginary_selfenergy_convolution(se, wp, qp, dr, sr, ise,
             end do
         end do
         ! Get the tapering function
-        call taperfn_im(se%energy_axis, dr%omega_max, dr%omega_min, taper)
-        ! Taper the self-energies so that they are zero where they should be.
-        do mode1 = 1, dr%n_mode
-            se%im_3ph(:, mode1) = max(se%im_3ph(:, mode1), 0.0_r8)
-            se%im_iso(:, mode1) = max(se%im_iso(:, mode1), 0.0_r8)
-            se%im_3ph(:, mode1) = se%im_3ph(:, mode1)*taper
-            se%im_iso(:, mode1) = se%im_iso(:, mode1)*taper
-        end do
+        ! call taperfn_im(se%energy_axis, dr%omega_max, dr%omega_min, taper)
+        ! ! Taper the self-energies so that they are zero where they should be.
+        ! do mode1 = 1, dr%n_mode
+        !     se%im_3ph(:, mode1) = max(se%im_3ph(:, mode1), 0.0_r8)
+        !     se%im_iso(:, mode1) = max(se%im_iso(:, mode1), 0.0_r8)
+        !     se%im_3ph(:, mode1) = se%im_3ph(:, mode1)*taper
+        !     se%im_iso(:, mode1) = se%im_iso(:, mode1)*taper
+        ! end do
 
         call mem%deallocate(taper, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

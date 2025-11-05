@@ -217,7 +217,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
 
             if ( mw%talk ) then
                 write(*,*) '... evaluating qpoint '//tochar(iq)//' out of '//tochar(dqp%n_irr_point)
-                write(*,*) '... qv:',dqp%ip(iq)%r
+                !write(*,*) '... qv:',dqp%ip(iq)%r
             endif
 
             call se%generate(&
@@ -225,6 +225,12 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 temperature, max_energy, n_energy, integrationtype, sigma,&
                 use_isotope, use_thirdorder, use_fourthorder, offdiagonal, &
                 tmr, mw, mem, verbosity=0)
+
+            ! if ( mw%talk ) then
+            !     write(*,*) sum(se%normalization_residual)/se%n_mode
+            !     write(*,*) se%normalization_residual
+            ! endif
+
             ! Dump the energy axis once we have it
             if ( iq == 1 ) then
             if ( mw%r .eq. writerank ) then
@@ -354,7 +360,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 do ie=1,se%n_energy
                     sigma_mode=0.0_r8
                     do imode=1,se%n_mode
-                        sigma_mode(imode,imode)=lo_imag*(se%im_3ph(ie,imode) + se%im_iso(ie,imode)) + se%re_3ph(ie,imode) + se%re_4ph(ie,imode)
+                        sigma_mode(imode,imode)=lo_imag*(se%im_3ph(ie,imode) + se%im_iso(ie,imode)) + se%re(ie,imode)
                     enddo
 
                     ! call lo_gemm(eig,sigma_mode,halfproduct)
@@ -416,7 +422,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                     ! Get the spectral functions
                     if (ddr%iq(iq)%omega(imode) .gt. lo_freqtol) then
                         buf_sigmaIm = se%im_3ph(:, imode) + se%im_iso(:, imode)
-                        buf_sigmaRe = se%re_3ph(:, imode) + se%re_4ph(:, imode)
+                        buf_sigmaRe = se%re(:, imode) !+ se%re_4ph(:, imode)
                         call taperfn_im(se%energy_axis, se%energy_axis(se%n_energy), ddr%iq(iq)%omega(imode), buf_taper)
                         buf_sigmaIm = buf_sigmaIm*buf_taper
                         call evaluate_spectral_function(se%energy_axis, buf_sigmaIm, buf_sigmaRe, ddr%iq(iq)%omega(imode), buf_spectral(:, imode))

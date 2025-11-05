@@ -495,9 +495,7 @@ subroutine taperfn_im(x, maxomega, harmomega, y)
     !> tapering function
     real(r8), dimension(:), intent(out) :: y
 
-    real(r8), parameter :: lowtaperonset = 0.25_r8
     real(r8), parameter :: taperonset = 2.1_r8
-    integer :: nlowtaper
 
     integer :: n, ii, jj, i, j
     real(r8) :: xmax, f0
@@ -505,15 +503,7 @@ subroutine taperfn_im(x, maxomega, harmomega, y)
     n = size(x) ! number of energy values
     xmax = x(n) ! largest x
     y = 1.0_r8
-    ! Taper the low end, with a sine?
-    nlowtaper = ceiling(n*lowtaperonset*harmomega/xmax)
-
     y(1) = 0.0_r8
-    ! do i=2,nlowtaper-1
-    !     f0=real(i-1,r8)/real(nlowtaper-1,r8)
-    !     f0=f0*lo_pi*0.5_r8
-    !     y(i)=sin(f0)
-    ! enddo
 
     ! Taper the high end, with a cosine?
     ii = floor(n*maxomega*taperonset/xmax)

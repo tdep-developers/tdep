@@ -66,7 +66,7 @@ subroutine indices_and_weights(box,qp,uc,r,weight,irreducible_ind,full_ind)
 
     real(r8), dimension(3,3) :: tmatrix,itmatrix
     real(r8), dimension(3,4) :: tc
-    real(r8), dimension(3) :: v0,v1,vr
+    real(r8), dimension(3) :: v0,v1
     integer :: ti,i,j
 
     ! Which tetrahedron are we in? First switch to the first unit cell
@@ -117,7 +117,7 @@ subroutine generate_triangulation(box,qp,uc)
     real(r8), dimension(:,:), allocatable :: tetctr
     real(r8), dimension(:,:,:), allocatable :: tet
     real(r8), dimension(3) :: v0,v1,v2,rmin,rmax
-    real(r8) :: maxtetrad,t0
+    real(r8) :: maxtetrad
 
     allocate(tet(3,4,qp%n_full_tet))
     tet=-lo_huge
