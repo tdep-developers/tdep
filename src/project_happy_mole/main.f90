@@ -33,7 +33,7 @@ type(lo_forceconstant_secondorder) :: fc2
 type(lo_forceconstant_thirdorder) :: fc3
 type(lo_forceconstant_fourthorder) :: fc4
 
-type(lo_phonon_dispersions) :: dr,ddr
+type(lo_phonon_dispersions) :: dr,ddr,kdr
 
 class(lo_qpoint_mesh), allocatable :: qp,dqp,kqp
 
@@ -140,19 +140,18 @@ firstiteration: block
     if (mw%talk) then
         write(*,*) '... generating spectral function on a grid'
     endif
-    call ise%spectral_function_on_grid(uc,fc2,opts%qgrid_kappa,opts%sigma,opts%temperature,tc,pd,mw,mem)
+    call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
 
     if (mw%talk) then
         write (*, *) '... writing output'
         call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_0.hdf5', mem)
         call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_0.hdf5')
-
-        call pd%write_to_file(uc,opts%enhet,'outfile.spectral_function_dos_0')
+        call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_0.hdf5',mem)
     end if
+    call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
 
     ! Then I guess we start to iterate, self-consistently?
-    do iter=1,-1
-
+    do iter=1,1
         ! Then I guess the next step is to get the self-energy again, but this time using
         ! a convolution integration instead?
         call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
@@ -160,18 +159,26 @@ firstiteration: block
             opts%isotopescattering, opts%thirdorder, opts%fourthorder, .false.,&
             mw, mem, opts%verbosity)
 
-        ! Then we read the newly created interpolation and get a spectral function on a path?
+        ! Make sure the intermediate things are cleaned:
         call ise%destroy()
+        call kdr%destroy()
+        call tc%destroy()
+        call pd%destroy()
+        ! Then we read the newly created interpolation and get a spectral function on a path?
+
         ! Read it from file?
         call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
         ! Get spectral function on a path?
         call ise%spectral_function_along_path(bs,uc,mw,mem)
-
+        ! Spectral function on a grid
+        call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
         if (mw%talk) then
             write (*, *) '... writing output'
             call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_'//tochar(iter)//'.hdf5', mem)
             call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_'//tochar(iter)//'.hdf5')
+            call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_'//tochar(iter)//'.hdf5',mem)
         end if
+        call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_'//tochar(iter)//'.hdf5',opts%enhet,mw,mem)
     enddo
 
 end block firstiteration

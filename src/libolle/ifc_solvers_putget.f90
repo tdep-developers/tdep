@@ -591,7 +591,7 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
 
     end block solve
     ! And final cleanup
-    lo_deallocate(wdyn)
+    if ( allocated(wdyn) ) deallocate(wdyn)
 end subroutine
 
 !> Construct the dynamical matrix coefficient matrix for a specific q-point

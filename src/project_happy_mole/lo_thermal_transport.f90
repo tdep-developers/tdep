@@ -57,6 +57,8 @@ contains
     procedure :: report
     !> dump to file
     procedure :: write_to_hdf5
+    !> destroy
+    procedure :: destroy=>destroy_tc
 end type
 
 contains
@@ -787,6 +789,23 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
     end if
 
     call mem%tock(__FILE__, __LINE__, mw%comm)
+end subroutine
+
+subroutine destroy_tc(tc)
+    class(lo_thermal_conductivity), intent(inout) :: tc
+
+    tc%n_mode = -lo_hugeint
+    tc%n_energy = -lo_hugeint
+    tc%n_local_qpoint = -lo_hugeint
+    tc%temperature = -lo_huge
+
+    if ( allocated(tc%qind                         ) ) deallocate(tc%qind                         )
+    if ( allocated(tc%omega                        ) ) deallocate(tc%omega                        )
+    if ( allocated(tc%spectral_kappa               ) ) deallocate(tc%spectral_kappa               )
+    if ( allocated(tc%lifetime                     ) ) deallocate(tc%lifetime                     )
+    if ( allocated(tc%mean_free_path               ) ) deallocate(tc%mean_free_path               )
+    if ( allocated(tc%kappa                        ) ) deallocate(tc%kappa                        )
+    if ( allocated(tc%diagonal_imaginary_selfenergy) ) deallocate(tc%diagonal_imaginary_selfenergy)
 end subroutine
 
 end module

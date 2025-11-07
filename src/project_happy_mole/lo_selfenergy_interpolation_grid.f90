@@ -5,15 +5,15 @@ implicit none
 contains
 
 !> Calculate the spectral function along a path in the BZ
-module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smearing_prefactor, temperature, tc, pd, mw, mem)
+module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefactor, temperature, tc, pd, dr, mw, mem)
     !> interpolated self-energy thing
     class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> crystal structure
     type(lo_crystalstructure), intent(inout) :: uc
     !> second order force constant
     type(lo_forceconstant_secondorder), intent(inout) :: fc
-    !> q-grid density?
-    integer, dimension(3), intent(in) :: grid_density
+    !> q-grid we interpolate to
+    class(lo_qpoint_mesh), intent(inout) :: qp
     !> smearing prefactor
     real(r8), intent(in) :: smearing_prefactor
     !> temperature
@@ -22,13 +22,14 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
     type(lo_thermal_conductivity), intent(out) :: tc
     !> phonon dos
     type(lo_phonon_dos), intent(out) :: pd
+    !> dispersions on tight grid
+    type(lo_phonon_dispersions), intent(out) :: dr
     !> mpi communicator
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
     type(lo_mem_helper), intent(inout) :: mem
 
-    class(lo_qpoint_mesh), allocatable :: qp
-    type(lo_phonon_dispersions) :: dr
+
     real(r8) :: timer, t0, t1
     integer :: solrnk
 
@@ -48,8 +49,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
         ! Which rank do we solve serial things on?
         solrnk = 0
 
-        ! Create the q-point mesh
-        call lo_generate_qmesh(qp, uc, grid_density, 'fft', timereversal=.true., headrankonly=.false., mw=mw, mem=mem, verbosity=-1)
         ! Harmonic dispersions
         call dr%generate(qp, fc, uc, mw=mw, mem=mem, verbosity=-1)
 
@@ -120,7 +119,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
                 write (lo_iou, *) '... q-point '//tochar(iq)//' out of '//tochar(qp%n_irr_point)
                 t0 = t1
             end if
-
 
             ! Check the scaling factor?
             ! evaluate the spectral function
@@ -204,12 +202,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smear
         ! Sync across ranks
         call mw%allreduce('sum', pd%pdos_site)
         call mw%allreduce('sum', pd%pdos_mode)
-
-        ! Make sure to keep the frequency axis
-        !pd%omega = se%energy_axis
-        !pd%dosmax = maxval(se%energy_axis)
-
-        call tc%report(qp, mw)
 
         ! Cleanup
         call mem%deallocate(buf_spectral, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

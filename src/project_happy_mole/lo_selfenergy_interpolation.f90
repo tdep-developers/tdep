@@ -74,15 +74,16 @@ interface ! to path
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
-    module subroutine spectral_function_grid_interp(ise, uc, fc, grid_density, smearing_prefactor, temperature, tc, pd, mw, mem)
+    module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefactor, temperature, tc, pd, dr, mw, mem)
         class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_crystalstructure), intent(inout) :: uc
         type(lo_forceconstant_secondorder), intent(inout) :: fc
-        integer, dimension(3), intent(in) :: grid_density
+        class(lo_qpoint_mesh), intent(inout) :: qp
         real(r8), intent(in) :: smearing_prefactor
         real(r8), intent(in) :: temperature
         type(lo_thermal_conductivity), intent(out) :: tc
         type(lo_phonon_dos), intent(out) :: pd
+        type(lo_phonon_dispersions), intent(out) :: dr
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
@@ -108,8 +109,9 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,filename,mw,mem,verbosit
     readfile: block
         real(r8), dimension(:,:,:), allocatable :: rbuf
         type(lo_hdf5_helper) :: h5
-        complex(r8), dimension(3,3) :: cm0,cm1
-        integer :: iq,jq,ie,a1,a2
+        integer :: iq
+        ! complex(r8), dimension(3,3) :: cm0,cm1
+        ! integer :: iq,jq,ie,a1,a2
 
         if ( verbosity .gt. 0 ) then
             write(*,*) ''

@@ -436,9 +436,9 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
     ! get the threephonon matrix elements
     if (threephononscatter) then
         threephsc2: block
-            real(r8) :: t_up, t_tot
+            !real(r8) :: t_up, t_tot
             real(r8), dimension(3) :: qv2, qv3
-            complex(r8), dimension(:, :, :), allocatable :: psi_3ph_tmp
+            !complex(r8), dimension(:, :, :), allocatable :: psi_3ph_tmp
             integer :: q, b1, b2, b3, ctr, l
 
             ! Some space

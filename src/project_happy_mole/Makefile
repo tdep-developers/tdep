@@ -45,7 +45,6 @@ $(OBJECT_PATH)main.o:\
 	$(OBJECT_PATH)options.o\
 	$(OBJECT_PATH)scatteringrates.o\
 	$(OBJECT_PATH)lineshape_helper.o\
-	$(OBJECT_PATH)scf_helper.o\
 	$(OBJECT_PATH)create_selfenergy_interpolation.o\
 	$(OBJECT_PATH)lo_evaluate_phonon_self_energy.o\
 	$(OBJECT_PATH)lo_thermal_transport.o\
