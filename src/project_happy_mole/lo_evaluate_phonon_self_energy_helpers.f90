@@ -19,7 +19,7 @@ module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,ini
     real(r8), parameter :: tol_integral = 1E-12_r8
     real(r8), parameter :: derivdelta = 1E-2_r8
     integer, parameter :: derivorder = 3
-    integer, parameter :: maxiter = 15
+    integer, parameter :: maxiter = 25
     real(r8), dimension(derivorder*2 + 1, 4) :: sc
     real(r8), dimension(derivorder*2 + 1) :: fval
     real(r8), dimension(:), allocatable :: s_xlo,s_xmax,s_xhi
@@ -46,9 +46,6 @@ module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,ini
     call mw%allreduce('sum',s_xmax)
     call mw%allreduce('sum',s_xhi)
 
-    ! We are going to need a quadrature
-    !call lo_
-
     allocate(rbuf0(size(x)))
     allocate(rbuf1(size(x)))
     allocate(buf_alpha(n_mode))
@@ -59,6 +56,7 @@ module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,ini
     do imode=1,n_mode
         ! Skip acoustic modes
         if ( omega(imode) .lt. lo_freqtol ) cycle
+        ! Parallel over modes
         if ( mod(imode,mw%n) .ne. mw%r ) cycle
 
         alpha=0.0_r8
@@ -71,15 +69,15 @@ module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,ini
                 exit
             endif
             ! Get the function value at this point?
+            ! Function value is (1 - \int J dOmega)^2
             rbuf1=rbuf0+alpha*x*x
-            call lo_adaptive_reqursive_integral_over_spectral_function(x,omega(imode),sigmaIm(:,imode),rbuf1,s_xmax(imode),s_xlo(imode),s_xhi(imode),tol_integral,y0)
+            call lo_adaptive_recursive_integral_over_spectral_function(x,omega(imode),sigmaIm(:,imode),rbuf1,s_xmax(imode),s_xlo(imode),s_xhi(imode),tol_integral,y0)
             y1=(1.0_r8-y0)**2
 
             ! Store the first residual?
             if ( iter .eq. 1 ) then
                 initial_residual(imode)=y0
             endif
-
 
             ! We might be done?
             if ( abs(y0-1.0_r8) .lt. tol_integral*100 ) then
@@ -91,9 +89,10 @@ module subroutine add_quadratic_to_fix_normalization(omega,sigmare,sigmaim,x,ini
             call lo_centraldifference(3,alpha,derivdelta,sc)
             do i=1,2*derivorder+1
                 rbuf1=rbuf0+sc(i,1)*x*x
-                call lo_adaptive_reqursive_integral_over_spectral_function(x,omega(imode),sigmaIm(:,imode),rbuf1,s_xmax(imode),s_xlo(imode),s_xhi(imode),tol_integral,fval(i))
+                call lo_adaptive_recursive_integral_over_spectral_function(x,omega(imode),sigmaIm(:,imode),rbuf1,s_xmax(imode),s_xlo(imode),s_xhi(imode),tol_integral,fval(i))
                 fval(i)=(1.0_r8-fval(i))**2
             enddo
+            ! Newton step
             dy1=sum(fval*sc(:,2))
             ddy1=sum(fval*sc(:,3))
             alpha=alpha - dy1/ddy1
@@ -141,8 +140,8 @@ module subroutine tapering_function(x,y)
     end do
 end subroutine
 
-!> very careful
-subroutine lo_adaptive_reqursive_integral_over_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xhi, tolerance, integrated_spectralfunction)
+!> very careful integral to measure the norm of the spectral function
+subroutine lo_adaptive_recursive_integral_over_spectral_function(x, omega, sigmaIm, sigmaRe, xmid, xlo, xhi, tolerance, integrated_spectralfunction)
     !> rough x-axis
     real(r8), dimension(:), intent(in) :: x
     !> harmonic frequency
@@ -377,7 +376,7 @@ subroutine lo_adaptive_reqursive_integral_over_spectral_function(x, omega, sigma
     !deallocate(next_kp)
 end subroutine
 
-!> find peak maximum of spectral function
+!> locate the peak in the spectral function
 subroutine lo_find_spectral_function_max_and_fwhm(omega, energy, sigmaIm, sigmaRe, energy_max, energy_lo, energy_hi)
     !> harmonic frequency
     real(r8), intent(in) :: omega
@@ -659,8 +658,6 @@ function interpolated_spectral_function(x, yim, yre, omega, xi) result(yi)
 
     ! This should put us in the right interval.
     ilo = floor(n*xi/xhi) + 1
-    ! ilo=max(ilo,1)
-    ! ilo=min(ilo,n-1)
     ihi = ilo + 1
     ! evaluate imaginary and real self-energy
     f0 = (x(ihi) - xi)/(x(ihi) - x(ilo))

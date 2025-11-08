@@ -112,6 +112,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
 
         local_iq=0
         do iq = 1, qp%n_irr_point
+            ! Make it parallel over q-points
             if ( mod(iq,mw%n) .ne. mw%r ) cycle
 
             if (mw%talk) then
@@ -120,8 +121,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
                 t0 = t1
             end if
 
-            ! Check the scaling factor?
-            ! evaluate the spectral function
+            ! reset buffers
             buf_spectral = 0.0_r8
             buf_spectral_smeared = 0.0_r8
             buf_sigmaIm = 0.0_r8
@@ -130,21 +130,14 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
             xmid = 0.0_r8
             xlo = 0.0_r8
             xhi = 0.0_r8
-
-            ! Evaluate the self-energy at this q
+            ! interpolate self-energy to this q-vector
             call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mem)
-
-            ! if (mw%talk) then
-            !     t1 = walltime()
-            !     write (lo_iou, *) '     evaluate interpolation (', tochar(t1 - t0), 's)'
-            !     t0 = t1
-            ! end if
 
             ! Evaluate spectral functions and smear and so on.
             do imode = 1, dr%n_mode
                 ! Get the spectral functions
-                if (dr%iq(iq)%omega(imode) .gt. lo_freqtol) then
-                    ! Taper self-energy
+                if ( dr%iq(iq)%omega(imode) .gt. lo_freqtol ) then
+                    ! Taper self-energy?
                     call taperfn_im(ise%omega, pd%dosmax, dr%iq(iq)%omega(imode), buf_taper)
                     buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
 
@@ -152,13 +145,13 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
                     call find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode), dr%omega_max, ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
                     call integrate_spectral_function(ise%omega, dr%iq(iq)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
                     1.0_r8, temperature, integraltol, f0, f1, f2)
-
                     normalizationfactor(imode)=1.0_r8/f0
 
                     call evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
-                    sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
                     buf_spectral_smeared(:, imode) = buf_spectral(:, imode)
+                    sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
                     call gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral_smeared(:, imode))
+
                     ! Normalize both.
                     f0 = lo_trapezoid_integration(ise%omega, buf_spectral(:, imode))
                     buf_spectral(:, imode) = buf_spectral(:, imode)/f0
@@ -182,15 +175,9 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
                 end if
             end do
 
-            ! if (mw%talk) then
-            !     t1 = walltime()
-            !     write (lo_iou, *) '     integrals and normalization (', tochar(t1 - t0), 's)'
-            !     t0 = t1
-            ! end if
-
             ! Accumulate thermal transport data
             local_iq=local_iq+1
-            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mw, mem)
+            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mem)
 
             ! if (mw%talk) then
             !     t1 = walltime()
@@ -202,6 +189,10 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         ! Sync across ranks
         call mw%allreduce('sum', pd%pdos_site)
         call mw%allreduce('sum', pd%pdos_mode)
+
+        ! Accumulate spectral things
+        !call mw%allreduce('max', tc%lifetime)
+        call mw%allreduce('sum', tc%spectral_kappa)
 
         ! Cleanup
         call mem%deallocate(buf_spectral, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

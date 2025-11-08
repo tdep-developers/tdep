@@ -111,7 +111,7 @@ subroutine initialize(tc, dr, n_energy, maxf, temperature, mw)
 end subroutine
 
 !> accumulate data from a single q-point on a grid.
-subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mw, mem)
+subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mem)
     !> thermal conductivity
     class(lo_thermal_conductivity), intent(inout) :: tc
     !> index to irreducible q-point we are working on
@@ -142,8 +142,6 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeare
     real(r8), dimension(:), intent(in) :: xlo
     !> right fwhm
     real(r8), dimension(:), intent(in) :: xhi
-    !> MPI helper
-    type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
     type(lo_mem_helper), intent(inout) :: mem
 
@@ -253,7 +251,7 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeare
         do i = 1, dr%n_mode
         do j = 1, dr%n_mode
             ii = (i - 1)*dr%n_mode + j
-            jj = (j - 1)*dr%n_mode + i
+            !jj = (j - 1)*dr%n_mode + i
             cv0 = buf_cm2(ii, :)
             ! remove tiny numbers.
             cv0 = lo_chop(cv0, 1E-10/(lo_groupvel_Hartreebohr_to_ms/1000))
@@ -326,8 +324,9 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeare
             buf_thermal(ie) = f0*(f0 + 1.0_r8)
         end do
 
-        do imode = 1, dr%n_mode ! Make faster if needed.
+        do imode = 1, dr%n_mode
         do jmode = 1, dr%n_mode
+
             if (dr%iq(iq)%omega(imode) .lt. lo_freqtol) cycle
             if (dr%iq(iq)%omega(jmode) .lt. lo_freqtol) cycle
 
@@ -504,8 +503,15 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         end do
         call mw%allreduce('sum', m0)
 
+        ! if (mw%talk) then
+        !     write (*, *) ''
+        !     do i=1,3
+        !         write(*,*) 'm0',m0(i,:)*lo_kappa_au_to_SI
+        !     enddo
+        ! end if
+
         ! Decide on a tolerance
-        kappatol = maxval(m0)*1E-10_r8
+        kappatol = maxval(m0)*1E-14_r8
         ! Use the tolerance to clean things neatly.
         if (tc%n_local_qpoint .gt. 0) then
             tc%kappa = lo_chop(tc%kappa, kappatol)
@@ -631,13 +637,13 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         call mw%allreduce('sum', m2)
 
         ! make sure they are symmetric
-        v9 = lo_flattentensor(m1)
-        v9 = matmul(symmetrizer, v9)
-        m1 = lo_unflatten_2tensor(v9)
+        ! v9 = lo_flattentensor(m1)
+        ! v9 = matmul(symmetrizer, v9)
+        ! m1 = lo_unflatten_2tensor(v9)
 
-        v9 = lo_flattentensor(m2)
-        v9 = matmul(symmetrizer, v9)
-        m2 = lo_unflatten_2tensor(v9)
+        ! v9 = lo_flattentensor(m2)
+        ! v9 = matmul(symmetrizer, v9)
+        ! m2 = lo_unflatten_2tensor(v9)
 
         if (mw%talk) then
             write (*, *) 'RTA kappa'
@@ -729,7 +735,7 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         bf2 = 0.0_r8
 
         do ie = 1, tc%n_energy
-            if (mod(ctr, mw%n) .ne. mw%r) cycle
+            !if (mod(ctr, mw%n) .ne. mw%r) cycle
             do jmode = 1, tc%n_mode
             do imode = 1, tc%n_mode
                 do ix = 1, 3
