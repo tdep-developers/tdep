@@ -485,7 +485,7 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
                 end do
             end do
         end if
-        lo_deallocate(selfterm)
+        deallocate(selfterm)
 
         ! Get the total number of q-points
         i1 = nq
@@ -506,12 +506,12 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
         real(r8), dimension(:), allocatable :: ATB, rdm
         integer :: q, a1, a2, i, j, k, ii, jj
 
-        lo_allocate(ATA(nx, nx))
-        lo_allocate(ATB(nx))
-        lo_allocate(cfm(nd, nx))
-        lo_allocate(rcfm(2*nd, nx))
-        lo_allocate(rdm(2*nd))
-        lo_allocate(cdm(nd))
+        allocate(ATA(nx, nx))
+        allocate(ATB(nx))
+        allocate(cfm(nd, nx))
+        allocate(rcfm(2*nd, nx))
+        allocate(rdm(2*nd))
+        allocate(cdm(nd))
         ATA = 0.0_r8
         ATB = 0.0_r8
         cfm = 0.0_r8
@@ -521,7 +521,7 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
 
         if (verbosity .gt. 0) call lo_progressbar_init()
         do q = 1, nq
-            if (mod(q, mw%n) .ne. mw%r) cycle
+            ! if (mod(q, mw%n) .ne. mw%r) cycle
             ! grab coefficient matrix
             call lo_dynamical_matrix_coefficient_matrix_for_single_q(map, qp(q)%r, cfm)
             ! grab flattened dynamical matrix. I hate indices.
@@ -580,12 +580,12 @@ module subroutine lo_irreducible_forceconstant_from_qmesh_dynmat( &
         end if
         call mw%bcast(map%xuc%x_fc_pair, solrnk)
 
-        lo_deallocate(ATA)
-        lo_deallocate(ATB)
-        lo_deallocate(cfm)
-        lo_deallocate(rcfm)
-        lo_deallocate(rdm)
-        lo_deallocate(cdm)
+        deallocate(ATA)
+        deallocate(ATB)
+        deallocate(cfm)
+        deallocate(rcfm)
+        deallocate(rdm)
+        deallocate(cdm)
 
         if (verbosity .gt. 0) write (*, *) 'solved for irreducible forceconstants (', tochar(walltime() - timer), 's)'
 

@@ -111,7 +111,7 @@ subroutine initialize(tc, dr, n_energy, maxf, temperature, mw)
 end subroutine
 
 !> accumulate data from a single q-point on a grid.
-subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mem)
+subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral_smeared, sigmaIm, sigmaRe, scalefactor, xmid, xlo, xhi, mem)
     !> thermal conductivity
     class(lo_thermal_conductivity), intent(inout) :: tc
     !> index to irreducible q-point we are working on
@@ -126,8 +126,8 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeare
     type(lo_forceconstant_secondorder), intent(inout) :: fc
     !> structure
     type(lo_crystalstructure), intent(in) :: p
-    !> raw normalized spectral function
-    real(r8), dimension(:, :), intent(in) :: spectral
+    ! !> raw normalized spectral function
+    ! real(r8), dimension(:, :), intent(in) :: spectral
     !> smeared normalized spectral function
     real(r8), dimension(:, :), intent(in) :: spectral_smeared
     !> imaginary part of the self-energy
@@ -157,7 +157,7 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral, spectral_smeare
     call mem%allocate(buf_velsq, [3, 3, dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     buf_vel = 0.0_r8
     buf_velsq = 0.0_r8
-    n_energy = size(spectral, 1)
+    n_energy = size(spectral_smeared, 1)
 
     ! Calculate the off-diagonal group velocity.
     groupvel: block
@@ -637,13 +637,13 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         call mw%allreduce('sum', m2)
 
         ! make sure they are symmetric
-        ! v9 = lo_flattentensor(m1)
-        ! v9 = matmul(symmetrizer, v9)
-        ! m1 = lo_unflatten_2tensor(v9)
+        v9 = lo_flattentensor(m1)
+        v9 = matmul(symmetrizer, v9)
+        m1 = lo_unflatten_2tensor(v9)
 
-        ! v9 = lo_flattentensor(m2)
-        ! v9 = matmul(symmetrizer, v9)
-        ! m2 = lo_unflatten_2tensor(v9)
+        v9 = lo_flattentensor(m2)
+        v9 = matmul(symmetrizer, v9)
+        m2 = lo_unflatten_2tensor(v9)
 
         if (mw%talk) then
             write (*, *) 'RTA kappa'
@@ -735,7 +735,9 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         bf2 = 0.0_r8
 
         do ie = 1, tc%n_energy
-            !if (mod(ctr, mw%n) .ne. mw%r) cycle
+
+            if (mod(ie, mw%n) .ne. mw%r) cycle
+
             do jmode = 1, tc%n_mode
             do imode = 1, tc%n_mode
                 do ix = 1, 3
@@ -777,6 +779,11 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         if (mw%talk) then
             bf2 = tc%spectral_kappa
             bf2 = bf2*lo_kappa_au_to_SI/unitfactor
+            ! f0=0.0_r8
+            ! do imode=1,tc%n_mode
+            !     f0=f0+lo_trapezoid_integration(tc%omega,tc%spectral_kappa(:,1,1,imode,imode))*lo_kappa_au_to_SI
+            !     write(*,*) 'INTEGRATED SPECTRAL',imode,lo_trapezoid_integration(tc%omega,tc%spectral_kappa(:,1,1,imode,imode))*lo_kappa_au_to_SI,f0
+            ! enddo
             call h5%store_data(tc%omega*unitfactor, h5%file_id, 'energy_axis', enhet=unitname)
             call h5%store_data(bf2, h5%file_id, 'spectral_kappa')
             write (*, *) '... stored spectral kappa'

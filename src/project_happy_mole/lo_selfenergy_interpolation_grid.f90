@@ -137,6 +137,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
             do imode = 1, dr%n_mode
                 ! Get the spectral functions
                 if ( dr%iq(iq)%omega(imode) .gt. lo_freqtol ) then
+
                     ! Taper self-energy?
                     call taperfn_im(ise%omega, pd%dosmax, dr%iq(iq)%omega(imode), buf_taper)
                     buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
@@ -177,7 +178,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
 
             ! Accumulate thermal transport data
             local_iq=local_iq+1
-            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mem)
+            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mem)
 
             ! if (mw%talk) then
             !     t1 = walltime()

@@ -118,7 +118,6 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,filename,mw,mem,verbosit
             write(*,*) 'Reading interpolated self-energy from file'
         endif
 
-
         call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
 

@@ -92,7 +92,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
 
     ! We start by dumping some metadata to file
     init: block
-        writerank=mw%n-1
+        writerank=0 !mw%n-1
 
         if ( mw%r .eq. writerank ) then
             call h5%init(__FILE__, __LINE__)
@@ -187,7 +187,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
         call map%get_secondorder_forceconstant(uc,aux_fc,mem,-1)
 
         ! Makes sense to write this to file. Plaintext for now, have to fix hdf5 eventually
-        if ( mw%talk ) then
+        if ( mw%r .eq. writerank ) then
             call aux_fc%writetofile(uc,'outfile.aux_forceconstant')
         endif
 
@@ -233,13 +233,15 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
 
             ! Dump the energy axis once we have it
             if ( iq == 1 ) then
-            if ( mw%r .eq. writerank ) then
-                call h5%store_data(se%energy_axis,h5%file_id,'omega')
-            endif
+                if ( mw%r .eq. writerank ) then
+                    call h5%store_data(se%energy_axis,h5%file_id,'omega')
+                endif
             endif
 
             ! Convert self-energies to xyz coordinates and dump to file
             if ( mw%r .eq. writerank ) then
+
+
                 allocate(bufc(se%n_mode,se%n_mode,se%n_energy))
                 allocate(bufr(se%n_mode,se%n_mode,se%n_energy))
                 allocate(eig(se%n_mode,se%n_mode))
@@ -372,8 +374,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                     call lo_gemm(left_trf,sigma_mode,halfproduct)
                     call lo_gemm(halfproduct,right_trf,sigma_xyz)
 
-                    ! Ok, decent start, now we are in xyz-space. Now the next step is to
-
                     ! Then it seems we have to enforce symmetry? Or not?
                     cm0=0.0_r8
                     do i=1,dqp%ip(iq)%n_invariant_operation
@@ -387,6 +387,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                     bufc(:,:,ie)=sigma_xyz
                 enddo
                 bufr=aimag(bufc)
+
                 call h5%store_data(bufr,h5%group_id,'sigma_Im')
                 bufr=real(bufc,r8)
                 call h5%store_data(bufr,h5%group_id,'sigma_Re')

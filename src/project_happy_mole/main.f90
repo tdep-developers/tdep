@@ -151,7 +151,7 @@ firstiteration: block
     call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
 
     ! Then I guess we start to iterate, self-consistently?
-    do iter=1,1
+    do iter=1,5
         ! Then I guess the next step is to get the self-energy again, but this time using
         ! a convolution integration instead?
         call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
