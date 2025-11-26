@@ -3,9 +3,9 @@ implicit none
 contains
 
 !> Generate the self-energy at a single q-point
-module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, &
+module subroutine generate(se, qpoint, qdir, uc, fc, fct, fcf, ise, qp, ddr,&
     temperature, max_energy, n_energy, integrationtype, sigma,&
-    use_isotope, use_thirdorder, use_fourthorder, offdiagonal, &
+    use_isotope, use_thirdorder, use_fourthorder, &
     tmr, mw, mem, verbosity)
     !> self energy
     class(lo_phonon_selfenergy), intent(out) :: se
@@ -14,7 +14,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     !> direction of probe?
     real(r8), dimension(3), intent(in) :: qdir
     !> harmonic properties at this q-point
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+    !type(lo_phonon_dispersions_qpoint), intent(in) :: wp
     !> crystal structure
     type(lo_crystalstructure), intent(in) :: uc
     !> second order force constant
@@ -27,8 +27,8 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> q-point mesh
     class(lo_qpoint_mesh), intent(in) :: qp
-    !> harmonic properties on this mesh
-    type(lo_phonon_dispersions), intent(in) :: dr
+    !> distributed phonon dispersions
+    type(lo_distributed_phonon_dispersions), intent(in) :: ddr
     !> temperature
     real(r8), intent(in) :: temperature
     !> max energy to consider
@@ -45,8 +45,6 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     logical, intent(in) :: use_thirdorder
     !> include fourthorder scattering
     logical, intent(in) :: use_fourthorder
-    !> include off-diagonal terms in the self-energy
-    logical, intent(in) :: offdiagonal
     !> timer (start and stop outside this routine)
     type(lo_timer), intent(inout) :: tmr
     !> MPI communicator
@@ -56,12 +54,8 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
     !> talk a lot
     integer, intent(in) :: verbosity
 
-    ! scattering rates container
-    type(lo_listofscatteringrates) :: sr
     ! harmonic properties at Gamma
-    type(lo_phonon_dispersions_qpoint) :: gp
-    ! is the input q-point on the grid
-    logical :: ongrid
+    type(lo_distributed_phonon_dispersions_qpoint) :: ompoint
 
     call mem%tick()
     call tmr%tick()
@@ -82,17 +76,11 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         se%isotope_scattering = use_isotope          ! include isotope scattering?
         se%thirdorder_scattering = use_thirdorder    ! include threephonon term?
         se%fourthorder_scattering = use_fourthorder  ! include fourphonon term?
-        se%diagonal = .not.offdiagonal               ! calculate only the diagonal part of the self-energy
         se%qdir = qdir                               ! Make note on the probe direction
-        ! Make sure we know exactly when to skip symmetry things
-        se%skipsym = .true.
         ! Make space for all the necessary arrays
         allocate(se%energy_axis(se%n_energy))
-        allocate(se%im_3ph(se%n_energy, se%n_mode))
-        allocate(se%im_iso(se%n_energy, se%n_mode))
+        allocate(se%im(se%n_energy, se%n_mode))
         allocate(se%re(se%n_energy, se%n_mode))
-        !allocate(se%re_3ph(se%n_energy, se%n_mode))
-        !allocate(se%re_4ph(se%n_energy, se%n_mode))
         ! Get the energy range
         if (se%integrationtype .eq. 5) then
             se%energy_axis = ise%omega
@@ -101,33 +89,11 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             call lo_linspace(0.0_r8, max_energy, se%energy_axis)
         end if
         ! Set self-energies to nothing, for now.
-        se%im_3ph = 0.0_r8
-        se%im_iso = 0.0_r8
+        se%im = 0.0_r8
         se%re = 0.0_r8
-        !se%re_4ph = 0.0_r8
 
-
-        ! Get harmonic properties at Gamma with the proper direction for this q-point.
-        call gp%generate(fc, uc, mem, qvec=[0.0_r8, 0.0_r8, 0.0_r8], qdirection=qdir)
-
-        ! Figure out if the desired q-point resides on the grid.
-        select type(qp)
-        type is(lo_fft_mesh)
-            ongrid=qp%is_point_on_grid( qpoint%r )
-        class default
-            ongrid=.false.
-        end select
-
-        ! If a closed grid, get Gamma consistent with the grid.
-        if ( ongrid ) then
-            do i = 1, qp%n_irr_point
-                if (norm2(qp%ip(i)%r) .gt. lo_sqtol) cycle
-                gp%omega = dr%iq(i)%omega
-                gp%egv = dr%iq(i)%egv
-                gp%vel = dr%iq(i)%vel
-                exit
-            end do
-        end if
+        ! Harmonic properties the new fancy way
+        call ompoint%generate(fc,uc,mem,qpoint,qdirection=qdir)
 
         ! And some space for auxiliary information
         allocate (se%xmid(se%n_mode))
@@ -144,47 +110,34 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             write (*, *) '         liso:', se%isotope_scattering
             write (*, *) '  lthirdorder:', se%thirdorder_scattering
             write (*, *) ' lfourthorder:', se%fourthorder_scattering
-            write (*, *) '        sigma:', se%smearing_prefactor*lo_mean(dr%default_smearing)*lo_frequency_hartree_to_thz, ' Thz'
+            write (*, *) '        sigma:', se%smearing_prefactor*lo_mean(ddr%default_smearing)*lo_frequency_hartree_to_thz, ' Thz'
             write (*, *) '  temperature: ', tochar(temperature), ' K'
-            write (*, *) '  closed grid: ',ongrid
             write (*, *) '  frequencies:'
-            do i = 1, dr%n_mode
-                write (*, *) '    mode ', tochar(i, -3), ', omega: ', tochar(wp%omega(i)*lo_frequency_Hartree_to_THz, 6), ' THz'
+            do i = 1, ddr%n_mode
+                write (*, *) '    mode ', tochar(i, -3), ', omega: ', tochar(ompoint%omega(i)*lo_frequency_Hartree_to_THz, 6), ' THz'
             end do
         end if
     end block setopts
-
     call tmr%tock('self-energy initialization')
 
-    ! First we evaluate all the matrix elements
-    call sr%generate(qpoint, wp, gp, qp, dr, uc, fc, fct, se%isotope_scattering, se%thirdorder_scattering, se%skipsym, .false., ongrid, tmr, mw, mem, verbosity)
-
-    ! Start to actually calculate stuff, isotope things first
-    if (se%isotope_scattering) then
-        call isotope_imaginary_selfenergy(wp,se,qp,dr,sr,mw,mem,verbosity)
-        call tmr%tock('isotope integrals')
-    end if
-
-    ! ! Then three-phonon things
-    if (se%thirdorder_scattering) then
-        call threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,uc,temperature,mw,mem,verbosity)
-        call tmr%tock('three-phonon integrals')
-    end if
+    ! Cubic + isotope anharmonicity
+    call threephonon_imaginary_selfenergy(se,qpoint,ompoint,qp,ddr,ise,uc,fc,fct,temperature,mw,mem,verbosity)
+    call tmr%tock('three-phonon integrals')
 
     ! Maybe fourthorder things
     if (se%fourthorder_scattering) then
-        fourthorder: block
-            real(r8), dimension(:), allocatable :: delta
-            integer :: j
+        ! fourthorder: block
+        !     real(r8), dimension(:), allocatable :: delta
+        !     integer :: j
 
-            allocate (delta(dr%n_mode))
-            call fourphonon_real_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, delta, se%skipsym, mw, mem, verbosity)
-            do j = 1, se%n_mode
-                se%re(:, j) = se%re(:, j) + delta(j)
-            end do
-            deallocate (delta)
-        end block fourthorder
-        call tmr%tock('four-phonon self-energy')
+        !     allocate (delta(dr%n_mode))
+        !     call fourphonon_real_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, delta, se%skipsym, mw, mem, verbosity)
+        !     do j = 1, se%n_mode
+        !         se%re(:, j) = se%re(:, j) + delta(j)
+        !     end do
+        !     deallocate (delta)
+        ! end block fourthorder
+        ! call tmr%tock('four-phonon self-energy')
     end if
 
     ! Massage the self-energy ever so slightly
@@ -192,7 +145,6 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         real(r8), parameter :: KK_prefactor = 2.0_r8/lo_pi
         complex(r8), dimension(:), allocatable :: z0
         complex(r8) :: eta
-        real(r8), dimension(:,:), allocatable :: imbuf
         real(r8), dimension(:), allocatable :: taper,Omega,Omegasquare,y0
         real(r8) :: dOmega,Omegaprime
         integer :: imode,ie,ctr
@@ -201,12 +153,10 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         ! at large Omega, and that it is strictly positive.
         call mem%allocate(taper, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         taper=0.0_r8
-        call tapering_function(se%energy_axis,taper)
+        call lo_tapering_function(se%energy_axis,taper)
         do imode=1,se%n_mode
-            se%im_iso(:,imode)=max(se%im_iso(:,imode),0.0_r8)
-            se%im_3ph(:,imode)=max(se%im_3ph(:,imode),0.0_r8)
-            se%im_iso(:,imode)=se%im_iso(:,imode)*taper
-            se%im_3ph(:,imode)=se%im_3ph(:,imode)*taper
+            se%im(:,imode)=max(se%im(:,imode),0.0_r8)
+            se%im(:,imode)=se%im(:,imode)*taper
         enddo
         call mem%deallocate(taper, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
@@ -228,7 +178,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
             ctr = ctr + 1
             if (mod(ctr, mw%n) .ne. mw%r) cycle
             Omegaprime = Omega(ie)
-            y0 = (se%im_3ph(:, imode)  + se%im_iso(:,imode))*Omega
+            y0 = se%im(:, imode)*Omega
             z0 = (Omegaprime + eta)**2 - Omegasquare
             y0 = real(y0/z0, r8)
             y0(1) = y0(1)*0.5_r8
@@ -251,11 +201,7 @@ module subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, qp, dr, 
         enddo
 
         ! Then we add a quadratic term to fix normalization
-        call mem%allocate(imbuf, [se%n_energy,se%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        imbuf=0.0_r8
-        imbuf=imbuf + se%im_3ph + se%im_iso
-        call add_quadratic_to_fix_normalization(wp%omega,se%re,imbuf,se%energy_axis,se%normalization_residual,mw)
-        call mem%deallocate(imbuf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call add_quadratic_to_fix_normalization(ompoint%omega,se%re,se%im,se%energy_axis,se%normalization_residual,mw)
 
         call tmr%tock('normalize spectral function')
     end block massageselfenergy

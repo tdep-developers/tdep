@@ -4,15 +4,17 @@ implicit none
 contains
 
 !> evaluate phonon self-energy at arbitrary point
-module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
+module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,mw)
     !> self-energy interpolation
     class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> crystal structure
     type(lo_crystalstructure), intent(in) :: p
     !> q-point
     real(r8), dimension(3), intent(in) :: qv
-    !> harmonic phonon properties at this q
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+    !> harmonic phonon frequencies at this q
+    real(r8), dimension(:), intent(in) :: omega
+    !> harmonic phonon eigenvectors at this q
+    complex(r8), dimension(:,:), intent(in) :: egv
     !> real part of self-energy
     real(r8), dimension(:,:), intent(out) :: sigma_Re
     !> imaginary part of self-energy
@@ -29,7 +31,7 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
 
     ! Some prep
     init: block
-        n_mode=size(wp%omega)
+        n_mode=size(omega)
 
         qpoint%r=qv
         call lo_get_small_group_of_qpoint(qpoint, p)
@@ -107,11 +109,11 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
 
         ! Transformation with real dispersions
         if ( ise%polar ) then
-            eig=wp%egv
+            eig=egv
             inveig=transpose(conjg(eig))
             do imode=1,n_mode
-                if ( wp%omega(imode) .gt. lo_freqtol ) then
-                    f0=sqrt(wp%omega(imode))
+                if ( omega(imode) .gt. lo_freqtol ) then
+                    f0=sqrt(omega(imode))
                     f1=1.0_r8/f0
                 else
                     f0=0.0_r8
@@ -155,11 +157,11 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
             call lo_gemm(aux_trafo,eig,right_trf)
         else
             ! Non-polar interpolation, much easier
-            eig=wp%egv
+            eig=egv
             inveig=transpose(conjg(eig))
             do imode=1,n_mode
-                if ( wp%omega(imode) .gt. lo_freqtol ) then
-                    f0=sqrt(wp%omega(imode))
+                if ( omega(imode) .gt. lo_freqtol ) then
+                    f0=sqrt(omega(imode))
                     f1=1.0_r8/f0
                 else
                     f0=0.0_r8
@@ -262,5 +264,8 @@ module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
     ! endif
 
 end subroutine
+
+!module subroutine evaluate_smeared_J(ise,p,qp,wp)
+!end subroutine
 
 end submodule

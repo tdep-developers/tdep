@@ -17,7 +17,8 @@ use type_qpointmesh, only: lo_qpoint_mesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
 use type_symmetryoperation, only: lo_expandoperation_pair, lo_eigenvector_transformation_matrix
 use type_blas_lapack_wrappers, only: lo_gemm
-use lineshape_helper, only: evaluate_spectral_function, taperfn_im, integrate_spectral_function, integrate_two_spectral_functions
+!use lineshape_helper, only: evaluate_spectral_function, taperfn_im, integrate_spectral_function, integrate_two_spectral_functions
+use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function, lo_integrate_spectral_function, lo_integrate_two_spectral_functions, lo_tapering_function
 use quadratures_stencils, only: lo_centraldifference
 implicit none
 
@@ -35,7 +36,7 @@ type lo_thermal_conductivity
     !> temperature
     real(r8), private :: temperature = -lo_huge
     !> which global q-points do the local q-points correspond to?
-    integer, dimension(:), allocatable, private :: qind
+    integer, dimension(:), allocatable :: qind
     !> energy axis in spectral plots
     real(r8), dimension(:), allocatable, private :: omega
     !> spectral kappa (energy,xyz,xyz,mode,mode)
@@ -332,11 +333,11 @@ subroutine accumulate(tc, iq, local_iq, qp, dr, fc, p, spectral_smeared, sigmaIm
 
             if (imode .eq. jmode) then
                 ! Diagonal part. Can use the easy way of doing things.
-                call integrate_spectral_function(tc%omega, dr%iq(iq)%omega(imode), sigmaIm(:, imode), sigmaRe(:, imode), xmid(imode), xlo(imode), xhi(imode), &
+                call lo_integrate_spectral_function(tc%omega, dr%iq(iq)%omega(imode), sigmaIm(:, imode), sigmaRe(:, imode), xmid(imode), xlo(imode), xhi(imode), &
                                                  scalefactor(imode), tc%temperature, integraltol, f0, f1, f2)
             else
                 ! Nondiagonal, trickier integral I suppose.
-                call integrate_two_spectral_functions(tc%omega, &
+                call lo_integrate_two_spectral_functions(tc%omega, &
                                                       dr%iq(iq)%omega(imode), dr%iq(iq)%omega(jmode), &
                                                       sigmaIm(:, imode), sigmaIm(:, jmode), &
                                                       sigmaRe(:, imode), sigmaRe(:, jmode), &
@@ -507,6 +508,11 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         !     write (*, *) ''
         !     do i=1,3
         !         write(*,*) 'm0',m0(i,:)*lo_kappa_au_to_SI
+        !     enddo
+        !     do iq=1,mw%n
+        !         do i=1,3
+        !             write(*,*) 'pr',iq,dr0(i,:,iq)*lo_kappa_au_to_SI
+        !         enddo
         !     enddo
         ! end if
 
@@ -704,8 +710,10 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         ctr = 0
         do imode = 1, tc%n_mode
         do jmode = 1, tc%n_mode
+
             ctr = ctr + 1
             if (mod(ctr, mw%n) .ne. mw%r) cycle
+
             do iy = 1, 3
             do ix = 1, 3
                 ia = (ix - 1)*3 + iy

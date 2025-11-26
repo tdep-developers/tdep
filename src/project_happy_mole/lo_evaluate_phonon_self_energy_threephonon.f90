@@ -1,23 +1,30 @@
 submodule(lo_evaluate_phonon_self_energy) lo_evaluate_phonon_self_energy_threephonon
 implicit none
+
+
+
 contains
 
 !> evaluate the isotope self-energy
-module subroutine threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,p,temperature,mw,mem,verbosity)
-    !> harmonic properties at this q-point
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+module subroutine threephonon_imaginary_selfenergy(se,qpoint,ompoint,qp,dr,ise,p,fc2,fc3,temperature,mw,mem,verbosity)
     !> self-energy
     type(lo_phonon_selfenergy), intent(inout) :: se
+    !> q-point we are investigating
+    class(lo_qpoint), intent(in) :: qpoint
+    !> harmonic properties at this q-point
+    type(lo_distributed_phonon_dispersions_qpoint), intent(in) :: ompoint
     !> qpoint mesh
     class(lo_qpoint_mesh), intent(in) :: qp
-    !> harmonic dispersions
-    type(lo_phonon_dispersions), intent(in) :: dr
-    !> scattering rates
-    type(lo_listofscatteringrates), intent(in) :: sr
+    !> distributed harmonic dispersions
+    type(lo_distributed_phonon_dispersions), intent(in) :: dr
     !> self-energy interpolation
     type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> structure
     type(lo_crystalstructure), intent(in) :: p
+    !> second order force constant
+    type(lo_forceconstant_secondorder), intent(inout) :: fc2
+    !> third order force constant
+    type(lo_forceconstant_thirdorder), intent(in) :: fc3
     !> temperature
     real(r8), intent(in) :: temperature
     !> MPI communicator
@@ -29,29 +36,32 @@ module subroutine threephonon_imaginary_selfenergy(wp,se,qp,dr,sr,ise,p,temperat
 
     select case (se%integrationtype)
     case (1:2)
-        call threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, temperature, mw, mem, verbosity)
-    case (3)
-        call threephonon_imaginary_selfenergy_tetrahedron(wp, qp, sr, dr, temperature, se, mw, mem, verbosity)
+        call threephonon_imaginary_selfenergy_gaussian_v0(qpoint, ompoint, se, qp, dr, p, fc2, fc3, temperature, mw, mem, verbosity)
     case (4)
-        call threephonon_imaginary_selfenergy_convolution(se, wp, qp, dr, sr, ise, p, temperature, mw, mem, verbosity)
+        call threephonon_imaginary_selfenergy_convolution_v0(qpoint, ompoint, se, qp, dr, p, fc2, fc3, ise, temperature, mw, mem, verbosity)
     case default
         call lo_stop_gracefully(['Unknown integration type'], lo_exitcode_param, __FILE__, __LINE__, mw%comm)
     end select
-
 end subroutine
 
-!> threephonon self energy gaussian
-subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, temperature, mw, mem, verbosity)
-    !> harmonic properties at this q-point
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+!> threephonon self energy gaussian, with on-the-fly matrix elements
+subroutine threephonon_imaginary_selfenergy_gaussian_v0(qpoint, ompoint, se, qp, dr, p, fc2, fc3, temperature, mw, mem, verbosity)
+    !> q-point we are investigating
+    class(lo_qpoint), intent(in) :: qpoint
+    !> harmonic properties at q-point we are investigating
+    type(lo_distributed_phonon_dispersions_qpoint), intent(in) :: ompoint
     !> self-energy
     type(lo_phonon_selfenergy), intent(inout) :: se
-    !> scattering rates
-    type(lo_listofscatteringrates), intent(in) :: sr
     !> qpoint mesh
     class(lo_qpoint_mesh), intent(in) :: qp
     !> harmonic dispersions
-    type(lo_phonon_dispersions), intent(in) :: dr
+    type(lo_distributed_phonon_dispersions), intent(in) :: dr
+    !> structure
+    type(lo_crystalstructure), intent(in) :: p
+    !> second order force constant
+    type(lo_forceconstant_secondorder), intent(inout) :: fc2
+    !> third order force constant
+    type(lo_forceconstant_thirdorder), intent(in) :: fc3
     !> temperature
     real(r8), intent(in) :: temperature
     !> MPI helper
@@ -61,59 +71,111 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
     !> talk a lot?
     integer, intent(in) :: verbosity
 
+    type(lo_distributed_phonon_dispersions_qpoint) :: op3
+    complex(r8), dimension(:), allocatable :: ptf_phi,evp1,evp2
+    real(r8), dimension(:,:,:), allocatable :: psisq_3ph
+    real(r8), dimension(:,:), allocatable :: psisq_isotope
     real(r8), dimension(:), allocatable :: buf
-    real(r8) :: psisquare, psisq23, psisq32
-    real(r8) :: sigma, om1, om2, om3, invf, s2, s3
-    real(r8) :: plf1, plf2, t0, pref
-    integer :: q, ctr, i, ii, jj, b1, b2, b3, ilo, ihi
+    real(r8) :: t0,invf
+    integer :: ipt,iq
 
-    ! set the unit
-    t0 = walltime()
+    init: block
+        t0 = walltime()
+        invf = se%n_energy/se%energy_axis(se%n_energy)
+        se%im = 0.0_r8
 
-    invf = se%n_energy/se%energy_axis(se%n_energy)
+        call mem%allocate(buf, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(ptf_phi, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(psisq_3ph,[dr%n_mode,dr%n_mode,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(psisq_isotope,[dr%n_mode,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        buf = 0.0_r8
+        ptf_phi = 0.0_r8
+        evp1 = 0.0_r8
+        evp2 = 0.0_r8
+        psisq_3ph = 0.0_r8
+        psisq_isotope = 0.0_r8
+    end block init
 
-    ctr = 0
-    se%im_3ph = 0.0_r8
-    call mem%allocate(buf, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    buf = 0.0_r8
+    qploop: do ipt=1,dr%n_full_qpoint_local
 
-    if (sr%atgamma) then
-        ! If we are doing the Gamma-point, we can use symmetry
-        qloopirr: do q = 1, qp%n_irr_point
-            do b1 = 1, dr%n_mode
-                ! Make it parallel
-                ctr = ctr + 1
-                if (mod(ctr, mw%n) .ne. mw%r) cycle
+        ! Need to know the global q-point index
+        iq=dr%aq(ipt)%global_full_index
 
-                ! Prefactor for this q-point
-                pref = threephonon_prefactor*qp%ip(q)%integration_weight
+        matrixelement: block
+            complex(r8) :: c0
+            real(r8), dimension(3) :: qv1, qv2, qv3
+            integer :: b1,b2,b3
+
+            qv1=qpoint%r
+            qv2=qp%ap(iq)%r
+            qv3=-qv1-qv2
+
+            if ( se%thirdorder_scattering ) then
+                call op3%generate(fc2,p,mem,qvec=qv3)
+                do b1=1,se%n_mode
+                    op3%sigma(b1) = qp%adaptive_sigma( qp%ap(iq)%radius,op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
+                enddo
+
+                call pretransform_phi(fc3, qv2, qv3, ptf_phi)
+
+                psisq_3ph=0.0_r8
+                do b1 = 1, dr%n_mode
+                do b2 = 1, dr%n_mode
+                    evp1 = 0.0_r8
+                    !call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
+                    call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), dr%aq(ipt)%nuvec(:,b2), 1, ompoint%nuvec(:, b1), 1, evp1, dr%n_mode)
+                    do b3 = 1, dr%n_mode
+                        evp2 = 0.0_r8
+                        !call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv3(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
+                        call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), op3%nuvec(:, b3), 1, evp1, 1, evp2, dr%n_mode)
+                        evp2 = conjg(evp2)
+                        c0=dot_product(evp2, ptf_phi)
+                        psisq_3ph(b1, b2, b3)=abs(conjg(c0)*c0)
+                    end do
+                enddo
+                enddo
+            else
+                psisq_3ph=0.0_r8
+            endif
+
+            if ( se%isotope_scattering ) then
+                do b1=1,dr%n_mode
+                do b2=1,dr%n_mode
+                    psisq_isotope(b1,b2)=isotope_scattering_strength(p,ompoint%egv(:,b1),dr%aq(ipt)%egv(:,b2),ompoint%omega(b1),dr%aq(ipt)%omega(b2))
+                enddo
+                enddo
+            else
+                psisq_isotope=0.0_r8
+            endif
+
+        end block matrixelement
+
+        frequencyintegral: block
+            real(r8) :: s2,s3,sigma,om2,om3,plf1,plf2
+            integer :: b1,b2,b3
+            integer :: ilo,ihi,ii,jj,i
+
+            psisq_3ph=psisq_3ph*threephonon_prefactor*qp%ap(iq)%integration_weight
+            psisq_isotope=psisq_isotope*isotope_prefactor*qp%ap(iq)%integration_weight
+
+            if ( se%thirdorder_scattering ) then
                 ! Slightly smarter version that should be a little faster.
                 do b2 = 1, dr%n_mode
-                do b3 = b2, dr%n_mode
+                do b3 = 1, dr%n_mode
                     ! reset buffer
                     buf = 0.0_r8
                     ilo = lo_hugeint
                     ihi = -lo_hugeint
-                    ! Get the smearing parameter, in case it's adaptive
-                    select case (se%integrationtype)
-                    case (1)
-                        !sigma=(dr%default_smearing(b2)+dr%default_smearing(b3))*0.5_r8*se%smearing_prefactor
-                        s2 = dr%default_smearing(b2)
-                        s3 = dr%default_smearing(b3)
-                        sigma = sqrt(s2**2 + s3**2)
-                    case (2)
-                        s2 = qp%adaptive_sigma(qp%ip(q)%radius, dr%iq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
-                        s3 = qp%adaptive_sigma(qp%ip(q)%radius, dr%iq(q)%vel(:, b3), dr%default_smearing(b3), se%smearing_prefactor)
-                        sigma = sqrt(s2**2 + s3**2)
-                        !v0=dr%iq(q)%vel(:,b2)
-                        !v1=dr%iq(q)%vel(:,b3)
-                        !sigma=qp%smearingparameter(v0-v1,(dr%default_smearing(b2)+dr%default_smearing(b3))*0.5_r8,se%smearing_prefactor)
-                    end select
-
+                    ! Get the smearing parameter
+                    s2 = dr%aq(ipt)%sigma(b2)
+                    s3 = op3%sigma(b3)
+                    sigma = sqrt(s2**2 + s3**2)
                     ! fetch frequencies
-                    om1 = wp%omega(b1)
-                    om2 = dr%iq(q)%omega(b2)
-                    om3 = dr%iq(q)%omega(b3)
+                    !om1 = ompoint%omega(b1)
+                    om2 = dr%aq(ipt)%omega(b2)
+                    om3 = op3%omega(b3)
                     ! Get the S-function
                     plf1 = 1.0_r8 + lo_planck(temperature, om2) + lo_planck(temperature, om3)
                     plf2 = lo_planck(temperature, om3) - lo_planck(temperature, om2)
@@ -153,580 +215,370 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
 
                     ! Increment the self-energy
                     if (ilo .lt. ihi) then
-                        if (b2 .eq. b3) then
-                            psisquare = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))*pref
-                            se%im_3ph(ilo:ihi, b1) = se%im_3ph(ilo:ihi, b1) + buf(ilo:ihi)*psisquare
-                        else
-                            psisq23 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))*pref
-                            psisq32 = abs(sr%psi_3ph(b1, b3, b2, q)*conjg(sr%psi_3ph(b1, b3, b2, q)))*pref
-                            se%im_3ph(ilo:ihi, b1) = se%im_3ph(ilo:ihi, b1) + buf(ilo:ihi)*(psisq23 + psisq32)
-                        end if
+                        ! Three-phonon scattering
+                        do b1 = 1, dr%n_mode
+                            se%im(ilo:ihi, b1) = se%im(ilo:ihi, b1) + buf(ilo:ihi)*psisq_3ph(b1,b2,b3)
+                        enddo
                     end if
                 end do
                 end do
+            endif
 
-                if (verbosity .gt. 0) then
-                    if (lo_trueNtimes(ctr, 127, qp%n_irr_point*dr%n_mode)) call lo_progressbar(' ... threephonon imaginary selfenergy', ctr, dr%n_mode*qp%n_irr_point)
-                end if
-            end do
-        end do qloopirr
-    else
-        ! If not Gamma we have to do all of it.
-        qloopfull: do q = 1, qp%n_full_point
-            do b1 = 1, dr%n_mode
-                ! Make it parallel
-                ctr = ctr + 1
-                if (mod(ctr, mw%n) .ne. mw%r) cycle
-
-                ! Prefactor for this q-point
-                pref = threephonon_prefactor*qp%ap(q)%integration_weight
-                ! Slightly smarter version that should be a little faster.
-                do b2 = 1, dr%n_mode
-                    !do b3=b2,dr%n_mode
-                    do b3 = 1, dr%n_mode
-                        ! reset buffer
-                        buf = 0.0_r8
-                        ilo = lo_hugeint
-                        ihi = -lo_hugeint
-                        ! Get the smearing parameter, in case it's adaptive
-                        select case (se%integrationtype)
-                        case (1)
-                            ! s2=dr%default_smearing(b2)
-                            ! s3=dr%default_smearing(b3)
-                            ! sigma=sqrt(s2**2 + s3**2)
-                            sigma = 1.0_r8*lo_frequency_THz_to_Hartree
-                        case (2)
-                            s2 = qp%adaptive_sigma(qp%ap(q)%radius, dr%aq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
-                            s3 = qp%adaptive_sigma(qp%ap(q)%radius, sr%wp3(q)%vel(:,b3), dr%default_smearing(b3), se%smearing_prefactor)
-                            sigma = sqrt(s2**2 + s3**2)
-                        end select
-                        ! fetch frequencies
-                        om1 = wp%omega(b1)
-                        om2 = dr%aq(q)%omega(b2)
-                        om3 = sr%wp3(q)%omega(b3) ! sr%omega3(b3, q)
-                        ! Get the S-function
-                        plf1 = 1.0_r8 + lo_planck(temperature, om2) + lo_planck(temperature, om3)
-                        plf2 = lo_planck(temperature, om3) - lo_planck(temperature, om2)
-
-                        ! delta(bigOM-om2-om3)
-                        ii = max(floor((om2 + om3 - 4*sigma)*invf), 1)
-                        jj = min(ceiling((om2 + om3 + 4*sigma)*invf), se%n_energy)
-                        ilo = min(ilo, ii)
-                        ihi = max(ihi, jj)
-                        do i = ii, jj
-                            buf(i) = buf(i) + plf1*lo_gauss(se%energy_axis(i), om2 + om3, sigma)
-                        end do
-                        ! delta(bigOM+om2+om3)
-                        ii = max(floor((-om2 - om3 - 4*sigma)*invf), 1)
-                        jj = min(ceiling((-om2 - om3 + 4*sigma)*invf), se%n_energy)
-                        ilo = min(ilo, ii)
-                        ihi = max(ihi, jj)
-                        do i = ii, jj
-                            buf(i) = buf(i) - plf1*lo_gauss(se%energy_axis(i), -om2 - om3, sigma)
-                        end do
-                        ! delta(bigOM-om2+om3)
-                        ii = max(floor((om2 - om3 - 4*sigma)*invf), 1)
-                        jj = min(ceiling((om2 - om3 + 4*sigma)*invf), se%n_energy)
-                        ilo = min(ilo, ii)
-                        ihi = max(ihi, jj)
-                        do i = ii, jj
-                            buf(i) = buf(i) + plf2*lo_gauss(se%energy_axis(i), om2 - om3, sigma)
-                        end do
-                        ! delta(bigOM+om2-om3)
-                        ii = max(floor((-om2 + om3 - 4*sigma)*invf), 1)
-                        jj = min(ceiling((-om2 + om3 + 4*sigma)*invf), se%n_energy)
-                        ilo = min(ilo, ii)
-                        ihi = max(ihi, jj)
-                        do i = ii, jj
-                            buf(i) = buf(i) - plf2*lo_gauss(se%energy_axis(i), -om2 + om3, sigma)
-                        end do
-
-                        ! Increment the self-energy
-                        if (ilo .lt. ihi) then
-                            !if ( b2 .eq. b3 ) then
-                            psisquare = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))*pref
-                            se%im_3ph(ilo:ihi, b1) = se%im_3ph(ilo:ihi, b1) + buf(ilo:ihi)*psisquare
-                            !else
-                            !    psisq23=abs( sr%psi_3ph(b1,b2,b3,q)*conjg(sr%psi_3ph(b1,b2,b3,q)) )*pref
-                            !    psisq32=abs( sr%psi_3ph(b1,b3,b2,q)*conjg(sr%psi_3ph(b1,b3,b2,q)) )*pref
-                            !    se%im_3ph(ilo:ihi,b1)=se%im_3ph(ilo:ihi,b1)+buf(ilo:ihi)*(psisq23+psisq32)
-                            !endif
-                        end if
+            if ( se%isotope_scattering ) then
+                do b1 = 1,dr%n_mode
+                do b2 = 1,dr%n_mode
+                    sigma=dr%aq(ipt)%sigma(b2)
+                    ii = max(floor((dr%aq(ipt)%omega(b2) - 4*sigma)*invf), 1)
+                    jj = min(ceiling((dr%aq(ipt)%omega(b2) + 4*sigma)*invf), se%n_energy)
+                    do i = ii, jj
+                        se%im(i, b1) = se%im(i, b1) + lo_gauss(se%energy_axis(i), dr%aq(ipt)%omega(b2), sigma)*psisq_isotope(b1,b2)
                     end do
-                end do
+                enddo
+                enddo
+            endif
 
-                if (verbosity .gt. 0) then
-                    if (lo_trueNtimes(ctr, 127, qp%n_full_point*dr%n_mode)) call lo_progressbar(' ... threephonon imaginary selfenergy', ctr, dr%n_mode*qp%n_full_point)
-                end if
-            end do
-        end do qloopfull
-    end if
+        end block frequencyintegral
+
+        if (verbosity .gt. 0) then
+            if (lo_trueNtimes(ipt, 127, dr%n_full_qpoint_local)) call lo_progressbar(' ... threephonon imaginary selfenergy', ipt, dr%n_full_qpoint_local)
+        end if
+    enddo qploop
 
     ! Sum it up
-    call mw%allreduce('sum', se%im_3ph)
+    call mw%allreduce('sum', se%im)
 
-    ! Fix degeneracies?
-    ! do b1 = 1, dr%n_mode
-    !     buf = 0.0_r8
-    !     do i = 1, wp%degeneracy(b1)
-    !         b2 = wp%degenmode(i, b1)
-    !         buf = buf + se%im_3ph(:, b2)
-    !     end do
-    !     buf = buf/real(wp%degeneracy(b1), r8)
-    !     do i = 1, wp%degeneracy(b1)
-    !         b2 = wp%degenmode(i, b1)
-    !         se%im_3ph(:, b2) = buf
-    !     end do
-    ! end do
-    call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    ! Fix degeneracies? Why not.
+    fixdegen: block
+        integer :: b1,b2,i
+        do b1 = 1, dr%n_mode
+            buf = 0.0_r8
+            do i = 1, ompoint%degeneracy(b1)
+                b2 = ompoint%degenmode(i, b1)
+                buf = buf + se%im(:, b2)
+            end do
+            buf = buf/real(ompoint%degeneracy(b1), r8)
+            do i = 1, ompoint%degeneracy(b1)
+                b2 = ompoint%degenmode(i, b1)
+                se%im(:, b2) = buf
+            end do
+        end do
+    end block fixdegen
+
+    ! And some cleanup
+    call mem%deallocate(buf,     persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf_phi, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(evp1,    persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(evp2,    persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(psisq_3ph,     persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(psisq_isotope, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
     if (verbosity .gt. 0) call lo_progressbar(' ... threephonon imaginary selfenergy', dr%n_mode*qp%n_full_point, dr%n_mode*qp%n_full_point, walltime() - t0)
 end subroutine
 
-!> The three-phonon imaginary selfenergy with the tetrahedron method
-subroutine threephonon_imaginary_selfenergy_tetrahedron(wp, qp, sr, dr, temperature, se, mw, mem, verbosity)
-    !> harmonic properties at this q-point
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
-    !> the q-point mesh
-    class(lo_qpoint_mesh), intent(in) :: qp
-    !> the phonon dispersions
-    type(lo_phonon_dispersions), intent(in) :: dr
-    !> the scattering rates
-    type(lo_listofscatteringrates), intent(in) :: sr
-    !> the self-energy
-    type(lo_phonon_selfenergy), intent(inout) :: se
-    !> the temperature
-    real(r8), intent(in) :: temperature
-    !> mpi helper
-    type(lo_mpi_helper), intent(inout) :: mw
-    !> memory helper
-    type(lo_mem_helper), intent(inout) :: mem
-    !> talk a lot?
-    integer, intent(in) :: verbosity
-
-    real(r8), dimension(:, :, :, :), allocatable :: psisq1, psisq2
-    real(r8), dimension(:, :), allocatable :: omr2, omr3
-    real(r8), dimension(:), allocatable :: buf
-    real(r8), dimension(4) :: wts1, wts2, bvals, cvals
-    real(r8) :: minc, maxc, sigma, omthres, f0, f1, delta
-    real(r8) :: bigOM, invf, t0
-    integer :: i, j, ii, jj, q
-    integer :: b1, b2, b3
-
-    ! Fix the third order stuff
-    t0 = walltime()
-    delta = (se%energy_axis(2) - se%energy_axis(1))*0.1_r8
-    invf = se%n_energy/se%energy_axis(se%n_energy)
-    omthres = dr%omega_min*0.5_r8
-
-    call mem%allocate(omr2, [4, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(omr3, [4, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(psisq1, [4, dr%n_mode, dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(psisq2, [4, dr%n_mode, dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    omr2 = 0.0_r8
-    omr3 = 0.0_r8
-    psisq1 = 0.0_r8
-    psisq2 = 0.0_r8
-
-    se%im_3ph = 0.0_r8
-    if (verbosity .gt. 0) call lo_progressbar_init()
-    do j = 1, qp%n_full_tet
-        ! mpi stuff
-        if (mod(j, mw%n) .ne. mw%r) cycle
-        ! fetch frequencies and matrix elements for this tetrahedron
-        do ii = 1, 4
-            q = qp%at(j)%full_index(ii)
-            ! get frequencies in tetrahedron
-            omr2(ii, :) = dr%aq(q)%omega
-            omr3(ii, :) = sr%wp3(q)%omega !sr%omega3(:, q)
-            ! matrix elements, weighted with occupation functions
-            do b1 = 1, dr%n_mode
-            do b2 = 1, dr%n_mode
-            do b3 = 1, dr%n_mode
-                if (omr2(ii, b2) .gt. omthres .and. omr3(ii, b3) .gt. omthres) then
-                    f1 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))
-                    f0 = 1.0_r8 + lo_planck(temperature, omr2(ii, b2)) + lo_planck(temperature, omr3(ii, b3))
-                    psisq1(ii, b1, b2, b3) = f1*f0
-                    f0 = lo_planck(temperature, omr3(ii, b3)) - lo_planck(temperature, omr2(ii, b2))
-                    psisq2(ii, b1, b2, b3) = f1*f0
-                else
-                    psisq1(ii, b1, b2, b3) = 0.0_r8
-                    psisq2(ii, b1, b2, b3) = 0.0_r8
-                end if
-            end do
-            end do
-            end do
-
-            ! Adjusted version
-            do b1 = 1, dr%n_mode
-            do b2 = 1, dr%n_mode
-            do b3 = 1, dr%n_mode
-                if (b2 .eq. b3) then
-                    if (omr2(ii, b2) .gt. omthres .and. omr3(ii, b3) .gt. omthres) then
-                        f1 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))
-                        f0 = 1.0_r8 + lo_planck(temperature, omr2(ii, b2)) + lo_planck(temperature, omr3(ii, b3))
-                        psisq1(ii, b1, b2, b3) = f1*f0
-                        f0 = lo_planck(temperature, omr3(ii, b3)) - lo_planck(temperature, omr2(ii, b2))
-                        psisq2(ii, b1, b2, b3) = f1*f0
-                    else
-                        psisq1(ii, b1, b2, b3) = 0.0_r8
-                        psisq2(ii, b1, b2, b3) = 0.0_r8
-                    end if
-                else
-                    if (omr2(ii, b2) .gt. omthres .and. omr3(ii, b3) .gt. omthres) then
-                        f1 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q))) + abs(sr%psi_3ph(b1, b3, b2, q)*conjg(sr%psi_3ph(b1, b3, b2, q)))
-                        f0 = 1.0_r8 + lo_planck(temperature, omr2(ii, b2)) + lo_planck(temperature, omr3(ii, b3))
-                        psisq1(ii, b1, b2, b3) = f1*f0
-                        f0 = lo_planck(temperature, omr3(ii, b3)) - lo_planck(temperature, omr2(ii, b2))
-                        psisq2(ii, b1, b2, b3) = f1*f0
-                    else
-                        psisq1(ii, b1, b2, b3) = 0.0_r8
-                        psisq2(ii, b1, b2, b3) = 0.0_r8
-                    end if
-                end if
-            end do
-            end do
-            end do
-        end do
-        ! And add the prefactor
-        psisq1 = psisq1*threephonon_prefactor*qp%at(j)%integration_weight
-        psisq2 = psisq2*threephonon_prefactor*qp%at(j)%integration_weight
-
-        ! Sum over bands and frequencies
-        do b2 = 1, dr%n_mode
-            !do b3=1,dr%n_mode
-            do b3 = b2, dr%n_mode
-                ! delta(bigOM-om2-om3)
-                minc = lo_huge
-                maxc = -lo_huge
-                do ii = 1, 4
-                    cvals(ii) = omr2(ii, b2) + omr3(ii, b3)
-                    minc = min(minc, cvals(ii))
-                    maxc = max(maxc, cvals(ii))
-                end do
-                ii = max(floor(minc*invf), 1)
-                jj = min(ceiling(maxc*invf), se%n_energy)
-                do b1 = 1, dr%n_mode
-                    sigma = dr%default_smearing(b1)
-                    bvals = psisq1(:, b1, b2, b3)
-                    do i = ii, jj
-                        bigOM = se%energy_axis(i)
-                        wts1 = lo_LV_tetrahedron_weights(cvals, bigOM - delta, lo_freqtol, sigma)
-                        wts2 = lo_LV_tetrahedron_weights(cvals, bigOM + delta, lo_freqtol, sigma)
-                        se%im_3ph(i, b1) = se%im_3ph(i, b1) + sum((wts1 + wts2)*bvals)*0.5_r8
-                    end do
-                end do
-
-                ! delta(bigOM+om2+om3)
-                minc = lo_huge
-                maxc = -lo_huge
-                do ii = 1, 4
-                    cvals(ii) = -omr2(ii, b2) - omr3(ii, b3)
-                    minc = min(minc, cvals(ii))
-                    maxc = max(maxc, cvals(ii))
-                end do
-                ii = max(floor(minc*invf), 1)
-                jj = min(ceiling(maxc*invf), se%n_energy)
-                do b1 = 1, dr%n_mode
-                    sigma = dr%default_smearing(b1)
-                    bvals = psisq1(:, b1, b2, b3)
-                    do i = ii, jj
-                        bigOM = se%energy_axis(i)
-                        wts1 = lo_LV_tetrahedron_weights(cvals, bigOM - delta, lo_freqtol, sigma)
-                        wts2 = lo_LV_tetrahedron_weights(cvals, bigOM + delta, lo_freqtol, sigma)
-                        se%im_3ph(i, b1) = se%im_3ph(i, b1) - sum((wts1 + wts2)*bvals)*0.5_r8
-                    end do
-                end do
-
-                ! delta(bigOM-om2+om3)
-                minc = lo_huge
-                maxc = -lo_huge
-                do ii = 1, 4
-                    cvals(ii) = omr2(ii, b2) - omr3(ii, b3)
-                    minc = min(minc, cvals(ii))
-                    maxc = max(maxc, cvals(ii))
-                end do
-                ii = max(floor(minc*invf), 1)
-                jj = min(ceiling(maxc*invf), se%n_energy)
-                do b1 = 1, dr%n_mode
-                    sigma = dr%default_smearing(b1)
-                    bvals = psisq2(:, b1, b2, b3)
-                    do i = ii, jj
-                        bigOM = se%energy_axis(i)
-                        wts1 = lo_LV_tetrahedron_weights(cvals, bigOM - delta, lo_freqtol, sigma)
-                        wts2 = lo_LV_tetrahedron_weights(cvals, bigOM + delta, lo_freqtol, sigma)
-                        se%im_3ph(i, b1) = se%im_3ph(i, b1) + sum((wts1 + wts2)*bvals)*0.5_r8
-                    end do
-                end do
-
-                ! delta(bigOM+om2-om3)
-                minc = lo_huge
-                maxc = -lo_huge
-                do ii = 1, 4
-                    cvals(ii) = -omr2(ii, b2) + omr3(ii, b3)
-                    minc = min(minc, cvals(ii))
-                    maxc = max(maxc, cvals(ii))
-                end do
-                ii = max(floor(minc*invf), 1)
-                jj = min(ceiling(maxc*invf), se%n_energy)
-                do b1 = 1, dr%n_mode
-                    sigma = dr%default_smearing(b1)
-                    bvals = psisq2(:, b1, b2, b3)
-                    do i = ii, jj
-                        bigOM = se%energy_axis(i)
-                        wts1 = lo_LV_tetrahedron_weights(cvals, bigOM - delta, lo_freqtol, sigma)
-                        wts2 = lo_LV_tetrahedron_weights(cvals, bigOM + delta, lo_freqtol, sigma)
-                        se%im_3ph(i, b1) = se%im_3ph(i, b1) - sum((wts1 + wts2)*bvals)*0.5_r8
-                    end do
-                end do
-            end do
-        end do
-
-        ! Dump a bit
-        if (verbosity .gt. 0) then
-            if (lo_trueNtimes(j, 127, qp%n_full_tet)) call lo_progressbar(' ... threephonon imaginary selfenergy', j, qp%n_full_tet)
-        end if
-    end do
-    ! Add it up
-    call mw%allreduce('sum', se%im_3ph)
-
-    call mem%allocate(buf, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    ! Fix degeneracies
-    do b1 = 1, dr%n_mode
-        buf = 0.0_r8
-        do i = 1, wp%degeneracy(b1)
-            b2 = wp%degenmode(i, b1)
-            buf = buf + se%im_3ph(:, b2)
-        end do
-        buf = buf/real(wp%degeneracy(b1), r8)
-        do i = 1, wp%degeneracy(b1)
-            b2 = wp%degenmode(i, b1)
-            se%im_3ph(:, b2) = buf
-        end do
-    end do
-    call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-
-    if (verbosity .gt. 0) call lo_progressbar(' ... threephonon imaginary selfenergy', qp%n_full_tet, qp%n_full_tet, walltime() - t0)
-
-    call mem%deallocate(omr2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(omr3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(psisq1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(psisq2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-end subroutine
-
-!> Get the three-phonon self-energy via convolutions of the spectral function.
-subroutine threephonon_imaginary_selfenergy_convolution(se, wp, qp, dr, sr, ise, p, temperature, mw, mem, verbosity)
+!> threephonon self energy, convolution based, with on-the-fly matrix elements
+subroutine threephonon_imaginary_selfenergy_convolution_v0(qpoint, ompoint, se, qp, dr, p, fc2, fc3, ise, temperature, mw, mem, verbosity)
+    !> q-point we are investigating
+    class(lo_qpoint), intent(in) :: qpoint
+    !> harmonic properties at q-point we are investigating
+    type(lo_distributed_phonon_dispersions_qpoint), intent(in) :: ompoint
     !> self-energy
     type(lo_phonon_selfenergy), intent(inout) :: se
-    !> harmonic properties at this q-point
-    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
     !> qpoint mesh
     class(lo_qpoint_mesh), intent(in) :: qp
     !> harmonic dispersions
-    type(lo_phonon_dispersions), intent(in) :: dr
-    !> scattering rates
-    type(lo_listofscatteringrates), intent(in) :: sr
-    !> tabulated spectral functions
-    type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
+    type(lo_distributed_phonon_dispersions), intent(in) :: dr
     !> structure
     type(lo_crystalstructure), intent(in) :: p
+    !> second order force constant
+    type(lo_forceconstant_secondorder), intent(inout) :: fc2
+    !> third order force constant
+    type(lo_forceconstant_thirdorder), intent(in) :: fc3
+    !> interpolated self-energy
+    type(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> temperature
     real(r8), intent(in) :: temperature
-    !> MPI communicator
+    !> MPI helper
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
     type(lo_mem_helper), intent(inout) :: mem
     !> talk a lot?
     integer, intent(in) :: verbosity
 
+    type(lo_convolution_handle) :: ch
+    type(lo_distributed_phonon_dispersions_qpoint) :: op3
+    complex(r8), dimension(:,:), allocatable :: cbuf1
+    complex(r8), dimension(:), allocatable :: cbuf0
+    complex(r8), dimension(:), allocatable :: ptf_phi,evp1,evp2
+    real(r8), dimension(:,:,:), allocatable :: psisq_3ph
+    real(r8), dimension(:,:), allocatable :: psisq_isotope
+    real(r8) :: t0
+    integer :: ipt,iq
 
-    real(r8) :: timer, t0, t1
-
-    timer = walltime()
-    t0 = timer
-    t1 = timer
-
-    ! Might add some more pre-processing here.
     init: block
-        if (verbosity .gt. 0) then
-            write (lo_iou, *) '... convolution based integration'
-        end if
-        ! Reset values
-        se%im_iso = 0.0_r8
-        se%im_3ph = 0.0_r8
+        t0 = walltime()
+        se%im = 0.0_r8
+
+        call mem%allocate(ptf_phi, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(psisq_3ph,[dr%n_mode,dr%n_mode,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(psisq_isotope,[dr%n_mode,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        ptf_phi = 0.0_r8
+        evp1 = 0.0_r8
+        evp2 = 0.0_r8
+        psisq_3ph = 0.0_r8
+        psisq_isotope = 0.0_r8
+
+        call ch%generate(ise%omega,temperature,dr%n_mode)
+        ! Need fft-compatible buffers to accumulate
+        allocate(cbuf0(-ch%n:ch%n))
+        allocate(cbuf1(-ch%n:ch%n,dr%n_mode))
+        cbuf0 = 0.0_r8
+        cbuf1 = 0.0_r8
     end block init
 
+    qploop: do ipt=1,dr%n_full_qpoint_local
 
-    ! Try this again, this time with more feeling. The next attempt will
-    ! make do with much less Fourier transforms, this one is to get it right.
-    newattempt: block
-        type(lo_convolution_helper) :: ch
-        real(r8), dimension(:), allocatable :: buf_sfun, buf_sigma2, buf_sigma3
-        real(r8), dimension(:,:), allocatable :: buf_sim2,buf_sim3,buf_sf2
-        real(r8), dimension(:,:), allocatable :: buf_sre2,buf_sre3,buf_sf3
-        integer :: iq
+        ! Need to know the global q-point index
+        iq=dr%aq(ipt)%global_full_index
 
-        ! Set up the helper guy for the convolutions
-        call ch%generate(se%energy_axis, temperature, dr%n_mode)
+        ! Evaluate the relevant matrix element(s)
+        matrixelement: block
+            complex(r8) :: c0
+            real(r8), dimension(3) :: qv1, qv2, qv3
+            integer :: b1,b2,b3
 
-        ! Some temporary buffers
-        allocate (buf_sigma2(dr%n_mode))
-        allocate (buf_sigma3(dr%n_mode))
-        buf_sigma2 = 0.0_r8
-        buf_sigma3 = 0.0_r8
-        allocate (buf_sfun(se%n_energy))
-        buf_sfun = 0.0_r8
+            qv1=qpoint%r
+            qv2=qp%ap(iq)%r
+            qv3=-qv1-qv2
 
-        allocate(buf_sim2(se%n_energy,dr%n_mode))
-        allocate(buf_sim3(se%n_energy,dr%n_mode))
-        allocate(buf_sre2(se%n_energy,dr%n_mode))
-        allocate(buf_sre3(se%n_energy,dr%n_mode))
-        allocate(buf_sf2(se%n_energy,dr%n_mode))
-        allocate(buf_sf3(se%n_energy,dr%n_mode))
-        buf_sim2 = 0.0_r8
-        buf_sim3 = 0.0_r8
-        buf_sre2 = 0.0_r8
-        buf_sre3 = 0.0_r8
-        buf_sf2  = 0.0_r8
-        buf_sf3  = 0.0_r8
-
-        if (verbosity .gt. 0) call lo_progressbar_init()
-        qploopfull: do iq = 1, qp%n_full_point
-            ! Make it MPI parallel
-            if (mod(iq, mw%n) .ne. mw%r) cycle
-
-            ! Pre-fetch and massage spectral functions before the mode loop
-            fixspectralfunctions: block
-                integer :: imode
-
-                ! So, I will need the spectral functions for qpoint 2 and 3. I think it
-                ! makes sense to evaluate them on-the-fly, as to not dramatically increase
-                ! memory usage. First we grab the self-energy:
-                call ise%evaluate(p,qp%ap(iq)%r,dr%aq(iq),buf_sre2,buf_sim2,mem)
-                call ise%evaluate(p,sr%qvec3(:,iq),sr%wp3(iq),buf_sre3,buf_sim3,mem)
-                ! Then we have to convert this to spectral functions
-                do imode=1,dr%n_mode
-                    call evaluate_spectral_function(ise%omega, buf_sim2(:,imode), buf_sre2(:,imode), dr%aq(iq)%omega(imode), buf_sf2(:,imode))
-                    call evaluate_spectral_function(ise%omega, buf_sim3(:,imode), buf_sre3(:,imode), sr%wp3(iq)%omega(imode), buf_sf3(:,imode))
+            if ( se%thirdorder_scattering ) then
+                call op3%generate(fc2,p,mem,qvec=qv3)
+                do b1=1,se%n_mode
+                    op3%sigma(b1) = qp%adaptive_sigma( qp%ap(iq)%radius,op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
                 enddo
-                ! Fourier-transform spectral functions
-                call ch%buffer_spectral_functions( buf_sf2, buf_sf3)
-            end block fixspectralfunctions
 
-            assemble: block
-                real(r8) :: pref, sigma2, sigma3, sigma, psisq
-                integer :: mode1,mode2,mode3
-                ! Prefactor for this q-point
-                pref = threephonon_prefactor*qp%ap(iq)%integration_weight
+                call pretransform_phi(fc3, qv2, qv3, ptf_phi)
 
-                ! Excellent. Now start convoluting every which way.
-                mode2loop2: do mode2 = 1, dr%n_mode
-                mode3loop2: do mode3 = 1, dr%n_mode
-                    ! Skip acoustic modes?
-                    if (dr%aq(iq)%omega(mode2) .lt. lo_freqtol) cycle
-                    if (sr%wp3(iq)%omega(mode3) .lt. lo_freqtol) cycle
-                    ! Smear?
-                    sigma2 = qp%adaptive_sigma(qp%ap(iq)%radius,  dr%aq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
-                    sigma3 = qp%adaptive_sigma(qp%ap(iq)%radius, sr%wp3(iq)%vel(:, mode3), dr%default_smearing(mode3), se%smearing_prefactor)
-                    sigma = sqrt(sigma2**2 + sigma3**2)
-
-                    ! Do the convolution over modes, and smear, all at once
-                    call ch%convolute_to_sfun(mode2, mode3, sigma, buf_sfun)
-
-                    ! Excellent, everything was convoluted properly. Start accumulating self-energy
-                    mode1loop2: do mode1 = 1, dr%n_mode
-                        psisq = abs(sr%psi_3ph(mode1, mode2, mode3, iq)*conjg(sr%psi_3ph(mode1, mode2, mode3, iq)))
-                        se%im_3ph(:, mode1) = se%im_3ph(:, mode1) + buf_sfun*pref*psisq
-                    end do mode1loop2
-                end do mode3loop2
-                end do mode2loop2
-
-                ! Since I have the spectral functions available I might as well sort
-                ! out the isotope scattering here.
-                pref = isotope_prefactor*qp%ap(iq)%integration_weight
-                do mode2 = 1, dr%n_mode
-                    buf_sfun = buf_sf2(:,mode2)
-                    sigma2 = qp%adaptive_sigma(qp%ap(iq)%radius, dr%aq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
-                    call gaussian_smear_spectral_function(se%energy_axis, sigma2, buf_sfun)
-                    do mode1 = 1, dr%n_mode
-                        se%im_iso(:, mode1) = se%im_iso(:, mode1) + buf_sfun*sr%psi_iso(mode1, mode2, iq)*pref
+                psisq_3ph=0.0_r8
+                do b1 = 1, dr%n_mode
+                do b2 = 1, dr%n_mode
+                    evp1 = 0.0_r8
+                    !call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
+                    call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), dr%aq(ipt)%nuvec(:,b2), 1, ompoint%nuvec(:, b1), 1, evp1, dr%n_mode)
+                    do b3 = 1, dr%n_mode
+                        evp2 = 0.0_r8
+                        !call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv3(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
+                        call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), op3%nuvec(:, b3), 1, evp1, 1, evp2, dr%n_mode)
+                        evp2 = conjg(evp2)
+                        c0=dot_product(evp2, ptf_phi)
+                        psisq_3ph(b1, b2, b3)=abs(conjg(c0)*c0)
                     end do
-                end do
-            end block assemble
+                enddo
+                enddo
+            else
+                psisq_3ph=0.0_r8
+            endif
 
-            if (verbosity .gt. 0 .and. iq .lt. qp%n_full_point) then
-                t1 = walltime()
-                call lo_progressbar(' ... imaginary selfenergy', iq, qp%n_full_point, t1 - t0)
-            end if
+            if ( se%isotope_scattering ) then
+                do b1=1,dr%n_mode
+                do b2=1,dr%n_mode
+                    psisq_isotope(b1,b2)=isotope_scattering_strength(p,ompoint%egv(:,b1),dr%aq(ipt)%egv(:,b2),ompoint%omega(b1),dr%aq(ipt)%omega(b2))
+                enddo
+                enddo
+            else
+                psisq_isotope=0.0_r8
+            endif
+        end block matrixelement
 
-            end do qploopfull
-        ! Cleanup
-        call ch%destroy()
+        ! Evaluate spectral functions
+        spectralfunction: block
+            real(r8), dimension(:,:), allocatable :: buf_j,buf_re,buf_im
+            real(r8), dimension(3) :: qv1, qv2, qv3
+            real(r8) :: f0
+            integer :: imode
 
-        ! Add together
-        call mw%allreduce('sum', se%im_3ph)
-        call mw%allreduce('sum', se%im_iso)
+            qv1=qpoint%r
+            qv2=qp%ap(iq)%r
+            qv3=-qv1-qv2
+            call mem%allocate(buf_re,[ise%n_energy,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(buf_im,[ise%n_energy,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(buf_j,[ise%n_energy,dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            buf_re=0.0_r8
+            buf_im=0.0_r8
+            buf_j=0.0_r8
+
+            ! Spectral function for q'
+            call ise%evaluate(p,qv2,dr%aq(ipt)%omega,dr%aq(ipt)%egv,buf_re,buf_im,mem)
+            ! Turn self-energy into smeared normalized spectral functions
+            buf_j=0.0_r8
+            do imode=1,dr%n_mode
+                if ( dr%aq(ipt)%omega(imode) .lt. lo_freqtol ) cycle
+                call lo_evaluate_spectral_function(ise%omega,buf_im(:,imode),buf_re(:,imode),dr%aq(ipt)%omega(imode),buf_j(:,imode))
+                call lo_gaussian_smear_spectral_function(ise%omega,dr%aq(ipt)%sigma(imode),buf_j(:,imode))
+                f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
+                buf_j(:,imode)=buf_j(:,imode)/f0
+            enddo
+
+            ! Pre-buffer in convolution helper. Means I store greater and lesser for q' in buffer 1.
+            call ch%buffer_and_transform_J_to_greater_lesser(buf_j,1)
+
+            ! Also pre-buffer the bare spectral without any thermal prefactors for isotope scattering.
+            ! Stored in ch%lesser3(:,:)
+            call ch%buffer_and_transform_J(buf_j,3)
+
+            ! Spectral function for q''
+            call ise%evaluate(p,qv3,op3%omega,op3%egv,buf_re,buf_im,mem)
+            ! Turn self-energy into smeared normalized spectral functions in the time domain
+            buf_j=0.0_r8
+            do imode=1,dr%n_mode
+                if ( op3%omega(imode) .lt. lo_freqtol ) cycle
+                call lo_evaluate_spectral_function(ise%omega,buf_im(:,imode),buf_re(:,imode),op3%omega(imode),buf_j(:,imode))
+                call lo_gaussian_smear_spectral_function(ise%omega,op3%sigma(imode),buf_j(:,imode))
+                f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
+                buf_j(:,imode)=buf_j(:,imode)/f0
+            enddo
+
+            ! Pre-buffer in convolution helper. Means I store greater and lesser for q'' in buffer 2.
+            call ch%buffer_and_transform_J_to_greater_lesser(buf_j,2)
+
+            call mem%deallocate(buf_re,persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(buf_im,persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(buf_j,persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        end block spectralfunction
+
+        frequencyintegral: block
+            integer :: b1,b2,b3
+
+            ! Add the prefactor to the matrix elements
+            psisq_3ph=psisq_3ph*threephonon_prefactor*qp%ap(iq)%integration_weight
+            psisq_isotope=psisq_isotope*isotope_prefactor*qp%ap(iq)%integration_weight
+
+            ! Make this faster and loop only over half of b2
+            if ( se%thirdorder_scattering ) then
+                do b3 = 1, dr%n_mode
+                do b2 = 1, dr%n_mode
+                    cbuf0 = ch%greater1(:,b2)*ch%greater2(:,b3) - ch%lesser1(:,b2)*ch%lesser2(:,b3)
+                    do b1=1, dr%n_mode
+                        cbuf1(:,b1)=cbuf1(:,b1) + psisq_3ph(b1,b2,b3)*cbuf0
+                    enddo
+                enddo
+                enddo
+            endif
+
+            if ( se%isotope_scattering ) then
+                do b2=1, dr%n_mode
+                do b1=1, dr%n_mode
+                    cbuf1(:,b1)=cbuf1(:,b1) + psisq_isotope(b1,b2)*ch%lesser3(:,b2)
+                enddo
+                enddo
+            endif
+        end block frequencyintegral
 
         if (verbosity .gt. 0) then
-            t1 = walltime()
-            call lo_progressbar(' ... imaginary selfenergy', qp%n_full_point, qp%n_full_point, t1 - t0)
-            t0 = t1
+            if (lo_trueNtimes(ipt, 127, dr%n_full_qpoint_local)) call lo_progressbar(' ... threephonon imaginary selfenergy', ipt, dr%n_full_qpoint_local)
         end if
+    enddo qploop
 
-        ! if ( mw%talk ) then
-        !         call h5%init(__FILE__,__LINE__)
-        !         call h5%open_file('write','sbuf.hdf5')
-        !
-        !         call h5%store_data(allsbuf,h5%file_id,'sfun')
-        !
-        !         call h5%close_file()
-        !         call h5%destroy(__FILE__,__LINE__)
-        ! endif
-    end block newattempt
+    ! Sum it up and go back to frequency domain (cbuf1 is in the time domain right now)
+    inversetransform: block
+        integer :: imode
+        ! Sync across ranks
+        call mw%allreduce('sum', cbuf1)
+        ! Inverse transform
+        se%im=0.0_r8
+        do imode=1,dr%n_mode
+            if ( mod(imode,mw%n) .ne. mw%r ) cycle
+            call ch%inverse_transform_to_real(cbuf1(:,imode),se%im(:,imode))
+        enddo
+        call mw%allreduce('sum', se%im)
+    end block inversetransform
 
-    ! Make sure the whole thing makes sense in the end.
-    massage: block
-        real(r8), dimension(:), allocatable :: taper, buf1, buf2
-        integer :: mode1, mode2, i
+    ! And some cleanup
+    call ch%destroy()
+    deallocate(cbuf0)
+    deallocate(cbuf1)
+    call mem%deallocate(ptf_phi,       persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(evp1,          persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(evp2,          persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(psisq_3ph,     persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(psisq_isotope, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
-        call mem%allocate(taper, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(buf1, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(buf2, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        taper = 0.0_r8
-        buf1 = 0.0_r8
-        buf2 = 0.0_r8
+    ! Fix degeneracies? Why not.
+    fixdegen: block
+        real(r8), dimension(:), allocatable :: buf
+        integer :: b1,b2,i
 
-        ! Sort out degeneracies
-        do mode1 = 1, dr%n_mode
-            buf1 = 0.0_r8
-            buf2 = 0.0_r8
-            do i = 1, wp%degeneracy(mode1)
-                mode2 = wp%degenmode(i, mode1)
-                buf1 = buf1 + se%im_iso(:, mode2)
-                buf2 = buf2 + se%im_3ph(:, mode2)
+        call mem%allocate(buf,ise%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        buf=0.0_r8
+
+        do b1 = 1, dr%n_mode
+            buf = 0.0_r8
+            do i = 1, ompoint%degeneracy(b1)
+                b2 = ompoint%degenmode(i, b1)
+                buf = buf + se%im(:, b2)
             end do
-            buf1 = buf1/real(wp%degeneracy(mode1), r8)
-            buf2 = buf2/real(wp%degeneracy(mode1), r8)
-            do i = 1, wp%degeneracy(mode1)
-                mode2 = wp%degenmode(i, mode1)
-                se%im_iso(:, mode2) = buf1
-                se%im_3ph(:, mode2) = buf2
+            buf = buf/real(ompoint%degeneracy(b1), r8)
+            do i = 1, ompoint%degeneracy(b1)
+                b2 = ompoint%degenmode(i, b1)
+                se%im(:, b2) = buf
             end do
         end do
-        ! Get the tapering function
-        ! call taperfn_im(se%energy_axis, dr%omega_max, dr%omega_min, taper)
-        ! ! Taper the self-energies so that they are zero where they should be.
-        ! do mode1 = 1, dr%n_mode
-        !     se%im_3ph(:, mode1) = max(se%im_3ph(:, mode1), 0.0_r8)
-        !     se%im_iso(:, mode1) = max(se%im_iso(:, mode1), 0.0_r8)
-        !     se%im_3ph(:, mode1) = se%im_3ph(:, mode1)*taper
-        !     se%im_iso(:, mode1) = se%im_iso(:, mode1)*taper
-        ! end do
 
-        call mem%deallocate(taper, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(buf1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(buf2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    end block massage
+        call mem%deallocate(buf,persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end block fixdegen
 
+
+    if (verbosity .gt. 0) call lo_progressbar(' ... threephonon imaginary selfenergy', dr%n_mode*qp%n_full_point, dr%n_mode*qp%n_full_point, walltime() - t0)
+
+    ! if ( mw%talk ) write(*,*) 'Done here for now ',__FILE__,__LINE__
+    ! call mw%destroy()
+    ! stop
+end subroutine
+
+!> pre-transform three-phonon matrix element to xyz
+subroutine pretransform_phi(fct, q2, q3, ptf)
+    !> third order forceconstant
+    type(lo_forceconstant_thirdorder), intent(in) :: fct
+    !> q-vectors
+    real(r8), dimension(3), intent(in) :: q2, q3
+    !> flattened, pretransformed matrix element
+    complex(r8), dimension(:), intent(out) :: ptf
+
+    integer :: i, j, k, l
+
+    complex(r8) :: expiqr
+    real(r8), dimension(3) :: rv2, rv3
+    real(r8) :: iqr
+    integer :: a1, a2, a3, ia, ib, ic, t, nb
+
+    nb = fct%na*3
+    ptf = 0.0_r8
+    do a1 = 1, fct%na
+    do t = 1, fct%atom(a1)%n
+        a2 = fct%atom(a1)%triplet(t)%i2
+        a3 = fct%atom(a1)%triplet(t)%i3
+
+        rv2 = fct%atom(a1)%triplet(t)%lv2
+        rv3 = fct%atom(a1)%triplet(t)%lv3
+
+        iqr = dot_product(q2, rv2) + dot_product(q3, rv3)
+        iqr = -iqr*lo_twopi
+        expiqr = cmplx(cos(iqr), sin(iqr), r8)
+        do i = 1, 3
+        do j = 1, 3
+        do k = 1, 3
+            ia = (a1 - 1)*3 + i
+            ib = (a2 - 1)*3 + j
+            ic = (a3 - 1)*3 + k
+            ! Now for the grand flattening scheme, consistent with the zgeru operations above.
+            l = (ia - 1)*nb*nb + (ib - 1)*nb + ic
+            ptf(l) = ptf(l) + fct%atom(a1)%triplet(t)%m(i, j, k)*expiqr
+        end do
+        end do
+        end do
+    end do
+    end do
 end subroutine
 
 end submodule

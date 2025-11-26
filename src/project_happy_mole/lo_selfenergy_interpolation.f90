@@ -19,10 +19,10 @@ use type_blas_lapack_wrappers, only: lo_gemm, lo_dgels
 use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
 
 
-use lineshape_helper, only: lo_spectralfunction_helper,evaluate_spectral_function,taperfn_im,gaussian_smear_spectral_function,find_spectral_function_max_and_fwhm,integrate_spectral_function
 use lo_tetrahedron_interpolation, only: lo_linear_tetrahedron_interpolation
 use type_phonon_dos, only: lo_phonon_dos
 use lo_thermal_transport, only: lo_thermal_conductivity
+use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function,lo_gaussian_smear_spectral_function,lo_find_spectral_function_max_and_fwhm,lo_integrate_spectral_function,lo_tapering_function
 implicit none
 
 private
@@ -48,17 +48,19 @@ type lo_interpolated_selfenergy_grid
     contains
         procedure :: read_from_hdf5=>read_interpolated_selfenergy_from_hdf5
         procedure :: evaluate=>evaluate_self_energy
+        procedure :: evaluate_smeared_J=>evaluate_self_energy
         procedure :: destroy=>destroy_interpolated_selfenergy
         procedure :: spectral_function_along_path=>spectral_function_path_interp
         procedure :: spectral_function_on_grid=>spectral_function_grid_interp
 end type
 
 interface ! to evaluate
-    module subroutine evaluate_self_energy(ise,p,qv,wp,sigma_Re,sigma_Im,mem,mw)
+    module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,mw)
         class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
         type(lo_crystalstructure), intent(in) :: p
         real(r8), dimension(3), intent(in) :: qv
-        type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+        real(r8), dimension(:), intent(in) :: omega
+        complex(r8), dimension(:,:), intent(in) :: egv
         real(r8), dimension(:,:), intent(out) :: sigma_Re
         real(r8), dimension(:,:), intent(out) :: sigma_Im
         type(lo_mem_helper), intent(inout) :: mem

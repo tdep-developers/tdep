@@ -91,7 +91,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         real(r8), dimension(3), parameter :: qdir = [1.0_r8, 0.0_r8, 0.0_r8]
         real(r8) :: f0, f1, f2, sigma
         integer :: iq, imode, iatom,local_iq
-
         ! A little space for temporary buffers
         call mem%allocate(buf_spectral, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(buf_spectral_smeared, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -111,7 +110,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         siteproj = 0.0_r8
 
         local_iq=0
-        do iq = 1, qp%n_irr_point
+        qploop: do iq = 1, qp%n_irr_point
             ! Make it parallel over q-points
             if ( mod(iq,mw%n) .ne. mw%r ) cycle
 
@@ -131,7 +130,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
             xlo = 0.0_r8
             xhi = 0.0_r8
             ! interpolate self-energy to this q-vector
-            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq),buf_sigmaRe,buf_sigmaIm,mem)
+            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq)%omega,dr%iq(iq)%egv,buf_sigmaRe,buf_sigmaIm,mem)
 
             ! Evaluate spectral functions and smear and so on.
             do imode = 1, dr%n_mode
@@ -139,19 +138,19 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
                 if ( dr%iq(iq)%omega(imode) .gt. lo_freqtol ) then
 
                     ! Taper self-energy?
-                    call taperfn_im(ise%omega, pd%dosmax, dr%iq(iq)%omega(imode), buf_taper)
+                    call lo_tapering_function(ise%omega, buf_taper)
                     buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
 
                     ! First up would be to find a normalization factor per mode
-                    call find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode), dr%omega_max, ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
-                    call integrate_spectral_function(ise%omega, dr%iq(iq)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
+                    call lo_find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode), ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
+                    call lo_integrate_spectral_function(ise%omega, dr%iq(iq)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
                     1.0_r8, temperature, integraltol, f0, f1, f2)
                     normalizationfactor(imode)=1.0_r8/f0
 
-                    call evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
+                    call lo_evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
                     buf_spectral_smeared(:, imode) = buf_spectral(:, imode)
                     sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
-                    call gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral_smeared(:, imode))
+                    call lo_gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral_smeared(:, imode))
 
                     ! Normalize both.
                     f0 = lo_trapezoid_integration(ise%omega, buf_spectral(:, imode))
@@ -185,7 +184,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
             !     write (lo_iou, *) '     kappa accumulation (', tochar(t1 - t0), 's)'
             !     t0 = t1
             ! end if
-        end do
+        enddo qploop
 
         ! Sync across ranks
         call mw%allreduce('sum', pd%pdos_site)
@@ -213,7 +212,6 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         integer :: i, j, k
         real(r8), dimension(:, :), allocatable :: sitebuf
         real(r8) :: f0, f1, dostol
-
 
         ! I might have gotten a contribution at zero frequency due to the smearing. That has to
         ! be removed. I subtract the line that goes from the dos at 0 to the max frequency.

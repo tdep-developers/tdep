@@ -102,7 +102,7 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
         do iq = 1, bs%n_point
             if (mod(iq, mw%n) .ne. mw%r) cycle
             ! Get self-energy
-            call ise%evaluate(uc,bs%q(iq)%r,bs%p(iq),buf_Re(:,:,iq),buf_im(:,:,iq),mem)
+            call ise%evaluate(uc,bs%q(iq)%r,bs%p(iq)%omega,bs%p(iq)%egv,buf_Re(:,:,iq),buf_im(:,:,iq),mem)
             !call ise%diagonal_selfenergy(uc, bs%q(iq)%r, bs%p(iq)%omega, bs%p(iq)%egv, buf_re(:, :, iq), buf_im(:, :, iq))
             ! Get shift and width
             do imode = 1, bs%n_mode
@@ -170,7 +170,7 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
                     bufr = buf_re(:, imode, ipt)
                     ! make sure we at least have some smearing?
                     bufi = max(bufi, im_lower_limit)
-                    call evaluate_spectral_function(ise%omega, bufi, bufr, bs%p(ipt)%omega(imode), bufs)
+                    call lo_evaluate_spectral_function(ise%omega, bufi, bufr, bs%p(ipt)%omega(imode), bufs)
                     bufs = bufs/lo_trapezoid_integration(ise%omega, bufs)
                 else
                     do ie = 1, ise%n_energy

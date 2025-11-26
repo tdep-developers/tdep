@@ -24,8 +24,9 @@ use type_forcemap, only: lo_forcemap, lo_secondorder_rot_herm_huang
 use ifc_solvers, only: lo_irreducible_forceconstant_from_qmesh_dynmat
 
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
-use lineshape_helper, only: evaluate_spectral_function,taperfn_im
 use lo_evaluate_phonon_self_energy, only: lo_phonon_selfenergy
+use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
+use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function,lo_tapering_function
 
 implicit none
 
@@ -35,9 +36,9 @@ public :: generate_interpolated_selfenergy
 contains
 
 !> create the interpolated self-energy object and store it to file
-subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr,ddr, &
+subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr,ddr,pdr, &
     temperature, max_energy, n_energy, integrationtype, sigma,&
-    use_isotope, use_thirdorder, use_fourthorder, offdiagonal, &
+    use_isotope, use_thirdorder, use_fourthorder, &
     mw, mem, verbosity)
     !> filename
     character(len=*), intent(in) :: filename
@@ -59,6 +60,8 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
     type(lo_phonon_dispersions), intent(in) :: dr
     !> harmonic propertors on the sigma mesh
     type(lo_phonon_dispersions), intent(in) :: ddr
+    !> distributed harmonic properties on the integration mesh
+    type(lo_distributed_phonon_dispersions), intent(in) :: pdr
     !> temperature
     real(r8), intent(in) :: temperature
     !> max energy to consider
@@ -75,8 +78,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
     logical, intent(in) :: use_thirdorder
     !> include fourthorder scattering
     logical, intent(in) :: use_fourthorder
-    !> include off-diagonal terms in the self-energy
-    logical, intent(in) :: offdiagonal
     !> MPI communicator
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
@@ -221,9 +222,9 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
             endif
 
             call se%generate(&
-                dqp%ip(iq), qdir, ddr%iq(iq), uc, fc, fct, fcf, ise, qp, dr, &
+                dqp%ip(iq), qdir, uc, fc, fct, fcf, ise, qp, pdr,&
                 temperature, max_energy, n_energy, integrationtype, sigma,&
-                use_isotope, use_thirdorder, use_fourthorder, offdiagonal, &
+                use_isotope, use_thirdorder, use_fourthorder,&
                 tmr, mw, mem, verbosity=0)
 
             ! if ( mw%talk ) then
@@ -362,7 +363,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 do ie=1,se%n_energy
                     sigma_mode=0.0_r8
                     do imode=1,se%n_mode
-                        sigma_mode(imode,imode)=lo_imag*(se%im_3ph(ie,imode) + se%im_iso(ie,imode)) + se%re(ie,imode)
+                        sigma_mode(imode,imode)=lo_imag*se%im(ie,imode) + se%re(ie,imode)
                     enddo
 
                     ! call lo_gemm(eig,sigma_mode,halfproduct)
@@ -422,11 +423,11 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 do imode = 1, ddr%n_mode
                     ! Get the spectral functions
                     if (ddr%iq(iq)%omega(imode) .gt. lo_freqtol) then
-                        buf_sigmaIm = se%im_3ph(:, imode) + se%im_iso(:, imode)
-                        buf_sigmaRe = se%re(:, imode) !+ se%re_4ph(:, imode)
-                        call taperfn_im(se%energy_axis, se%energy_axis(se%n_energy), ddr%iq(iq)%omega(imode), buf_taper)
+                        buf_sigmaIm = se%im(:, imode)
+                        buf_sigmaRe = se%re(:, imode)
+                        call lo_tapering_function(se%energy_axis,buf_taper)
                         buf_sigmaIm = buf_sigmaIm*buf_taper
-                        call evaluate_spectral_function(se%energy_axis, buf_sigmaIm, buf_sigmaRe, ddr%iq(iq)%omega(imode), buf_spectral(:, imode))
+                        call lo_evaluate_spectral_function(se%energy_axis, buf_sigmaIm, buf_sigmaRe, ddr%iq(iq)%omega(imode), buf_spectral(:, imode))
 
                         ! Normalize both.
                         f0 = lo_trapezoid_integration(se%energy_axis, buf_spectral(:, imode))

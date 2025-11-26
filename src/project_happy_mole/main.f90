@@ -17,10 +17,12 @@ use lo_timetracker, only: lo_timer
 
 !use dielscatter, only: lo_dielectric_response
 use options, only: lo_opts
+use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
 use lo_thermal_transport, only: lo_thermal_conductivity
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
 use lo_evaluate_phonon_self_energy, only: lo_phonon_selfenergy
 use create_selfenergy_interpolation, only: generate_interpolated_selfenergy
+use lo_collision_matrix, only: lo_scattering_matrix
 
 implicit none
 type(lo_opts) :: opts
@@ -28,12 +30,13 @@ type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr_init !, tmr_calc, tmr_diel
 
-type(lo_crystalstructure) :: uc !,ss
+type(lo_crystalstructure) :: uc
 type(lo_forceconstant_secondorder) :: fc2
 type(lo_forceconstant_thirdorder) :: fc3
 type(lo_forceconstant_fourthorder) :: fc4
 
 type(lo_phonon_dispersions) :: dr,ddr,kdr
+type(lo_distributed_phonon_dispersions) :: pdr
 
 class(lo_qpoint_mesh), allocatable :: qp,dqp,kqp
 
@@ -94,8 +97,10 @@ init: block
     call dr%generate(qp, fc2, uc, mw=mw, mem=mem, verbosity=opts%verbosity)
     call ddr%generate(dqp, fc2, uc, mw=mw, mem=mem, verbosity=opts%verbosity)
 
-    ! Now I can decide what the maximum frequency on the self-energy
-    ! axis will be. This is quite a generous margin.
+    call pdr%generate(qp, uc, fc2, opts%sigma, mw=mw, mem=mem, verbosity=opts%verbosity)
+
+    ! Now I can decide the maximum frequency on the self-energy
+    ! axis. This is quite a generous margin.
     opts%maxf = 3*(dr%omega_max*1.1_r8 + maxval(dr%default_smearing)*3)
 
     call tmr_init%tock('initial harmonic properties')
@@ -111,13 +116,14 @@ firstiteration: block
     type(lo_phonon_bandstructure) :: bs
     type(lo_phonon_dos) :: pd
     type(lo_thermal_conductivity) :: tc
+    !type(lo_scattering_matrix) :: scm
     integer :: iter
 
-    ! This is the zeroth iteration, or whatever I should call it. Here we always
-    ! use adaptive Gaussian integration, because why not.
-    call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
+    ! This is the zeroth iteration, or whatever I should call it. Here we
+    ! always use adaptive Gaussian integration, because we have to use something.
+    call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
         opts%temperature, opts%maxf, opts%nf, 2, opts%sigma,&
-        opts%isotopescattering, opts%thirdorder, opts%fourthorder, .false.,&
+        opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
         mw, mem, opts%verbosity)
 
     ! For diagnostics I guess dumping the self-energy on a path makes sense?
@@ -150,13 +156,16 @@ firstiteration: block
     end if
     call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
 
+    ! Create scattering matrix?
+    !call scm%generate(uc,fc2,fc3,ise,kqp,mw,mem,opts%verbosity+5)
+
     ! Then I guess we start to iterate, self-consistently?
-    do iter=1,5
+    do iter=1,3
         ! Then I guess the next step is to get the self-energy again, but this time using
         ! a convolution integration instead?
-        call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr, &
+        call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
             opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
-            opts%isotopescattering, opts%thirdorder, opts%fourthorder, .false.,&
+            opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
             mw, mem, opts%verbosity)
 
         ! Make sure the intermediate things are cleaned:
