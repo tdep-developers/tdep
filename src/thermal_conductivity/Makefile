@@ -27,19 +27,20 @@ clean:
 	rm -f $(PROG) $(OBJS) $(OBJECT_PATH)*.mod
 
 $(OBJECT_PATH)main.o: \
+main.f90\
 $(OBJECT_PATH)options.o\
 $(OBJECT_PATH)scattering.o\
 $(OBJECT_PATH)kappa.o\
 $(OBJECT_PATH)cumulative_kappa.o
-	$(F90) $(OPT) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
-$(OBJECT_PATH)scattering.o:
-	$(F90) $(OPT) $(F90FLAGS) -c scattering.f90 $(LIBS) -o $@
+	$(F90) $(OPT) $(F90FLAGS) -c $< $(LIBS) -o $@
+$(OBJECT_PATH)scattering.o: scattering.f90
+	$(F90) $(OPT) $(F90FLAGS) -c $< $(LIBS) -o $@
 $(OBJECT_PATH)kappa.o:\
 	kappa.f90\
 	$(OBJECT_PATH)scattering.o
-	$(F90) $(OPT) $(F90FLAGS) -c kappa.f90 $(LIBS) -o $@
-$(OBJECT_PATH)cumulative_kappa.o:\
+	$(F90) $(OPT) $(F90FLAGS) -c $< $(LIBS) -o $@
+$(OBJECT_PATH)cumulative_kappa.o: cumulative_kappa.f90\
 	$(OBJECT_PATH)kappa.o
-	$(F90) $(OPT) $(F90FLAGS) -c cumulative_kappa.f90 $(LIBS) -o $@
-$(OBJECT_PATH)options.o:
-	$(F90) $(OPT) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
+	$(F90) $(OPT) $(F90FLAGS) -c $< $(LIBS) -o $@
+$(OBJECT_PATH)options.o: options.f90
+	$(F90) $(OPT) $(F90FLAGS) -c $< $(LIBS) -o $@
