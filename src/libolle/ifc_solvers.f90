@@ -560,7 +560,7 @@ subroutine lo_solve_for_irreducible_ifc(map, sim, uc, ss, solver, mw, mem, verbo
             rotational_rhs=0.0_r8
         endif
 
-        call map%forceconstant_constraints(uc,rotational=.true.,huanginvariances=.true.,hermitian=.true.,hermitian_rhs=hermitian_rhs,huang_rhs=huang_rhs,rotational_rhs=rotational_rhs,verbosity=verbosity)
+        call map%forceconstant_constraints(uc,rotational=.true.,huanginvariances=.true.,hermitian=.true.,elastic=.false.,hermitian_rhs=hermitian_rhs,huang_rhs=huang_rhs,rotational_rhs=rotational_rhs,verbosity=verbosity)
         !call map%forceconstant_constraints(uc,rotational=.false.,huanginvariances=.true.,hermitian=.true.,hermitian_rhs=hermitian_rhs,huang_rhs=huang_rhs,verbosity=verbosity)
     end block buildconstraints
 

@@ -4,7 +4,7 @@ implicit none
 contains
 
 !> generate the linear constraints on the equations
-module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
+module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, elastic, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
     !> symmetry stuff rearranged into coordination shells
     class(lo_forcemap), intent(inout) :: map
     !> unitcell
@@ -15,6 +15,8 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
     logical, intent(in) :: huanginvariances
     !> build the Hermitian constraints
     logical, intent(in) :: hermitian
+    !> use fix elastic constants as constraints (overrides huang invariances)
+    logical, intent(in) :: elastic
     !> rhs for the Hermitian constraints
     real(r8), dimension(:), intent(in) :: hermitian_rhs
     !> rhs for Huang invariances
@@ -46,7 +48,7 @@ module subroutine forceconstant_constraints(map, uc, rotational, huanginvariance
 
         if (map%have_fc_pair) then
             t0 = walltime()
-            call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
+            call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%d2, map%constraints%neq2, rotational, huanginvariances, hermitian, elastic, hermitian_rhs, huang_rhs, rotational_rhs)
             if (verbosity .gt. 0) then
                 write (*, *) '... ', tochar(map%constraints%neq2), ' secondorder constraints (', tochar(walltime() - t0), 's)'
             end if
@@ -155,7 +157,7 @@ module subroutine enforce_constraints(map)
 end subroutine
 
 !> Rotational, Hermitian and Huang invariances for the second order
-module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
+module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, elastic, hermitian_rhs, huang_rhs, rotational_rhs)
     !> symmetry stuff rearranged into coordination shells
     class(lo_forcemap), intent(in) :: map
     !> unitcell
@@ -167,7 +169,7 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotation
     !> how many equations did I get?
     integer, intent(out) :: neq2
     !> which constraints should I care about?
-    logical, intent(in) :: rotational, huang, hermitian
+    logical, intent(in) :: rotational, huang, hermitian, elastic
     !> rhs of hermitian constraints
     real(r8), dimension(:), intent(in) :: hermitian_rhs
     real(r8), dimension(:), intent(in) :: huang_rhs
@@ -245,10 +247,15 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotation
                 m9x27 = secondorder_rotational_coefficient(rij, CM)
                 dumeq_rot(xind(1:nx), (a1-1)*27+1:a1*27) = dumeq_rot(xind(1:nx), (a1-1)*27+1:a1*27) + m9x27(xlocind(1:nx), :)
             end if
-            if (huang) then
-                m9x81 = secondorder_huang_coefficient(rij, CM)
+            if ( elastic ) then
+                m9x81 = secondorder_elastic_coefficient(rij, CM)
                 dumeq_huang(xind(1:nx), :) = dumeq_huang(xind(1:nx), :) + m9x81(xlocind(1:nx), :)
-            end if
+            else
+                if (huang) then
+                    m9x81 = secondorder_huang_coefficient(rij, CM)
+                    dumeq_huang(xind(1:nx), :) = dumeq_huang(xind(1:nx), :) + m9x81(xlocind(1:nx), :)
+                end if
+            endif
             if (hermitian) then
                 m9x9 = secondorder_hermitian_character(CM)
                 dumeq_herm(xind(1:nx), (a1-1)*9+1:a1*9) = dumeq_herm(xind(1:nx), (a1-1)*9+1:a1*9) + m9x9(xlocind(1:nx), :)
@@ -263,14 +270,23 @@ module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotation
             dum_rhs(eqctr) = rotational_rhs(i)
         end do
     end if
-    if (huang) then
+    if (elastic) then
         do i = 1, 81
             eqctr = eqctr + 1
             dumeq(:, eqctr) = dumeq_huang(:, i)
             dum_rhs(eqctr) = huang_rhs(i)
             !write(*,*) i,eqctr,dum_rhs(eqctr),sum(abs(dumeq))
         end do
-    end if
+    else
+        if (huang) then
+            do i = 1, 81
+                eqctr = eqctr + 1
+                dumeq(:, eqctr) = dumeq_huang(:, i)
+                dum_rhs(eqctr) = huang_rhs(i)
+                !write(*,*) i,eqctr,dum_rhs(eqctr),sum(abs(dumeq))
+            end do
+        end if
+    endif
     if (hermitian) then
         do i=1,map%n_atom_uc*9
             eqctr = eqctr + 1
@@ -778,6 +794,747 @@ contains
         m(:, 81) = [0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, &
                     0.0_r8, 0.0_r8, 0.0_r8]
     end function
+    function secondorder_elastic_coefficient(r, cl) result(m)
+        real(r8), dimension(3), intent(in) :: r
+        real(r8), dimension(9, 9), intent(in) :: cl
+        real(r8), dimension(9, 81) :: m
+        !
+        real(r8) :: rx, ry, rz
+        rx = r(1)
+        ry = r(2)
+        rz = r(3)
+
+        m(1,1)=cl(1,1)*rx**2
+        m(2,1)=cl(1,2)*rx**2
+        m(3,1)=cl(1,3)*rx**2
+        m(4,1)=cl(1,4)*rx**2
+        m(5,1)=cl(1,5)*rx**2
+        m(6,1)=cl(1,6)*rx**2
+        m(7,1)=cl(1,7)*rx**2
+        m(8,1)=cl(1,8)*rx**2
+        m(9,1)=cl(1,9)*rx**2
+        m(1,2)=cl(1,1)*rx*ry
+        m(2,2)=cl(1,2)*rx*ry
+        m(3,2)=cl(1,3)*rx*ry
+        m(4,2)=cl(1,4)*rx*ry
+        m(5,2)=cl(1,5)*rx*ry
+        m(6,2)=cl(1,6)*rx*ry
+        m(7,2)=cl(1,7)*rx*ry
+        m(8,2)=cl(1,8)*rx*ry
+        m(9,2)=cl(1,9)*rx*ry
+        m(1,3)=cl(1,1)*rx*rz
+        m(2,3)=cl(1,2)*rx*rz
+        m(3,3)=cl(1,3)*rx*rz
+        m(4,3)=cl(1,4)*rx*rz
+        m(5,3)=cl(1,5)*rx*rz
+        m(6,3)=cl(1,6)*rx*rz
+        m(7,3)=cl(1,7)*rx*rz
+        m(8,3)=cl(1,8)*rx*rz
+        m(9,3)=cl(1,9)*rx*rz
+        m(1,4)=cl(1,1)*rx*ry
+        m(2,4)=cl(1,2)*rx*ry
+        m(3,4)=cl(1,3)*rx*ry
+        m(4,4)=cl(1,4)*rx*ry
+        m(5,4)=cl(1,5)*rx*ry
+        m(6,4)=cl(1,6)*rx*ry
+        m(7,4)=cl(1,7)*rx*ry
+        m(8,4)=cl(1,8)*rx*ry
+        m(9,4)=cl(1,9)*rx*ry
+        m(1,5)=cl(1,1)*ry**2
+        m(2,5)=cl(1,2)*ry**2
+        m(3,5)=cl(1,3)*ry**2
+        m(4,5)=cl(1,4)*ry**2
+        m(5,5)=cl(1,5)*ry**2
+        m(6,5)=cl(1,6)*ry**2
+        m(7,5)=cl(1,7)*ry**2
+        m(8,5)=cl(1,8)*ry**2
+        m(9,5)=cl(1,9)*ry**2
+        m(1,6)=cl(1,1)*ry*rz
+        m(2,6)=cl(1,2)*ry*rz
+        m(3,6)=cl(1,3)*ry*rz
+        m(4,6)=cl(1,4)*ry*rz
+        m(5,6)=cl(1,5)*ry*rz
+        m(6,6)=cl(1,6)*ry*rz
+        m(7,6)=cl(1,7)*ry*rz
+        m(8,6)=cl(1,8)*ry*rz
+        m(9,6)=cl(1,9)*ry*rz
+        m(1,7)=cl(1,1)*rx*rz
+        m(2,7)=cl(1,2)*rx*rz
+        m(3,7)=cl(1,3)*rx*rz
+        m(4,7)=cl(1,4)*rx*rz
+        m(5,7)=cl(1,5)*rx*rz
+        m(6,7)=cl(1,6)*rx*rz
+        m(7,7)=cl(1,7)*rx*rz
+        m(8,7)=cl(1,8)*rx*rz
+        m(9,7)=cl(1,9)*rx*rz
+        m(1,8)=cl(1,1)*ry*rz
+        m(2,8)=cl(1,2)*ry*rz
+        m(3,8)=cl(1,3)*ry*rz
+        m(4,8)=cl(1,4)*ry*rz
+        m(5,8)=cl(1,5)*ry*rz
+        m(6,8)=cl(1,6)*ry*rz
+        m(7,8)=cl(1,7)*ry*rz
+        m(8,8)=cl(1,8)*ry*rz
+        m(9,8)=cl(1,9)*ry*rz
+        m(1,9)=cl(1,1)*rz**2
+        m(2,9)=cl(1,2)*rz**2
+        m(3,9)=cl(1,3)*rz**2
+        m(4,9)=cl(1,4)*rz**2
+        m(5,9)=cl(1,5)*rz**2
+        m(6,9)=cl(1,6)*rz**2
+        m(7,9)=cl(1,7)*rz**2
+        m(8,9)=cl(1,8)*rz**2
+        m(9,9)=cl(1,9)*rz**2
+        m(1,10)=cl(2,1)*rx**2
+        m(2,10)=cl(2,2)*rx**2
+        m(3,10)=cl(2,3)*rx**2
+        m(4,10)=cl(2,4)*rx**2
+        m(5,10)=cl(2,5)*rx**2
+        m(6,10)=cl(2,6)*rx**2
+        m(7,10)=cl(2,7)*rx**2
+        m(8,10)=cl(2,8)*rx**2
+        m(9,10)=cl(2,9)*rx**2
+        m(1,11)=cl(2,1)*rx*ry
+        m(2,11)=cl(2,2)*rx*ry
+        m(3,11)=cl(2,3)*rx*ry
+        m(4,11)=cl(2,4)*rx*ry
+        m(5,11)=cl(2,5)*rx*ry
+        m(6,11)=cl(2,6)*rx*ry
+        m(7,11)=cl(2,7)*rx*ry
+        m(8,11)=cl(2,8)*rx*ry
+        m(9,11)=cl(2,9)*rx*ry
+        m(1,12)=cl(2,1)*rx*rz
+        m(2,12)=cl(2,2)*rx*rz
+        m(3,12)=cl(2,3)*rx*rz
+        m(4,12)=cl(2,4)*rx*rz
+        m(5,12)=cl(2,5)*rx*rz
+        m(6,12)=cl(2,6)*rx*rz
+        m(7,12)=cl(2,7)*rx*rz
+        m(8,12)=cl(2,8)*rx*rz
+        m(9,12)=cl(2,9)*rx*rz
+        m(1,13)=cl(2,1)*rx*ry
+        m(2,13)=cl(2,2)*rx*ry
+        m(3,13)=cl(2,3)*rx*ry
+        m(4,13)=cl(2,4)*rx*ry
+        m(5,13)=cl(2,5)*rx*ry
+        m(6,13)=cl(2,6)*rx*ry
+        m(7,13)=cl(2,7)*rx*ry
+        m(8,13)=cl(2,8)*rx*ry
+        m(9,13)=cl(2,9)*rx*ry
+        m(1,14)=cl(2,1)*ry**2
+        m(2,14)=cl(2,2)*ry**2
+        m(3,14)=cl(2,3)*ry**2
+        m(4,14)=cl(2,4)*ry**2
+        m(5,14)=cl(2,5)*ry**2
+        m(6,14)=cl(2,6)*ry**2
+        m(7,14)=cl(2,7)*ry**2
+        m(8,14)=cl(2,8)*ry**2
+        m(9,14)=cl(2,9)*ry**2
+        m(1,15)=cl(2,1)*ry*rz
+        m(2,15)=cl(2,2)*ry*rz
+        m(3,15)=cl(2,3)*ry*rz
+        m(4,15)=cl(2,4)*ry*rz
+        m(5,15)=cl(2,5)*ry*rz
+        m(6,15)=cl(2,6)*ry*rz
+        m(7,15)=cl(2,7)*ry*rz
+        m(8,15)=cl(2,8)*ry*rz
+        m(9,15)=cl(2,9)*ry*rz
+        m(1,16)=cl(2,1)*rx*rz
+        m(2,16)=cl(2,2)*rx*rz
+        m(3,16)=cl(2,3)*rx*rz
+        m(4,16)=cl(2,4)*rx*rz
+        m(5,16)=cl(2,5)*rx*rz
+        m(6,16)=cl(2,6)*rx*rz
+        m(7,16)=cl(2,7)*rx*rz
+        m(8,16)=cl(2,8)*rx*rz
+        m(9,16)=cl(2,9)*rx*rz
+        m(1,17)=cl(2,1)*ry*rz
+        m(2,17)=cl(2,2)*ry*rz
+        m(3,17)=cl(2,3)*ry*rz
+        m(4,17)=cl(2,4)*ry*rz
+        m(5,17)=cl(2,5)*ry*rz
+        m(6,17)=cl(2,6)*ry*rz
+        m(7,17)=cl(2,7)*ry*rz
+        m(8,17)=cl(2,8)*ry*rz
+        m(9,17)=cl(2,9)*ry*rz
+        m(1,18)=cl(2,1)*rz**2
+        m(2,18)=cl(2,2)*rz**2
+        m(3,18)=cl(2,3)*rz**2
+        m(4,18)=cl(2,4)*rz**2
+        m(5,18)=cl(2,5)*rz**2
+        m(6,18)=cl(2,6)*rz**2
+        m(7,18)=cl(2,7)*rz**2
+        m(8,18)=cl(2,8)*rz**2
+        m(9,18)=cl(2,9)*rz**2
+        m(1,19)=cl(3,1)*rx**2
+        m(2,19)=cl(3,2)*rx**2
+        m(3,19)=cl(3,3)*rx**2
+        m(4,19)=cl(3,4)*rx**2
+        m(5,19)=cl(3,5)*rx**2
+        m(6,19)=cl(3,6)*rx**2
+        m(7,19)=cl(3,7)*rx**2
+        m(8,19)=cl(3,8)*rx**2
+        m(9,19)=cl(3,9)*rx**2
+        m(1,20)=cl(3,1)*rx*ry
+        m(2,20)=cl(3,2)*rx*ry
+        m(3,20)=cl(3,3)*rx*ry
+        m(4,20)=cl(3,4)*rx*ry
+        m(5,20)=cl(3,5)*rx*ry
+        m(6,20)=cl(3,6)*rx*ry
+        m(7,20)=cl(3,7)*rx*ry
+        m(8,20)=cl(3,8)*rx*ry
+        m(9,20)=cl(3,9)*rx*ry
+        m(1,21)=cl(3,1)*rx*rz
+        m(2,21)=cl(3,2)*rx*rz
+        m(3,21)=cl(3,3)*rx*rz
+        m(4,21)=cl(3,4)*rx*rz
+        m(5,21)=cl(3,5)*rx*rz
+        m(6,21)=cl(3,6)*rx*rz
+        m(7,21)=cl(3,7)*rx*rz
+        m(8,21)=cl(3,8)*rx*rz
+        m(9,21)=cl(3,9)*rx*rz
+        m(1,22)=cl(3,1)*rx*ry
+        m(2,22)=cl(3,2)*rx*ry
+        m(3,22)=cl(3,3)*rx*ry
+        m(4,22)=cl(3,4)*rx*ry
+        m(5,22)=cl(3,5)*rx*ry
+        m(6,22)=cl(3,6)*rx*ry
+        m(7,22)=cl(3,7)*rx*ry
+        m(8,22)=cl(3,8)*rx*ry
+        m(9,22)=cl(3,9)*rx*ry
+        m(1,23)=cl(3,1)*ry**2
+        m(2,23)=cl(3,2)*ry**2
+        m(3,23)=cl(3,3)*ry**2
+        m(4,23)=cl(3,4)*ry**2
+        m(5,23)=cl(3,5)*ry**2
+        m(6,23)=cl(3,6)*ry**2
+        m(7,23)=cl(3,7)*ry**2
+        m(8,23)=cl(3,8)*ry**2
+        m(9,23)=cl(3,9)*ry**2
+        m(1,24)=cl(3,1)*ry*rz
+        m(2,24)=cl(3,2)*ry*rz
+        m(3,24)=cl(3,3)*ry*rz
+        m(4,24)=cl(3,4)*ry*rz
+        m(5,24)=cl(3,5)*ry*rz
+        m(6,24)=cl(3,6)*ry*rz
+        m(7,24)=cl(3,7)*ry*rz
+        m(8,24)=cl(3,8)*ry*rz
+        m(9,24)=cl(3,9)*ry*rz
+        m(1,25)=cl(3,1)*rx*rz
+        m(2,25)=cl(3,2)*rx*rz
+        m(3,25)=cl(3,3)*rx*rz
+        m(4,25)=cl(3,4)*rx*rz
+        m(5,25)=cl(3,5)*rx*rz
+        m(6,25)=cl(3,6)*rx*rz
+        m(7,25)=cl(3,7)*rx*rz
+        m(8,25)=cl(3,8)*rx*rz
+        m(9,25)=cl(3,9)*rx*rz
+        m(1,26)=cl(3,1)*ry*rz
+        m(2,26)=cl(3,2)*ry*rz
+        m(3,26)=cl(3,3)*ry*rz
+        m(4,26)=cl(3,4)*ry*rz
+        m(5,26)=cl(3,5)*ry*rz
+        m(6,26)=cl(3,6)*ry*rz
+        m(7,26)=cl(3,7)*ry*rz
+        m(8,26)=cl(3,8)*ry*rz
+        m(9,26)=cl(3,9)*ry*rz
+        m(1,27)=cl(3,1)*rz**2
+        m(2,27)=cl(3,2)*rz**2
+        m(3,27)=cl(3,3)*rz**2
+        m(4,27)=cl(3,4)*rz**2
+        m(5,27)=cl(3,5)*rz**2
+        m(6,27)=cl(3,6)*rz**2
+        m(7,27)=cl(3,7)*rz**2
+        m(8,27)=cl(3,8)*rz**2
+        m(9,27)=cl(3,9)*rz**2
+        m(1,28)=cl(4,1)*rx**2
+        m(2,28)=cl(4,2)*rx**2
+        m(3,28)=cl(4,3)*rx**2
+        m(4,28)=cl(4,4)*rx**2
+        m(5,28)=cl(4,5)*rx**2
+        m(6,28)=cl(4,6)*rx**2
+        m(7,28)=cl(4,7)*rx**2
+        m(8,28)=cl(4,8)*rx**2
+        m(9,28)=cl(4,9)*rx**2
+        m(1,29)=cl(4,1)*rx*ry
+        m(2,29)=cl(4,2)*rx*ry
+        m(3,29)=cl(4,3)*rx*ry
+        m(4,29)=cl(4,4)*rx*ry
+        m(5,29)=cl(4,5)*rx*ry
+        m(6,29)=cl(4,6)*rx*ry
+        m(7,29)=cl(4,7)*rx*ry
+        m(8,29)=cl(4,8)*rx*ry
+        m(9,29)=cl(4,9)*rx*ry
+        m(1,30)=cl(4,1)*rx*rz
+        m(2,30)=cl(4,2)*rx*rz
+        m(3,30)=cl(4,3)*rx*rz
+        m(4,30)=cl(4,4)*rx*rz
+        m(5,30)=cl(4,5)*rx*rz
+        m(6,30)=cl(4,6)*rx*rz
+        m(7,30)=cl(4,7)*rx*rz
+        m(8,30)=cl(4,8)*rx*rz
+        m(9,30)=cl(4,9)*rx*rz
+        m(1,31)=cl(4,1)*rx*ry
+        m(2,31)=cl(4,2)*rx*ry
+        m(3,31)=cl(4,3)*rx*ry
+        m(4,31)=cl(4,4)*rx*ry
+        m(5,31)=cl(4,5)*rx*ry
+        m(6,31)=cl(4,6)*rx*ry
+        m(7,31)=cl(4,7)*rx*ry
+        m(8,31)=cl(4,8)*rx*ry
+        m(9,31)=cl(4,9)*rx*ry
+        m(1,32)=cl(4,1)*ry**2
+        m(2,32)=cl(4,2)*ry**2
+        m(3,32)=cl(4,3)*ry**2
+        m(4,32)=cl(4,4)*ry**2
+        m(5,32)=cl(4,5)*ry**2
+        m(6,32)=cl(4,6)*ry**2
+        m(7,32)=cl(4,7)*ry**2
+        m(8,32)=cl(4,8)*ry**2
+        m(9,32)=cl(4,9)*ry**2
+        m(1,33)=cl(4,1)*ry*rz
+        m(2,33)=cl(4,2)*ry*rz
+        m(3,33)=cl(4,3)*ry*rz
+        m(4,33)=cl(4,4)*ry*rz
+        m(5,33)=cl(4,5)*ry*rz
+        m(6,33)=cl(4,6)*ry*rz
+        m(7,33)=cl(4,7)*ry*rz
+        m(8,33)=cl(4,8)*ry*rz
+        m(9,33)=cl(4,9)*ry*rz
+        m(1,34)=cl(4,1)*rx*rz
+        m(2,34)=cl(4,2)*rx*rz
+        m(3,34)=cl(4,3)*rx*rz
+        m(4,34)=cl(4,4)*rx*rz
+        m(5,34)=cl(4,5)*rx*rz
+        m(6,34)=cl(4,6)*rx*rz
+        m(7,34)=cl(4,7)*rx*rz
+        m(8,34)=cl(4,8)*rx*rz
+        m(9,34)=cl(4,9)*rx*rz
+        m(1,35)=cl(4,1)*ry*rz
+        m(2,35)=cl(4,2)*ry*rz
+        m(3,35)=cl(4,3)*ry*rz
+        m(4,35)=cl(4,4)*ry*rz
+        m(5,35)=cl(4,5)*ry*rz
+        m(6,35)=cl(4,6)*ry*rz
+        m(7,35)=cl(4,7)*ry*rz
+        m(8,35)=cl(4,8)*ry*rz
+        m(9,35)=cl(4,9)*ry*rz
+        m(1,36)=cl(4,1)*rz**2
+        m(2,36)=cl(4,2)*rz**2
+        m(3,36)=cl(4,3)*rz**2
+        m(4,36)=cl(4,4)*rz**2
+        m(5,36)=cl(4,5)*rz**2
+        m(6,36)=cl(4,6)*rz**2
+        m(7,36)=cl(4,7)*rz**2
+        m(8,36)=cl(4,8)*rz**2
+        m(9,36)=cl(4,9)*rz**2
+        m(1,37)=cl(5,1)*rx**2
+        m(2,37)=cl(5,2)*rx**2
+        m(3,37)=cl(5,3)*rx**2
+        m(4,37)=cl(5,4)*rx**2
+        m(5,37)=cl(5,5)*rx**2
+        m(6,37)=cl(5,6)*rx**2
+        m(7,37)=cl(5,7)*rx**2
+        m(8,37)=cl(5,8)*rx**2
+        m(9,37)=cl(5,9)*rx**2
+        m(1,38)=cl(5,1)*rx*ry
+        m(2,38)=cl(5,2)*rx*ry
+        m(3,38)=cl(5,3)*rx*ry
+        m(4,38)=cl(5,4)*rx*ry
+        m(5,38)=cl(5,5)*rx*ry
+        m(6,38)=cl(5,6)*rx*ry
+        m(7,38)=cl(5,7)*rx*ry
+        m(8,38)=cl(5,8)*rx*ry
+        m(9,38)=cl(5,9)*rx*ry
+        m(1,39)=cl(5,1)*rx*rz
+        m(2,39)=cl(5,2)*rx*rz
+        m(3,39)=cl(5,3)*rx*rz
+        m(4,39)=cl(5,4)*rx*rz
+        m(5,39)=cl(5,5)*rx*rz
+        m(6,39)=cl(5,6)*rx*rz
+        m(7,39)=cl(5,7)*rx*rz
+        m(8,39)=cl(5,8)*rx*rz
+        m(9,39)=cl(5,9)*rx*rz
+        m(1,40)=cl(5,1)*rx*ry
+        m(2,40)=cl(5,2)*rx*ry
+        m(3,40)=cl(5,3)*rx*ry
+        m(4,40)=cl(5,4)*rx*ry
+        m(5,40)=cl(5,5)*rx*ry
+        m(6,40)=cl(5,6)*rx*ry
+        m(7,40)=cl(5,7)*rx*ry
+        m(8,40)=cl(5,8)*rx*ry
+        m(9,40)=cl(5,9)*rx*ry
+        m(1,41)=cl(5,1)*ry**2
+        m(2,41)=cl(5,2)*ry**2
+        m(3,41)=cl(5,3)*ry**2
+        m(4,41)=cl(5,4)*ry**2
+        m(5,41)=cl(5,5)*ry**2
+        m(6,41)=cl(5,6)*ry**2
+        m(7,41)=cl(5,7)*ry**2
+        m(8,41)=cl(5,8)*ry**2
+        m(9,41)=cl(5,9)*ry**2
+        m(1,42)=cl(5,1)*ry*rz
+        m(2,42)=cl(5,2)*ry*rz
+        m(3,42)=cl(5,3)*ry*rz
+        m(4,42)=cl(5,4)*ry*rz
+        m(5,42)=cl(5,5)*ry*rz
+        m(6,42)=cl(5,6)*ry*rz
+        m(7,42)=cl(5,7)*ry*rz
+        m(8,42)=cl(5,8)*ry*rz
+        m(9,42)=cl(5,9)*ry*rz
+        m(1,43)=cl(5,1)*rx*rz
+        m(2,43)=cl(5,2)*rx*rz
+        m(3,43)=cl(5,3)*rx*rz
+        m(4,43)=cl(5,4)*rx*rz
+        m(5,43)=cl(5,5)*rx*rz
+        m(6,43)=cl(5,6)*rx*rz
+        m(7,43)=cl(5,7)*rx*rz
+        m(8,43)=cl(5,8)*rx*rz
+        m(9,43)=cl(5,9)*rx*rz
+        m(1,44)=cl(5,1)*ry*rz
+        m(2,44)=cl(5,2)*ry*rz
+        m(3,44)=cl(5,3)*ry*rz
+        m(4,44)=cl(5,4)*ry*rz
+        m(5,44)=cl(5,5)*ry*rz
+        m(6,44)=cl(5,6)*ry*rz
+        m(7,44)=cl(5,7)*ry*rz
+        m(8,44)=cl(5,8)*ry*rz
+        m(9,44)=cl(5,9)*ry*rz
+        m(1,45)=cl(5,1)*rz**2
+        m(2,45)=cl(5,2)*rz**2
+        m(3,45)=cl(5,3)*rz**2
+        m(4,45)=cl(5,4)*rz**2
+        m(5,45)=cl(5,5)*rz**2
+        m(6,45)=cl(5,6)*rz**2
+        m(7,45)=cl(5,7)*rz**2
+        m(8,45)=cl(5,8)*rz**2
+        m(9,45)=cl(5,9)*rz**2
+        m(1,46)=cl(6,1)*rx**2
+        m(2,46)=cl(6,2)*rx**2
+        m(3,46)=cl(6,3)*rx**2
+        m(4,46)=cl(6,4)*rx**2
+        m(5,46)=cl(6,5)*rx**2
+        m(6,46)=cl(6,6)*rx**2
+        m(7,46)=cl(6,7)*rx**2
+        m(8,46)=cl(6,8)*rx**2
+        m(9,46)=cl(6,9)*rx**2
+        m(1,47)=cl(6,1)*rx*ry
+        m(2,47)=cl(6,2)*rx*ry
+        m(3,47)=cl(6,3)*rx*ry
+        m(4,47)=cl(6,4)*rx*ry
+        m(5,47)=cl(6,5)*rx*ry
+        m(6,47)=cl(6,6)*rx*ry
+        m(7,47)=cl(6,7)*rx*ry
+        m(8,47)=cl(6,8)*rx*ry
+        m(9,47)=cl(6,9)*rx*ry
+        m(1,48)=cl(6,1)*rx*rz
+        m(2,48)=cl(6,2)*rx*rz
+        m(3,48)=cl(6,3)*rx*rz
+        m(4,48)=cl(6,4)*rx*rz
+        m(5,48)=cl(6,5)*rx*rz
+        m(6,48)=cl(6,6)*rx*rz
+        m(7,48)=cl(6,7)*rx*rz
+        m(8,48)=cl(6,8)*rx*rz
+        m(9,48)=cl(6,9)*rx*rz
+        m(1,49)=cl(6,1)*rx*ry
+        m(2,49)=cl(6,2)*rx*ry
+        m(3,49)=cl(6,3)*rx*ry
+        m(4,49)=cl(6,4)*rx*ry
+        m(5,49)=cl(6,5)*rx*ry
+        m(6,49)=cl(6,6)*rx*ry
+        m(7,49)=cl(6,7)*rx*ry
+        m(8,49)=cl(6,8)*rx*ry
+        m(9,49)=cl(6,9)*rx*ry
+        m(1,50)=cl(6,1)*ry**2
+        m(2,50)=cl(6,2)*ry**2
+        m(3,50)=cl(6,3)*ry**2
+        m(4,50)=cl(6,4)*ry**2
+        m(5,50)=cl(6,5)*ry**2
+        m(6,50)=cl(6,6)*ry**2
+        m(7,50)=cl(6,7)*ry**2
+        m(8,50)=cl(6,8)*ry**2
+        m(9,50)=cl(6,9)*ry**2
+        m(1,51)=cl(6,1)*ry*rz
+        m(2,51)=cl(6,2)*ry*rz
+        m(3,51)=cl(6,3)*ry*rz
+        m(4,51)=cl(6,4)*ry*rz
+        m(5,51)=cl(6,5)*ry*rz
+        m(6,51)=cl(6,6)*ry*rz
+        m(7,51)=cl(6,7)*ry*rz
+        m(8,51)=cl(6,8)*ry*rz
+        m(9,51)=cl(6,9)*ry*rz
+        m(1,52)=cl(6,1)*rx*rz
+        m(2,52)=cl(6,2)*rx*rz
+        m(3,52)=cl(6,3)*rx*rz
+        m(4,52)=cl(6,4)*rx*rz
+        m(5,52)=cl(6,5)*rx*rz
+        m(6,52)=cl(6,6)*rx*rz
+        m(7,52)=cl(6,7)*rx*rz
+        m(8,52)=cl(6,8)*rx*rz
+        m(9,52)=cl(6,9)*rx*rz
+        m(1,53)=cl(6,1)*ry*rz
+        m(2,53)=cl(6,2)*ry*rz
+        m(3,53)=cl(6,3)*ry*rz
+        m(4,53)=cl(6,4)*ry*rz
+        m(5,53)=cl(6,5)*ry*rz
+        m(6,53)=cl(6,6)*ry*rz
+        m(7,53)=cl(6,7)*ry*rz
+        m(8,53)=cl(6,8)*ry*rz
+        m(9,53)=cl(6,9)*ry*rz
+        m(1,54)=cl(6,1)*rz**2
+        m(2,54)=cl(6,2)*rz**2
+        m(3,54)=cl(6,3)*rz**2
+        m(4,54)=cl(6,4)*rz**2
+        m(5,54)=cl(6,5)*rz**2
+        m(6,54)=cl(6,6)*rz**2
+        m(7,54)=cl(6,7)*rz**2
+        m(8,54)=cl(6,8)*rz**2
+        m(9,54)=cl(6,9)*rz**2
+        m(1,55)=cl(7,1)*rx**2
+        m(2,55)=cl(7,2)*rx**2
+        m(3,55)=cl(7,3)*rx**2
+        m(4,55)=cl(7,4)*rx**2
+        m(5,55)=cl(7,5)*rx**2
+        m(6,55)=cl(7,6)*rx**2
+        m(7,55)=cl(7,7)*rx**2
+        m(8,55)=cl(7,8)*rx**2
+        m(9,55)=cl(7,9)*rx**2
+        m(1,56)=cl(7,1)*rx*ry
+        m(2,56)=cl(7,2)*rx*ry
+        m(3,56)=cl(7,3)*rx*ry
+        m(4,56)=cl(7,4)*rx*ry
+        m(5,56)=cl(7,5)*rx*ry
+        m(6,56)=cl(7,6)*rx*ry
+        m(7,56)=cl(7,7)*rx*ry
+        m(8,56)=cl(7,8)*rx*ry
+        m(9,56)=cl(7,9)*rx*ry
+        m(1,57)=cl(7,1)*rx*rz
+        m(2,57)=cl(7,2)*rx*rz
+        m(3,57)=cl(7,3)*rx*rz
+        m(4,57)=cl(7,4)*rx*rz
+        m(5,57)=cl(7,5)*rx*rz
+        m(6,57)=cl(7,6)*rx*rz
+        m(7,57)=cl(7,7)*rx*rz
+        m(8,57)=cl(7,8)*rx*rz
+        m(9,57)=cl(7,9)*rx*rz
+        m(1,58)=cl(7,1)*rx*ry
+        m(2,58)=cl(7,2)*rx*ry
+        m(3,58)=cl(7,3)*rx*ry
+        m(4,58)=cl(7,4)*rx*ry
+        m(5,58)=cl(7,5)*rx*ry
+        m(6,58)=cl(7,6)*rx*ry
+        m(7,58)=cl(7,7)*rx*ry
+        m(8,58)=cl(7,8)*rx*ry
+        m(9,58)=cl(7,9)*rx*ry
+        m(1,59)=cl(7,1)*ry**2
+        m(2,59)=cl(7,2)*ry**2
+        m(3,59)=cl(7,3)*ry**2
+        m(4,59)=cl(7,4)*ry**2
+        m(5,59)=cl(7,5)*ry**2
+        m(6,59)=cl(7,6)*ry**2
+        m(7,59)=cl(7,7)*ry**2
+        m(8,59)=cl(7,8)*ry**2
+        m(9,59)=cl(7,9)*ry**2
+        m(1,60)=cl(7,1)*ry*rz
+        m(2,60)=cl(7,2)*ry*rz
+        m(3,60)=cl(7,3)*ry*rz
+        m(4,60)=cl(7,4)*ry*rz
+        m(5,60)=cl(7,5)*ry*rz
+        m(6,60)=cl(7,6)*ry*rz
+        m(7,60)=cl(7,7)*ry*rz
+        m(8,60)=cl(7,8)*ry*rz
+        m(9,60)=cl(7,9)*ry*rz
+        m(1,61)=cl(7,1)*rx*rz
+        m(2,61)=cl(7,2)*rx*rz
+        m(3,61)=cl(7,3)*rx*rz
+        m(4,61)=cl(7,4)*rx*rz
+        m(5,61)=cl(7,5)*rx*rz
+        m(6,61)=cl(7,6)*rx*rz
+        m(7,61)=cl(7,7)*rx*rz
+        m(8,61)=cl(7,8)*rx*rz
+        m(9,61)=cl(7,9)*rx*rz
+        m(1,62)=cl(7,1)*ry*rz
+        m(2,62)=cl(7,2)*ry*rz
+        m(3,62)=cl(7,3)*ry*rz
+        m(4,62)=cl(7,4)*ry*rz
+        m(5,62)=cl(7,5)*ry*rz
+        m(6,62)=cl(7,6)*ry*rz
+        m(7,62)=cl(7,7)*ry*rz
+        m(8,62)=cl(7,8)*ry*rz
+        m(9,62)=cl(7,9)*ry*rz
+        m(1,63)=cl(7,1)*rz**2
+        m(2,63)=cl(7,2)*rz**2
+        m(3,63)=cl(7,3)*rz**2
+        m(4,63)=cl(7,4)*rz**2
+        m(5,63)=cl(7,5)*rz**2
+        m(6,63)=cl(7,6)*rz**2
+        m(7,63)=cl(7,7)*rz**2
+        m(8,63)=cl(7,8)*rz**2
+        m(9,63)=cl(7,9)*rz**2
+        m(1,64)=cl(8,1)*rx**2
+        m(2,64)=cl(8,2)*rx**2
+        m(3,64)=cl(8,3)*rx**2
+        m(4,64)=cl(8,4)*rx**2
+        m(5,64)=cl(8,5)*rx**2
+        m(6,64)=cl(8,6)*rx**2
+        m(7,64)=cl(8,7)*rx**2
+        m(8,64)=cl(8,8)*rx**2
+        m(9,64)=cl(8,9)*rx**2
+        m(1,65)=cl(8,1)*rx*ry
+        m(2,65)=cl(8,2)*rx*ry
+        m(3,65)=cl(8,3)*rx*ry
+        m(4,65)=cl(8,4)*rx*ry
+        m(5,65)=cl(8,5)*rx*ry
+        m(6,65)=cl(8,6)*rx*ry
+        m(7,65)=cl(8,7)*rx*ry
+        m(8,65)=cl(8,8)*rx*ry
+        m(9,65)=cl(8,9)*rx*ry
+        m(1,66)=cl(8,1)*rx*rz
+        m(2,66)=cl(8,2)*rx*rz
+        m(3,66)=cl(8,3)*rx*rz
+        m(4,66)=cl(8,4)*rx*rz
+        m(5,66)=cl(8,5)*rx*rz
+        m(6,66)=cl(8,6)*rx*rz
+        m(7,66)=cl(8,7)*rx*rz
+        m(8,66)=cl(8,8)*rx*rz
+        m(9,66)=cl(8,9)*rx*rz
+        m(1,67)=cl(8,1)*rx*ry
+        m(2,67)=cl(8,2)*rx*ry
+        m(3,67)=cl(8,3)*rx*ry
+        m(4,67)=cl(8,4)*rx*ry
+        m(5,67)=cl(8,5)*rx*ry
+        m(6,67)=cl(8,6)*rx*ry
+        m(7,67)=cl(8,7)*rx*ry
+        m(8,67)=cl(8,8)*rx*ry
+        m(9,67)=cl(8,9)*rx*ry
+        m(1,68)=cl(8,1)*ry**2
+        m(2,68)=cl(8,2)*ry**2
+        m(3,68)=cl(8,3)*ry**2
+        m(4,68)=cl(8,4)*ry**2
+        m(5,68)=cl(8,5)*ry**2
+        m(6,68)=cl(8,6)*ry**2
+        m(7,68)=cl(8,7)*ry**2
+        m(8,68)=cl(8,8)*ry**2
+        m(9,68)=cl(8,9)*ry**2
+        m(1,69)=cl(8,1)*ry*rz
+        m(2,69)=cl(8,2)*ry*rz
+        m(3,69)=cl(8,3)*ry*rz
+        m(4,69)=cl(8,4)*ry*rz
+        m(5,69)=cl(8,5)*ry*rz
+        m(6,69)=cl(8,6)*ry*rz
+        m(7,69)=cl(8,7)*ry*rz
+        m(8,69)=cl(8,8)*ry*rz
+        m(9,69)=cl(8,9)*ry*rz
+        m(1,70)=cl(8,1)*rx*rz
+        m(2,70)=cl(8,2)*rx*rz
+        m(3,70)=cl(8,3)*rx*rz
+        m(4,70)=cl(8,4)*rx*rz
+        m(5,70)=cl(8,5)*rx*rz
+        m(6,70)=cl(8,6)*rx*rz
+        m(7,70)=cl(8,7)*rx*rz
+        m(8,70)=cl(8,8)*rx*rz
+        m(9,70)=cl(8,9)*rx*rz
+        m(1,71)=cl(8,1)*ry*rz
+        m(2,71)=cl(8,2)*ry*rz
+        m(3,71)=cl(8,3)*ry*rz
+        m(4,71)=cl(8,4)*ry*rz
+        m(5,71)=cl(8,5)*ry*rz
+        m(6,71)=cl(8,6)*ry*rz
+        m(7,71)=cl(8,7)*ry*rz
+        m(8,71)=cl(8,8)*ry*rz
+        m(9,71)=cl(8,9)*ry*rz
+        m(1,72)=cl(8,1)*rz**2
+        m(2,72)=cl(8,2)*rz**2
+        m(3,72)=cl(8,3)*rz**2
+        m(4,72)=cl(8,4)*rz**2
+        m(5,72)=cl(8,5)*rz**2
+        m(6,72)=cl(8,6)*rz**2
+        m(7,72)=cl(8,7)*rz**2
+        m(8,72)=cl(8,8)*rz**2
+        m(9,72)=cl(8,9)*rz**2
+        m(1,73)=cl(9,1)*rx**2
+        m(2,73)=cl(9,2)*rx**2
+        m(3,73)=cl(9,3)*rx**2
+        m(4,73)=cl(9,4)*rx**2
+        m(5,73)=cl(9,5)*rx**2
+        m(6,73)=cl(9,6)*rx**2
+        m(7,73)=cl(9,7)*rx**2
+        m(8,73)=cl(9,8)*rx**2
+        m(9,73)=cl(9,9)*rx**2
+        m(1,74)=cl(9,1)*rx*ry
+        m(2,74)=cl(9,2)*rx*ry
+        m(3,74)=cl(9,3)*rx*ry
+        m(4,74)=cl(9,4)*rx*ry
+        m(5,74)=cl(9,5)*rx*ry
+        m(6,74)=cl(9,6)*rx*ry
+        m(7,74)=cl(9,7)*rx*ry
+        m(8,74)=cl(9,8)*rx*ry
+        m(9,74)=cl(9,9)*rx*ry
+        m(1,75)=cl(9,1)*rx*rz
+        m(2,75)=cl(9,2)*rx*rz
+        m(3,75)=cl(9,3)*rx*rz
+        m(4,75)=cl(9,4)*rx*rz
+        m(5,75)=cl(9,5)*rx*rz
+        m(6,75)=cl(9,6)*rx*rz
+        m(7,75)=cl(9,7)*rx*rz
+        m(8,75)=cl(9,8)*rx*rz
+        m(9,75)=cl(9,9)*rx*rz
+        m(1,76)=cl(9,1)*rx*ry
+        m(2,76)=cl(9,2)*rx*ry
+        m(3,76)=cl(9,3)*rx*ry
+        m(4,76)=cl(9,4)*rx*ry
+        m(5,76)=cl(9,5)*rx*ry
+        m(6,76)=cl(9,6)*rx*ry
+        m(7,76)=cl(9,7)*rx*ry
+        m(8,76)=cl(9,8)*rx*ry
+        m(9,76)=cl(9,9)*rx*ry
+        m(1,77)=cl(9,1)*ry**2
+        m(2,77)=cl(9,2)*ry**2
+        m(3,77)=cl(9,3)*ry**2
+        m(4,77)=cl(9,4)*ry**2
+        m(5,77)=cl(9,5)*ry**2
+        m(6,77)=cl(9,6)*ry**2
+        m(7,77)=cl(9,7)*ry**2
+        m(8,77)=cl(9,8)*ry**2
+        m(9,77)=cl(9,9)*ry**2
+        m(1,78)=cl(9,1)*ry*rz
+        m(2,78)=cl(9,2)*ry*rz
+        m(3,78)=cl(9,3)*ry*rz
+        m(4,78)=cl(9,4)*ry*rz
+        m(5,78)=cl(9,5)*ry*rz
+        m(6,78)=cl(9,6)*ry*rz
+        m(7,78)=cl(9,7)*ry*rz
+        m(8,78)=cl(9,8)*ry*rz
+        m(9,78)=cl(9,9)*ry*rz
+        m(1,79)=cl(9,1)*rx*rz
+        m(2,79)=cl(9,2)*rx*rz
+        m(3,79)=cl(9,3)*rx*rz
+        m(4,79)=cl(9,4)*rx*rz
+        m(5,79)=cl(9,5)*rx*rz
+        m(6,79)=cl(9,6)*rx*rz
+        m(7,79)=cl(9,7)*rx*rz
+        m(8,79)=cl(9,8)*rx*rz
+        m(9,79)=cl(9,9)*rx*rz
+        m(1,80)=cl(9,1)*ry*rz
+        m(2,80)=cl(9,2)*ry*rz
+        m(3,80)=cl(9,3)*ry*rz
+        m(4,80)=cl(9,4)*ry*rz
+        m(5,80)=cl(9,5)*ry*rz
+        m(6,80)=cl(9,6)*ry*rz
+        m(7,80)=cl(9,7)*ry*rz
+        m(8,80)=cl(9,8)*ry*rz
+        m(9,80)=cl(9,9)*ry*rz
+        m(1,81)=cl(9,1)*rz**2
+        m(2,81)=cl(9,2)*rz**2
+        m(3,81)=cl(9,3)*rz**2
+        m(4,81)=cl(9,4)*rz**2
+        m(5,81)=cl(9,5)*rz**2
+        m(6,81)=cl(9,6)*rz**2
+        m(7,81)=cl(9,7)*rz**2
+        m(8,81)=cl(9,8)*rz**2
+        m(9,81)=cl(9,9)*rz**2
+    end function
+
 end subroutine
 
 ! Below not exposed

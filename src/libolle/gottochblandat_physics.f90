@@ -1,31 +1,20 @@
-#include "precompilerdefinitions"
 submodule (gottochblandat) gottochblandat_physics
 implicit none
 contains
 
 !> Calculate the reciprocal basis
-#ifdef AGRESSIVE_SANITY
-module function lo_reciprocal_basis(a) result(b)
-#else
 pure module function lo_reciprocal_basis(a) result(b)
-#endif
     !> the basis
-    real(flyt), dimension(3,3), intent(in) :: a
+    real(r8), dimension(3,3), intent(in) :: a
     !> reciprocal basis
-    real(flyt), dimension(3,3) :: b
+    real(r8), dimension(3,3) :: b
 
-    real(flyt), dimension(3) :: a1,a2,a3,b1,b2,b3
-    real(flyt) :: vol
+    real(r8), dimension(3) :: a1,a2,a3,b1,b2,b3
+    real(r8) :: vol
     a1=a(:,1)
     a2=a(:,2)
     a3=a(:,3)
     vol=abs(lo_determ(a))
-#ifdef AGRESSIVE_SANITY
-    if ( vol .lt. lo_sqtol ) then
-        call lo_stop_gracefully(['Trying to calculate reciprocal basis of a cell with zero volume'],&
-                                lo_exitcode_param,__FILE__,__LINE__)
-    endif
-#endif
     b1=lo_cross(a2,a3)
     b2=lo_cross(a3,a1)
     b3=lo_cross(a1,a2)
@@ -37,7 +26,7 @@ end function
 !> Return a sensible-ish k-mesh density for a given cell from a linear density
 pure module function lo_kmesh_density(reciprocal_latticevectors,na,nq) result(density)
     !> reciprocal latticevectors
-    real(flyt), dimension(3,3), intent(in) :: reciprocal_latticevectors
+    real(r8), dimension(3,3), intent(in) :: reciprocal_latticevectors
     !> number of atoms in the cell
     integer, intent(in) :: na
     !> linear density
@@ -45,19 +34,19 @@ pure module function lo_kmesh_density(reciprocal_latticevectors,na,nq) result(de
     !> resulting q-density
     integer, dimension(3) :: density
 
-    real(flyt) :: f0,a,b,c,avg
+    real(r8) :: f0,a,b,c,avg
 
     ! So, what do I want. I want that product(density)*natoms = constant
     ! So this is approximately the total number of points.
-    f0=real(nq**3,flyt)/real(na,flyt)
+    f0=real(nq**3,r8)/real(na,r8)
     ! And this would be the sensible number per direction
-    f0=f0**(1.0_flyt/3.0_flyt)
+    f0=f0**(1.0_r8/3.0_r8)
 
     ! Then, It should be proportional to the length of the reciprocal lattice vectors
     a=norm2(reciprocal_latticevectors(:,1))
     b=norm2(reciprocal_latticevectors(:,2))
     c=norm2(reciprocal_latticevectors(:,3))
-    avg=(a+b+c)/3.0_flyt
+    avg=(a+b+c)/3.0_r8
     ! This should be somewhat ok, I guess
     density(1)=ceiling(f0*a/avg)
     density(2)=ceiling(f0*b/avg)
@@ -67,21 +56,21 @@ end function
 !> Calculate a,b,c,alpha,beta,gamma from a set of lattice vectors
 module pure subroutine lo_get_axis_angles(basis,a,b,c,al,be,gm)
     !> the basis
-    real(flyt), dimension(3,3), intent(in) :: basis
+    real(r8), dimension(3,3), intent(in) :: basis
     !> lattice parameter a
-    real(flyt), intent(out) :: a
+    real(r8), intent(out) :: a
     !> lattice parameter a
-    real(flyt), intent(out) :: b
+    real(r8), intent(out) :: b
     !> lattice parameter a
-    real(flyt), intent(out) :: c
+    real(r8), intent(out) :: c
     !> angle alpha
-    real(flyt), intent(out) :: al
+    real(r8), intent(out) :: al
     !> angle beta
-    real(flyt), intent(out) :: be
+    real(r8), intent(out) :: be
     !> angle gamma
-    real(flyt), intent(out) :: gm
+    real(r8), intent(out) :: gm
     !
-    real(flyt), dimension(3) :: a1,a2,a3
+    real(r8), dimension(3) :: a1,a2,a3
     !
     a1=basis(:,1)
     a2=basis(:,2)
@@ -97,23 +86,23 @@ end subroutine
 !> Fermi-Dirac smearing. The derivative of the Fermi-Dirac occupation function: $$ \frac{\partial f}{\partial \epsilon} $$. Can perhaps be used in place of a Gaussian or Lorentzian for smearing.
 module elemental function lo_fermidirac(x,mu,sigma) result(f)
     !> point to evaluate
-    real(flyt), intent(in) :: x
+    real(r8), intent(in) :: x
     !> mean
-    real(flyt), intent(in) :: mu
+    real(r8), intent(in) :: mu
     !> width
-    real(flyt), intent(in) :: sigma
+    real(r8), intent(in) :: sigma
     !> the intensity
-    real(flyt) :: f
+    real(r8) :: f
 
-    real(flyt) :: f0,f1
+    real(r8) :: f0,f1
 
     ! Avoid overflows
     if ( abs(x-mu) .gt. 20*sigma ) then
-        f=0.0_flyt
+        f=0.0_r8
         return
     else
         f0=exp( (x-mu)/sigma )
-        f1=sigma*((1.0_flyt+f0)**2)
+        f1=sigma*((1.0_r8+f0)**2)
         f=f0/f1
     endif
 end function lo_fermidirac
@@ -121,13 +110,13 @@ end function lo_fermidirac
 !> Fermi-Dirac occupation function $$ f=\frac{1}{\exp\left[(\epsilon-\epsilon_F)/k_BT \right]+1 } $$ Temperature tolerance it is replaced with a step function, same thing when the energy is very far from the Fermi level.
 module elemental function lo_fermi(energy,efermi,temperature) result(f)
     !> energy
-    real(flyt), intent(in) :: energy
+    real(r8), intent(in) :: energy
     !> Fermi level
-    real(flyt), intent(in) :: efermi
+    real(r8), intent(in) :: efermi
     !> Temperature
-    real(flyt), intent(in) :: temperature
+    real(r8), intent(in) :: temperature
     !> occupation
-    real(flyt) :: f
+    real(r8) :: f
 
     ! defaults to 1E-3 K
     if ( temperature .lt. lo_temperaturetol ) then
@@ -136,21 +125,21 @@ module elemental function lo_fermi(energy,efermi,temperature) result(f)
         ! Probably better to handle that with a tiny temperature. Something future Olle will figure
         ! out when something breaks.
         if ( energy .gt. efermi ) then
-            f=0.0_flyt
+            f=0.0_r8
         else
-            f=1.0_flyt
+            f=1.0_r8
         endif
     else
         ! 36 sigma makes makes the error from using a step function disappear in the finite precision.
         if ( abs(energy-efermi) .lt. 36*lo_kb_hartree*temperature ) then
             ! use the proper distribution
-            f=1.0_flyt/(exp( (energy-efermi)/(lo_kb_hartree*temperature) )+1.0_flyt)
+            f=1.0_r8/(exp( (energy-efermi)/(lo_kb_hartree*temperature) )+1.0_r8)
         else
             ! replace with step function, avoids overflows.
             if ( energy .lt. efermi ) then
-                f=1.0_flyt
+                f=1.0_r8
             else
-                f=0.0_flyt
+                f=0.0_r8
             endif
         endif
     endif
@@ -159,50 +148,51 @@ end function lo_fermi
 !> Planck distribution function. $$ f=\frac{1}{\exp\left( \hbar\omega/k_BT \right)-1 } $$ Assumes frequencies in Hz and temperature in K. Below a frequency or temperature tolerance it returns zero for numerical stability.
 module elemental function lo_planck(temperature,omega) result(n)
     !> Temperature in K
-    real(flyt), intent(in) :: temperature
+    real(r8), intent(in) :: temperature
     !> Frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> the occupation
-    real(flyt) :: n
+    real(r8) :: n
 
-    real(flyt) :: x
+    real(r8) :: x
+
     ! Get the T=0 limit correct
     if ( temperature .lt. lo_temperaturetol ) then
-        n=0.0_flyt
+        n=0.0_r8
         return
     endif
     ! And the omega = 0 limit
     if ( omega .lt. lo_freqtol ) then
-        n=0.0_flyt
+        n=0.0_r8
         return
     endif
 
     x=omega/(lo_kb_Hartree*temperature)
-    if ( x .gt. 1E2_flyt ) then
+    if ( x .gt. 1E2_r8 ) then
         ! corresponds to 1E-44 or something like that.
-        n=0.0_flyt
+        n=0.0_r8
     else
         ! Use the real distribution
-        n=1.0_flyt/(exp(x)-1.0_flyt)
+        n=1.0_r8/(exp(x)-1.0_r8)
     endif
 end function lo_planck
 
 !> Temperature derivative of the Planck distribution, in 1/K
 module elemental function lo_planck_deriv(T,omega) result(dndt)
     !> Temperature in K
-    real(flyt), intent(in) :: T
+    real(r8), intent(in) :: T
     !> Frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> The derivative
-    real(flyt) :: dndt
+    real(r8) :: dndt
     !
-    real(flyt) :: x,n
+    real(r8) :: x,n
     if ( T .lt. lo_temperaturetol ) then
-        dndt=0.0_flyt
+        dndt=0.0_r8
         return
     endif
     if ( omega .lt. lo_freqtol ) then
-        dndt=0.0_flyt
+        dndt=0.0_r8
         return
     endif
     ! ok, finite derivative
@@ -214,19 +204,19 @@ end function lo_planck_deriv
 !> Second temperature derivative of the Planck distribution, in 1/K^2
 module elemental function lo_planck_secondderiv(T,omega) result(ddnddt)
     !> Temperature in K
-    real(flyt), intent(in) :: T
+    real(r8), intent(in) :: T
     !> Frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> Second derivative
-    real(flyt) :: ddnddt
+    real(r8) :: ddnddt
     !
-    real(flyt) :: x,ex,n
+    real(r8) :: x,ex,n
     if ( T .lt. lo_temperaturetol ) then
-        ddnddt=0.0_flyt
+        ddnddt=0.0_r8
         return
     endif
     if ( omega .lt. lo_freqtol ) then
-        ddnddt=0.0_flyt
+        ddnddt=0.0_r8
         return
     endif
     x=(omega/lo_kb_hartree/T)
@@ -238,58 +228,58 @@ end function lo_planck_secondderiv
 !> The free energy for a single quantum harmonic oscillator in eV $$ F = \frac{\hbar\omega}{2} - k_b T \log(n+1) $$ Assumes temperatures in K and frequency in Hz.
 module elemental function lo_harmonic_oscillator_free_energy(temp,omega) result(f)
     !> Temperature in K
-    real(flyt), intent(in) :: temp
+    real(r8), intent(in) :: temp
     !> Angular frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> the free energy in Hartree
-    real(flyt) :: f
+    real(r8) :: f
 
-    real(flyt) :: n
+    real(r8) :: n
     ! return 0 for omega <= 0. Should be undefined, but that should be taken care of elsewhere.
     if ( omega .lt. lo_freqtol ) then
-        f=0.0_flyt
+        f=0.0_r8
         return
     endif
     ! correct T=0 limit without numerical instability
     if ( temp .lt. lo_temperaturetol ) then
-        f=omega*0.5_flyt
+        f=omega*0.5_r8
         return
     endif
     ! all normal temperatures/frequencies
     n=lo_planck(temp,omega)
-    f=omega*0.5_flyt-lo_kb_hartree*temp*log(1.0_flyt+n)
+    f=omega*0.5_r8-lo_kb_hartree*temp*log(1.0_r8+n)
 end function
 
 !> Harmonic oscillator internal energy
 module elemental function lo_harmonic_oscillator_internal_energy(temp,omega) result(u)
     !> Temperature in K
-    real(flyt), intent(in) :: temp
+    real(r8), intent(in) :: temp
     !> Angular frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> Internal energy in Hartree
-    real(flyt) :: u
+    real(r8) :: u
 
-    u=omega*0.5_flyt+lo_planck(temp,omega)*omega
+    u=omega*0.5_r8+lo_planck(temp,omega)*omega
 end function
 
 !> Free energy of classical harmonic oscillator
 module elemental function lo_classical_harmonic_oscillator_free_energy(temp,omega) result(f)
     !> Temperature in K
-    real(flyt), intent(in) :: temp
+    real(r8), intent(in) :: temp
     !> Angular frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> the free energy in Hartree
-    real(flyt) :: f
+    real(r8) :: f
 
-    real(flyt) :: x
+    real(r8) :: x
     ! undefined for tiny omega
     if ( omega .lt. lo_freqtol ) then
-        f=0.0_flyt
+        f=0.0_r8
         return
     endif
     ! nothing for tiny temperatures
     if ( temp .lt. lo_temperaturetol ) then
-        f=0.0_flyt
+        f=0.0_r8
         return
     endif
     ! normal T and omega
@@ -300,28 +290,28 @@ end function
 !> The entropy for a single harmonic oscillator in eV/K
 module elemental function lo_harmonic_oscillator_entropy(temp,omega) result(s)
     !> Temperature in K
-    real(flyt), intent(in) :: temp
+    real(r8), intent(in) :: temp
     !> Angular frequency in hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> The entropy in Hartreee/K
-    real(flyt) :: s
+    real(r8) :: s
     !
-    real(flyt) :: n
+    real(r8) :: n
 
     if ( omega .lt. lo_freqtol ) then
-        s=0.0_flyt
+        s=0.0_r8
         return
     endif
 
     if ( temp .lt. lo_temperaturetol ) then
-        s=0.0_flyt
+        s=0.0_r8
         return
     endif
 
     n=lo_planck(temp,omega)
     ! make sure we don't take log zero, use the Taylor expansion below that
-    if ( n .gt. 1E-8_flyt ) then
-        s=lo_kb_hartree*( (1.0_flyt+n)*log(1.0_flyt+n)-n*log(n) )
+    if ( n .gt. 1E-8_r8 ) then
+        s=lo_kb_hartree*( (1.0_r8+n)*log(1.0_r8+n)-n*log(n) )
     else
         s=n*lo_kb_hartree
     endif
@@ -330,36 +320,36 @@ end function
 !> Heat capacity (Cv) for a single harmonic oscillator in eV/K
 module elemental function lo_harmonic_oscillator_cv(temp,omega) result(cv)
     !> Temperature in K
-    real(flyt), intent(in) :: temp
+    real(r8), intent(in) :: temp
     !> Angular frequency in Hartree
-    real(flyt), intent(in) :: omega
+    real(r8), intent(in) :: omega
     !> The heat capacity in Hartree/K
-    real(flyt) :: cv
+    real(r8) :: cv
 
-    real(flyt) :: x
+    real(r8) :: x
 
     if ( omega .lt. lo_freqtol ) then
-        cv=0.0_flyt
+        cv=0.0_r8
         return
     endif
 
     if ( temp .lt. lo_temperaturetol ) then
-        cv=0.0_flyt
+        cv=0.0_r8
         return
     endif
 
     x=omega/temp/lo_kb_hartree
     ! have to make sure we avoid overflows. Replace with high/low temperature Taylor expansions
     ! where applicable. This should still be ok to machine precision.
-    if ( x .gt. 200.0_flyt ) then
+    if ( x .gt. 200.0_r8 ) then
         ! very low temperature
-        cv=0.0_flyt
-    elseif ( x .gt. 21.0_flyt ) then
+        cv=0.0_r8
+    elseif ( x .gt. 21.0_r8 ) then
         ! pretty low temperature
         cv=lo_kb_hartree*x*x*exp(-x)
-    elseif ( x .lt. 2E-2_flyt ) then
+    elseif ( x .lt. 2E-2_r8 ) then
         ! really high temperature
-        cv=lo_kb_hartree*(1.0_flyt-x*x/12_flyt+x*x*x*x/240.0_flyt)
+        cv=lo_kb_hartree*(1.0_r8-x*x/12_r8+x*x*x*x/240.0_r8)
     else
         ! in the middle
         cv=lo_kb_hartree*x*x*exp(x)/(exp(x)-1)**2
@@ -451,8 +441,8 @@ module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degent
 
     ! With the basics taken care of, untangle it the best we can.
     untangle: block
-        real(flyt), dimension(3) :: v0
-        real(flyt) :: e0
+        real(r8), dimension(3) :: v0
+        real(r8) :: e0
         real(r8) :: f0,f1
         integer :: icrn,iband,jband,k
 
@@ -511,7 +501,7 @@ module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degent
         enddo
         error_interp_energy=sqrt(error_interp_energy)
 
-        error_interp_gradient=0.0_flyt
+        error_interp_gradient=0.0_r8
         ! Measure the absolute error in group velocity. Or relative? No absolute I think.
         do iband=1,nband
             v0=groupvelocity(:,iband,refcorner)
@@ -521,7 +511,7 @@ module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degent
             enddo
             v1=lo_linear_gradient_in_tetrahedron(corner,tete,1E-12_r8)
             do icrn=1,4
-                error_interp_gradient(iband)=error_interp_gradient(iband)+lo_sqnorm(v1-dvel(:,icrn))*0.25_flyt
+                error_interp_gradient(iband)=error_interp_gradient(iband)+lo_sqnorm(v1-dvel(:,icrn))*0.25_r8
             enddo
         enddo
         error_interp_gradient=sqrt(error_interp_gradient)
@@ -553,7 +543,7 @@ module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degent
     !     enddo
     !     error_interp_energy=sqrt(error_interp_energy)
     !
-    !     error_interp_gradient=0.0_flyt
+    !     error_interp_gradient=0.0_r8
     !     ! Measure the absolute error in group velocity. Or relative? No absolute I think.
     !     do iband=1,nband
     !         v0=groupvelocity(:,iband,refcorner)
@@ -564,7 +554,7 @@ module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degent
     !         enddo
     !         v1=lo_linear_gradient_in_tetrahedron(corner,tete,1E-12_r8)
     !         do icrn=1,4
-    !             error_interp_gradient(iband)=error_interp_gradient(iband)+lo_sqnorm(v1-dvel(:,icrn))*0.25_flyt
+    !             error_interp_gradient(iband)=error_interp_gradient(iband)+lo_sqnorm(v1-dvel(:,icrn))*0.25_r8
     !         enddo
     !     enddo
     !     error_interp_gradient=sqrt(error_interp_gradient)
@@ -576,26 +566,26 @@ end subroutine
 !> Finds the rotation matrix such that lattice'=rotation*lattice represents a diagnoal distortion of ref_lattice.
 module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,lattice,rotation,strain,guess )
     !> reference lattice
-    real(flyt), dimension(3,3), intent(in) :: ref_lattice
+    real(r8), dimension(3,3), intent(in) :: ref_lattice
     !> current lattice
-    real(flyt), dimension(3,3), intent(in) :: lattice
+    real(r8), dimension(3,3), intent(in) :: lattice
     !> rotation matrix
-    real(flyt), dimension(3,3), intent(out) :: rotation
+    real(r8), dimension(3,3), intent(out) :: rotation
     !> strain matrix
-    real(flyt), dimension(3,3), intent(out) :: strain
+    real(r8), dimension(3,3), intent(out) :: strain
     !> guess for the symmetric strain?
-    real(flyt), dimension(3,3), intent(in), optional :: guess
+    real(r8), dimension(3,3), intent(in), optional :: guess
 
     integer, parameter :: nouter=1000
     integer, parameter :: ninner=1000
     integer, parameter :: maxctr=20
-    real(flyt), parameter :: defstep=1E-5_flyt
-    real(flyt), parameter :: errtol=1E-20_flyt
+    real(r8), parameter :: defstep=1E-5_r8
+    real(r8), parameter :: errtol=1E-20_r8
 
-    real(flyt), dimension(6,6,6) :: coeffM
-    real(flyt), dimension(6) :: bvec,eta0,eta1,grad
-    real(flyt), dimension(3,3) :: m0
-    real(flyt) :: e0,e1,f0,step
+    real(r8), dimension(6,6,6) :: coeffM
+    real(r8), dimension(6) :: bvec,eta0,eta1,grad
+    real(r8), dimension(3,3) :: m0
+    real(r8) :: e0,e1,f0,step
     integer :: initer,outiter,ctr,i
 
     ! So, what do I solve here. The idea is that any transformation of a lattice takes
@@ -646,13 +636,13 @@ module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,latti
         eta0(5)=m0(1,3)
         eta0(6)=m0(2,3)
     endif
-    eta1=0.0_flyt
-    grad=0.0_flyt
+    eta1=0.0_r8
+    grad=0.0_r8
 
     outloop: do outiter=1,nouter
         ! Get the error and gradient
-        e0=0.0_flyt
-        grad=0.0_flyt
+        e0=0.0_r8
+        grad=0.0_r8
         do i=1,6
             f0=dot_product(eta0,matmul(coeffM(:,:,i),eta0))-bvec(i)
             e0=e0+f0**2
@@ -666,7 +656,7 @@ module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,latti
             ! Guess new point
             eta1=eta0-step*grad
             ! Get error at new point
-            e1=0.0_flyt
+            e1=0.0_r8
             do i=1,6
                 e1=e1+( dot_product(eta1,matmul(coeffM(:,:,i),eta1))-bvec(i) )**2
             enddo
@@ -681,10 +671,10 @@ module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,latti
                 ! Good step, keep going
                 eta0=eta1
                 e0=e1
-                step=step*1.3_flyt
+                step=step*1.3_r8
             else
                 ! Bad step, decrease and try again
-                step=step*0.1_flyt
+                step=step*0.1_r8
                 ctr=ctr+1
             endif
 
@@ -706,15 +696,15 @@ module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,latti
     ! Get the rotation
     m0=matmul(strain,ref_lattice)
     rotation=matmul(m0,lo_invert3x3matrix(lattice))
-    rotation=rotation/lo_determ(rotation)**(1.0_flyt/3.0_flyt)
+    rotation=rotation/lo_determ(rotation)**(1.0_r8/3.0_r8)
 
     contains
 
     ! These are magic matrices that define the quadratic form. Thanks Mathematica.
     subroutine cfvars(cm1,cm2,cm3,cm4,cm5,cm6,basis)
-        real(flyt), dimension(6,6), intent(out) :: cm1,cm2,cm3,cm4,cm5,cm6
-        real(flyt), dimension(3,3), intent(in) :: basis
-        real(flyt) :: ax,ay,az,bx,by,bz,cx,cy,cz
+        real(r8), dimension(6,6), intent(out) :: cm1,cm2,cm3,cm4,cm5,cm6
+        real(r8), dimension(3,3), intent(in) :: basis
+        real(r8) :: ax,ay,az,bx,by,bz,cx,cy,cz
         ax=basis(1,1)
         ay=basis(2,1)
         az=basis(3,1)
@@ -954,30 +944,30 @@ module elemental function lo_mass_from_Z(Z) result(mass)
     !> atomic number
     integer, intent(in) :: Z
     !> atomic mass
-    real(flyt) :: mass
+    real(r8) :: mass
 
-    real(flyt), parameter :: mass_of_z(103)=[&
-        1837.3635941738078_flyt,7296.2969734687958_flyt,12650.914674013131_flyt,16428.203160097353_flyt,19707.298616949192_flyt,&
-        21894.232166580099_flyt,25532.658002279986_flyt,29165.131013836126_flyt,34631.970469439431_flyt,36785.974179179480_flyt,&
-        41907.785702600464_flyt,44305.398719494158_flyt,49184.336085177551_flyt,51196.732196748162_flyt,56461.713422756598_flyt,&
-        58450.531435178993_flyt,64626.751682478913_flyt,72820.159896487196_flyt,71271.842915840840_flyt,73057.766007199767_flyt,&
-        81949.614150126494_flyt,87255.746029294125_flyt,92860.614527125974_flyt,94783.152256241054_flyt,100145.92981946046_flyt,&
-        101799.47291883679_flyt,107428.64256934724_flyt,106991.43472875118_flyt,115837.34411593614_flyt,119232.81727182020_flyt,&
-        127097.37348457018_flyt,132414.33382488810_flyt,136573.71556256805_flyt,143934.15963176650_flyt,145655.22107549547_flyt,&
-        152754.42102390452_flyt,155798.01983481817_flyt,159715.37166228655_flyt,162065.44714477652_flyt,166290.53681230778_flyt,&
-        169357.96685242554_flyt,174883.53175668753_flyt,176648.83155961873_flyt,184230.12531840615_flyt,187585.25831892420_flyt,&
-        193983.27749829018_flyt,196631.61010862543_flyt,204913.72412466665_flyt,209300.56637053887_flyt,216395.28954064651_flyt,&
-        221954.51211759393_flyt,232606.27244494593_flyt,231332.70256887272_flyt,239332.06149861717_flyt,242271.81796656057_flyt,&
-        250331.60985197860_flyt,253209.15261516630_flyt,255415.34392933775_flyt,256858.93778433156_flyt,262926.38304727047_flyt,&
-        264154.77040951385_flyt,274101.08530984761_flyt,277014.10111818346_flyt,286653.08288060426_flyt,289703.18470917374_flyt,&
-        296218.40489202098_flyt,300649.58503824903_flyt,304894.64416939113_flyt,307948.23220325267_flyt,315428.42281563085_flyt,&
-        318944.82173007610_flyt,325358.20052182802_flyt,329847.79912501748_flyt,335123.06042591197_flyt,339434.06137212575_flyt,&
-        346758.71246973320_flyt,350388.43593453628_flyt,355605.08972890303_flyt,359048.09007865738_flyt,365669.91099485726_flyt,&
-        372568.16925712326_flyt,377733.31494506379_flyt,380947.96245039790_flyt,380947.23566475883_flyt,382788.35303494456_flyt,&
-        404717.70151349297_flyt,406540.58999882534_flyt,412027.48433967575_flyt,413850.37282500812_flyt,422979.49916528584_flyt,&
-        421152.65264218533_flyt,433900.15969218750_flyt,432115.71544803848_flyt,444894.16373021837_flyt,443071.27524488600_flyt,&
-        450381.05807106884_flyt,450381.05807106884_flyt,457690.84089725168_flyt,459513.72938258405_flyt,468664.62957895256_flyt,&
-        470487.51806428493_flyt,472310.40654961730_flyt,477797.30089046771_flyt]
+    real(r8), parameter :: mass_of_z(103)=[&
+        1837.3635941738078_r8,7296.2969734687958_r8,12650.914674013131_r8,16428.203160097353_r8,19707.298616949192_r8,&
+        21894.232166580099_r8,25532.658002279986_r8,29165.131013836126_r8,34631.970469439431_r8,36785.974179179480_r8,&
+        41907.785702600464_r8,44305.398719494158_r8,49184.336085177551_r8,51196.732196748162_r8,56461.713422756598_r8,&
+        58450.531435178993_r8,64626.751682478913_r8,72820.159896487196_r8,71271.842915840840_r8,73057.766007199767_r8,&
+        81949.614150126494_r8,87255.746029294125_r8,92860.614527125974_r8,94783.152256241054_r8,100145.92981946046_r8,&
+        101799.47291883679_r8,107428.64256934724_r8,106991.43472875118_r8,115837.34411593614_r8,119232.81727182020_r8,&
+        127097.37348457018_r8,132414.33382488810_r8,136573.71556256805_r8,143934.15963176650_r8,145655.22107549547_r8,&
+        152754.42102390452_r8,155798.01983481817_r8,159715.37166228655_r8,162065.44714477652_r8,166290.53681230778_r8,&
+        169357.96685242554_r8,174883.53175668753_r8,176648.83155961873_r8,184230.12531840615_r8,187585.25831892420_r8,&
+        193983.27749829018_r8,196631.61010862543_r8,204913.72412466665_r8,209300.56637053887_r8,216395.28954064651_r8,&
+        221954.51211759393_r8,232606.27244494593_r8,231332.70256887272_r8,239332.06149861717_r8,242271.81796656057_r8,&
+        250331.60985197860_r8,253209.15261516630_r8,255415.34392933775_r8,256858.93778433156_r8,262926.38304727047_r8,&
+        264154.77040951385_r8,274101.08530984761_r8,277014.10111818346_r8,286653.08288060426_r8,289703.18470917374_r8,&
+        296218.40489202098_r8,300649.58503824903_r8,304894.64416939113_r8,307948.23220325267_r8,315428.42281563085_r8,&
+        318944.82173007610_r8,325358.20052182802_r8,329847.79912501748_r8,335123.06042591197_r8,339434.06137212575_r8,&
+        346758.71246973320_r8,350388.43593453628_r8,355605.08972890303_r8,359048.09007865738_r8,365669.91099485726_r8,&
+        372568.16925712326_r8,377733.31494506379_r8,380947.96245039790_r8,380947.23566475883_r8,382788.35303494456_r8,&
+        404717.70151349297_r8,406540.58999882534_r8,412027.48433967575_r8,413850.37282500812_r8,422979.49916528584_r8,&
+        421152.65264218533_r8,433900.15969218750_r8,432115.71544803848_r8,444894.16373021837_r8,443071.27524488600_r8,&
+        450381.05807106884_r8,450381.05807106884_r8,457690.84089725168_r8,459513.72938258405_r8,468664.62957895256_r8,&
+        470487.51806428493_r8,472310.40654961730_r8,477797.30089046771_r8]
     mass=mass_of_Z(Z)
 end function
 

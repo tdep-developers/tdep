@@ -6,7 +6,7 @@ use gottochblandat, only: lo_sqnorm,lo_progressbar,lo_progressbar_init,walltime,
 use type_qpointmesh, only: lo_qpoint_mesh,lo_qpoint,lo_get_small_group_of_qpoint
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
-use type_blas_lapack_wrappers, only: lo_gemm
+use type_blas_lapack_wrappers, only: lo_gemm,lo_zheev
 use type_symmetryoperation, only: lo_eigenvector_transformation_matrix, lo_operate_on_vector
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
@@ -24,6 +24,8 @@ type lo_distributed_phonon_dispersions_qpoint
     real(r8), dimension(:), allocatable :: omega
     !> group velocities
     real(r8), dimension(:, :), allocatable :: vel
+    !> generalized group velocities
+    real(r8), dimension(:, :, :), allocatable :: genvel
     !> mode eigenvectors
     complex(r8), dimension(:, :), allocatable :: egv
     !> eigenvectors / sqrt( 2 omega_{qs} m_i)
@@ -153,7 +155,7 @@ subroutine lo_generate_distributed_dispersions(dr,qp,p,fc,smearing_prefactor,mw,
     ! Expand irreducible to full set
     expand: block
         complex(r8), dimension(:,:), allocatable :: rotmat
-        integer :: i,j,k,iq,jq,ctr,iop
+        integer :: i,j,k,l,iq,jq,ctr,iop
 
         ! First make a little space for the full
         j=0
@@ -194,6 +196,7 @@ subroutine lo_generate_distributed_dispersions(dr,qp,p,fc,smearing_prefactor,mw,
             allocate(dr%aq(i)%omega( p%na*3 ))
             allocate(dr%aq(i)%egv( p%na*3,p%na*3 ))
             allocate(dr%aq(i)%vel( 3,p%na*3 ))
+            allocate(dr%aq(i)%genvel( 3,p%na*3,p%na*3 ))
             allocate(dr%aq(i)%nuvec( p%na*3,p%na*3 ))
             allocate(dr%aq(i)%sigma( p%na*3 ))
             allocate(dr%aq(i)%degeneracy( p%na*3 ))
@@ -204,6 +207,7 @@ subroutine lo_generate_distributed_dispersions(dr,qp,p,fc,smearing_prefactor,mw,
             dr%aq(i)%omega=0.0_r8
             dr%aq(i)%egv=0.0_r8
             dr%aq(i)%vel=0.0_r8
+            dr%aq(i)%genvel=0.0_r8
             dr%aq(i)%nuvec=0.0_r8
             dr%aq(i)%degeneracy=0
             dr%aq(i)%degenmode=0
@@ -221,6 +225,9 @@ subroutine lo_generate_distributed_dispersions(dr,qp,p,fc,smearing_prefactor,mw,
                     dr%aq(i)%omega(k) = dr%iq(j)%omega(k)
                     ! Make sure the velocities have the proper symmetry
                     dr%aq(i)%vel(:,k) = lo_operate_on_vector(p%sym%op(abs(iop)), dr%iq(j)%vel(:, k), reciprocal=.true.)
+                    do l=1,dr%n_mode
+                        dr%aq(i)%genvel(:,k,l) = lo_operate_on_vector(p%sym%op(abs(iop)), dr%iq(j)%genvel(:, k, l), reciprocal=.true.)
+                    enddo
                 end do
             else
                 ! Same thing, but now we have to time-reverse it
@@ -549,11 +556,13 @@ subroutine harmonic_things_for_single_point(ompoint, fc, p, mem, qpoint, qvec, q
         allocate (ompoint%egv(nb, nb))
         allocate (ompoint%nuvec(nb, nb))
         allocate (ompoint%vel(3, nb))
+        allocate (ompoint%genvel(3, nb, nb))
         allocate (ompoint%sigma(nb))
         ompoint%omega = 0.0_r8
         ompoint%egv = 0.0_r8
         ompoint%nuvec = 0.0_r8
         ompoint%vel = 0.0_r8
+        ompoint%genvel = 0.0_r8
         ompoint%sigma = 0.0_r8
 
         ! Figure out what to do with the q-point
@@ -587,17 +596,21 @@ subroutine harmonic_things_for_single_point(ompoint, fc, p, mem, qpoint, qvec, q
     ! Solve for harmonic things
     slv: block
         complex(r8), dimension(:, :, :), allocatable :: Dq
-        complex(r8), dimension(:, :), allocatable :: D
+        complex(r8), dimension(:, :), allocatable :: D,m0,m1,m2,m3
+        real(r8), dimension(:), allocatable :: v0,v1
         real(r8) :: f0,f1
         integer, dimension(:, :), allocatable :: di
-        integer :: l,b1,b2,i,j,iatom,ialpha,ii
+        logical, dimension(:), allocatable :: modefixed
+        integer :: l,b1,b2,i,j,iatom,ialpha,ii,jj
 
         ! Get the frequencies
         call mem%allocate(Dq, [nb, nb, 3], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(D,  [nb, nb], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(m0, [nb, nb], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(di, [nb, nb], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         Dq = 0.0_r8
         D = 0.0_r8
+        m0 = 0.0_r8
         di = 0
         if (present(qpoint)) then
             call fc%dynamicalmatrix( &
@@ -666,9 +679,105 @@ subroutine harmonic_things_for_single_point(ompoint, fc, p, mem, qpoint, qvec, q
             enddo
         enddo
 
+        ! Evaluate off-diagonal group velocities
+        allocate(modefixed(nb))
+        allocate(v1(nb))
+        v1=0.0_r8
+        modefixed=.false.
+        do ialpha=1,3
+            ! Find the properly rotated eigenvectors
+            modefixed=.false.
+            v1=0.0_r8
+            m0=0.0_r8
+            do b1=1,nb
+                if ( modefixed(b1) ) cycle
+
+                if ( ompoint%omega(b1) .lt. lo_freqtol ) then
+                    ! Don't care for acoustic modes
+                    m0(:,b1)=0.0_r8
+                    modefixed(b1)=.true.
+                elseif ( ompoint%degeneracy(b1) .eq. 1 ) then
+                    ! Not degenerate, nothing to worry about
+                    m0(:,b1)=ompoint%egv(:,b1)
+                    modefixed(b1)=.true.
+                else
+                    allocate(m1(ompoint%degeneracy(b1),ompoint%degeneracy(b1)))
+                    allocate(m2(nb,ompoint%degeneracy(b1)))
+                    allocate(m3(nb,ompoint%degeneracy(b1)))
+                    allocate(v0(ompoint%degeneracy(b1)))
+                    m1=0.0_r8
+                    m2=0.0_r8
+                    m3=0.0_r8
+                    v0=0.0_r8
+
+                    do i=1,ompoint%degeneracy(b1)
+                    do j=1,ompoint%degeneracy(b1)
+                        ii=ompoint%degenmode(i,b1)
+                        jj=ompoint%degenmode(j,b1)
+                        m1(i,j)=dot_product(ompoint%egv(:,ii),matmul(Dq(:,:,ialpha),ompoint%egv(:,jj)))
+                    enddo
+                    enddo
+                    ! Figure out the mean eigenvalue
+                    call lo_zheev(m1,v0,jobz='V')
+                    f0=sum(v0)/real(ompoint%degeneracy(b1),r8)
+                    ! Rotate eigenvectors
+                    do i=1,ompoint%degeneracy(b1)
+                        ii=ompoint%degenmode(i,b1)
+                        m2(:,i)=ompoint%egv(:,ii)
+                    enddo
+                    m3=matmul(m2,m1)
+                    ! Store correctly rotated eigenvectors
+                    do i=1,ompoint%degeneracy(b1)
+                        b2=ompoint%degenmode(i,b1)
+                        m0(:,b2)=m3(:,i)
+                        v1(b2)=f0
+                        modefixed(b2)=.true.
+                    enddo
+
+                    deallocate(m1)
+                    deallocate(m2)
+                    deallocate(m3)
+                    deallocate(v0)
+                endif
+            enddo
+
+            ! Sandwich with rotated eigenvectors
+            allocate(m2(nb,nb))
+            m2=0.0_r8
+            do b1=1,nb
+            do b2=1,nb
+                m2(b1,b2)=dot_product(m0(:,b1),matmul(Dq(:,:,ialpha),m0(:,b2)))
+            enddo
+            enddo
+            ! Make sure the degeneracies hold
+            do b1=1,nb
+                if ( ompoint%degeneracy(b1) .eq. 1 ) cycle
+                do i=1,ompoint%degeneracy(b1)
+                    b2=ompoint%degenmode(i,b1)
+                    if ( b1 .eq. b2 ) then
+                        m2(b1,b1)=v1(b1)
+                    else
+                        m2(b1,b2)=0.0_r8
+                    endif
+                enddo
+            enddo
+            ! Store as generalized group velocity
+            do b1=1,nb
+            do b2=1,nb
+                if ( ompoint%omega(b1) .lt. lo_freqtol ) cycle
+                if ( ompoint%omega(b2) .lt. lo_freqtol ) cycle
+                ompoint%genvel(ialpha,b1,b2)=real( m2(b1,b2)/(ompoint%omega(b1)+ompoint%omega(b2)), r8)
+            enddo
+            enddo
+
+            deallocate(m2)
+        enddo
+
+
         ! Cleanup
         call mem%deallocate(Dq, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(D, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(D,  persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(m0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(di, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         if (present(qvec)) then
             deallocate (dumqpoint%invariant_operation)
@@ -681,6 +790,7 @@ subroutine destroy_ompoint(self)
 
     if ( allocated(self%omega      ) ) deallocate(self%omega      )
     if ( allocated(self%vel        ) ) deallocate(self%vel        )
+    if ( allocated(self%genvel     ) ) deallocate(self%genvel     )
     if ( allocated(self%egv        ) ) deallocate(self%egv        )
     if ( allocated(self%nuvec      ) ) deallocate(self%nuvec      )
     if ( allocated(self%degeneracy ) ) deallocate(self%degeneracy )

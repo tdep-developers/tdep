@@ -26,8 +26,6 @@ interface lo_return_unique
     module procedure lo_return_unique_characters
     module procedure lo_return_unique_integers
     module procedure lo_return_unique_integer_columns
-    !module procedure lo_return_unique_doubles
-
     module procedure lo_return_unique_double_columns
     module procedure lo_return_unique_double_matrices
 end interface lo_return_unique

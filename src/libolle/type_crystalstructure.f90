@@ -1099,11 +1099,7 @@ real(flyt) function kinetic_energy(p)
 end function
 
 !> The shortest distance in a cell, should be the shortest neighbour distance.
-#ifdef AGRESSIVE_SANITY
-function mincutoff(p) result(r)
-#else
 pure function mincutoff(p) result(r)
-#endif
     !> the crystal structure
     class(lo_crystalstructure), intent(in) :: p
     !> the cutoff
@@ -1134,11 +1130,7 @@ pure function mincutoff(p) result(r)
 end function
 
 !> calculate the nearest neighbour distance. Not fast.
-#ifdef AGRESSIVE_SANITY
-function nearest_neighbour_distance(p) result(r)
-#else
 pure function nearest_neighbour_distance(p) result(r)
-#endif
     !> structure
     class(lo_crystalstructure), intent(in) :: p
     !> nearest neighbour distance
@@ -1172,11 +1164,7 @@ pure function nearest_neighbour_distance(p) result(r)
 end function
 
 !> The longest distance in a cell. Will return the radius of the largest sphere that can fit safely inside the cell
-#ifdef AGRESSIVE_SANITY
-function maxcutoff(p) result(r)
-#else
 pure function maxcutoff(p) result(r)
-#endif
     !> the crystal structure
     class(lo_crystalstructure), intent(in) :: p
     !> the cutoff

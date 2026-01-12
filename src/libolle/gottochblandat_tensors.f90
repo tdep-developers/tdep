@@ -1,4 +1,3 @@
-#include "precompilerdefinitions"
 submodule (gottochblandat) gottochblandat_tensors
 implicit none
 
@@ -6,9 +5,9 @@ contains
 
 !> generate all tensor transposition things, as simple arrays as well as matrices that operate on flattened tensors
 module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quartet,prm_pair,prm_triplet,prm_quartet)
-    real(flyt), dimension(9,9,2), intent(out), optional :: trm_pair
-    real(flyt), dimension(27,27,6), intent(out), optional :: trm_triplet
-    real(flyt), dimension(81,81,24), intent(out), optional :: trm_quartet
+    real(r8), dimension(9,9,2), intent(out), optional :: trm_pair
+    real(r8), dimension(27,27,6), intent(out), optional :: trm_triplet
+    real(r8), dimension(81,81,24), intent(out), optional :: trm_quartet
     integer, dimension(2,2), intent(out), optional :: prm_pair
     integer, dimension(3,6), intent(out), optional :: prm_triplet
     integer, dimension(4,24), intent(out), optional :: prm_quartet
@@ -30,7 +29,7 @@ module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quart
     if ( present(prm_quartet) ) prm_quartet=pq
 
     if ( present(trm_pair) ) then
-        trm_pair=0.0_flyt
+        trm_pair=0.0_r8
         l=0
         do i1=1,3
         do i2=1,3
@@ -40,13 +39,13 @@ module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quart
                 dd2=d2(pp(:,prm))
                 j1=dd2(2)
                 j2=dd2(1)
-                trm_pair(j1 + (j2-1)*3 , l, prm)=1.0_flyt
+                trm_pair(j1 + (j2-1)*3 , l, prm)=1.0_r8
             enddo
         enddo
         enddo
     endif
     if ( present(trm_triplet) ) then
-        trm_triplet=0.0_flyt
+        trm_triplet=0.0_r8
         l=0
         do i1=1,3
         do i2=1,3
@@ -58,14 +57,14 @@ module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quart
                 j1=dd3(3)
                 j2=dd3(2)
                 j3=dd3(1)
-                trm_triplet(j1 + (j2-1)*3 + (j3-1)*9 , l, prm)=1.0_flyt
+                trm_triplet(j1 + (j2-1)*3 + (j3-1)*9 , l, prm)=1.0_r8
             enddo
         enddo
         enddo
         enddo
     endif
     if ( present(trm_quartet) ) then
-        trm_quartet=0.0_flyt
+        trm_quartet=0.0_r8
         l=0
         do i1=1,3
         do i2=1,3
@@ -79,7 +78,7 @@ module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quart
                 j2=dd4(3)
                 j3=dd4(2)
                 j4=dd4(1)
-                trm_quartet(j1 + (j2-1)*3 + (j3-1)*9 + (j4-1)*27, l, prm)=1.0_flyt
+                trm_quartet(j1 + (j2-1)*3 + (j3-1)*9 + (j4-1)*27, l, prm)=1.0_r8
             enddo
         enddo
         enddo
@@ -90,9 +89,9 @@ end subroutine
 
 !> routines that permute tensors
 module pure function lo_transpose_2tensor(m,perm) result(pm)
-    real(flyt), dimension(3,3), intent(in) :: m
+    real(r8), dimension(3,3), intent(in) :: m
     integer, dimension(2), intent(in) :: perm
-    real(flyt), dimension(3,3) :: pm
+    real(r8), dimension(3,3) :: pm
 
     integer :: i,j
     integer, dimension(2) :: d
@@ -105,9 +104,9 @@ module pure function lo_transpose_2tensor(m,perm) result(pm)
     enddo
 end function
 module pure function lo_transpose_3tensor(m,perm) result(pm)
-    real(flyt), dimension(3,3,3), intent(in) :: m
+    real(r8), dimension(3,3,3), intent(in) :: m
     integer, dimension(3), intent(in) :: perm
-    real(flyt), dimension(3,3,3) :: pm
+    real(r8), dimension(3,3,3) :: pm
 
     integer :: i,j,k
     integer, dimension(3) :: d
@@ -122,9 +121,9 @@ module pure function lo_transpose_3tensor(m,perm) result(pm)
     enddo
 end function
 module pure function lo_transpose_4tensor(m,perm) result(pm)
-    real(flyt), dimension(3,3,3,3), intent(in) :: m
+    real(r8), dimension(3,3,3,3), intent(in) :: m
     integer, dimension(4), intent(in) :: perm
-    real(flyt), dimension(3,3,3,3) :: pm
+    real(r8), dimension(3,3,3,3) :: pm
 
     integer :: i,j,k,l
     integer, dimension(4) :: d
@@ -143,8 +142,8 @@ end function
 
 !> routines to flatten tensors
 module pure function lo_flatten_2tensor(m) result(fm)
-    real(flyt), dimension(3,3), intent(in) :: m
-    real(flyt), dimension(9) :: fm
+    real(r8), dimension(3,3), intent(in) :: m
+    real(r8), dimension(9) :: fm
 
     integer :: i,j,l
     l=0
@@ -156,8 +155,8 @@ module pure function lo_flatten_2tensor(m) result(fm)
     enddo
 end function
 module pure function lo_flatten_3tensor(m) result(fm)
-    real(flyt), dimension(3,3,3), intent(in) :: m
-    real(flyt), dimension(27) :: fm
+    real(r8), dimension(3,3,3), intent(in) :: m
+    real(r8), dimension(27) :: fm
 
     integer :: i,j,k,l
     l=0
@@ -171,8 +170,8 @@ module pure function lo_flatten_3tensor(m) result(fm)
     enddo
 end function
 module pure function lo_flatten_4tensor(m) result(fm)
-    real(flyt), dimension(3,3,3,3), intent(in) :: m
-    real(flyt), dimension(81) :: fm
+    real(r8), dimension(3,3,3,3), intent(in) :: m
+    real(r8), dimension(81) :: fm
 
     integer :: i,j,k,l,ll
     ll=0
@@ -189,8 +188,8 @@ module pure function lo_flatten_4tensor(m) result(fm)
 end function
 !> and unflatten them
 module pure function lo_unflatten_2tensor(fm) result(m)
-    real(flyt), dimension(9), intent(in) :: fm
-    real(flyt), dimension(3,3) :: m
+    real(r8), dimension(9), intent(in) :: fm
+    real(r8), dimension(3,3) :: m
 
     integer :: i,j,l
     l=0
@@ -202,8 +201,8 @@ module pure function lo_unflatten_2tensor(fm) result(m)
     enddo
 end function
 module pure function lo_unflatten_3tensor(fm) result(m)
-    real(flyt), dimension(27), intent(in) :: fm
-    real(flyt), dimension(3,3,3) :: m
+    real(r8), dimension(27), intent(in) :: fm
+    real(r8), dimension(3,3,3) :: m
 
     integer :: i,j,k,l
     l=0
@@ -217,8 +216,8 @@ module pure function lo_unflatten_3tensor(fm) result(m)
     enddo
 end function
 module pure function lo_unflatten_4tensor(fm) result(m)
-    real(flyt), dimension(81), intent(in) :: fm
-    real(flyt), dimension(3,3,3,3) :: m
+    real(r8), dimension(81), intent(in) :: fm
+    real(r8), dimension(3,3,3,3) :: m
 
     integer :: i,j,k,l,ll
     ll=0

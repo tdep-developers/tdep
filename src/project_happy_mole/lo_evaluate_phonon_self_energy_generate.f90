@@ -140,6 +140,63 @@ module subroutine generate(se, qpoint, qdir, uc, fc, fct, fcf, ise, qp, ddr,&
         ! call tmr%tock('four-phonon self-energy')
     end if
 
+    ! ! Fix symmetry, if broken?
+    ! fixsymmetry: block
+    !     complex(r8), dimension(:,:,:), allocatable :: symmetryop
+    !     complex(r8), dimension(:,:), allocatable :: sigma_mode,sigma_xyz,cm0,cm1,cm2
+    !     integer :: ie,i,iop,imode
+
+
+    !     allocate(symmetryop(uc%na*3,uc%na*3,qpoint%n_invariant_operation))
+    !     allocate(sigma_mode(uc%na*3,uc%na*3))
+    !     allocate(sigma_xyz(uc%na*3,uc%na*3))
+    !     allocate(cm0(uc%na*3,uc%na*3))
+    !     allocate(cm1(uc%na*3,uc%na*3))
+    !     allocate(cm2(uc%na*3,uc%na*3))
+    !     symmetryop=0.0_r8
+    !     sigma_mode=0.0_r8
+    !     sigma_xyz=0.0_r8
+    !     cm0=0.0_r8
+    !     cm1=0.0_r8
+    !     cm2=0.0_r8
+
+    !     do i=1,qpoint%n_invariant_operation
+    !         iop = qpoint%invariant_operation(i)
+    !         call lo_eigenvector_transformation_matrix(symmetryop(:,:,i),uc%rcart,qpoint%r,uc%sym%op(iop))
+    !     enddo
+
+    !     do ie=1,se%n_energy
+    !         sigma_mode=0.0_r8
+    !         do imode=1,se%n_mode
+    !             if ( ompoint%omega(imode) .gt. lo_freqtol ) then
+    !                 sigma_mode(imode,imode)=lo_imag*se%im(ie,imode) + se%re(ie,imode)
+    !                 sigma_mode(imode,imode)=sigma_mode(imode,imode)*ompoint%omega(imode)
+    !             endif
+    !         enddo
+    !         call lo_gemm(ompoint%egv,sigma_mode,cm0)
+    !         call lo_gemm(cm0,ompoint%egv,sigma_xyz,transb='C')
+
+    !         cm0=0.0_r8
+    !         do i=1,qpoint%n_invariant_operation
+    !             iop = qpoint%invariant_operation(i)
+    !             call lo_gemm(symmetryop(:,:,i),sigma_xyz,cm1)
+    !             call lo_gemm(cm1,symmetryop(:,:,i),cm2,transb='C')
+    !             cm0=cm0+cm2
+    !         enddo
+    !         cm0=cm0/real(qpoint%n_invariant_operation,r8)
+
+    !         ! then transform back again?
+    !         call lo_gemm(ompoint%egv,cm0,cm1,transa='C')
+    !         call lo_gemm(cm1,ompoint%egv,cm2)
+    !         do imode=1,se%n_mode
+    !             if ( ompoint%omega(imode) .gt. lo_freqtol ) then
+    !                 se%im(ie,imode)=aimag(cm2(imode,imode))/ompoint%omega(imode)
+    !                 se%re(ie,imode)=real(cm2(imode,imode),r8)/ompoint%omega(imode)
+    !             endif
+    !         enddo
+    !     enddo
+    ! end block fixsymmetry
+
     ! Massage the self-energy ever so slightly
     massageselfenergy: block
         real(r8), parameter :: KK_prefactor = 2.0_r8/lo_pi

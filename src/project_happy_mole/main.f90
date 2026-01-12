@@ -5,7 +5,6 @@ use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_forceconstant_fourthorder, only: lo_forceconstant_fourthorder
-
 use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh, lo_read_qmesh_from_file, lo_get_small_group_of_qpoint
 use type_phonon_dispersions, only: lo_phonon_dispersions
 use type_phonon_dos, only: lo_phonon_dos
@@ -14,15 +13,15 @@ use gottochblandat, only: open_file, walltime, lo_chop, lo_points_on_sphere, lo_
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use lo_timetracker, only: lo_timer
-
-!use dielscatter, only: lo_dielectric_response
 use options, only: lo_opts
+
 use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
 use lo_thermal_transport, only: lo_thermal_conductivity
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
 use lo_evaluate_phonon_self_energy, only: lo_phonon_selfenergy
 use create_selfenergy_interpolation, only: generate_interpolated_selfenergy
 use lo_collision_matrix, only: lo_scattering_matrix
+use bubble, only: bubble_only_transport
 
 implicit none
 type(lo_opts) :: opts
@@ -36,7 +35,7 @@ type(lo_forceconstant_thirdorder) :: fc3
 type(lo_forceconstant_fourthorder) :: fc4
 
 type(lo_phonon_dispersions) :: dr,ddr,kdr
-type(lo_distributed_phonon_dispersions) :: pdr
+type(lo_distributed_phonon_dispersions) :: pdr,psdr
 
 class(lo_qpoint_mesh), allocatable :: qp,dqp,kqp
 
@@ -46,6 +45,9 @@ init: block
 
     ! Init MPI!
     call mw%init()
+
+    ! Init memory tracker
+    call mem%init()
 
     ! Start the initialization timer
     call tmr_init%start()
@@ -98,6 +100,7 @@ init: block
     call ddr%generate(dqp, fc2, uc, mw=mw, mem=mem, verbosity=opts%verbosity)
 
     call pdr%generate(qp, uc, fc2, opts%sigma, mw=mw, mem=mem, verbosity=opts%verbosity)
+    call psdr%generate(kqp, uc, fc2, opts%sigma, mw=mw, mem=mem, verbosity=opts%verbosity)
 
     ! Now I can decide the maximum frequency on the self-energy
     ! axis. This is quite a generous margin.
@@ -133,10 +136,10 @@ firstiteration: block
     ! Make sure the interpolated self-energy is nothing
     call ise%destroy()
     ! Read it from file?
-    call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+    call ise%read_from_hdf5(uc,fc2,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
     call mw%barrier()
 
-    ! Get spectral function on a path?
+    ! ! Get spectral function on a path?
     if (mw%talk) then
         write(*,*) '... generating spectral function on path'
     endif
@@ -144,7 +147,7 @@ firstiteration: block
 
     ! Generate spectral function on a grid?
     if (mw%talk) then
-        write(*,*) '... generating spectral function on a grid'
+       write(*,*) '... generating spectral function on a grid'
     endif
     call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
 
@@ -156,11 +159,22 @@ firstiteration: block
     end if
     call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
 
+if ( mw%talk ) write(*,*) 'done here ',__FILE__,__LINE__
+call mw%destroy()
+stop
+
+    ! Generate a bubble-only thermal transport (for now)
+    if (mw%talk) then
+        write(*,*) '... generating bubble-only thermal transport'
+    endif
+    call bubble_only_transport(kqp,psdr,uc,ise,opts%sigma,opts%temperature,mw,mem,opts%verbosity)
+
+
     ! Create scattering matrix?
     !call scm%generate(uc,fc2,fc3,ise,kqp,mw,mem,opts%verbosity+5)
 
     ! Then I guess we start to iterate, self-consistently?
-    do iter=1,3
+    do iter=1,-1
         ! Then I guess the next step is to get the self-energy again, but this time using
         ! a convolution integration instead?
         call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
@@ -176,7 +190,7 @@ firstiteration: block
         ! Then we read the newly created interpolation and get a spectral function on a path?
 
         ! Read it from file?
-        call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+        !call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
         ! Get spectral function on a path?
         call ise%spectral_function_along_path(bs,uc,mw,mem)
         ! Spectral function on a grid

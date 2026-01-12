@@ -20,7 +20,9 @@ OBJS = $(OBJECT_PATH)main.o\
  $(OBJECT_PATH)lo_spectralfunction_convolution.o\
  $(OBJECT_PATH)lo_spectralfunction_helpers.o\
  $(OBJECT_PATH)lo_distributed_phonon_dispersion_relations.o\
- $(OBJECT_PATH)create_selfenergy_interpolation.o
+ $(OBJECT_PATH)create_selfenergy_interpolation.o\
+ $(OBJECT_PATH)lo_accumulate_thermal_transport.o\
+ $(OBJECT_PATH)bubble.o
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi) $(incLPATHfft)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) ${incIPATHhdf} $(incIPATHmpi) $(incIPATHfft)
@@ -51,7 +53,8 @@ $(OBJECT_PATH)main.o:\
 	$(OBJECT_PATH)lo_spectralfunction_convolution.o\
 	$(OBJECT_PATH)lo_spectralfunction_helpers.o\
 	$(OBJECT_PATH)lo_distributed_phonon_dispersion_relations.o\
-	$(OBJECT_PATH)lo_selfenergy_interpolation.o
+	$(OBJECT_PATH)lo_selfenergy_interpolation.o\
+	$(OBJECT_PATH)bubble.o
 	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 
 $(OBJECT_PATH)lo_distributed_phonon_dispersion_relations.o:\
@@ -141,3 +144,16 @@ $(OBJECT_PATH)lo_spectralfunction_convolution.o:\
 $(OBJECT_PATH)lo_spectralfunction_helpers.o:\
 	lo_spectralfunction_helpers.f90
 	$(F90) $(F90FLAGS) -c lo_spectralfunction_helpers.f90 $(LIBS) -o $@
+
+$(OBJECT_PATH)bubble.o:\
+	bubble.f90\
+	$(OBJECT_PATH)lo_spectralfunction_helpers.o\
+	$(OBJECT_PATH)lo_selfenergy_interpolation.o\
+	$(OBJECT_PATH)lo_accumulate_thermal_transport.o\
+	$(OBJECT_PATH)lo_distributed_phonon_dispersion_relations.o
+	$(F90) $(F90FLAGS) -c bubble.f90 $(LIBS) -o $@
+
+$(OBJECT_PATH)lo_accumulate_thermal_transport.o:\
+	lo_accumulate_thermal_transport.f90\
+	$(OBJECT_PATH)lo_spectralfunction_helpers.o
+	$(F90) $(F90FLAGS) -c lo_accumulate_thermal_transport.f90 $(LIBS) -o $@

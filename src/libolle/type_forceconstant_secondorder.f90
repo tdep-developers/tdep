@@ -113,7 +113,7 @@ type lo_forceconstant_secondorder
     !> list of atoms
     type(lo_fc2_atom), allocatable, dimension(:) :: atom
     !> settings for ewald summations
-    type(lo_ewald_parameters), private :: ew
+    type(lo_ewald_parameters) :: ew
 
     !> elastic constants, could be fun or something
     real(r8), dimension(6, 6) :: elastic_constants_voigt = lo_huge

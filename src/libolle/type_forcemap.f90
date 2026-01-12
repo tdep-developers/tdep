@@ -364,12 +364,13 @@ interface
 end interface
 ! Interfaces to type_forcemap_constraints
 interface
-    module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
+    module subroutine forceconstant_constraints(map, uc, rotational, huanginvariances, hermitian, elastic, hermitian_rhs, huang_rhs, rotational_rhs, verbosity)
         class(lo_forcemap), intent(inout) :: map
         type(lo_crystalstructure), intent(in) :: uc
         logical, intent(in) :: rotational
         logical, intent(in) :: huanginvariances
         logical, intent(in) :: hermitian
+        logical, intent(in) :: elastic
         real(r8), dimension(:), intent(in) :: hermitian_rhs
         real(r8), dimension(:), intent(in) :: huang_rhs
         real(r8), dimension(:), intent(in) :: rotational_rhs
@@ -378,13 +379,13 @@ interface
     module subroutine enforce_constraints(map)
         class(lo_forcemap), intent(inout) :: map
     end subroutine
-    module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, hermitian_rhs, huang_rhs, rotational_rhs)
+    module subroutine lo_secondorder_rot_herm_huang(map, uc, eq2, vD, neq2, rotational, huang, hermitian, elastic, hermitian_rhs, huang_rhs, rotational_rhs)
         class(lo_forcemap), intent(in) :: map
         type(lo_crystalstructure), intent(in) :: uc
         real(r8), dimension(:, :), allocatable, intent(out) :: eq2
         real(r8), dimension(:), allocatable, intent(out) :: vD
         integer, intent(out) :: neq2
-        logical, intent(in) :: rotational, huang, hermitian
+        logical, intent(in) :: rotational, huang, hermitian, elastic
         real(r8), dimension(:), intent(in) :: hermitian_rhs
         real(r8), dimension(:), intent(in) :: huang_rhs
         real(r8), dimension(:), intent(in) :: rotational_rhs

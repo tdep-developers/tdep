@@ -756,6 +756,7 @@ $(OBJECT_PATH)lo_electron_bandstructure_on_path.o:\
 	$(FC) $(FFLAGS) -c lo_electron_bandstructure_on_path.f90 -o $@
 
 $(OBJECT_PATH)type_forcemap.o:\
+	type_forcemap.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
 	$(OBJECT_PATH)mpi_wrappers.o\
@@ -774,6 +775,7 @@ $(OBJECT_PATH)type_forcemap_generate.o:\
     $(OBJECT_PATH)type_forcemap.o
 	$(FC) $(FFLAGS) -c type_forcemap_generate.f90 -o $@
 $(OBJECT_PATH)type_forcemap_constraints.o:\
+	type_forcemap_constraints.f90\
     $(OBJECT_PATH)type_forcemap.o
 	$(FC) $(FFLAGS) -c type_forcemap_constraints.f90 -o $@
 $(OBJECT_PATH)type_forcemap_coefficient_pair.o:\

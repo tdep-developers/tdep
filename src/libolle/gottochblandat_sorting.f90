@@ -1,4 +1,3 @@
-#include "precompilerdefinitions"
 submodule (gottochblandat) gottochblandat_sorting
 implicit none
 contains
@@ -85,14 +84,14 @@ end subroutine
 !> quicksort, but with vectors instead.
 module pure subroutine quick_sortv(A,ind,tol)
     !> list of vectors
-    real(flyt), dimension(:,:), intent(inout) :: A
+    real(r8), dimension(:,:), intent(inout) :: A
     !> index that sorts A
     integer, dimension(:), intent(out), optional :: ind
     !> tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
 
-    real(flyt) :: diff
-    real(flyt), dimension(:), allocatable :: dr
+    real(r8) :: diff
+    real(r8), dimension(:), allocatable :: dr
     integer, dimension(:), allocatable :: di1
     integer :: i,n,m,col,ctr,istart
 
@@ -120,12 +119,12 @@ module pure subroutine quick_sortv(A,ind,tol)
     endif
 
     ! Now rearrange stuff per each column, in smaller and smaller groups
-    dr=0.0_flyt
+    dr=0.0_r8
     di1=0
     cloop: do col=2,m
         istart=0
         ctr=1
-        dr=0.0_flyt
+        dr=0.0_r8
         dr(ctr)=A(col,1)
         do i=2,n+1
             if ( i .le. n ) then
@@ -151,7 +150,7 @@ module pure subroutine quick_sortv(A,ind,tol)
                     ctr=1
                     istart=i-1
                     di1=0
-                    dr=0.0_flyt
+                    dr=0.0_r8
                     dr(1)=A(col,i)
                 endif
             endif
@@ -171,9 +170,9 @@ module pure subroutine quick_sortiv(A,ind)
     integer :: i,j,nval,ncol
     integer, dimension(:,:), allocatable :: dj
     integer, dimension(:), allocatable :: di
-    real(flyt), dimension(:), allocatable :: hash
-    real(flyt), dimension(size(A,1)) :: mult
-    real(flyt) :: imax
+    real(r8), dimension(:), allocatable :: hash
+    real(r8), dimension(size(A,1)) :: mult
+    real(r8) :: imax
 
     nval=size(A,2)
     ncol=size(A,1)
@@ -182,12 +181,12 @@ module pure subroutine quick_sortiv(A,ind)
     imax=maxval(abs(A))
     do i=1,ncol
         j=ncol-i
-        mult(i)=(imax)*10.0_flyt**j
+        mult(i)=(imax)*10.0_r8**j
     enddo
 
     ! Hash the data
     allocate(hash(nval))
-    hash=0.0_flyt
+    hash=0.0_r8
     do i=1,nval
         hash(i)=sum(A(:,i)*mult)
     enddo
@@ -213,7 +212,7 @@ end subroutine
 !> qsort for double precision
 pure module subroutine quick_sort_real(list,order)
     !> array to sort
-    real(flyt), dimension(:), intent(inout)  :: list
+    real(r8), dimension(:), intent(inout)  :: list
     !> optionally, an index array
     integer, dimension(:), intent(inout), optional :: order
 
@@ -234,11 +233,11 @@ pure module subroutine quick_sort_real(list,order)
 
     pure recursive subroutine qsreal(left_end,right_end,buf,ind)
         integer, intent(in) :: left_end,right_end
-        real(flyt), dimension(:), intent(inout) :: buf
+        real(r8), dimension(:), intent(inout) :: buf
         integer, dimension(:), intent(inout), optional :: ind
 
         integer, parameter :: max_simple_sort_size=6
-        real(flyt) :: reference, temp
+        real(r8) :: reference, temp
         integer :: i,j,itemp
 
         if (right_end < left_end + max_simple_sort_size) then
@@ -293,10 +292,10 @@ end subroutine
 !> Interchange sort to be used for small real arrays
 pure subroutine interchange_sort_real(left_end,right_end,list,order)
     integer, intent(in) :: left_end, right_end
-    real(flyt), dimension(:), intent(inout) :: list
+    real(r8), dimension(:), intent(inout) :: list
     integer, dimension(:), intent(inout), optional :: order
 
-    real(flyt) :: temp
+    real(r8) :: temp
     integer :: i,j,itemp
 
     if ( present(order) ) then
@@ -371,7 +370,7 @@ module subroutine sortchar(StringArray, indexarray, CaseInsensitive)
     low = 1
     high = size(StringArray,1)
 
-    lo_allocate(indarr(high))
+    allocate(indarr(high))
 
     ! fancy implied loop. Should maybe start using these
     indarr = (/ (k, k = low, high) /)
@@ -383,8 +382,7 @@ module subroutine sortchar(StringArray, indexarray, CaseInsensitive)
     if ( ReturnIndex ) then
         indexarray=indarr
     endif
-    ! The local routines for this kind of sort
-    contains
+end subroutine
 
     recursive subroutine quicksort_string(StringArray, indarr, low, high, CaseSensitive)
         character (len = *), dimension (:), intent (inout) :: StringArray
@@ -467,7 +465,7 @@ module subroutine sortchar(StringArray, indexarray, CaseInsensitive)
             L = letter
         end if
     end function UpperCase
-end subroutine
+
 
 !> Return a unique list of characters
 module pure subroutine lo_return_unique_characters(a,u)
@@ -528,8 +526,8 @@ module pure subroutine lo_return_unique_integers(a,u,sort)
     if ( sortvals ) then
         ! This version scales as quicksort. With a large number of unique, it is
         ! faster. Get a copy and a buffer array, sort the copy.
-        lo_allocate(di(n))
-        lo_allocate(dj(n))
+        allocate(di(n))
+        allocate(dj(n))
         di=a
         dj=0
         call qsort(di)
@@ -612,16 +610,16 @@ end subroutine
 !> Return unique columns. @todo Should be update to NlogN by sorting, but can't get it completely stable.
 module pure subroutine lo_return_unique_double_columns(a,u,tol,ind)
     !> list of vectors
-    real(flyt), dimension(:,:), intent(in) :: a
+    real(r8), dimension(:,:), intent(in) :: a
     !> unique vectors
-    real(flyt), dimension(:,:), allocatable, intent(out) :: u
+    real(r8), dimension(:,:), allocatable, intent(out) :: u
     !> tolerance
-    real(flyt), intent(in), optional :: tol
+    real(r8), intent(in), optional :: tol
     !> auxiliary index saying which unique each of the original correspond to
     integer, dimension(:), intent(out), optional :: ind
 
-    real(flyt) :: tolerance
-    real(flyt), dimension(:,:), allocatable :: dum
+    real(r8) :: tolerance
+    real(r8), dimension(:,:), allocatable :: dum
     integer :: i,j,k !,l
     logical :: newval
 
@@ -666,14 +664,14 @@ end subroutine
 !> Return unique matrices, within a tolerance
 module pure subroutine lo_return_unique_double_matrices(a,u,tol)
     !> list of matrices
-    real(flyt), dimension(:,:,:), intent(in) :: a
+    real(r8), dimension(:,:,:), intent(in) :: a
     !> unique matrices
-    real(flyt), dimension(:,:,:), allocatable, intent(out) :: u
+    real(r8), dimension(:,:,:), allocatable, intent(out) :: u
     !> tolerance
-    real(flyt), intent(in), optional :: tol
+    real(r8), intent(in), optional :: tol
 
-    real(flyt) :: tolerance
-    real(flyt), dimension(:,:,:), allocatable :: dum
+    real(r8) :: tolerance
+    real(r8), dimension(:,:,:), allocatable :: dum
     integer :: i,j,k
     logical :: newval
 
@@ -711,14 +709,14 @@ end subroutine
 !> Return unique scalars, within a tolerance @TODO add sort to make it NlogN
 module pure subroutine lo_return_unique_doubles(a,u,tol)
     !> list of numbers
-    real(flyt), dimension(:), intent(in) :: a
+    real(r8), dimension(:), intent(in) :: a
     !> list of unique
-    real(flyt), dimension(:), allocatable, intent(out) :: u
+    real(r8), dimension(:), allocatable, intent(out) :: u
     !> tolerance
-    real(flyt), intent(in), optional :: tol
+    real(r8), intent(in), optional :: tol
     !
-    real(flyt), dimension(:), allocatable :: dum
-    real(flyt) :: tolerance
+    real(r8), dimension(:), allocatable :: dum
+    real(r8) :: tolerance
     integer :: i,j,k
     logical :: newval
 
@@ -769,7 +767,7 @@ module subroutine lo_permutations(p,n)
     do i=1,n
         j=j*i
     enddo
-    lo_allocate(p(n,j))
+    allocate(p(n,j))
     val_min=1
     val_max=n
     pos_min=1
@@ -778,6 +776,7 @@ module subroutine lo_permutations(p,n)
     call generate(pos_min,p,i)
 
     contains
+
     recursive subroutine generate(pos,pm,k)
         integer, intent(in) :: pos
         integer, dimension(:,:), intent(inout) :: pm
@@ -799,19 +798,20 @@ module subroutine lo_permutations(p,n)
     end subroutine
 end subroutine
 
+
 !> return unique values as an index array.
 module subroutine lo_return_unique_indices_real_vectors(a,ind,redind,tol)
     !> list of vectors
-    real(flyt), dimension(:,:), intent(in) :: a
+    real(r8), dimension(:,:), intent(in) :: a
     !> indices to unique vectors
     integer, dimension(:), allocatable, intent(out) :: ind
     !> optional index array that says which unique each element in the original array correspond to
     integer, dimension(:), intent(out), optional :: redind
     !> tolerance
-    real(flyt), intent(in), optional :: tol
+    real(r8), intent(in), optional :: tol
     !
-    real(flyt) :: tolerance
-    real(flyt), dimension(:,:), allocatable :: dum
+    real(r8) :: tolerance
+    real(r8), dimension(:,:), allocatable :: dum
     integer, dimension(:), allocatable :: di
     integer :: i,j,k !,l
     logical :: newval

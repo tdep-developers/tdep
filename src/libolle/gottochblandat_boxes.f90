@@ -1,4 +1,3 @@
-#include "precompilerdefinitions"
 submodule (gottochblandat) gottochblandat_boxes
 implicit none
 contains
@@ -8,7 +7,7 @@ module subroutine boxind_from_coordinate(vb,r,bi,bj,bk)
     !> verlet boxes
     class(lo_verletbox), intent(in) :: vb
     !> coordinates of point
-    real(flyt), dimension(3), intent(in) :: r
+    real(r8), dimension(3), intent(in) :: r
     !> box-indices
     integer, intent(out) :: bi,bj,bk
 
@@ -22,9 +21,9 @@ module function locate_index_of_point(vb,points,r,singlebox) result(ind)
     !> verlet boxes
     class(lo_verletbox), intent(in) :: vb
     !> all possible points
-    real(flyt), dimension(:,:), intent(in) :: points
+    real(r8), dimension(:,:), intent(in) :: points
     !> coordinates of point
-    real(flyt), dimension(3), intent(in) :: r
+    real(r8), dimension(3), intent(in) :: r
     !> check only the first box that comes to mind
     logical, intent(in), optional :: singlebox
     !> index of points
@@ -84,11 +83,11 @@ module subroutine add_particles_in_boxes(vb,r,ndim)
     !> verlet boxes
     class(lo_verletbox), intent(out) :: vb
     !> particles
-    real(flyt), dimension(:,:), intent(in) :: r
+    real(r8), dimension(:,:), intent(in) :: r
     !> number of boxes
     integer, dimension(3), intent(in) :: ndim
 
-    real(flyt), dimension(3) :: v0
+    real(r8), dimension(3) :: v0
     integer :: n,i,j,k,l
 
     ! number of particles
@@ -108,13 +107,13 @@ module subroutine add_particles_in_boxes(vb,r,ndim)
     vb%rmin=vb%rmin-v0
     vb%rmax=vb%rmax+v0
     ! Scaling factor
-    vb%ird=(ndim*1.0_flyt)/(vb%rmax-vb%rmin)
+    vb%ird=(ndim*1.0_r8)/(vb%rmax-vb%rmin)
     ! Dimensions
     vb%nx=ndim(1)
     vb%ny=ndim(2)
     vb%nz=ndim(3)
     ! Make space
-    lo_allocate(vb%box( vb%nx,vb%ny,vb%nz ))
+    allocate(vb%box( vb%nx,vb%ny,vb%nz ))
 
     ! Reset the counter
     do i=1,vb%nx

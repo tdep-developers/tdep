@@ -32,7 +32,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
 
     real(r8), parameter :: time_report_interval = 5.0_r8 ! how often to report progress
     real(r8), dimension(:, :, :), allocatable :: buf_re, buf_im, thermal_disp
-    real(r8), dimension(:, :), allocatable :: buf_shift_3rd, buf_shift_4th, buf_linewidth
+    real(r8), dimension(:, :), allocatable :: buf_shift_3rd, buf_shift_4th
     real(r8), dimension(:, :), allocatable :: buf_xval
     real(r8), dimension(:), allocatable :: buf_saxis
     real(r8) :: timer, t0, t1
@@ -73,13 +73,11 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
             call mem%allocate(buf_im, [opts%nf, dr%n_mode, n_pts], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(buf_shift_3rd, [dr%n_mode, n_pts], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(buf_shift_4th, [dr%n_mode, n_pts], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-            call mem%allocate(buf_linewidth, [dr%n_mode, n_pts], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%allocate(buf_saxis, opts%nf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             buf_re = 0.0_r8
             buf_im = 0.0_r8
             buf_shift_3rd = 0.0_r8
             buf_shift_4th = 0.0_r8
-            buf_linewidth = 0.0_r8
             buf_saxis = 0.0_r8
         end if
 
@@ -341,6 +339,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
             do imode = 1, dr%n_mode
                 f0 = 0.0_r8
                 f1 = 0.0_r8
+                f2 = 0.0_r8
                 do i = 1, bs%p(ipt)%degeneracy(imode)
                     jmode = bs%p(ipt)%degenmode(i, imode)
                     f0 = f0 + bs%p(ipt)%shift3(jmode)
@@ -391,12 +390,17 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
             do imode = 1, dr%n_mode
                 if (bs%p(ipt)%omega(imode) .gt. lo_freqtol) then
                     bufi = bs%selfenergy_imag(ipt, :, imode)
+
+                    bs%p(ipt)%linewidth(imode)=lo_linear_interpolation(buf_saxis,bufi,bs%p(ipt)%omega(imode))
+
                     bufr = bs%selfenergy_real(ipt, :, imode)
                     ! make sure we at least have some smearing?
                     bufi = max(bufi, im_lower_limit)
                     call evaluate_spectral_function(buf_saxis, bufi, bufr, bs%p(ipt)%omega(imode), bufs)
                     bufs = bufs/lo_trapezoid_integration(buf_saxis, bufs)
                 else
+                    bs%p(ipt)%linewidth(imode)=0.0_r8
+
                     do ie = 1, opts%nf
                         bufs(ie) = lo_lorentz(buf_saxis(ie), 0.0_r8, im_at_gamma)
                     end do
@@ -425,7 +429,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
         call mem%deallocate(buf_im, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_shift_3rd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_shift_4th, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(buf_linewidth, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        !call mem%deallocate(buf_linewidth, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_saxis, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end if
 end subroutine

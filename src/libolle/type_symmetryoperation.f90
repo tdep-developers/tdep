@@ -239,11 +239,7 @@ pure function lo_operate_on_secondorder_tensor(op,m) result(n)
 end function
 
 !> Transformation matrix for phonon eigenvectors corresponding to a symmetry operation
-#ifdef AGRESSIVE_SANITY
-subroutine lo_eigenvector_transformation_matrix(gm,rcart,qv,op,inverseoperation)
-#else
 pure subroutine lo_eigenvector_transformation_matrix(gm,rcart,qv,op,inverseoperation)
-#endif
     !> transformation matrix
     complex(r8), dimension(:,:), intent(out) :: gm
     !> position vectors in Cartesian coordinates, generally crystalstructure%rcart
@@ -269,15 +265,6 @@ pure subroutine lo_eigenvector_transformation_matrix(gm,rcart,qv,op,inverseopera
     endif
 
     na=size(rcart,2)
-    ! Small sanity check
-#ifdef AGRESSIVE_SANITY
-    if ( na*3 .ne. size(gm,1) ) then
-        call lo_stop_gracefully(&
-            ['inconsistent number of atoms, rotation matrix has size '//tochar(size(gm,1))//'x'//tochar(size(gm,2))//' and Na='//tochar(na)],&
-            lo_exitcode_baddim,__FILE__,__LINE__)
-    endif
-#endif
-
     gm=0.0_r8
     do a2=1,na
         a1=op%fmap(a2)
@@ -803,212 +790,10 @@ subroutine generate(sym,basis,timereversal,points,pointclassification,pointflavo
         write(*,*) '... identified and classified operations in '//tochar(walltime()-timer)//'s'
         write(*,*) 'Generated the relevant spacegroup operations.'
     endif
-
-    contains
-
-    !> Check if an operation is valid
-#ifdef AGRESSIVE_SANITY
-    subroutine check_operation(op,tr,sbox,basis,fmap,valid,tolerance)
-#else
-    pure subroutine check_operation(op,tr,sbox,basis,fmap,valid,tolerance)
-#endif
-        !> The point operation
-        real(r8), dimension(3,3), intent(in) :: op
-        !> The translation
-        real(r8), dimension(3), intent(in) :: tr
-        !> the points, decomposed into boxes per species
-        type(lo_speciesbox), dimension(:), intent(in) :: sbox
-        !> the basis
-        real(r8), dimension(3,3), intent(in) :: basis
-        !> the mappy stuff
-        integer, dimension(:), intent(inout) :: fmap
-        !> is it valid?
-        logical, intent(out) :: valid
-        !> tolerance
-        real(r8), intent(in) :: tolerance
-        !
-        real(r8), dimension(:,:), allocatable :: dum
-        real(r8), dimension(3) :: v0
-        real(r8) :: sqtol
-        integer :: i,j,sp,ii,jj
-        logical :: match
-
-        ! Set the tolerances
-        call lo_fetch_tolerance(tolerance,basis,realspace_fractional_tol=sqtol,squared=.true.)
-
-        valid=.false.
-        fmap=0
-        ! check per species separately, makes it faster
-        jj=0
-        do sp=1,size(sbox,1)
-            ! get the rotated lattice
-            allocate(dum(3,sbox(sp)%n))
-            do i=1,sbox(sp)%n
-                ! choose a particle
-                v0=sbox(sp)%r(:,i)
-                ! rotate it
-                v0=matmul(op,v0)
-                ! add translation
-                v0=v0+tr
-                ! move back to first unitcell
-                dum(:,i)=lo_clean_fractional_coordinates(v0,sqtol)
-            enddo
-
-            ! now I have the rotated, compare with all
-            ii=0
-            do i=1,sbox(sp)%n
-                match=.false.
-                do j=1,sbox(sp)%n
-                    ! compare vectors
-                    v0=sbox(sp)%r(:,i)-dum(:,j)
-                    v0=lo_clean_fractional_coordinates(v0+0.5_r8,sqtol)-0.5_r8
-                    ! compare
-                    if ( lo_sqnorm(v0) .lt. sqtol ) then
-                        match=.true.
-                        fmap( sbox(sp)%ind(j) )=sbox(sp)%ind(i)
-                        exit
-                    endif
-                enddo
-                ! If there was no match, the operation is invalid
-                if ( match .eqv. .false. ) then
-                    valid=.false.
-                    fmap=0
-                    return
-                else
-                    ! if there was a match, continue
-                    ii=ii+1
-                endif
-            enddo
-            ! Where all points matched?
-            if ( ii .eq. sbox(sp)%n ) then
-                jj=jj+1
-            endif
-            deallocate(dum)
-        enddo
-
-        ! It might be valid!
-        if ( jj .eq. size(sbox,1) ) then
-            valid=.true.
-        else
-            valid=.false.
-            fmap=0
-        endif
-    end subroutine
-
-    !> Return the possible translations for this lattice
-#ifdef AGRESSIVE_SANITY
-    subroutine return_possible_translations(translations,fractranslations,ops,basis,inversebasis,points,species,tolerance)
-#else
-    pure subroutine return_possible_translations(translations,fractranslations,ops,basis,inversebasis,points,species,tolerance)
-#endif
-        !> basis
-        real(r8), dimension(3,3), intent(in) :: basis
-        !> inverse of basis
-        real(r8), dimension(3,3), intent(in) :: inversebasis
-        !> translpoint operations
-        real(r8), dimension(:,:), allocatable, intent(out) :: translations
-        !> translations in fractional coordinates
-        real(r8), dimension(:,:), allocatable, intent(out) :: fractranslations
-        !> point operations
-        real(r8), dimension(:,:,:), allocatable, intent(in) :: ops
-        !> positions of atoms
-        real(r8), dimension(:,:), intent(in) :: points
-        !> species of the atoms
-        integer, dimension(:), intent(in) :: species
-        !> tolerance
-        real(r8), intent(in) :: tolerance
-
-        integer :: i,j,k,l,n,o
-        real(r8), dimension(3) :: v0,v1
-        real(r8), dimension(:,:), allocatable :: dum,r
-        real(r8) :: fractol
-
-        ! Set the tolerance
-        call lo_fetch_tolerance(tolerance,basis,realspace_fractional_tol=fractol)
-        fractol=fractol*100.0_r8
-
-        ! I operate under the assumption that a translation has to move one
-        ! atom to another. Why do I know that? Well, I am allowed to rigidly translate the
-        ! lattice within the cell without changing the symmetry. So I can put any atom at
-        ! the origin. It will not move anywhere by the rotation part, so the translation
-        ! part has to move it to another site with the same kind of atom. This can be repeated
-        ! for all kinds of atoms. So the possible translations are then all the pair vectors in
-        ! the cell, that move an atom of species A.
-
-        ! get cartesian positions
-        n=size(points,2)
-        lo_allocate(r(3,n))
-        do i=1,n
-            r(:,i)=matmul(basis,points(:,i))
-        enddo
-        ! First rough count, I only want translations between the same species
-        l=0
-        do i=1,n
-        do j=1,n
-            if ( species(i) .eq. species(j) ) l=l+1
-        enddo
-        enddo
-
-        ! I consider the action of the rotations as well, so multiply with that.
-        l=l*size(ops,3)
-        lo_allocate(dum(3,l))
-        dum=0.0_r8
-        l=0
-        do i=1,n
-        do j=i,n
-            if ( species(i) .eq. species(j) ) then
-                do o=1,size(ops,3)
-                    ! possible vector
-                    v0=r(:,j)-matmul(ops(:,:,o),r(:,i))
-                    v0=lo_clean_fractional_coordinates(matmul(inversebasis,v0))
-                    do k=1,3
-                        if ( v0(k) .gt. fractol ) then
-                            v1(k)=1.0_r8/v0(k)
-                        else
-                            v1(k)=0.0_r8
-                        endif
-                    enddo
-                    ! vector has to be a 1/n-thingy, where n is an integer
-                    if ( sum(abs(v1-anint(v1))) .lt. fractol ) then
-                        l=l+1
-                        dum(:,l)=r(:,j)-matmul(ops(:,:,o),r(:,i))
-                    endif
-
-                enddo
-            endif
-        enddo
-        enddo
-
-        ! back to fractional
-        do i=1,l
-            dum(:,i)=matmul(inversebasis,dum(:,i))
-        enddo
-
-        ! Chop to my well-defined values, and make sure the translations are 0-1, not including 1
-        dum(:,1:l)=lo_clean_fractional_coordinates(lo_chop(lo_clean_fractional_coordinates(dum(:,1:l)),fractol))
-
-        ! Now keep only the unique translations, no point in having millions of them.
-        call lo_return_unique(dum(:,1:l),fractranslations,fractol)
-        ! sanity check
-#ifdef AGRESSIVE_SANITY
-        if ( size(fractranslations,2) .lt. 1 ) then
-            call lo_stop_gracefully(['Got no translations, that is strange.'],lo_exitcode_symmetry,__FILE__,__LINE__)
-        endif
-#endif
-
-        lo_allocate(translations(3,size(fractranslations,2)))
-        do i=1,size(fractranslations,2)
-            translations(:,i)=matmul(basis,fractranslations(:,i))
-        enddo
-    end subroutine
 end subroutine
 
 !> Return the valid point operations for this basis
-#ifdef AGRESSIVE_SANITY
-subroutine return_all_operations(ops,fracops,primbasis,basis,tolerance)
-#else
 pure subroutine return_all_operations(ops,fracops,primbasis,basis,tolerance)
-#endif
     !> basis
     real(r8), dimension(3,3), intent(in) :: primbasis
     !> basis for the lattice I actually want
@@ -1066,15 +851,8 @@ pure subroutine return_all_operations(ops,fracops,primbasis,basis,tolerance)
             k=k+1
             bflist(:,:,k)=m
         endif
-        ! Sanity check
-#ifdef AGRESSIVE_SANITY
-        if ( k .gt. 48 ) then
-            call lo_stop_gracefully(['Found more than 48 point operations, something is strange'],lo_exitcode_symmetry,__FILE__,__LINE__)
-        endif
-#else
         ! done when I hit 48
         if ( k .eq. 48 ) exit il1
-#endif
     enddo
     enddo
     enddo
@@ -1110,15 +888,8 @@ pure subroutine return_all_operations(ops,fracops,primbasis,basis,tolerance)
                 k=k+1
                 bflist(:,:,k)=m
             endif
-            ! Sanity check
-#ifdef AGRESSIVE_SANITY
-            if ( l .gt. 48 ) then
-                call lo_stop_gracefully(['Found more than 48 point operations, something is strange'],lo_exitcode_symmetry,__FILE__,__LINE__)
-            endif
-#else
             ! done when I hit 48
             if ( l .eq. 48 ) exit il2
-#endif
         enddo
         enddo
         enddo
@@ -1133,11 +904,6 @@ pure subroutine return_all_operations(ops,fracops,primbasis,basis,tolerance)
     ! Keep the unique operations
     call lo_return_unique(bflist(:,:,1:k),list,tolerance)
     k=size(list,3) ! number of operations
-#ifdef AGRESSIVE_SANITY
-    if ( k .gt. 48 ) then
-        call lo_stop_gracefully(['Found more than 48 point operations, something is strange'],lo_exitcode_symmetry,__FILE__,__LINE__)
-    endif
-#endif
 
     ! Make the values clean and nice
     list=lo_chop(list,tolerance*1E-2_r8)
@@ -1392,165 +1158,80 @@ subroutine find_primitive_cell(basis,r,species,flavor,primbasis,tolerance)
     if ( allocated(species1) ) deallocate(species1)
     if ( allocated(flavor0) )  deallocate(flavor0)
     if ( allocated(flavor1) )  deallocate(flavor1)
+end subroutine
 
-    contains
+!> single iteration of the cell reduction
+subroutine reduce_cell(latticevectors,r,species,flavor,newlatticevectors,newr,newspecies,newflavor,tolerance)
+    !> original lattice vectors
+    real(r8), dimension(3,3), intent(in) :: latticevectors
+    !> original positions
+    real(r8), dimension(:,:), intent(in) :: r
+    !> original species
+    integer, dimension(:), intent(in) :: species
+    !> additional flavor for symmetry thing
+    integer, dimension(:), intent(in) :: flavor
+    !> tolerance
+    real(r8), intent(in) :: tolerance
 
-    !> single iteration of the cell reduction
-    subroutine reduce_cell(latticevectors,r,species,flavor,newlatticevectors,newr,newspecies,newflavor,tolerance)
-        !> original lattice vectors
-        real(r8), dimension(3,3), intent(in) :: latticevectors
-        !> original positions
-        real(r8), dimension(:,:), intent(in) :: r
-        !> original species
-        integer, dimension(:), intent(in) :: species
-        !> additional flavor for symmetry thing
-        integer, dimension(:), intent(in) :: flavor
-        !> tolerance
-        real(r8), intent(in) :: tolerance
+    real(r8), dimension(3,3), intent(out) :: newlatticevectors
+    real(r8), dimension(:,:), allocatable, intent(out) :: newr
+    integer, dimension(:), allocatable, intent(out) :: newspecies
+    integer, dimension(:), allocatable,intent(out) :: newflavor
 
-        real(r8), dimension(3,3), intent(out) :: newlatticevectors
-        real(r8), dimension(:,:), allocatable, intent(out) :: newr
-        integer, dimension(:), allocatable, intent(out) :: newspecies
-        integer, dimension(:), allocatable,intent(out) :: newflavor
+    real(r8), dimension(:,:), allocatable :: vecs,dum
+    real(r8), dimension(3,3) :: m0,m1
+    real(r8) :: vol,f0,tol,reltol,frtol
+    integer :: i,j,k,l,nvecs,na
+    logical :: cellvalid
 
-        real(r8), dimension(:,:), allocatable :: vecs,dum
-        real(r8), dimension(3,3) :: m0,m1
-        real(r8) :: vol,f0,tol,reltol,frtol
-        integer :: i,j,k,l,nvecs,na
-        logical :: cellvalid
+    ! set the tolerance
+    call lo_fetch_tolerance(tolerance,latticevectors,realspace_cart_tol=tol,realspace_fractional_tol=frtol,relative_tol=reltol)
 
-        ! set the tolerance
-        call lo_fetch_tolerance(tolerance,latticevectors,realspace_cart_tol=tol,realspace_fractional_tol=frtol,relative_tol=reltol)
+    na=size(r,2)
+    ! Get a list of possible lattice vectors: All the vectors in the cell + old latticevectors
+    l=na+3
+    allocate(dum(3,na+3))
+    dum(:,1:na)=lo_clean_fractional_coordinates(r,frtol**2)
+    do i=1,na
+        dum(:,i)=matmul(latticevectors,dum(:,i))
+    enddo
+    do i=1,3
+        dum(:,i+na)=latticevectors(:,i)
+    enddo
+    ! Reduce these to the unique. Should not be necessary, but never hurts.
+    call lo_return_unique(dum,vecs,frtol)
+    nvecs=size(vecs,2)
 
-        na=size(r,2)
-        ! Get a list of possible lattice vectors: All the vectors in the cell + old latticevectors
-        l=na+3
-        allocate(dum(3,na+3))
-        dum(:,1:na)=lo_clean_fractional_coordinates(r,frtol**2)
-        do i=1,na
-            dum(:,i)=matmul(latticevectors,dum(:,i))
-        enddo
-        do i=1,3
-            dum(:,i+na)=latticevectors(:,i)
-        enddo
-        ! Reduce these to the unique. Should not be necessary, but never hurts.
-        call lo_return_unique(dum,vecs,frtol)
-        nvecs=size(vecs,2)
-
-        ! volume of original cell
-        vol=abs(lo_determ(latticevectors))
-        ! Loop over all vectors to try to find a new cell.
-        vl1: do i=1,nvecs
-        vl2: do j=i+1,nvecs
-        vl3: do k=j+1,nvecs
-            ! possible new set of lattice vectors
-            m0(:,1)=vecs(:,i)
-            m0(:,2)=vecs(:,j)
-            m0(:,3)=vecs(:,k)
-            ! some quick tests to see if there is any point in continuing:
-            f0=abs(lo_determ(m0))
-            if ( f0 .lt. tol ) cycle vl3                           ! stupid cell if volume is zero
-            if ( abs(mod(vol/f0,1.0_r8)) .gt. reltol ) cycle vl3 ! has to be an integer division
-            if ( int(anint(vol/f0)) .eq. 1 ) cycle vl3             ! has to make the cell smaller, not the same
-            ! I can get really retarded cells from this, do the Delaunay thing on it
-            call reduce_basis_to_something_decent(m0,m1)
-            ! Now do an actual test
-            call test_cell(latticevectors,r,species,flavor,m1,cellvalid,newr,newspecies,newflavor,tolerance)
-            if ( cellvalid ) then
-                ! If I find a new cell, we will exit this routine and start over. Makes things way way faster.
-                newlatticevectors=m1
-                deallocate(vecs)
-                return
-            endif
-        enddo vl3
-        enddo vl2
-        enddo vl1
-        ! If we made it here, the cell is already the smallest. Return the same basis again.
-        newlatticevectors=latticevectors
-    end subroutine
-
-    !> test if a new cell is a smaller unit cell
-    subroutine test_cell(oldcell,oldr,oldspecies,oldflavor,cell,valid,newr,newspecies,newflavor,tolerance)
-        !> original cell
-        real(r8), dimension(3,3), intent(in) :: oldcell
-        !> original positions
-        real(r8), dimension(:,:), intent(in) :: oldr
-        !> original species
-        integer, dimension(:), intent(in) :: oldspecies
-        !> original flavor
-        integer, dimension(:), intent(in) :: oldflavor
-        !> new cell
-        real(r8), dimension(3,3), intent(in) :: cell
-        !> is it a new cell?
-        logical, intent(out) :: valid
-        !> new positions in case of a valid cell
-        real(r8), dimension(:,:), allocatable, intent(out) :: newr
-        !> new species in case of a valid cell
-        integer, dimension(:), allocatable, intent(out) :: newspecies
-        !> new flavor in case of a valid cell
-        integer, dimension(:), allocatable, intent(out) :: newflavor
-        !> tolerance
-        real(r8), intent(in) :: tolerance
-        !
-        real(r8), dimension(3,3) :: icell,m0
-        real(r8), dimension(:,:), allocatable :: dumr1,dumr2
-        real(r8) :: tol,sqtol,f0
-        integer :: i,j,l,mult,oldna,newna
-
-        ! set the tolerance
-        call lo_fetch_tolerance(tolerance,oldcell,realspace_fractional_tol=tol)
-        sqtol=tol**2
-
-        valid=.false.
-        ! How many atoms should I get of each?
-        f0=abs(lo_determ(oldcell)/lo_determ(cell))
-        mult=int(anint(abs(lo_determ(oldcell)/lo_determ(cell))))
-
-        ! m0 is a matrix that converts to fractional coordinates in the new cell
-        icell=lo_invert3x3matrix(cell)
-        m0=matmul(icell,oldcell)
-
-        ! convert coordinates to fractional with respect to the new cell. Also
-        ! I decorate the positions with the species and flavor, to keep track of that.
-        oldna=size(oldr,2)
-        allocate(dumr1(5,oldna))
-        do i=1,oldna
-            dumr1(1:3,i)=lo_clean_fractional_coordinates(matmul(m0,oldr(:,i)),sqtol)
-            dumr1(4:5,i)=[oldspecies(i),oldflavor(i)]
-        enddo
-        ! Reduce this to the union of the list, the unique
-        call lo_return_unique(dumr1,dumr2,tol)
-
-        ! Did it become the correct number of atoms?
-        if ( abs(size(dumr2,2)*mult-oldna) .ne. 0 ) then
-            valid=.false.
+    ! volume of original cell
+    vol=abs(lo_determ(latticevectors))
+    ! Loop over all vectors to try to find a new cell.
+    vl1: do i=1,nvecs
+    vl2: do j=i+1,nvecs
+    vl3: do k=j+1,nvecs
+        ! possible new set of lattice vectors
+        m0(:,1)=vecs(:,i)
+        m0(:,2)=vecs(:,j)
+        m0(:,3)=vecs(:,k)
+        ! some quick tests to see if there is any point in continuing:
+        f0=abs(lo_determ(m0))
+        if ( f0 .lt. tol ) cycle vl3                           ! stupid cell if volume is zero
+        if ( abs(mod(vol/f0,1.0_r8)) .gt. reltol ) cycle vl3 ! has to be an integer division
+        if ( int(anint(vol/f0)) .eq. 1 ) cycle vl3             ! has to make the cell smaller, not the same
+        ! I can get really retarded cells from this, do the Delaunay thing on it
+        call reduce_basis_to_something_decent(m0,m1)
+        ! Now do an actual test
+        call test_cell(latticevectors,r,species,flavor,m1,cellvalid,newr,newspecies,newflavor,tolerance)
+        if ( cellvalid ) then
+            ! If I find a new cell, we will exit this routine and start over. Makes things way way faster.
+            newlatticevectors=m1
+            deallocate(vecs)
             return
         endif
-
-        ! Slightly better check: Each of the atoms in the reduced cell must appear
-        ! exactly mult times in the old cell.
-        do i=1,size(dumr2,2)
-            l=0
-            do j=1,oldna
-                if ( sum(abs(dumr1(:,j)-dumr2(:,i))) .lt. tol ) l=l+1
-            enddo
-            ! kill if not true
-            if ( l .ne. mult ) then
-                valid=.false.
-                return
-            endif
-        enddo
-
-        ! ok, now I say this is valid, return the new cell
-        newna=size(dumr2,2)
-        allocate(newr(3,newna))
-        allocate(newspecies(newna))
-        allocate(newflavor(newna))
-        newr=dumr2(1:3,:)
-        newspecies=int(anint(dumr2(4,:)))
-        newflavor=int(anint(dumr2(5,:)))
-        valid=.true.
-    end subroutine
+    enddo vl3
+    enddo vl2
+    enddo vl1
+    ! If we made it here, the cell is already the smallest. Return the same basis again.
+    newlatticevectors=latticevectors
 end subroutine
 
 !> reduce a set of lattice vectors to canonical form
@@ -2388,6 +2069,272 @@ subroutine sort_and_reorder_eigenvectors(eigenvalues,left_eigenvectors,right_eig
     enddo
 end subroutine
 
+!> Check if an operation is valid
+pure subroutine check_operation(op,tr,sbox,basis,fmap,valid,tolerance)
+    !> The point operation
+    real(r8), dimension(3,3), intent(in) :: op
+    !> The translation
+    real(r8), dimension(3), intent(in) :: tr
+    !> the points, decomposed into boxes per species
+    type(lo_speciesbox), dimension(:), intent(in) :: sbox
+    !> the basis
+    real(r8), dimension(3,3), intent(in) :: basis
+    !> the mappy stuff
+    integer, dimension(:), intent(inout) :: fmap
+    !> is it valid?
+    logical, intent(out) :: valid
+    !> tolerance
+    real(r8), intent(in) :: tolerance
+    !
+    real(r8), dimension(:,:), allocatable :: dum
+    real(r8), dimension(3) :: v0
+    real(r8) :: sqtol
+    integer :: i,j,sp,ii,jj
+    logical :: match
+
+    ! Set the tolerances
+    call lo_fetch_tolerance(tolerance,basis,realspace_fractional_tol=sqtol,squared=.true.)
+
+    valid=.false.
+    fmap=0
+    ! check per species separately, makes it faster
+    jj=0
+    do sp=1,size(sbox,1)
+        ! get the rotated lattice
+        allocate(dum(3,sbox(sp)%n))
+        do i=1,sbox(sp)%n
+            ! choose a particle
+            v0=sbox(sp)%r(:,i)
+            ! rotate it
+            v0=matmul(op,v0)
+            ! add translation
+            v0=v0+tr
+            ! move back to first unitcell
+            dum(:,i)=lo_clean_fractional_coordinates(v0,sqtol)
+        enddo
+
+        ! now I have the rotated, compare with all
+        ii=0
+        do i=1,sbox(sp)%n
+            match=.false.
+            do j=1,sbox(sp)%n
+                ! compare vectors
+                v0=sbox(sp)%r(:,i)-dum(:,j)
+                v0=lo_clean_fractional_coordinates(v0+0.5_r8,sqtol)-0.5_r8
+                ! compare
+                if ( lo_sqnorm(v0) .lt. sqtol ) then
+                    match=.true.
+                    fmap( sbox(sp)%ind(j) )=sbox(sp)%ind(i)
+                    exit
+                endif
+            enddo
+            ! If there was no match, the operation is invalid
+            if ( match .eqv. .false. ) then
+                valid=.false.
+                fmap=0
+                return
+            else
+                ! if there was a match, continue
+                ii=ii+1
+            endif
+        enddo
+        ! Where all points matched?
+        if ( ii .eq. sbox(sp)%n ) then
+            jj=jj+1
+        endif
+        deallocate(dum)
+    enddo
+
+    ! It might be valid!
+    if ( jj .eq. size(sbox,1) ) then
+        valid=.true.
+    else
+        valid=.false.
+        fmap=0
+    endif
+end subroutine
+
+!> test if a new cell is a smaller unit cell
+subroutine test_cell(oldcell,oldr,oldspecies,oldflavor,cell,valid,newr,newspecies,newflavor,tolerance)
+    !> original cell
+    real(r8), dimension(3,3), intent(in) :: oldcell
+    !> original positions
+    real(r8), dimension(:,:), intent(in) :: oldr
+    !> original species
+    integer, dimension(:), intent(in) :: oldspecies
+    !> original flavor
+    integer, dimension(:), intent(in) :: oldflavor
+    !> new cell
+    real(r8), dimension(3,3), intent(in) :: cell
+    !> is it a new cell?
+    logical, intent(out) :: valid
+    !> new positions in case of a valid cell
+    real(r8), dimension(:,:), allocatable, intent(out) :: newr
+    !> new species in case of a valid cell
+    integer, dimension(:), allocatable, intent(out) :: newspecies
+    !> new flavor in case of a valid cell
+    integer, dimension(:), allocatable, intent(out) :: newflavor
+    !> tolerance
+    real(r8), intent(in) :: tolerance
+    !
+    real(r8), dimension(3,3) :: icell,m0
+    real(r8), dimension(:,:), allocatable :: dumr1,dumr2
+    real(r8) :: tol,sqtol,f0
+    integer :: i,j,l,mult,oldna,newna
+
+    ! set the tolerance
+    call lo_fetch_tolerance(tolerance,oldcell,realspace_fractional_tol=tol)
+    sqtol=tol**2
+
+    valid=.false.
+    ! How many atoms should I get of each?
+    f0=abs(lo_determ(oldcell)/lo_determ(cell))
+    mult=int(anint(abs(lo_determ(oldcell)/lo_determ(cell))))
+
+    ! m0 is a matrix that converts to fractional coordinates in the new cell
+    icell=lo_invert3x3matrix(cell)
+    m0=matmul(icell,oldcell)
+
+    ! convert coordinates to fractional with respect to the new cell. Also
+    ! I decorate the positions with the species and flavor, to keep track of that.
+    oldna=size(oldr,2)
+    allocate(dumr1(5,oldna))
+    do i=1,oldna
+        dumr1(1:3,i)=lo_clean_fractional_coordinates(matmul(m0,oldr(:,i)),sqtol)
+        dumr1(4:5,i)=[oldspecies(i),oldflavor(i)]
+    enddo
+    ! Reduce this to the union of the list, the unique
+    call lo_return_unique(dumr1,dumr2,tol)
+
+    ! Did it become the correct number of atoms?
+    if ( abs(size(dumr2,2)*mult-oldna) .ne. 0 ) then
+        valid=.false.
+        return
+    endif
+
+    ! Slightly better check: Each of the atoms in the reduced cell must appear
+    ! exactly mult times in the old cell.
+    do i=1,size(dumr2,2)
+        l=0
+        do j=1,oldna
+            if ( sum(abs(dumr1(:,j)-dumr2(:,i))) .lt. tol ) l=l+1
+        enddo
+        ! kill if not true
+        if ( l .ne. mult ) then
+            valid=.false.
+            return
+        endif
+    enddo
+
+    ! ok, now I say this is valid, return the new cell
+    newna=size(dumr2,2)
+    allocate(newr(3,newna))
+    allocate(newspecies(newna))
+    allocate(newflavor(newna))
+    newr=dumr2(1:3,:)
+    newspecies=int(anint(dumr2(4,:)))
+    newflavor=int(anint(dumr2(5,:)))
+    valid=.true.
+end subroutine
+
+!> Return the possible translations for this lattice
+pure subroutine return_possible_translations(translations,fractranslations,ops,basis,inversebasis,points,species,tolerance)
+    !> basis
+    real(r8), dimension(3,3), intent(in) :: basis
+    !> inverse of basis
+    real(r8), dimension(3,3), intent(in) :: inversebasis
+    !> translpoint operations
+    real(r8), dimension(:,:), allocatable, intent(out) :: translations
+    !> translations in fractional coordinates
+    real(r8), dimension(:,:), allocatable, intent(out) :: fractranslations
+    !> point operations
+    real(r8), dimension(:,:,:), allocatable, intent(in) :: ops
+    !> positions of atoms
+    real(r8), dimension(:,:), intent(in) :: points
+    !> species of the atoms
+    integer, dimension(:), intent(in) :: species
+    !> tolerance
+    real(r8), intent(in) :: tolerance
+
+    integer :: i,j,k,l,n,o
+    real(r8), dimension(3) :: v0,v1
+    real(r8), dimension(:,:), allocatable :: dum,r
+    real(r8) :: fractol
+
+    ! Set the tolerance
+    call lo_fetch_tolerance(tolerance,basis,realspace_fractional_tol=fractol)
+    fractol=fractol*100.0_r8
+
+    ! I operate under the assumption that a translation has to move one
+    ! atom to another. Why do I know that? Well, I am allowed to rigidly translate the
+    ! lattice within the cell without changing the symmetry. So I can put any atom at
+    ! the origin. It will not move anywhere by the rotation part, so the translation
+    ! part has to move it to another site with the same kind of atom. This can be repeated
+    ! for all kinds of atoms. So the possible translations are then all the pair vectors in
+    ! the cell, that move an atom of species A.
+
+    ! get cartesian positions
+    n=size(points,2)
+    lo_allocate(r(3,n))
+    do i=1,n
+        r(:,i)=matmul(basis,points(:,i))
+    enddo
+    ! First rough count, I only want translations between the same species
+    l=0
+    do i=1,n
+    do j=1,n
+        if ( species(i) .eq. species(j) ) l=l+1
+    enddo
+    enddo
+
+    ! I consider the action of the rotations as well, so multiply with that.
+    l=l*size(ops,3)
+    lo_allocate(dum(3,l))
+    dum=0.0_r8
+    l=0
+    do i=1,n
+    do j=i,n
+        if ( species(i) .eq. species(j) ) then
+            do o=1,size(ops,3)
+                ! possible vector
+                v0=r(:,j)-matmul(ops(:,:,o),r(:,i))
+                v0=lo_clean_fractional_coordinates(matmul(inversebasis,v0))
+                do k=1,3
+                    if ( v0(k) .gt. fractol ) then
+                        v1(k)=1.0_r8/v0(k)
+                    else
+                        v1(k)=0.0_r8
+                    endif
+                enddo
+                ! vector has to be a 1/n-thingy, where n is an integer
+                if ( sum(abs(v1-anint(v1))) .lt. fractol ) then
+                    l=l+1
+                    dum(:,l)=r(:,j)-matmul(ops(:,:,o),r(:,i))
+                endif
+
+            enddo
+        endif
+    enddo
+    enddo
+
+    ! back to fractional
+    do i=1,l
+        dum(:,i)=matmul(inversebasis,dum(:,i))
+    enddo
+
+    ! Chop to my well-defined values, and make sure the translations are 0-1, not including 1
+    dum(:,1:l)=lo_clean_fractional_coordinates(lo_chop(lo_clean_fractional_coordinates(dum(:,1:l)),fractol))
+
+    ! Now keep only the unique translations, no point in having millions of them.
+    call lo_return_unique(dum(:,1:l),fractranslations,fractol)
+    ! sanity check
+
+    lo_allocate(translations(3,size(fractranslations,2)))
+    do i=1,size(fractranslations,2)
+        translations(:,i)=matmul(basis,fractranslations(:,i))
+    enddo
+end subroutine
+
 !> size in memory, approximately.
 pure function size_in_mem(sym) result(mem)
     !> symmetry operations
@@ -2515,5 +2462,7 @@ end function
 !
 !     match=.true.
 ! end function
+
+
 
 end module

@@ -1,7 +1,6 @@
-#include "precompilerdefinitions"
 module gottochblandat
 !! A lot of helper functions, that did not logically fit somewhere else. Used to be called helpers, but it turns out it's a rather common name for a module and leads to issues, hence the weird name.
-use konstanter, only: flyt,r8,i8,lo_pi,lo_twopi,lo_tol,lo_sqtol,lo_temperaturetol,lo_freqtol,lo_huge,&
+use konstanter, only: r8,i8,lo_pi,lo_twopi,lo_tol,lo_sqtol,lo_temperaturetol,lo_freqtol,lo_huge,&
                       lo_hugeint,lo_status,lo_exitcode_param,lo_exitcode_symmetry,lo_exitcode_blaslapack,&
                       lo_kb_hartree,lo_exitcode_baddim
 
@@ -9,6 +8,7 @@ implicit none
 private
 ! Derived types
 public :: lo_verletbox
+public :: lo_array_of_array
 ! Interfaced things
 public :: qsort
 public :: tochar
@@ -170,81 +170,88 @@ interface lo_stddev
     module procedure lo_stddev_3d
 end interface
 
-    !> list of points in a verlet box
-    type lo_verletbox_box
-        integer :: n=-lo_hugeint
-        integer, dimension(:), allocatable :: ind
-    end type
+!> simple array of array
+type lo_array_of_array
+    real(r8), dimension(:), allocatable :: buf_1d_r8
+    contains
+        procedure :: destroy=>destroy_array_of_arrays
+end type
 
-    !> minimal Verlet-box to generate distancelists and things like that
-    type lo_verletbox
-        !> box divisions
-        integer :: nx=-lo_hugeint,ny=-lo_hugeint,nz=-lo_hugeint
-        !> lower bounds
-        real(flyt), dimension(3) :: rmin=lo_huge
-        !> upper bounds
-        real(flyt), dimension(3) :: rmax=lo_huge
-        !> scalefactor per dimension
-        real(flyt), dimension(3) :: ird=lo_huge
-        !> boxes with points in them
-        type(lo_verletbox_box), dimension(:,:,:), allocatable :: box
-        contains
-            !> stuff the particles into boxes
-            procedure :: generate=>add_particles_in_boxes
-            !> box-indices from a point
-            procedure :: boxind=>boxind_from_coordinate
-            !> locate index of a point
-            procedure :: locate=>locate_index_of_point
-    end type
+!> list of points in a verlet box
+type lo_verletbox_box
+    integer :: n=-lo_hugeint
+    integer, dimension(:), allocatable :: ind
+end type
+
+!> minimal Verlet-box to generate distancelists and things like that
+type lo_verletbox
+    !> box divisions
+    integer :: nx=-lo_hugeint,ny=-lo_hugeint,nz=-lo_hugeint
+    !> lower bounds
+    real(r8), dimension(3) :: rmin=lo_huge
+    !> upper bounds
+    real(r8), dimension(3) :: rmax=lo_huge
+    !> scalefactor per dimension
+    real(r8), dimension(3) :: ird=lo_huge
+    !> boxes with points in them
+    type(lo_verletbox_box), dimension(:,:,:), allocatable :: box
+    contains
+        !> stuff the particles into boxes
+        procedure :: generate=>add_particles_in_boxes
+        !> box-indices from a point
+        procedure :: boxind=>boxind_from_coordinate
+        !> locate index of a point
+        procedure :: locate=>locate_index_of_point
+end type
 
 ! Interfaces to submodule tensors:
 interface
     module subroutine lo_return_tensor_transpositions(trm_pair,trm_triplet,trm_quartet,prm_pair,prm_triplet,prm_quartet)
-        real(flyt), dimension(9,9,2), intent(out), optional :: trm_pair
-        real(flyt), dimension(27,27,6), intent(out), optional :: trm_triplet
-        real(flyt), dimension(81,81,24), intent(out), optional :: trm_quartet
+        real(r8), dimension(9,9,2), intent(out), optional :: trm_pair
+        real(r8), dimension(27,27,6), intent(out), optional :: trm_triplet
+        real(r8), dimension(81,81,24), intent(out), optional :: trm_quartet
         integer, dimension(2,2), intent(out), optional :: prm_pair
         integer, dimension(3,6), intent(out), optional :: prm_triplet
         integer, dimension(4,24), intent(out), optional :: prm_quartet
     end subroutine
     module pure function lo_flatten_2tensor(m) result(fm)
-        real(flyt), dimension(3,3), intent(in) :: m
-        real(flyt), dimension(9) :: fm
+        real(r8), dimension(3,3), intent(in) :: m
+        real(r8), dimension(9) :: fm
     end function
     module pure function lo_flatten_3tensor(m) result(fm)
-        real(flyt), dimension(3,3,3), intent(in) :: m
-        real(flyt), dimension(27) :: fm
+        real(r8), dimension(3,3,3), intent(in) :: m
+        real(r8), dimension(27) :: fm
     end function
     module pure function lo_flatten_4tensor(m) result(fm)
-        real(flyt), dimension(3,3,3,3), intent(in) :: m
-        real(flyt), dimension(81) :: fm
+        real(r8), dimension(3,3,3,3), intent(in) :: m
+        real(r8), dimension(81) :: fm
     end function
     module pure function lo_unflatten_2tensor(fm) result(m)
-        real(flyt), dimension(9), intent(in) :: fm
-        real(flyt), dimension(3,3) :: m
+        real(r8), dimension(9), intent(in) :: fm
+        real(r8), dimension(3,3) :: m
     end function
     module pure function lo_unflatten_3tensor(fm) result(m)
-        real(flyt), dimension(27), intent(in) :: fm
-        real(flyt), dimension(3,3,3) :: m
+        real(r8), dimension(27), intent(in) :: fm
+        real(r8), dimension(3,3,3) :: m
     end function
     module pure function lo_unflatten_4tensor(fm) result(m)
-        real(flyt), dimension(81), intent(in) :: fm
-        real(flyt), dimension(3,3,3,3) :: m
+        real(r8), dimension(81), intent(in) :: fm
+        real(r8), dimension(3,3,3,3) :: m
     end function
     module pure function lo_transpose_2tensor(m,perm) result(pm)
-        real(flyt), dimension(3,3), intent(in) :: m
+        real(r8), dimension(3,3), intent(in) :: m
         integer, dimension(2), intent(in) :: perm
-        real(flyt), dimension(3,3) :: pm
+        real(r8), dimension(3,3) :: pm
     end function
     module pure function lo_transpose_3tensor(m,perm) result(pm)
-        real(flyt), dimension(3,3,3), intent(in) :: m
+        real(r8), dimension(3,3,3), intent(in) :: m
         integer, dimension(3), intent(in) :: perm
-        real(flyt), dimension(3,3,3) :: pm
+        real(r8), dimension(3,3,3) :: pm
     end function
     module pure function lo_transpose_4tensor(m,perm) result(pm)
-        real(flyt), dimension(3,3,3,3), intent(in) :: m
+        real(r8), dimension(3,3,3,3), intent(in) :: m
         integer, dimension(4), intent(in) :: perm
-        real(flyt), dimension(3,3,3,3) :: pm
+        real(r8), dimension(3,3,3,3) :: pm
     end function
 end interface
 
@@ -255,16 +262,16 @@ interface
         integer, dimension(:), intent(inout), optional :: order
     end subroutine
     module pure subroutine quick_sortv(A,ind,tol)
-        real(flyt), dimension(:,:), intent(inout) :: A
+        real(r8), dimension(:,:), intent(inout) :: A
         integer, dimension(:), intent(out), optional :: ind
-        real(flyt), intent(in) :: tol
+        real(r8), intent(in) :: tol
     end subroutine
     module pure subroutine quick_sortiv(A,ind)
         integer, dimension(:,:), intent(inout) :: A
         integer, dimension(:), intent(out), optional :: ind
     end subroutine
     module pure subroutine quick_sort_real(list, order)
-        real(flyt), dimension(:), intent(inout)  :: list
+        real(r8), dimension(:), intent(inout)  :: list
         integer, dimension(:), intent(inout), optional :: order
     end subroutine
     module subroutine sortchar(StringArray, indexarray, CaseInsensitive)
@@ -286,30 +293,30 @@ interface
         integer, dimension(:,:), allocatable, intent(out) :: u
     end subroutine
     module pure subroutine lo_return_unique_double_columns(a,u,tol,ind)
-        real(flyt), dimension(:,:), intent(in) :: a
-        real(flyt), dimension(:,:), allocatable, intent(out) :: u
-        real(flyt), intent(in), optional :: tol
+        real(r8), dimension(:,:), intent(in) :: a
+        real(r8), dimension(:,:), allocatable, intent(out) :: u
+        real(r8), intent(in), optional :: tol
         integer, dimension(:), intent(out), optional :: ind
     end subroutine
     module pure subroutine lo_return_unique_double_matrices(a,u,tol)
-        real(flyt), dimension(:,:,:), intent(in) :: a
-        real(flyt), dimension(:,:,:), allocatable, intent(out) :: u
-        real(flyt), intent(in), optional :: tol
+        real(r8), dimension(:,:,:), intent(in) :: a
+        real(r8), dimension(:,:,:), allocatable, intent(out) :: u
+        real(r8), intent(in), optional :: tol
     end subroutine
     module pure subroutine lo_return_unique_doubles(a,u,tol)
-        real(flyt), dimension(:), intent(in) :: a
-        real(flyt), dimension(:), allocatable, intent(out) :: u
-        real(flyt), intent(in), optional :: tol
+        real(r8), dimension(:), intent(in) :: a
+        real(r8), dimension(:), allocatable, intent(out) :: u
+        real(r8), intent(in), optional :: tol
     end subroutine
     module subroutine lo_permutations(p,n)
         integer, dimension(:,:), allocatable, intent(out) :: p
         integer, intent(in) :: n
     end subroutine
     module subroutine lo_return_unique_indices_real_vectors(a,ind,redind,tol)
-        real(flyt), dimension(:,:), intent(in) :: a
+        real(r8), dimension(:,:), intent(in) :: a
         integer, dimension(:), allocatable, intent(out) :: ind
         integer, dimension(:), intent(out), optional :: redind
-        real(flyt), intent(in), optional :: tol
+        real(r8), intent(in), optional :: tol
     end subroutine
     module subroutine lo_return_unique_indices_integers(a,ind,redind)
         integer, dimension(:), intent(in) :: a
@@ -326,199 +333,183 @@ end interface
 ! Interfaces to linalg submodule
 interface
     module elemental function lo_negsqrt(x) result(y)
-        real(flyt), intent(in) :: x
-        real(flyt) :: y
+        real(r8), intent(in) :: x
+        real(r8) :: y
     end function
     module elemental function lo_sgn(x) result(sgn)
-        real(flyt), intent(in) :: x
+        real(r8), intent(in) :: x
         integer :: sgn
     end function
     module pure function lo_unsigned_tetrahedron_volume(nodes) result(volume)
-        real(flyt), dimension(3,4), intent(in) :: nodes
-        real(flyt) :: volume
+        real(r8), dimension(3,4), intent(in) :: nodes
+        real(r8) :: volume
     end function
     module pure function lo_signed_tetrahedron_volume(nodes) result(volume)
-        real(flyt), dimension(3,4), intent(in) :: nodes
-        real(flyt) :: volume
+        real(r8), dimension(3,4), intent(in) :: nodes
+        real(r8) :: volume
     end function
     module pure function lo_frobnorm(m) result(nrm)
-        real(flyt), dimension(:,:), intent(in) :: m
-        real(flyt) :: nrm
+        real(r8), dimension(:,:), intent(in) :: m
+        real(r8) :: nrm
     end function
-#ifdef AGRESSIVE_SANITY
-    module function lo_trace(m) result(tr)
-#else
     module pure function lo_trace(m) result(tr)
-#endif
-        real(flyt), dimension(:,:), intent(in) :: m
-        real(flyt) :: tr
+        real(r8), dimension(:,:), intent(in) :: m
+        real(r8) :: tr
     end function
     module pure function lo_sqnorm(a) result(nrm)
-        real(flyt), dimension(3), intent(in) :: a
-        real(flyt) :: nrm
+        real(r8), dimension(3), intent(in) :: a
+        real(r8) :: nrm
     end function
     module pure function lo_cross(b,c) result(a)
-        real(flyt), dimension(3), intent(in) :: b
-        real(flyt), dimension(3), intent(in) :: c
-        real(flyt), dimension(3) :: a
+        real(r8), dimension(3), intent(in) :: b
+        real(r8), dimension(3), intent(in) :: c
+        real(r8), dimension(3) :: a
     end function
     module pure function lo_real_outerproduct(a,b) result(m)
-        real(flyt), dimension(3), intent(in) :: a
-        real(flyt), dimension(3), intent(in) :: b
-        real(flyt), dimension(3,3) :: m
+        real(r8), dimension(3), intent(in) :: a
+        real(r8), dimension(3), intent(in) :: b
+        real(r8), dimension(3,3) :: m
     end function
     module pure function lo_complex_outerproduct(a,b) result(m)
-        complex(flyt), dimension(3), intent(in) :: a
-        complex(flyt), dimension(3), intent(in) :: b
-        complex(flyt), dimension(3,3) :: m
+        complex(r8), dimension(3), intent(in) :: a
+        complex(r8), dimension(3), intent(in) :: b
+        complex(r8), dimension(3,3) :: m
     end function
     module pure function lo_determ_real(a) result(det)
-        real(flyt), dimension(3,3), intent(in) :: a
-        real(flyt) :: det
+        real(r8), dimension(3,3), intent(in) :: a
+        real(r8) :: det
     end function
     module pure function lo_determ_int(a) result(det)
         integer, dimension(3,3), intent(in) :: a
         integer :: det
     end function
-#ifdef AGRESSIVE_SANITY
-    module function lo_invert3x3matrix(m) result(n)
-#else
     module pure function lo_invert3x3matrix(m) result(n)
-#endif
-        real(flyt), dimension(3,3), intent(in) :: m
-        real(flyt), dimension(3,3) :: n
+        real(r8), dimension(3,3), intent(in) :: m
+        real(r8), dimension(3,3) :: n
     end function
     module function lo_sqrt3x3matrix(matrix) result(matrix_sqrt)
-        real(flyt), dimension(3,3), intent(in) :: matrix
-        real(flyt), dimension(3,3) :: matrix_sqrt
+        real(r8), dimension(3,3), intent(in) :: matrix
+        real(r8), dimension(3,3) :: matrix_sqrt
     end function
     module pure subroutine lo_real_gram_schmidt(X)
-        real(flyt), dimension(:,:), intent(inout) :: X
+        real(r8), dimension(:,:), intent(inout) :: X
     end subroutine
     module pure subroutine lo_complex_gram_schmidt(X)
-        complex(flyt), dimension(:,:), intent(inout) :: X
+        complex(r8), dimension(:,:), intent(inout) :: X
     end subroutine
     module pure subroutine lo_identitymatrix(m)
-        real(flyt), dimension(:,:), intent(out) :: m
+        real(r8), dimension(:,:), intent(out) :: m
     end subroutine
     module subroutine lo_real_singular_value_decomposition(A,S,U,V)
-        real(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), allocatable, intent(out) :: S
-        real(flyt), dimension(:,:), allocatable, intent(out), optional :: U
-        real(flyt), dimension(:,:), allocatable, intent(out), optional :: V
+        real(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), allocatable, intent(out) :: S
+        real(r8), dimension(:,:), allocatable, intent(out), optional :: U
+        real(r8), dimension(:,:), allocatable, intent(out), optional :: V
     end subroutine
     module subroutine lo_complex_singular_value_decomposition(A,S,U,V)
-        complex(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), allocatable, intent(out) :: S
-        complex(flyt), dimension(:,:), allocatable, intent(out), optional :: U
-        complex(flyt), dimension(:,:), allocatable, intent(out), optional :: V
+        complex(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), allocatable, intent(out) :: S
+        complex(r8), dimension(:,:), allocatable, intent(out), optional :: U
+        complex(r8), dimension(:,:), allocatable, intent(out), optional :: V
     end subroutine
     module subroutine lo_enforce_linear_constraints(A,X,tolerance,nosquare)
-        real(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), intent(inout) :: X
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), intent(inout) :: X
+        real(r8), intent(in), optional :: tolerance
         logical, intent(in), optional :: nosquare
     end subroutine
-#ifdef AGRESSIVE_SANITY
-    module subroutine lo_make_coeffmatrix_tidy(m,tolerance)
-#else
     module pure subroutine lo_make_coeffmatrix_tidy(m,tolerance)
-#endif
-        real(flyt), dimension(:,:), intent(inout) :: m
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), dimension(:,:), intent(inout) :: m
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module pure subroutine lo_make_complex_coeffmatrix_tidy(m,tolerance)
-        complex(flyt), dimension(:,:), intent(inout) :: m
-        real(flyt), intent(in), optional :: tolerance
+        complex(r8), dimension(:,:), intent(inout) :: m
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module subroutine lo_compress_equations(equations,n_compressed_equations,compressed_equations,trans,tolerance)
-        real(flyt), dimension(:,:), intent(in) :: equations
+        real(r8), dimension(:,:), intent(in) :: equations
         integer, intent(out) :: n_compressed_equations
-        real(flyt), dimension(:,:), allocatable, intent(out) :: compressed_equations
+        real(r8), dimension(:,:), allocatable, intent(out) :: compressed_equations
         logical, intent(in) :: trans
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module subroutine lo_nullspace_coefficient_matrix(invarM,coeffM,nvar,varind,tolerance)
-        real(flyt), dimension(:,:), intent(in) :: invarM
-        real(flyt), dimension(:,:), allocatable, intent(out) :: coeffM
+        real(r8), dimension(:,:), intent(in) :: invarM
+        real(r8), dimension(:,:), allocatable, intent(out) :: coeffM
         integer, intent(out) :: nvar
         integer, dimension(:), allocatable, intent(out), optional :: varind
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module subroutine lo_complex_nullspace_coefficient_matrix(invarM,invariant_operations,coeff,nvar,varind,tolerance)
-        complex(flyt), dimension(:,:), intent(in), optional :: invarM
-        complex(flyt), dimension(:,:,:), intent(in), optional :: invariant_operations
-        complex(flyt), dimension(:,:), allocatable, intent(out) :: coeff
+        complex(r8), dimension(:,:), intent(in), optional :: invarM
+        complex(r8), dimension(:,:,:), intent(in), optional :: invariant_operations
+        complex(r8), dimension(:,:), allocatable, intent(out) :: coeff
         integer, intent(out) :: nvar
         integer, dimension(:), allocatable, intent(out), optional :: varind
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module subroutine lo_real_nullspace_coefficient_matrix(invarM,invariant_operations,coeff,nvar,varind,tolerance)
-        real(flyt), dimension(:,:), intent(in), optional :: invarM
-        real(flyt), dimension(:,:,:), intent(in), optional :: invariant_operations
-        real(flyt), dimension(:,:), allocatable, intent(out) :: coeff
+        real(r8), dimension(:,:), intent(in), optional :: invarM
+        real(r8), dimension(:,:,:), intent(in), optional :: invariant_operations
+        real(r8), dimension(:,:), allocatable, intent(out) :: coeff
         integer, intent(out) :: nvar
         integer, dimension(:), allocatable, intent(out), optional :: varind
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
     end subroutine
-#ifdef AGRESSIVE_SANITY
-    module subroutine lo_transpositionmatrix(tm)
-#else
     module pure subroutine lo_transpositionmatrix(tm)
-#endif
-        real(flyt), dimension(:,:), intent(out) :: tm
+        real(r8), dimension(:,:), intent(out) :: tm
     end subroutine
     module subroutine lo_linear_least_squares(A,B,x,constraint_C,constraint_D,nconstraints,tolerance,subset,weights,gramified)
-        real(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), intent(in) :: B
-        real(flyt), dimension(:), intent(out) :: x
-        real(flyt), dimension(:,:), intent(in), optional :: constraint_C
-        real(flyt), dimension(:), intent(in), optional :: constraint_D
+        real(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), intent(in) :: B
+        real(r8), dimension(:), intent(out) :: x
+        real(r8), dimension(:,:), intent(in), optional :: constraint_C
+        real(r8), dimension(:), intent(in), optional :: constraint_D
         integer, intent(in), optional :: nconstraints
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
         integer, intent(in), dimension(:), optional :: subset
-        real(flyt), dimension(:), intent(in), optional :: weights
+        real(r8), dimension(:), intent(in), optional :: weights
         logical, intent(in), optional :: gramified
     end subroutine
     module subroutine lo_real_symmetric_eigenvalues_eigenvectors(A,eigenvalues,eigenvectors,careful,tolerance,nzeros)
-        real(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), intent(out) :: eigenvalues
-        real(flyt), dimension(:,:), intent(out), optional :: eigenvectors
+        real(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), intent(out) :: eigenvalues
+        real(r8), dimension(:,:), intent(out), optional :: eigenvectors
         logical, intent(in), optional :: careful
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
         integer, intent(in), optional :: nzeros
     end subroutine
     module subroutine lo_symmetric_eigensystem_3x3matrix(matrix,eigenvalues,eigenvectors)
-        real(flyt), dimension(3,3), intent(in) :: matrix
-        real(flyt), dimension(3), intent(out) :: eigenvalues
-        real(flyt), dimension(3,3), intent(out) :: eigenvectors
+        real(r8), dimension(3,3), intent(in) :: matrix
+        real(r8), dimension(3), intent(out) :: eigenvalues
+        real(r8), dimension(3,3), intent(out) :: eigenvectors
     end subroutine
     module subroutine lo_complex_hermitian_eigenvalues_eigenvectors(A,eigenvalues,eigenvectors,careful,tolerance,nzeros)
-        complex(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:), intent(out) :: eigenvalues
-        complex(flyt), dimension(:,:), intent(out), optional :: eigenvectors
+        complex(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:), intent(out) :: eigenvalues
+        complex(r8), dimension(:,:), intent(out), optional :: eigenvectors
         logical, intent(in), optional :: careful
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), intent(in), optional :: tolerance
         integer, intent(in), optional :: nzeros
     end subroutine
     module subroutine lo_general_real_eigenvalues_eigenvectors(A,eigenvalues,vec_left,vec_right,orthogonal)
-        real(flyt), dimension(:,:), intent(in) :: A
-        complex(flyt), dimension(:), intent(out) :: eigenvalues
-        real(flyt), dimension(:,:), intent(out) :: vec_left,vec_right
+        real(r8), dimension(:,:), intent(in) :: A
+        complex(r8), dimension(:), intent(out) :: eigenvalues
+        real(r8), dimension(:,:), intent(out) :: vec_left,vec_right
         logical, intent(in), optional :: orthogonal
     end subroutine
     module subroutine lo_invert_real_matrix(A,iA)
-       real(flyt), dimension(:,:), intent(in) :: A
-       real(flyt), dimension(:,:), intent(out) :: iA
+       real(r8), dimension(:,:), intent(in) :: A
+       real(r8), dimension(:,:), intent(out) :: iA
     end subroutine
     module subroutine lo_real_pseudoinverse(A,B,tolerance)
-        real(flyt), dimension(:,:), intent(in) :: A
-        real(flyt), dimension(:,:), intent(out) :: B
-        real(flyt), intent(in), optional :: tolerance
+        real(r8), dimension(:,:), intent(in) :: A
+        real(r8), dimension(:,:), intent(out) :: B
+        real(r8), intent(in), optional :: tolerance
     end subroutine
     module subroutine lo_triplegemm(A,B,C,D,transa,transb,transc)
-        real(flyt), dimension(:,:), intent(in) :: A,B,C
-        real(flyt), dimension(:,:), intent(out) :: D
+        real(r8), dimension(:,:), intent(in) :: A,B,C
+        real(r8), dimension(:,:), intent(out) :: D
         character(len=1), intent(in), optional :: transa,transb,transc
     end subroutine
 end interface
@@ -526,72 +517,72 @@ end interface
 ! Interfaces to calculus submodule
 interface
     module subroutine lo_put_function_on_new_axis(x,y,xi,yi,sigma,preservenorm)
-        real(flyt), dimension(:), intent(in) :: x
-        real(flyt), dimension(:), intent(in) :: y
-        real(flyt), dimension(:), intent(in) :: xi
-        real(flyt), dimension(:), intent(out) :: yi
-        real(flyt), intent(in), optional :: sigma
+        real(r8), dimension(:), intent(in) :: x
+        real(r8), dimension(:), intent(in) :: y
+        real(r8), dimension(:), intent(in) :: xi
+        real(r8), dimension(:), intent(out) :: yi
+        real(r8), intent(in), optional :: sigma
         logical, intent(in), optional :: preservenorm
     end subroutine
     module pure function lo_linear_interpolation(x,y,xi,threshold) result(yi)
-        real(flyt), dimension(:), intent(in) :: x
-        real(flyt), dimension(:), intent(in) :: y
-        real(flyt), intent(in) :: xi
-        real(flyt) :: yi
-        real(flyt), intent(in), optional :: threshold
+        real(r8), dimension(:), intent(in) :: x
+        real(r8), dimension(:), intent(in) :: y
+        real(r8), intent(in) :: xi
+        real(r8) :: yi
+        real(r8), intent(in), optional :: threshold
     end function
     module pure subroutine lo_points_on_sphere(r,randomseed)
-        real(flyt), dimension(:,:), intent(out) :: r
-        real(flyt), intent(in), optional :: randomseed
+        real(r8), dimension(:,:), intent(out) :: r
+        real(r8), intent(in), optional :: randomseed
     end subroutine
     module pure subroutine lo_linspace(minv,maxv,x)
-        real(flyt), dimension(:), intent(out) :: x
-        real(flyt), intent(in) :: minv
-        real(flyt), intent(in) :: maxv
+        real(r8), dimension(:), intent(out) :: x
+        real(r8), intent(in) :: minv
+        real(r8), intent(in) :: maxv
     end subroutine
     module pure subroutine lo_logspace(minv,maxv,x)
-        real(flyt), dimension(:), intent(out) :: x
-        real(flyt), intent(in) :: minv
-        real(flyt), intent(in) :: maxv
+        real(r8), dimension(:), intent(out) :: x
+        real(r8), intent(in) :: minv
+        real(r8), intent(in) :: maxv
     end subroutine
     module pure function lo_trapezoid_integration(x,y) result(f)
-        real(flyt), dimension(:), intent(in) :: x
-        real(flyt), dimension(:), intent(in) :: y
-        real(flyt) :: f
+        real(r8), dimension(:), intent(in) :: x
+        real(r8), dimension(:), intent(in) :: y
+        real(r8) :: f
     end function
     module elemental function lo_gauss(x,mu,sigma) result(g)
-        real(flyt), intent(in) :: x
-        real(flyt), intent(in) :: mu
-        real(flyt), intent(in) :: sigma
-        real(flyt) :: g
+        real(r8), intent(in) :: x
+        real(r8), intent(in) :: mu
+        real(r8), intent(in) :: sigma
+        real(r8) :: g
     end function
     module elemental function lo_lorentz(x,mu,sigma) result(l)
-        real(flyt), intent(in) :: x
-        real(flyt), intent(in) :: mu
-        real(flyt), intent(in) :: sigma
-        real(flyt) :: l
+        real(r8), intent(in) :: x
+        real(r8), intent(in) :: mu
+        real(r8), intent(in) :: sigma
+        real(r8) :: l
     end function
     module pure function lo_mean(x) result(m)
-        real(flyt), dimension(:), intent(in) :: x
-        real(flyt) :: m
+        real(r8), dimension(:), intent(in) :: x
+        real(r8) :: m
     end function
     module pure function lo_stddev_1d(x) result(s)
-        real(flyt), dimension(:), intent(in) :: x
-        real(flyt) :: s
+        real(r8), dimension(:), intent(in) :: x
+        real(r8) :: s
     end function
     module pure function lo_stddev_3d(x) result(s)
-        real(flyt), dimension(:,:,:), intent(in) :: x
-        real(flyt) :: s
+        real(r8), dimension(:,:,:), intent(in) :: x
+        real(r8) :: s
     end function
     module pure function lo_rsquare_1d(values,predictions) result(rsq)
-        real(flyt), dimension(:), intent(in) :: values
-        real(flyt), dimension(:), intent(in) :: predictions
-        real(flyt) :: rsq
+        real(r8), dimension(:), intent(in) :: values
+        real(r8), dimension(:), intent(in) :: predictions
+        real(r8) :: rsq
     end function
     module pure function lo_rsquare_3d(values,predictions) result(rsq)
-        real(flyt), dimension(:,:,:), intent(in) :: values
-        real(flyt), dimension(:,:,:), intent(in) :: predictions
-        real(flyt) :: rsq
+        real(r8), dimension(:,:,:), intent(in) :: values
+        real(r8), dimension(:,:,:), intent(in) :: predictions
+        real(r8) :: rsq
     end function
     module pure function lo_linear_gradient_in_tetrahedron(corners,values,tolerance) result(gradient)
         real(r8), dimension(3,4), intent(in) :: corners
@@ -603,80 +594,76 @@ end interface
 
 ! Interfaces to the physics submodule
 interface
-#ifdef AGRESSIVE_SANITY
-    module function lo_reciprocal_basis(a) result(b)
-#else
     module pure function lo_reciprocal_basis(a) result(b)
-#endif
-        real(flyt), dimension(3,3), intent(in) :: a
-        real(flyt), dimension(3,3) :: b
+        real(r8), dimension(3,3), intent(in) :: a
+        real(r8), dimension(3,3) :: b
     end function
     module pure function lo_kmesh_density(reciprocal_latticevectors,na,nq) result(density)
-        real(flyt), dimension(3,3), intent(in) :: reciprocal_latticevectors
+        real(r8), dimension(3,3), intent(in) :: reciprocal_latticevectors
         integer, intent(in) :: na
         integer, intent(in) :: nq
         integer, dimension(3) :: density
     end function
     module pure subroutine lo_get_axis_angles(basis,a,b,c,al,be,gm)
-        real(flyt), dimension(3,3), intent(in) :: basis
-        real(flyt), intent(out) :: a
-        real(flyt), intent(out) :: b
-        real(flyt), intent(out) :: c
-        real(flyt), intent(out) :: al
-        real(flyt), intent(out) :: be
-        real(flyt), intent(out) :: gm
+        real(r8), dimension(3,3), intent(in) :: basis
+        real(r8), intent(out) :: a
+        real(r8), intent(out) :: b
+        real(r8), intent(out) :: c
+        real(r8), intent(out) :: al
+        real(r8), intent(out) :: be
+        real(r8), intent(out) :: gm
     end subroutine
     module elemental function lo_fermidirac(x,mu,sigma) result(f)
-        real(flyt), intent(in) :: x
-        real(flyt), intent(in) :: mu
-        real(flyt), intent(in) :: sigma
-        real(flyt) :: f
+        real(r8), intent(in) :: x
+        real(r8), intent(in) :: mu
+        real(r8), intent(in) :: sigma
+        real(r8) :: f
     end function lo_fermidirac
     module elemental function lo_fermi(energy,efermi,temperature) result(f)
-        real(flyt), intent(in) :: energy
-        real(flyt), intent(in) :: efermi
-        real(flyt), intent(in) :: temperature
-        real(flyt) :: f
+        real(r8), intent(in) :: energy
+        real(r8), intent(in) :: efermi
+        real(r8), intent(in) :: temperature
+        real(r8) :: f
     end function lo_fermi
     module elemental function lo_planck(temperature,omega) result(n)
-        real(flyt), intent(in) :: temperature
-        real(flyt), intent(in) :: omega
-        real(flyt) :: n
+        real(r8), intent(in) :: temperature
+        real(r8), intent(in) :: omega
+        real(r8) :: n
     end function lo_planck
     module elemental function lo_planck_deriv(T,omega) result(dndt)
-        real(flyt), intent(in) :: T
-        real(flyt), intent(in) :: omega
-        real(flyt) :: dndt
+        real(r8), intent(in) :: T
+        real(r8), intent(in) :: omega
+        real(r8) :: dndt
     end function lo_planck_deriv
     module elemental function lo_planck_secondderiv(T,omega) result(ddnddt)
-        real(flyt), intent(in) :: T
-        real(flyt), intent(in) :: omega
-        real(flyt) :: ddnddt
+        real(r8), intent(in) :: T
+        real(r8), intent(in) :: omega
+        real(r8) :: ddnddt
     end function lo_planck_secondderiv
     module elemental function lo_harmonic_oscillator_free_energy(temp,omega) result(f)
-        real(flyt), intent(in) :: temp
-        real(flyt), intent(in) :: omega
-        real(flyt) :: f
+        real(r8), intent(in) :: temp
+        real(r8), intent(in) :: omega
+        real(r8) :: f
     end function
     module elemental function lo_harmonic_oscillator_internal_energy(temp,omega) result(u)
-        real(flyt), intent(in) :: temp
-        real(flyt), intent(in) :: omega
-        real(flyt) :: u
+        real(r8), intent(in) :: temp
+        real(r8), intent(in) :: omega
+        real(r8) :: u
     end function
     module elemental function lo_classical_harmonic_oscillator_free_energy(temp,omega) result(f)
-        real(flyt), intent(in) :: temp
-        real(flyt), intent(in) :: omega
-        real(flyt) :: f
+        real(r8), intent(in) :: temp
+        real(r8), intent(in) :: omega
+        real(r8) :: f
     end function
     module elemental function lo_harmonic_oscillator_entropy(temp,omega) result(s)
-        real(flyt), intent(in) :: temp
-        real(flyt), intent(in) :: omega
-        real(flyt) :: s
+        real(r8), intent(in) :: temp
+        real(r8), intent(in) :: omega
+        real(r8) :: s
     end function
     module elemental function lo_harmonic_oscillator_cv(temp,omega) result(cv)
-        real(flyt), intent(in) :: temp
-        real(flyt), intent(in) :: omega
-        real(flyt) :: cv
+        real(r8), intent(in) :: temp
+        real(r8), intent(in) :: omega
+        real(r8) :: cv
     end function
     module subroutine lo_untangle_one_tetrahedron(corner,energy,groupvelocity,degentol,permutation,success,error_interp_energy,error_interp_gradient)
         real(r8), dimension(3,4), intent(in) :: corner
@@ -689,15 +676,15 @@ interface
         real(r8), dimension(:), intent(out), optional :: error_interp_gradient
     end subroutine
     module subroutine lo_find_rotation_that_makes_strain_diagonal( ref_lattice,lattice,rotation,strain,guess )
-        real(flyt), dimension(3,3), intent(in) :: ref_lattice
-        real(flyt), dimension(3,3), intent(in) :: lattice
-        real(flyt), dimension(3,3), intent(out) :: rotation
-        real(flyt), dimension(3,3), intent(out) :: strain
-        real(flyt), dimension(3,3), intent(in), optional :: guess
+        real(r8), dimension(3,3), intent(in) :: ref_lattice
+        real(r8), dimension(3,3), intent(in) :: lattice
+        real(r8), dimension(3,3), intent(out) :: rotation
+        real(r8), dimension(3,3), intent(out) :: strain
+        real(r8), dimension(3,3), intent(in), optional :: guess
     end subroutine
     module elemental function lo_mass_from_Z(Z) result(mass)
         integer, intent(in) :: Z
-        real(flyt) :: mass
+        real(r8) :: mass
     end function
 end interface
 
@@ -705,19 +692,19 @@ end interface
 interface
     module subroutine boxind_from_coordinate(vb,r,bi,bj,bk)
         class(lo_verletbox), intent(in) :: vb
-        real(flyt), dimension(3), intent(in) :: r
+        real(r8), dimension(3), intent(in) :: r
         integer, intent(out) :: bi,bj,bk
     end subroutine
     module function locate_index_of_point(vb,points,r,singlebox) result(ind)
         class(lo_verletbox), intent(in) :: vb
-        real(flyt), dimension(:,:), intent(in) :: points
-        real(flyt), dimension(3), intent(in) :: r
+        real(r8), dimension(:,:), intent(in) :: points
+        real(r8), dimension(3), intent(in) :: r
         logical, intent(in), optional :: singlebox
         integer :: ind
     end function
     module subroutine add_particles_in_boxes(vb,r,ndim)
         class(lo_verletbox), intent(out) :: vb
-        real(flyt), dimension(:,:), intent(in) :: r
+        real(r8), dimension(:,:), intent(in) :: r
         integer, dimension(3), intent(in) :: ndim
     end subroutine
 end interface
@@ -727,7 +714,7 @@ contains
 !> Wallclock time. Wrapper around system_clock, I think.
 function walltime() result(time)
     !> elapsed time
-    real(flyt) :: time
+    real(r8) :: time
 
     logical, save :: firstcall=.true.
     integer(i8), save :: countrate=-1,countmax=-1
@@ -739,7 +726,7 @@ function walltime() result(time)
     endif
 
     call system_clock(i)
-    time=real(i,flyt)/real(countrate,flyt)
+    time=real(i,r8)/real(countrate,r8)
 end function
 
 !> helper function that returns true nrep times when i cycles over nloop values. I use it for progressbars, so that if it is a very long and fast loop printing the progress bar does not become a bottleneck.
@@ -826,7 +813,7 @@ end function
 !> convert a real to a character
 pure function tochar_real(f,ndecimals,frmt) result(s)
     !> number to convert
-    real(flyt), intent(in) :: f
+    real(r8), intent(in) :: f
     !> how many decimals
     integer, intent(in), optional :: ndecimals
     !> maybe format instead
@@ -857,7 +844,7 @@ end function
 !> convert an array of reals to a character
 pure function tochar_realarr(f,ndecimals,frmt) result(s)
     !> number to convert
-    real(flyt), dimension(:), intent(in) :: f
+    real(r8), dimension(:), intent(in) :: f
     !> how many decimals
     integer, intent(in), optional :: ndecimals
     !> maybe format instead
@@ -893,7 +880,7 @@ end function
 !> convert seconds to hh:mm:ss
 pure function lo_seconds_to_ddhhmmss(t) result(ddhhmmss)
     !> time, in seconds
-    real(flyt), intent(in) :: t
+    real(r8), intent(in) :: t
     !> formatted string
     character(len=:), allocatable :: ddhhmmss
 
@@ -913,29 +900,25 @@ pure function lo_seconds_to_ddhhmmss(t) result(ddhhmmss)
 end function
 
 !> Set all the possible tolerances from a global tolerance
-#ifdef AGRESSIVE_SANITY
-subroutine lo_fetch_tolerance(tol,basis,realspace_cart_tol,realspace_fractional_tol,relative_tol,reciprocal_cart_tol,reciprocal_fractional_tol,temperature_tol,radian_tol,degree_tol,freq_tol,squared)
-#else
 pure subroutine lo_fetch_tolerance(tol,basis,realspace_cart_tol,realspace_fractional_tol,relative_tol,reciprocal_cart_tol,reciprocal_fractional_tol,temperature_tol,radian_tol,degree_tol,freq_tol,squared)
-#endif
     !> global tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
     !> metric for cartesian distances, realspace
-    real(flyt), dimension(3,3), intent(in), optional :: basis
+    real(r8), dimension(3,3), intent(in), optional :: basis
     !> this tolerance in different metrics
-    real(flyt), intent(out), optional :: realspace_cart_tol
-    real(flyt), intent(out), optional :: realspace_fractional_tol
-    real(flyt), intent(out), optional :: relative_tol
-    real(flyt), intent(out), optional :: reciprocal_cart_tol
-    real(flyt), intent(out), optional :: reciprocal_fractional_tol
-    real(flyt), intent(out), optional :: temperature_tol
-    real(flyt), intent(out), optional :: radian_tol
-    real(flyt), intent(out), optional :: degree_tol
-    real(flyt), intent(out), optional :: freq_tol
+    real(r8), intent(out), optional :: realspace_cart_tol
+    real(r8), intent(out), optional :: realspace_fractional_tol
+    real(r8), intent(out), optional :: relative_tol
+    real(r8), intent(out), optional :: reciprocal_cart_tol
+    real(r8), intent(out), optional :: reciprocal_fractional_tol
+    real(r8), intent(out), optional :: temperature_tol
+    real(r8), intent(out), optional :: radian_tol
+    real(r8), intent(out), optional :: degree_tol
+    real(r8), intent(out), optional :: freq_tol
     logical, intent(in), optional :: squared
 
-    real(flyt) :: f0
-    real(flyt), dimension(3,3) :: recbasis
+    real(r8) :: f0
+    real(r8), dimension(3,3) :: recbasis
     logical :: sq
 
     if ( present(squared) ) then
@@ -951,64 +934,49 @@ pure subroutine lo_fetch_tolerance(tol,basis,realspace_cart_tol,realspace_fracti
     endif
 
     if ( present(realspace_fractional_tol) ) then
-#ifdef AGRESSIVE_SANITY
-        if ( .not.present(basis) ) then
-            call lo_stop_gracefully(['I really need the basis (realspace metric) to define a fractional tolerance.'],lo_exitcode_param)
-        endif
-#endif
         ! Realspace distances in fractional coordinates
-        f0=( norm2(basis(:,1))+norm2(basis(:,2))+norm2(basis(:,3)) )/3.0_flyt
+        f0=( norm2(basis(:,1))+norm2(basis(:,2))+norm2(basis(:,3)) )/3.0_r8
         realspace_fractional_tol=tol/f0
         if ( sq ) realspace_fractional_tol=realspace_fractional_tol**2
     endif
 
     if ( present(relative_tol) ) then
         ! For relative quantities
-        relative_tol=tol*1E-2_flyt
+        relative_tol=tol*1E-2_r8
         if ( sq ) relative_tol=relative_tol**2
     endif
 
     if ( present(reciprocal_cart_tol) ) then
-#ifdef AGRESSIVE_SANITY
-        if ( .not.present(basis) ) then
-            call lo_stop_gracefully(['I really need the basis (realspace metric) to define a reciprocal tolerance.'],lo_exitcode_param)
-        endif
-#endif
         ! in reciprocal space
         reciprocal_cart_tol=tol/abs(lo_determ(basis))
         if ( sq ) reciprocal_cart_tol=reciprocal_cart_tol**2
     endif
 
     if ( present(reciprocal_fractional_tol) ) then
-#ifdef AGRESSIVE_SANITY
-        if ( .not.present(basis) ) then
-            call lo_stop_gracefully(['I really need the basis (realspace metric) to define a fractional reciprocal tolerance.'],lo_exitcode_param)
-        endif
-#endif
         ! in reciprocal fractional space
         recbasis=lo_reciprocal_basis(basis)
-        f0=( norm2(recbasis(:,1))+norm2(recbasis(:,2))+norm2(recbasis(:,3)) )/3.0_flyt
+        f0=( norm2(recbasis(:,1))+norm2(recbasis(:,2))+norm2(recbasis(:,3)) )/3.0_r8
         reciprocal_fractional_tol=tol/f0
         if ( sq ) reciprocal_fractional_tol=reciprocal_fractional_tol**2
     endif
 
     if ( present(temperature_tol) ) then
-        temperature_tol=tol*1E2_flyt
+        temperature_tol=tol*1E2_r8
         if ( sq ) temperature_tol=temperature_tol**2
     endif
 
     if ( present(radian_tol) ) then
-        radian_tol=tol*10.0_flyt*180.0_flyt/lo_pi
+        radian_tol=tol*10.0_r8*180.0_r8/lo_pi
         if ( sq ) radian_tol=radian_tol**2
     endif
 
     if ( present(degree_tol) ) then
-        degree_tol=tol*10.0_flyt
+        degree_tol=tol*10.0_r8
         if ( sq ) degree_tol=degree_tol**2
     endif
 
     if ( present(freq_tol) ) then
-        freq_tol=tol*1E-4_flyt
+        freq_tol=tol*1E-4_r8
         if ( sq ) freq_tol=freq_tol**2
     endif
 end subroutine
@@ -1126,26 +1094,26 @@ subroutine lo_looptimer(msg,t_start,t_curr,i,n)
     !> message
     character(len=*), intent(in) :: msg
     !> starting time for the loop
-    real(flyt), intent(in) :: t_start
+    real(r8), intent(in) :: t_start
     !> current time
-    real(flyt), intent(in) :: t_curr
+    real(r8), intent(in) :: t_curr
     !> counter
     integer, intent(in) :: i
     !> total count
     integer, intent(in) :: n
 
-    real(flyt) :: t_total,t_elapsed,t_remaining,percent_done
+    real(r8) :: t_total,t_elapsed,t_remaining,percent_done
     ! elapsed time
     t_elapsed=t_curr-t_start
     ! estimate total and remaining time
     if ( i .gt. 1 ) then
-        t_total=t_elapsed*(n*1.0_flyt-1.0_flyt)/(i*1.0_flyt-1.0_flyt)
+        t_total=t_elapsed*(n*1.0_r8-1.0_r8)/(i*1.0_r8-1.0_r8)
         t_remaining=t_total-t_elapsed
     else
-        t_total=0.0_flyt
-        t_remaining=0.0_flyt
+        t_total=0.0_r8
+        t_remaining=0.0_r8
     endif
-    percent_done=100*(i*1.0_flyt-1.0_flyt)/(n*1.0_flyt-1.0_flyt)
+    percent_done=100*(i*1.0_r8-1.0_r8)/(n*1.0_r8-1.0_r8)
 
     ! print this
     write(*,"(1X,A)") trim(adjustl(msg))//', remaining time: '//lo_seconds_to_ddhhmmss(t_remaining)//&
@@ -1179,9 +1147,9 @@ subroutine lo_progressbar(message,j,totn,elapsed_time)
     !> What is being calculated
     character(len=*), intent(in) :: message
     !> Optionally, how long time it has taken
-    real(flyt), intent(in), optional :: elapsed_time
+    real(r8), intent(in), optional :: elapsed_time
     !
-    real(flyt) :: f0
+    real(r8) :: f0
     integer :: i,k
     character(len=50) :: bar
     character(len=40) :: msg
@@ -1191,9 +1159,9 @@ subroutine lo_progressbar(message,j,totn,elapsed_time)
     msg="                                        "
     ! write the percentage in the bar
     if ( totn .gt. 1 ) then
-        f0=100.0_flyt*(j-1.0_flyt)/(totn*1.0_flyt-1.0_flyt)
+        f0=100.0_r8*(j-1.0_r8)/(totn*1.0_r8-1.0_r8)
     else
-        f0=100.0_flyt
+        f0=100.0_r8
     endif
     write(unit=bar(1:5),fmt="(F5.1)") f0
     ! fill in the bar
@@ -1260,13 +1228,13 @@ end function lo_index_in_periodic_array
 !> Clean up fractional coordinates in a way that I like, so that they become 0-1, inclusive 0 not inclusive 1. Some quick testing suggested this was faster than mod if I am close to 0-1, which almost always is the case. Also means that you should never use this for large numbers.
 elemental function lo_clean_fractional_coordinates(x,tol) result(y)
     !> unclean coordinate
-    real(flyt), intent(in) :: x
+    real(r8), intent(in) :: x
     !> tolerance
-    real(flyt), intent(in), optional :: tol
+    real(r8), intent(in), optional :: tol
     !> the clean coordinate
-    real(flyt) :: y
+    real(r8) :: y
 
-    real(flyt) :: dl
+    real(r8) :: dl
     if ( present(tol) ) then
         dl=tol
     else
@@ -1274,94 +1242,94 @@ elemental function lo_clean_fractional_coordinates(x,tol) result(y)
     endif
     y=x
     do
-        if ( abs(y) .lt. dl ) y=0.0_flyt
-        if ( abs(y-1.0_flyt) .lt. dl ) y=0.0_flyt
-        if ( y .gt. 1.0_flyt ) y=y-1.0_flyt
-        if ( y .lt. 0.0_flyt ) y=y+1.0_flyt
-        if ( y .gt. -dl .and. y .lt. 1.0_flyt ) exit
+        if ( abs(y) .lt. dl ) y=0.0_r8
+        if ( abs(y-1.0_r8) .lt. dl ) y=0.0_r8
+        if ( y .gt. 1.0_r8 ) y=y-1.0_r8
+        if ( y .lt. 0.0_r8 ) y=y+1.0_r8
+        if ( y .gt. -dl .and. y .lt. 1.0_r8 ) exit
     enddo
 end function
 
 !> Chop number to a short list of well-defined numbers, within a tolerance. Contains all n/m with m from 1 to 10 and n<m, and sqrt(3)/2. No problem adding more if that is needed. Only tests between -1 and 1
 elemental function lo_chop_real(x,tol) result(y)
     !> number to be chopped
-    real(flyt), intent(in) :: x
+    real(r8), intent(in) :: x
     !> tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
     !> the chopped number
-    real(flyt) :: y
+    real(r8) :: y
 
     integer :: i
-    real(flyt), dimension(69), parameter :: welldefined=[&
-          0.0000000000000000_flyt,&
-          0.1000000000000000_flyt,&
-         -0.1000000000000000_flyt,&
-          0.1111111111111111_flyt,&
-         -0.1111111111111111_flyt,&
-          0.1250000000000000_flyt,&
-         -0.1250000000000000_flyt,&
-          0.1428571428571428_flyt,&
-         -0.1428571428571428_flyt,&
-          0.1666666666666667_flyt,&
-         -0.1666666666666667_flyt,&
-          0.2000000000000000_flyt,&
-         -0.2000000000000000_flyt,&
-          0.2222222222222222_flyt,&
-         -0.2222222222222222_flyt,&
-          0.2500000000000000_flyt,&
-         -0.2500000000000000_flyt,&
-          0.2857142857142857_flyt,&
-         -0.2857142857142857_flyt,&
-          0.3000000000000000_flyt,&
-         -0.3000000000000000_flyt,&
-          0.3333333333333333_flyt,&
-         -0.3333333333333333_flyt,&
-          0.3750000000000000_flyt,&
-         -0.3750000000000000_flyt,&
-          0.4000000000000000_flyt,&
-         -0.4000000000000000_flyt,&
-          0.4285714285714285_flyt,&
-         -0.4285714285714285_flyt,&
-          0.4444444444444444_flyt,&
-         -0.4444444444444444_flyt,&
-          0.5000000000000000_flyt,&
-         -0.5000000000000000_flyt,&
-          0.5555555555555556_flyt,&
-         -0.5555555555555556_flyt,&
-          0.5714285714285714_flyt,&
-         -0.5714285714285714_flyt,&
-          0.6000000000000000_flyt,&
-         -0.6000000000000000_flyt,&
-          0.6250000000000000_flyt,&
-         -0.6250000000000000_flyt,&
-          0.6666666666666667_flyt,&
-         -0.6666666666666667_flyt,&
-          0.7000000000000000_flyt,&
-         -0.7000000000000000_flyt,&
-          0.7071067811865475_flyt,&
-         -0.7071067811865475_flyt,&
-          0.7142857142857143_flyt,&
-         -0.7142857142857143_flyt,&
-          0.7500000000000000_flyt,&
-         -0.7500000000000000_flyt,&
-          0.7777777777777778_flyt,&
-         -0.7777777777777778_flyt,&
-          0.8000000000000000_flyt,&
-         -0.8000000000000000_flyt,&
-          0.8333333333333334_flyt,&
-         -0.8333333333333334_flyt,&
-          0.8571428571428571_flyt,&
-         -0.8571428571428571_flyt,&
-          0.8660254037844386_flyt,&
-         -0.8660254037844386_flyt,&
-          0.8750000000000000_flyt,&
-         -0.8750000000000000_flyt,&
-          0.8888888888888888_flyt,&
-         -0.8888888888888888_flyt,&
-          0.9000000000000000_flyt,&
-         -0.9000000000000000_flyt,&
-          1.0000000000000000_flyt,&
-         -1.0000000000000000_flyt]
+    real(r8), dimension(69), parameter :: welldefined=[&
+          0.0000000000000000_r8,&
+          0.1000000000000000_r8,&
+         -0.1000000000000000_r8,&
+          0.1111111111111111_r8,&
+         -0.1111111111111111_r8,&
+          0.1250000000000000_r8,&
+         -0.1250000000000000_r8,&
+          0.1428571428571428_r8,&
+         -0.1428571428571428_r8,&
+          0.1666666666666667_r8,&
+         -0.1666666666666667_r8,&
+          0.2000000000000000_r8,&
+         -0.2000000000000000_r8,&
+          0.2222222222222222_r8,&
+         -0.2222222222222222_r8,&
+          0.2500000000000000_r8,&
+         -0.2500000000000000_r8,&
+          0.2857142857142857_r8,&
+         -0.2857142857142857_r8,&
+          0.3000000000000000_r8,&
+         -0.3000000000000000_r8,&
+          0.3333333333333333_r8,&
+         -0.3333333333333333_r8,&
+          0.3750000000000000_r8,&
+         -0.3750000000000000_r8,&
+          0.4000000000000000_r8,&
+         -0.4000000000000000_r8,&
+          0.4285714285714285_r8,&
+         -0.4285714285714285_r8,&
+          0.4444444444444444_r8,&
+         -0.4444444444444444_r8,&
+          0.5000000000000000_r8,&
+         -0.5000000000000000_r8,&
+          0.5555555555555556_r8,&
+         -0.5555555555555556_r8,&
+          0.5714285714285714_r8,&
+         -0.5714285714285714_r8,&
+          0.6000000000000000_r8,&
+         -0.6000000000000000_r8,&
+          0.6250000000000000_r8,&
+         -0.6250000000000000_r8,&
+          0.6666666666666667_r8,&
+         -0.6666666666666667_r8,&
+          0.7000000000000000_r8,&
+         -0.7000000000000000_r8,&
+          0.7071067811865475_r8,&
+         -0.7071067811865475_r8,&
+          0.7142857142857143_r8,&
+         -0.7142857142857143_r8,&
+          0.7500000000000000_r8,&
+         -0.7500000000000000_r8,&
+          0.7777777777777778_r8,&
+         -0.7777777777777778_r8,&
+          0.8000000000000000_r8,&
+         -0.8000000000000000_r8,&
+          0.8333333333333334_r8,&
+         -0.8333333333333334_r8,&
+          0.8571428571428571_r8,&
+         -0.8571428571428571_r8,&
+          0.8660254037844386_r8,&
+         -0.8660254037844386_r8,&
+          0.8750000000000000_r8,&
+         -0.8750000000000000_r8,&
+          0.8888888888888888_r8,&
+         -0.8888888888888888_r8,&
+          0.9000000000000000_r8,&
+         -0.9000000000000000_r8,&
+          1.0000000000000000_r8,&
+         -1.0000000000000000_r8]
 
     ! my list of well defined values. Could very well grow a little bit.
     ! starts with numbers that are common in symmetry operations
@@ -1377,82 +1345,82 @@ end function
 !> cutoff at small numbers for complex numbers
 elemental function lo_chop_complex(x,tol) result(y)
     !> number to be chopped
-    complex(flyt), intent(in) :: x
+    complex(r8), intent(in) :: x
     !> tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
     !> chopped number
-    complex(flyt) :: y
+    complex(r8) :: y
 
-    real(flyt) :: re,im
+    real(r8) :: re,im
     re=real(x)
     im=aimag(x)
-    if ( abs(re) .lt. tol ) re=0.0_flyt
-    if ( abs(im) .lt. tol ) im=0.0_flyt
-    y=cmplx(re,im,flyt)
+    if ( abs(re) .lt. tol ) re=0.0_r8
+    if ( abs(im) .lt. tol ) im=0.0_r8
+    y=cmplx(re,im,r8)
 end function
 
 !> Slower chopping function, identifies integers and common sqrt things, and multiples of those. Not that fast perhaps, but quite useful.
 elemental function lo_choplarge(x,tol) result(y)
     !> number to be chopped
-    real(flyt), intent(in) :: x
+    real(r8), intent(in) :: x
     !> tolerance
-    real(flyt), intent(in) :: tol
+    real(r8), intent(in) :: tol
     !> the chopped number
-    real(flyt) :: y
+    real(r8) :: y
 
     integer :: i
-    real(flyt), dimension(51), parameter :: welldefined=[&
--10.000000000000000000_flyt, &
--9.000000000000000000_flyt, &
--8.660254037844385522_flyt, &
--8.000000000000000000_flyt, &
--7.794228634059947147_flyt, &
--7.000000000000000000_flyt, &
--6.928203230275508773_flyt, &
--6.062177826491070398_flyt, &
--6.000000000000000000_flyt, &
--5.196152422706632024_flyt, &
--5.000000000000000000_flyt, &
--4.500000000000000000_flyt, &
--4.330127018922192761_flyt, &
--4.000000000000000000_flyt, &
--3.500000000000000000_flyt, &
--3.464101615137754386_flyt, &
--3.000000000000000000_flyt, &
--2.598076211353316012_flyt, &
--2.500000000000000000_flyt, &
--2.000000000000000000_flyt, &
--1.732050807568877193_flyt, &
--1.500000000000000000_flyt, &
--1.000000000000000000_flyt, &
--0.866025403784438597_flyt, &
--0.500000000000000000_flyt, &
- 0.000000000000000000_flyt, &
- 0.500000000000000000_flyt, &
- 0.866025403784438597_flyt, &
- 1.000000000000000000_flyt, &
- 1.500000000000000000_flyt, &
- 1.732050807568877193_flyt, &
- 2.000000000000000000_flyt, &
- 2.500000000000000000_flyt, &
- 2.598076211353316012_flyt, &
- 3.000000000000000000_flyt, &
- 3.464101615137754386_flyt, &
- 3.500000000000000000_flyt, &
- 4.000000000000000000_flyt, &
- 4.330127018922192761_flyt, &
- 4.500000000000000000_flyt, &
- 5.000000000000000000_flyt, &
- 5.196152422706632024_flyt, &
- 6.000000000000000000_flyt, &
- 6.062177826491070398_flyt, &
- 6.928203230275508773_flyt, &
- 7.000000000000000000_flyt, &
- 7.794228634059947147_flyt, &
- 8.000000000000000000_flyt, &
- 8.660254037844385522_flyt, &
- 9.000000000000000000_flyt, &
-10.000000000000000000_flyt]
+    real(r8), dimension(51), parameter :: welldefined=[&
+-10.000000000000000000_r8, &
+-9.000000000000000000_r8, &
+-8.660254037844385522_r8, &
+-8.000000000000000000_r8, &
+-7.794228634059947147_r8, &
+-7.000000000000000000_r8, &
+-6.928203230275508773_r8, &
+-6.062177826491070398_r8, &
+-6.000000000000000000_r8, &
+-5.196152422706632024_r8, &
+-5.000000000000000000_r8, &
+-4.500000000000000000_r8, &
+-4.330127018922192761_r8, &
+-4.000000000000000000_r8, &
+-3.500000000000000000_r8, &
+-3.464101615137754386_r8, &
+-3.000000000000000000_r8, &
+-2.598076211353316012_r8, &
+-2.500000000000000000_r8, &
+-2.000000000000000000_r8, &
+-1.732050807568877193_r8, &
+-1.500000000000000000_r8, &
+-1.000000000000000000_r8, &
+-0.866025403784438597_r8, &
+-0.500000000000000000_r8, &
+ 0.000000000000000000_r8, &
+ 0.500000000000000000_r8, &
+ 0.866025403784438597_r8, &
+ 1.000000000000000000_r8, &
+ 1.500000000000000000_r8, &
+ 1.732050807568877193_r8, &
+ 2.000000000000000000_r8, &
+ 2.500000000000000000_r8, &
+ 2.598076211353316012_r8, &
+ 3.000000000000000000_r8, &
+ 3.464101615137754386_r8, &
+ 3.500000000000000000_r8, &
+ 4.000000000000000000_r8, &
+ 4.330127018922192761_r8, &
+ 4.500000000000000000_r8, &
+ 5.000000000000000000_r8, &
+ 5.196152422706632024_r8, &
+ 6.000000000000000000_r8, &
+ 6.062177826491070398_r8, &
+ 6.928203230275508773_r8, &
+ 7.000000000000000000_r8, &
+ 7.794228634059947147_r8, &
+ 8.000000000000000000_r8, &
+ 8.660254037844385522_r8, &
+ 9.000000000000000000_r8, &
+10.000000000000000000_r8]
 
     ! my list of well defined values. Could very well grow a little bit.
     ! starts with numbers that are common in symmetry operations
@@ -1487,29 +1455,6 @@ elemental function lo_intsqrt(i) result(j)
         endif
     enddo
 end function
-
-!!> Return a linear index from a 2D array
-!pure function lo_flatten_2d_index(i,j,nj) result(l)
-!    !> index in first dimension
-!    integer, intent(in) :: i
-!    !> index in second dimension
-!    integer, intent(in) :: j
-!    !> second dimension
-!    integer, intent(in) :: nj
-!    !> linear index
-!    integer :: l
-!    l=(i-1)*nj+j
-!end function
-!
-!pure function lo_unflatten_2d_index(l,nj) result(ij)
-!    !> linear index
-!    integer, intent(in) :: l
-!    !> second dimension
-!    integer, intent(in) :: nj
-!    !> 2D indices
-!    integer, dimension(2) :: ij
-!    ij=[(l-1)/nj+1,mod(l-1,nj)+1]
-!end function
 
 !> kill the program gracefully, with an exit code and message. Optionally say what line in what file that called it.
 subroutine lo_stop_gracefully(msg,exitcode,filename,line)
@@ -1570,6 +1515,12 @@ subroutine lo_stop_gracefully(msg,exitcode,filename,line)
     case default
         error stop
     end select
+end subroutine
+
+subroutine destroy_array_of_arrays(self)
+    class(lo_array_of_array), intent(inout) :: self
+
+    if ( allocated(self%buf_1d_r8) ) deallocate(self%buf_1d_r8)
 end subroutine
 
 end module

@@ -1,5 +1,9 @@
 submodule(lo_selfenergy_interpolation) lo_selfenergy_interpolation_grid
 use gottochblandat, only: lo_lorentz
+use type_crystalstructure, only: lo_crystalstructure
+use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
+use lo_thermal_transport, only: lo_thermal_conductivity
+use type_qpointmesh, only: lo_qpoint_mesh
 implicit none
 
 contains

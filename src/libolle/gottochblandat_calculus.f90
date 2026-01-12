@@ -1,4 +1,3 @@
-#include "precompilerdefinitions"
 submodule (gottochblandat) gottochblandat_calculus
 implicit none
 contains

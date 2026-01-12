@@ -91,6 +91,7 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
 
     ! Get the self-energies
     selfenergy: block
+        real(r8) :: emax,elo,ehi,f0,f1,f2,f3
         integer :: iq, imode
 
         call mem%allocate(buf_re, [ise%n_energy, bs%n_mode, bs%n_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -103,6 +104,18 @@ module subroutine spectral_function_path_interp(ise, bs, uc, mw, mem)
             if (mod(iq, mw%n) .ne. mw%r) cycle
             ! Get self-energy
             call ise%evaluate(uc,bs%q(iq)%r,bs%p(iq)%omega,bs%p(iq)%egv,buf_Re(:,:,iq),buf_im(:,:,iq),mem)
+
+            !write(*,*) 'iq',iq
+
+            ! Do the normalizing thing?
+            do imode=1, bs%n_mode
+                if ( bs%p(iq)%omega(imode) .le. lo_freqtol ) cycle
+                !call lo_find_spectral_function_max_and_fwhm(bs%p(iq)%omega(imode),ise%omega,buf_im(:,imode,iq),buf_re(:,imode,iq),emax,elo,ehi)
+                !call lo_integrate_spectral_function(ise%omega,bs%p(iq)%omega(imode),buf_im(:,imode,iq),buf_re(:,imode,iq),emax,elo,ehi,1.0_r8,300.0_r8,1E-8_r8,f1,f2,f3)
+                !write(*,*) iq,imode,f0,f1,f2,f3
+                !buf_linewidth(imode, iq) = ehi-elo
+            enddo
+
             !call ise%diagonal_selfenergy(uc, bs%q(iq)%r, bs%p(iq)%omega, bs%p(iq)%egv, buf_re(:, :, iq), buf_im(:, :, iq))
             ! Get shift and width
             do imode = 1, bs%n_mode

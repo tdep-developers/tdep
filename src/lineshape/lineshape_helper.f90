@@ -242,8 +242,6 @@ subroutine convolute_to_sfun(ch, imode, jmode, sigma, sfun)
     call gaussian_smear_spectral_function(ch%x(0:ch%n), sigma, sfun)
 end subroutine
 
-!> multiply, inversetransform, shuffle, smear?
-
 !> Smear spectral functions before integrations
 subroutine smear_spectralfunction(sf, qp, dr, maxf, smearing_prefactor, mw, mem)
     !> helper container

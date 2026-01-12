@@ -10,6 +10,8 @@ use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_forceconstant_fourthorder, only: lo_forceconstant_fourthorder
 use type_qpointmesh, only: lo_qpoint_mesh,lo_qpoint
+use type_blas_lapack_wrappers, only: lo_gemm
+use type_symmetryoperation, only: lo_eigenvector_transformation_matrix
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
 !use lo_brents_method, only: lo_brent_helper
 use quadratures_stencils, only: lo_centraldifference, lo_gaussianquadrature

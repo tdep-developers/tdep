@@ -1,6 +1,7 @@
 module lo_spectralfunction_helpers
-use konstanter, only: r8,lo_huge,lo_hugeint,lo_exitcode_param,lo_pi
-use gottochblandat, only: lo_planck,lo_stop_gracefully,lo_gauss,lo_return_unique
+use konstanter, only: r8,lo_huge,lo_hugeint,lo_exitcode_param,lo_pi,lo_freqtol
+use gottochblandat, only: lo_planck,lo_stop_gracefully,lo_gauss,lo_return_unique,lo_complex_singular_value_decomposition
+use type_blas_lapack_wrappers, only: lo_gemm,lo_zheev
 use lo_brents_method, only: lo_brent_helper
 use quadratures_stencils, only: lo_centraldifference, lo_gaussianquadrature
 use lo_sorting, only: lo_qsort
@@ -14,6 +15,9 @@ public :: lo_find_spectral_function_max_and_fwhm
 public :: lo_interpolated_spectral_function
 public :: lo_integrate_spectral_function
 public :: lo_integrate_two_spectral_functions
+public :: lo_integrate_spectral_function_and_return_nodes
+public :: lo_make_eigenvector_parallel
+public :: lo_permute_eigenpairs
 
 contains
 
@@ -378,8 +382,8 @@ function lo_interpolated_spectral_function(x, yim, yre, omega, scalefactor, xi) 
 
     ! This should put us in the right interval.
     ilo = floor(n*xi/xhi) + 1
-    ! ilo=max(ilo,1)
-    ! ilo=min(ilo,n-1)
+    ilo=max(ilo,1)
+    ilo=min(ilo,n-1)
     ihi = ilo + 1
     ! evaluate imaginary and real self-energy
     f0 = (x(ihi) - xi)/(x(ihi) - x(ilo))
@@ -897,6 +901,398 @@ subroutine lo_integrate_two_spectral_functions(x, omega1, omega2, sigmaIm1, sigm
     if (allocated(next_ok)) deallocate (next_ok)
     if (allocated(next_sq)) deallocate (next_sq)
     if (allocated(next_kp)) deallocate (next_kp)
+end subroutine
+
+!> Integrate spectral function in a semi-smart way
+subroutine lo_integrate_spectral_function_and_return_nodes(x, omega, sigmaIm, sigmaRe, xmid, xlo, xhi, scalefactor, temperature, tolerance, integrated_spectralfunction, integrated_sf_squared, integrated_sf_nn, integration_nodes)
+    !> rough x-axis
+    real(r8), dimension(:), intent(in) :: x
+    !> harmonic frequency
+    real(r8), intent(in) :: omega
+    !> imaginary part
+    real(r8), dimension(:), intent(in) :: sigmaIm
+    !> real part
+    real(r8), dimension(:), intent(in) :: sigmaRe
+    !> peak location
+    real(r8), intent(in) :: xmid
+    !> fwhm left location
+    real(r8), intent(in) :: xlo
+    !> fwhm right location
+    real(r8), intent(in) :: xhi
+    !> scaling factor for the spectral function
+    real(r8), intent(in) :: scalefactor
+    !> temperature
+    real(r8), intent(in) :: temperature
+    !> relative tolerance to integrate to?
+    real(r8), intent(in) :: tolerance
+    !> integral of spectral function
+    real(r8), intent(out) :: integrated_spectralfunction
+    !> integrated pi*sf^2
+    real(r8), intent(out) :: integrated_sf_squared
+    !> integrated sf^2*n*(n+1)
+    real(r8), intent(out) :: integrated_sf_nn
+    !> integration nodes
+    real(r8), dimension(:), intent(out), allocatable :: integration_nodes
+
+    integer, parameter :: maxiter = 50
+    integer, parameter :: maxintervals = 10000
+    ! Order of quadratures to check.
+    integer, parameter :: nlo = 8
+    integer, parameter :: nhi = 11
+    real(r8), dimension(2, nlo) :: gqlo
+    real(r8), dimension(2, nhi) :: gqhi
+    real(r8), dimension(nlo) :: lo_sf, lo_sq, lo_kp
+    real(r8), dimension(nhi) :: hi_sf, hi_sq, hi_kp
+
+    real(r8), dimension(:), allocatable :: current_nodes, next_nodes
+    real(r8), dimension(:), allocatable :: current_sf, current_sq, current_kp
+    real(r8), dimension(:), allocatable :: next_sf, next_sq, next_kp
+    logical, dimension(:), allocatable :: current_ok, next_ok
+    logical :: segmentok
+    real(r8) :: xmax, f0, f1, x0
+    real(r8) :: int_sf, int_sq, int_kp
+    real(r8) :: err_sf, err_sq, err_kp
+    real(r8) :: vlo_sf, vlo_sq, vlo_kp
+    real(r8) :: vhi_sf, vhi_sq, vhi_kp
+    integer :: n, n_curr
+    integer :: iter, i, j, ctr, ctrok, ctrnew
+
+    n = size(x)
+    xmax = x(n)
+
+    ! Maybe try do do this recursively somehow.
+    ! Think I will do it like this, I will chop things into a
+    ! few intervals. Then do a nlo and nhi point Gaussian quadrature
+    ! on these intervals. If within tolerance, fine, if not split
+    ! it in half and go again? Can make this faster later, just
+    ! proof of concept for now.
+
+    ! Start building the first intervals.
+    n_curr = 9
+    allocate (current_nodes(n_curr))
+    allocate (current_ok(n_curr))
+    allocate (current_sf(n_curr))
+    allocate (current_sq(n_curr))
+    allocate (current_kp(n_curr))
+    current_nodes = 0.0_r8
+    current_ok = .false.
+    current_sf = 0.0_r8
+    current_sq = 0.0_r8
+    current_kp = 0.0_r8
+
+    ! Select some sensible starting nodes.
+    current_nodes(1) = 0.0_r8
+    current_nodes(2) = xlo*0.5_r8
+    current_nodes(3) = xlo
+    current_nodes(4) = xlo + (xmid - xlo)*0.5_r8
+    current_nodes(5) = xmid
+    current_nodes(6) = xmid + (xhi - xmid)*0.5_r8
+    current_nodes(7) = xhi
+    current_nodes(8) = xhi + (xmax - xhi)*0.5_r8
+    current_nodes(9) = xmax
+
+    ! Start adaptively integrating
+    iterloop: do iter = 1, maxiter
+        allocate (next_nodes(2*n_curr))
+        allocate (next_ok(2*n_curr))
+        allocate (next_sf(2*n_curr))
+        allocate (next_sq(2*n_curr))
+        allocate (next_kp(2*n_curr))
+        next_nodes = -1.0_r8
+        next_ok = .false.
+        next_sf = 0.0_r8
+        next_sq = 0.0_r8
+        next_kp = 0.0_r8
+
+        err_sf = 0.0_r8
+        err_sq = 0.0_r8
+        err_kp = 0.0_r8
+        int_sf = 0.0_r8
+        int_sq = 0.0_r8
+        int_kp = 0.0_r8
+
+        ctrok = 0
+        ctrnew = 0
+        ctr = 0
+        do i = 1, n_curr - 1
+
+            ! Check interval.
+            if (current_ok(i)) then
+                ! This interval is already fine.
+                segmentok = .true.
+                int_sf = int_sf + current_sf(i)
+                int_sq = int_sq + current_sq(i)
+                int_kp = int_kp + current_kp(i)
+            else
+                ! We have to actually check. Evaluate functions and integrate.
+                call lo_gaussianquadrature(nlo, current_nodes(i), current_nodes(i + 1), gqlo)
+                call lo_gaussianquadrature(nhi, current_nodes(i), current_nodes(i + 1), gqhi)
+                do j = 1, nlo
+                    x0 = gqlo(1, j)
+                    f0 = lo_interpolated_spectral_function(x, sigmaIm, sigmaRe, omega, scalefactor, x0)
+                    f1 = lo_planck(temperature, x0)
+                    lo_sf(j) = f0
+                    lo_sq(j) = f0*f0*lo_pi
+                    lo_kp(j) = f0*f0*f1*(f1 + 1.0_r8)
+                end do
+                do j = 1, nhi
+                    x0 = gqhi(1, j)
+                    f0 = lo_interpolated_spectral_function(x, sigmaIm, sigmaRe, omega, scalefactor, x0)
+                    f1 = lo_planck(temperature, x0)
+                    hi_sf(j) = f0
+                    hi_sq(j) = f0*f0*lo_pi
+                    hi_kp(j) = f0*f0*f1*(f1 + 1.0_r8)*x0*x0
+                end do
+                vlo_sf = sum(lo_sf*gqlo(2, :))
+                vlo_sq = sum(lo_sq*gqlo(2, :))
+                vlo_kp = sum(lo_kp*gqlo(2, :))
+                vhi_sf = sum(hi_sf*gqhi(2, :))
+                vhi_sq = sum(hi_sq*gqhi(2, :))
+                vhi_kp = sum(hi_kp*gqhi(2, :))
+
+                ! Check if fine:
+                !if ( abs(f0-f1) .lt. tolerance ) then
+                if (abs(vlo_sf - vhi_sf) .lt. tolerance) then
+                    current_sf(i) = vhi_sf
+                    current_sq(i) = vhi_sq
+                    current_kp(i) = vhi_kp
+                    segmentok = .true.
+                else
+                    segmentok = .false.
+                end if
+                ! Accumulate things
+                int_sf = int_sf + vhi_sf
+                int_sq = int_sq + vhi_sq
+                int_kp = int_kp + vhi_kp
+
+                err_sf = err_sf + abs(vhi_sf - vlo_sf)
+                err_sq = err_sq + abs(vhi_sq - vlo_sq)
+                err_kp = err_kp + abs(vhi_kp - vlo_kp)
+            end if
+
+            if (segmentok) then
+                ! Just copy
+                ctr = ctr + 1
+                next_nodes(ctr) = current_nodes(i)
+                next_ok(ctr) = .true.
+                next_sf(ctr) = current_sf(i)
+                next_sq(ctr) = current_sq(i)
+                next_kp(ctr) = current_kp(i)
+                ctrok = ctrok + 1
+            else
+                ! Split in half? Seems sensible.
+                ctr = ctr + 1
+                next_nodes(ctr) = current_nodes(i)
+                next_ok(ctr) = .false.
+                next_sf(ctr) = 0.0_r8
+                next_sq(ctr) = 0.0_r8
+                next_kp(ctr) = 0.0_r8
+                ctr = ctr + 1
+                next_nodes(ctr) = (current_nodes(i) + current_nodes(i + 1))*0.5_r8
+                next_ok(ctr) = .false.
+                next_sf(ctr) = 0.0_r8
+                next_sq(ctr) = 0.0_r8
+                next_kp(ctr) = 0.0_r8
+                ! make a note I added a segment
+                ctrnew = ctrnew + 1
+            end if
+        end do
+
+        !write(*,*) iter,'int',int_sf,int_kp,err_sf,ctr,n_curr,ctrnew
+
+        ! Check if we are converged
+        if (ctr + 1 .eq. n_curr) exit iterloop
+
+        deallocate (current_nodes)
+        deallocate (current_ok)
+        deallocate (current_sf)
+        deallocate (current_sq)
+        deallocate (current_kp)
+        n_curr = ctr + 1
+        allocate (current_nodes(n_curr))
+        allocate (current_ok(n_curr))
+        allocate (current_sf(n_curr))
+        allocate (current_sq(n_curr))
+        allocate (current_kp(n_curr))
+        current_nodes = 0.0_r8
+        current_ok = .false.
+        current_sf = 0.0_r8
+        current_sq = 0.0_r8
+        current_kp = 0.0_r8
+        current_nodes(1:ctr) = next_nodes(1:ctr)
+        current_nodes(ctr + 1) = xmax
+        current_ok(1:ctr) = next_ok(1:ctr)
+        current_sf(1:ctr) = next_sf(1:ctr)
+        current_sq(1:ctr) = next_sq(1:ctr)
+        current_kp(1:ctr) = next_kp(1:ctr)
+        deallocate (next_nodes)
+        deallocate (next_ok)
+        deallocate (next_sf)
+        deallocate (next_sq)
+        deallocate (next_kp)
+    end do iterloop
+
+    integrated_spectralfunction = int_sf
+    integrated_sf_squared = int_sq
+    integrated_sf_nn = int_kp
+    allocate(integration_nodes(ctr))
+    integration_nodes=current_nodes(1:ctr+1)
+
+    ! A little bit of cleanup?
+    !deallocate(current_nodes)
+    !deallocate(current_ok)
+    !deallocate(current_sf)
+    !deallocate(current_sq)
+    !deallocate(current_kp)
+    !deallocate(next_nodes)
+    !deallocate(next_ok)
+    !deallocate(next_sf)
+    !deallocate(next_sq)
+    !deallocate(next_kp)
+end subroutine
+
+subroutine lo_make_eigenvector_parallel(ref,egv)
+    !> reference eigenvectors
+    complex(r8), dimension(:,:), intent(in) :: ref
+    !> eigenvector to rotate
+    complex(r8), dimension(:,:), intent(inout) :: egv
+
+    complex(r8), dimension(:,:), allocatable :: ovl,ood,vec,trafo,cm0,cm1,U,V
+    real(r8), dimension(:), allocatable :: val
+    integer :: i,n
+
+    n=size(ref,1)
+
+    ! Calculate the overlap
+    allocate(ovl(n,n))
+    allocate(ood(n,n))
+    allocate(vec(n,n))
+    allocate(cm0(n,n))
+    allocate(cm1(n,n))
+    allocate(trafo(n,n))
+    allocate(val(n))
+    call lo_gemm(ref,egv,ovl,transa='C')
+    ! SVD
+    call lo_complex_singular_value_decomposition(ovl,val,U,V)
+    call lo_gemm(U,V,trafo)
+    call lo_gemm(egv,trafo,cm0)
+    egv=cm0
+
+    ! call lo_gemm(trafo,trafo,cm0,transa='C')
+    ! do i=1,n
+    !     cm0(i,i)=cm0(i,i)-1.0_r8
+    ! enddo
+
+    ! call lo_gemm(trafo,trafo,cm1,transb='C')
+    ! do i=1,n
+    !     cm1(i,i)=cm1(i,i)-1.0_r8
+    ! enddo
+    ! write(*,*) 'UNITARY',sum(abs(cm0)),sum(abs(cm1))
+
+    ! write(*,*) 'orig'
+    ! do i=1,n
+    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
+    ! enddo
+    ! write(*,*) 'new'
+    ! call lo_gemm(ref,egv,ovl,transa='C')
+    ! do i=1,n
+    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
+    ! enddo
+end subroutine
+
+subroutine lo_permute_eigenpairs(ref_egv,ref_val,egv,val)
+    !> reference eigenvectors
+    complex(r8), dimension(:,:), intent(in) :: ref_egv
+    !> reference eigenvalues
+    real(r8), dimension(:), intent(in) :: ref_val
+    !> eigenvector to rotate
+    complex(r8), dimension(:,:), intent(in) :: egv
+    !> reference eigenvalues
+    real(r8), dimension(:), intent(inout) :: val
+
+    complex(r8), dimension(:,:), allocatable :: ovl,ood,vec,trafo,cm0,cm1,U,V
+    real(r8), dimension(:), allocatable :: unique_ref,unique_val,singV
+    logical, dimension(:), allocatable :: modefixed
+    !real(r8), dimension(:), allocatable :: val
+    integer :: i,j,k,n
+    real(r8) :: f0
+
+
+    n=size(ref_egv,1)
+    ! First I guess I divide the modes into degenerate subspaces.
+    !call lo_return_unique(ref_val, unique_ref)
+
+    ! Next up, if I do the rotation/alignment thing rounded to integers
+    ! I should be able to identify at least roughly what subspace aligns
+    ! with what subspace in some way?
+    allocate(ovl(n,n))
+    allocate(U(n,n))
+    allocate(V(n,n))
+    allocate(trafo(n,n))
+    allocate(singV(n))
+    call lo_gemm(ref_egv,egv,ovl,transa='C')
+    ! SVD
+    call lo_complex_singular_value_decomposition(ovl,singV,U,V)
+    call lo_gemm(U,V,trafo)
+    ! Make the transformation an integer matrix? Since I can actually only
+
+    do i=1,n
+        k=0
+        f0=0.0_r8
+        do j=1,n
+            if ( abs(trafo(j,i)) .gt. f0 ) then
+                k=j
+                f0=abs(trafo(j,i))
+            endif
+        enddo
+        trafo(:,i)=0.0_r8
+        trafo(k,i)=1.0_r8
+        do j=i+1,n
+            trafo(k,j)=0.0_r8
+        enddo
+    enddo
+
+    !call lo_gemm(egv,trafo,cm0)
+    val=matmul(val,transpose(real(trafo,r8)))
+
+    !do i=1,unique_ref
+    !enddo
+
+
+    ! do i=1,n
+    !     if ( modefixed(i) ) cycle
+    !     k=0
+    !     do j=1,n
+    !         if ( abs(ref_val(i)-ref_val(j)) .lt. lo_freqtol ) k=k+1
+    !     enddo
+    ! enddo
+
+
+
+    ! ! Calculate the overlap
+    ! allocate(ovl(n,n))
+    ! allocate(ood(n,n))
+    ! allocate(vec(n,n))
+    ! allocate(cm0(n,n))
+    ! allocate(cm1(n,n))
+    ! allocate(trafo(n,n))
+    ! allocate(val(n))
+    ! call lo_gemm(ref,egv,ovl,transa='C')
+    ! ! SVD
+    ! call lo_complex_singular_value_decomposition(ovl,val,U,V)
+    ! call lo_gemm(U,V,trafo)
+    ! call lo_gemm(egv,trafo,cm0)
+    ! egv=cm0
+
+    ! write(*,*) 'orig'
+    ! do i=1,n
+    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
+    ! enddo
+    ! write(*,*) 'new'
+    ! call lo_gemm(ref,egv,ovl,transa='C')
+    ! do i=1,n
+    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
+    ! enddo
 end subroutine
 
 end module
