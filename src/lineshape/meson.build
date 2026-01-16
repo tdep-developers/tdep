@@ -1,4 +1,5 @@
-executable('lineshape',
+exec_name='lineshape'
+executable(exec_name,
            'dielscatter.f90',
            'dielscatter_helper.f90',
            # 'dielscatter_matrixelement.f90',
@@ -20,4 +21,4 @@ executable('lineshape',
            install: true,
            install_dir: meson.project_build_root() / 'bin')
 
-install_symlink('lineshape', pointing_to: meson.project_build_root() / 'bin/lineshape', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')
