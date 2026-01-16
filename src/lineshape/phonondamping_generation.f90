@@ -247,7 +247,74 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(y0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+            ! If we are in the mode-coupling approximation, we need to remove the static contribution
+            if (opts%mct) then
+                do imode=1, se%n_mode
+                    se%re_3ph(:, imode) = se%re_3ph(:, imode) - se%re_3ph(1, imode)
+                end do
+            end if
         end block kktransform
+        call tmr%tock('Kramers-Kronig transformation')
+    end if
+
+    ! Correct the memory matrix to get back to the orthogonal time one
+    if (opts%mct .and. se%thirdorder_scattering) then
+        kktransform2: block
+            real(r8) :: pref = 2.0_r8/lo_pi
+            complex(r8), dimension(:), allocatable :: z0
+            complex(r8) :: eta
+            real(r8), dimension(:), allocatable :: x, xs, y0
+            real(r8) :: xp, dlx
+            integer :: imode, ie, ctr
+
+            call mem%allocate(x, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(xs, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(z0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(y0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+            x = se%energy_axis                  ! copy of x-axis
+            xs = x**2                           ! x^2, precalculated
+            dlx = x(2) - x(1)                     ! prefactor for riemann integral
+            eta = lo_imag*(x(2) - x(1))*1E-8_r8   ! small imaginary thing to avoid divergence
+
+            do imode=1, se%n_mode
+                se%im_3ph(2:, imode) = (x(2:)**2 * se%im_3ph(2:, imode)) / ((x(2:) - se%re_3ph(2:, imode))**2 + se%im_3ph(2:, imode)**2)
+            end do
+
+            ctr = 0
+            se%re_3ph = 0.0_r8
+            do imode = 1, se%n_mode
+            do ie = 1, se%n_energy
+                ctr = ctr + 1
+                if (mod(ctr, mw%n) .ne. mw%r) cycle
+                xp = x(ie)
+                y0 = se%im_3ph(:, imode)*x
+                ! To anyone reading this code:
+                ! The correct way to compute the principal value would be
+                ! z0 = (xp + eta)**2 - xs
+                ! However, it doesn't matter for the Im -> Re transform because we
+                ! don't really hit 0.
+                z0 = xp**2 - xs + eta
+                y0 = real(y0/z0, r8)
+                y0(1) = y0(1)*0.5_r8
+                y0(se%n_energy) = y0(se%n_energy)*0.5_r8
+                se%re_3ph(ie, imode) = sum(y0)*dlx
+            end do
+            end do
+            call mw%allreduce('sum', se%re_3ph)
+            se%re_3ph = se%re_3ph*pref
+
+            call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(y0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+            ! If we are in the mode-coupling approximation, we need to remove the static contribution
+            do imode=1, se%n_mode
+                se%re_3ph(:, imode) = se%re_3ph(:, imode) - se%re_3ph(1, imode)
+            end do
+        end block kktransform2
         call tmr%tock('Kramers-Kronig transformation')
     end if
 
