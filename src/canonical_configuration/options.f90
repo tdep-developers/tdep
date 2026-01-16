@@ -26,6 +26,7 @@ type lo_opts
     real(r8) :: dielcutoff2 = -lo_huge
     real(r8) :: dielcutoff3 = -lo_huge
     logical :: modes = .false.
+    logical :: imaginary = .false.
 contains
     procedure :: parse
 end type
@@ -118,6 +119,10 @@ subroutine parse(opts)
     call cli%add(switch='--modes', &
                  help='Print displacements for every individual mode.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
+    call cli%add(switch='--imaginary', hidden=.true., &
+                 help='Displace imaginary modes as if they were positive', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+
     if (lo_status .ne. 0) stop
 
     cli_manpage
@@ -153,6 +158,7 @@ subroutine parse(opts)
     call cli%get(switch='-dc2', val=opts%dielcutoff2)
     call cli%get(switch='-dc3', val=opts%dielcutoff3)
     call cli%get(switch='--modes', val=opts%modes)
+    call cli%get(switch='--imaginary', val=opts%imaginary)
 
     ! Convert input to atomic units right away
     opts%maximum_frequency = opts%maximum_frequency*lo_frequency_THz_to_hartree
