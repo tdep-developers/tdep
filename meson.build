@@ -1,0 +1,33 @@
+project('tdep', 'fortran', 'c', 'cpp')
+add_project_arguments('-cpp', language: 'fortran')
+add_project_arguments('-ffree-line-length-none', language: 'fortran')
+# add_project_arguments('-std=f2008', language: 'fortran')
+add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
+
+# global dependencies:
+dep_mpi = dependency('mpi', language: 'fortran')
+dep_blas = dependency('blas')
+dep_lapack = dependency('lapack')
+dep_fftw = dependency('fftw3')
+dep_hdf5 = dependency('hdf5', language: 'fortran', version: '>1.10.7')
+dep_netcdf = dependency('netcdf', language: 'fortran')
+dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5, dep_netcdf]
+
+subdir('src/libolle')
+subdir('src/libflap')
+
+subdir('src/anharmonic_free_energy')
+subdir('src/atomic_distribution')
+subdir('src/canonical_configuration')
+subdir('src/crystal_structure_info')
+subdir('src/dump_dynamical_matrices')
+subdir('src/extract_forceconstants')
+subdir('src/generate_structure')
+subdir('src/lineshape')
+subdir('src/pack_simulation')
+subdir('src/phasespace_surface')
+subdir('src/phonon_dispersion_relations')
+subdir('src/refine_structure')
+subdir('src/samples_from_md')
+subdir('src/thermal_conductivity')
+subdir('src/thermal_conductivity_2023')
