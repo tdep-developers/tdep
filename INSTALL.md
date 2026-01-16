@@ -99,7 +99,7 @@ where `FC` and `CC` should point to the same Fortran/C compilers you are using t
 - [macOS](#macOS)
 - [Supercomputers](#Supercomputers)
 - [Platform-agnostic installation using Anaconda](#Anaconda)
-- [Platform-agnostic installation using the Meson build system](#Meson)
+- [Platform-agnostic installation using the Meson build system](#Meson-build-system)
 
 ## macOS
 
