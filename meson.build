@@ -28,11 +28,10 @@ dep_lapack = dependency('lapack')
 # fft
 dep_fftw = dependency('fftw3')
 
-# hdf5 + netcdf
+# hdf5
 dep_hdf5 = dependency('hdf5', language: 'fortran', version: '>1.10.7')
-dep_netcdf = dependency('netcdf', language: 'fortran')
 
-dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5, dep_netcdf]
+dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5]
 
 subdir('src/libolle')
 subdir('src/libflap')
