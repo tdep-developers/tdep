@@ -130,8 +130,8 @@ subroutine parse(opts)
                  help='Consider four-phonon contributions to the real part of the self-energy.', hidden=.true., &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--modecoupling', switch_ab='-mct', &
-                 help='Remove the static contribution to the self-energy in the mode-coupling theory.', &
+    call cli%add(switch='--remove_static_selfenergy', &
+                 help='Remove the static contribution to the self-energy as in the mode-coupling theory.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--nondiagonal', &
@@ -238,7 +238,7 @@ subroutine parse(opts)
     call cli%get(switch='--no_thirdorder_scattering', val=dumlog)
     opts%thirdorder = .not. dumlog
     call cli%get(switch='--fourthorder', val=opts%fourthorder)
-    call cli%get(switch='--modecoupling', val=opts%mct)
+    call cli%get(switch='--remove_static_selfenergy', val=opts%mct)
     call cli%get(switch='--nondiagonal', val=dumlog)
     opts%diagonal = .not. dumlog
     call cli%get(switch='--minsmear', val=opts%minsmear)

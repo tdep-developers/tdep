@@ -86,6 +86,10 @@ Optional switches:
     default value .false.  
     Read the q-point mesh from file. To generate a q-mesh file, see the genkpoints utility.
 
+* `--remove_static_selfenergy`
+    default value .false.
+    Remove the static contribution to the self-energy as in the mode-coupling theory.
+
 * `--help`, `-h`  
     Print this help message
 
