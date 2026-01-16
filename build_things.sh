@@ -42,6 +42,10 @@ case $i in
     shift
     # would be cleaner if we checked this was an integer
     ;;
+    -j*)
+    NTHREADS_MAKE=${i:(-2)}
+    shift
+    ;;
     *)
             # unknown option
     ;;
