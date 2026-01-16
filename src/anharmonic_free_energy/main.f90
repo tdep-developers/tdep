@@ -14,11 +14,11 @@ use type_mdsim, only: lo_mdsim
 use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh, lo_read_qmesh_from_file, lo_fft_mesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
 use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
+use lo_epot, only: lo_energy_differences
 use type_phonon_dos, only: lo_phonon_dos
 
 use options, only: lo_opts
 use energy, only: perturbative_anharmonic_free_energy
-use epot, only: lo_energy_differences
 
 implicit none
 

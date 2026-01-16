@@ -140,7 +140,8 @@ $(OBJECT_PATH)type_forcemap_coefficient_diel.o \
 $(OBJECT_PATH)type_forcemap_returntensors.o \
 $(OBJECT_PATH)type_forcemap_io.o \
 $(OBJECT_PATH)type_lassosolvers.o\
-$(OBJECT_PATH)lo_fftgrid_helper.o
+$(OBJECT_PATH)lo_fftgrid_helper.o \
+$(OBJECT_PATH)lo_epot.o \
 # maybe CGAL, maybe not.
 ifeq ($(USECGAL),yes)
 OBJScg = \
@@ -882,6 +883,20 @@ $(OBJECT_PATH)lo_fftgrid_helper.o:\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)lo_randomnumbers.o
 	$(FC) $(FFLAGS) -c lo_fftgrid_helper.f90 -o $@
+
+$(OBJECT_PATH)lo_epot.o:\
+	lo_epot.f90 \
+	$(OBJECT_PATH)konstanter.o\
+	$(OBJECT_PATH)type_mdsim.o\
+	$(OBJECT_PATH)gottochblandat.o\
+	$(OBJECT_PATH)mpi_wrappers.o\
+	$(OBJECT_PATH)lo_memtracker.o\
+	$(OBJECT_PATH)type_crystalstructure.o\
+	$(OBJECT_PATH)type_forceconstant_firstorder.o\
+	$(OBJECT_PATH)type_forceconstant_secondorder.o\
+	$(OBJECT_PATH)type_forceconstant_thirdorder.o\
+	$(OBJECT_PATH)type_forceconstant_fourthorder.o
+	$(FC) $(FFLAGS) -c lo_epot.f90 -o $@
 
 clean:
 	rm -rf $(OBJECT_PATH)*.o $(MODULE_PATH)*mod
