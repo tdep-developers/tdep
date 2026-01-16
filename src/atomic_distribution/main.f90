@@ -6,7 +6,6 @@ use lo_memtracker, only: lo_mem_helper
 use gottochblandat, only: lo_does_file_exist
 use type_crystalstructure, only: lo_crystalstructure
 use type_mdsim, only: lo_mdsim
-use type_symmetrylist, only: lo_symlist
 use lo_symmetry_of_interactions, only: lo_interaction_tensors
 
 use options, only: lo_opts

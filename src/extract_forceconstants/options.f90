@@ -68,7 +68,8 @@ type lo_opts
     logical :: fake_dielectric = .false.
     ! developer mode
     logical :: devmode = .false.
-
+    ! Dump IFCs in EPW format
+    logical :: dumpepw = .false.
 contains
     procedure :: parse
 end type
@@ -124,17 +125,17 @@ subroutine parse(opts)
                       &These can be used to find the finite temperature equilibrium structure.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--readforcemap',hidden=.true., &
+    call cli%add(switch='--readforcemap', hidden=.true., &
                  help='Read `infile.forcemap.hdf5` from file instead of calculating &
                       &all symmetry relations. Useful for sets of calculations with the same structure.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--readirreducible',hidden=.true., &
+    call cli%add(switch='--readirreducible', hidden=.true., &
                  help='Read the irreducible forceconstants from `infile.irrifc_*` &
                       &instead of solving for them. This option requires an `infile.forcemap.hdf5`, as above.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--potential_energy_differences', switch_ab='-U0',hidden=.true., &
+    call cli%add(switch='--potential_energy_differences', switch_ab='-U0', hidden=.true., &
                  help='Calculate the difference in potential energy from the &
                       &simulation and the forceconstants to determine U0.', &
                  help_markdown='As referenced in the thermodynamics section of &
@@ -146,12 +147,12 @@ subroutine parse(opts)
                                &This number should be added to the appropriate phonon free energy.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--printforcemap',hidden=.true., &
+    call cli%add(switch='--printforcemap', hidden=.true., &
                  help='Print `outfile.forcemap.hdf5` for reuse.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--temperature',&
-                 help='Temperature for self-consistent solver.',&
+    call cli%add(switch='--temperature', &
+                 help='Temperature for self-consistent solver.', &
                  required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
 
@@ -248,6 +249,9 @@ subroutine parse(opts)
     call cli%add(switch='--developermode', switch_ab='-dev', hidden=.true., help='dev. mode', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--output_epw', switch_ab='-epw', hidden=.false., help='Write the (second order) interatomic force constants in XML format useable by EPW.', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     ! actually parse it
     call cli%parse(error=lo_status)
@@ -306,6 +310,7 @@ subroutine parse(opts)
     call cli%get(switch='--temperature', val=opts%temperature)
     call cli%get(switch='--fakediel', val=opts%fake_dielectric)
     call cli%get(switch='--developermode', val=opts%devmode)
+    call cli%get(switch='--output_epw', val=opts%dumpepw)
 
     if (lo_status .ne. 0) stop
 

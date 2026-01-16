@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# A central place to put all the important paths. You probably have to modify this to make
+# things work.
+
+# Sigma/Tetralith 2024:
+module load buildenv-intel/2023a-eb
+module load HDF5/1.12.2-hpc1
+
+# the header to put in python scripts.
+PYTHONHEADER="#!/bin/env python"
+
+# Which gnuplot terminal to use by default.
+GNUPLOTTERMINAL="wxt" # other options are "aqua" and "x11"
+
+# the fortran compiler
+FORTRAN_COMPILER="mpiifort"
+OPTIMIZATION_LEVEL="-O3 -xCORE-AVX512" # first time you try you might want to put this to -O0 to make things compile a little faster.
+#OPTIMIZATION_LEVEL="-O0 -check bounds -check uninit -check pointers -check stack -traceback -g -fpe0 -init=snan,arrays -warn all -warn stderrors -stand f08 -diag-disable 5268"
+
+# Extra options for the compiler to make it play nice
+FCFLAGS="-ip -fpp -fp-model precise -qmkl=cluster"
+
+# flag that specifies location of modules
+MODULE_FLAG="-module"
+
+# Precompiler flags. Selecting default gnuplot terminal, and makes the progressbars work.
+PRECOMPILER_FLAGS="-DGP${GNUPLOTTERMINAL} -Dclusterprogressbar"
+
+# you need BLAS and LAPACK
+PATH_TO_BLASLAPACK_LIB="" # "-L${MKLROOT}/lib/intel64"
+PATH_TO_BLASLAPACK_INC="" # "-I${MKLROOT}/include"
+BLASLAPACK_LIBS="" # "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lmkl_scalapack_lp64"
+
+# I need the fftw library
+PATH_TO_FFTW_LIB=""
+PATH_TO_FFTW_INC="" # -I${MKL_ROOT}/include/fftw"
+FFTW_LIBS=""
+
+# Also need MPI
+PATH_TO_MPI_LIB="" # "-L${I_MPI_ROOT}/intel64/lib"
+PATH_TO_MPI_INC="" # "-I${I_MPI_ROOT}/intel64/include"
+MPI_LIBS="" # "-lmpi -lmpifort"
+
+# And a c-compiler
+C_COMPILER="icc"
+
+# And HDF5
+PATH_TO_HDF5_LIB="-L${HDF5_DIR}/lib"
+PATH_TO_HDF5_INC="-I${HDF5_DIR}/include"
+HDF5_LIBS="-lhdf5 -lhdf5_fortran"
+
+# Optionally CGAL and FHI-Aims. You probably do not want that.
+USECGAL="no"
+USEAIMS="no"

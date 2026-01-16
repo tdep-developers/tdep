@@ -1,7 +1,7 @@
 
 ### Short description
 
-End world hunger!
+Compute free energy including anharmonic contributions.
 
 ### Command line options:
 

@@ -8,14 +8,16 @@ theme:
     name: 'material'
 
     palette:
-        primary: red
+        primary: white
         accent: cyan
     logo: 'media/matematico_favicon.png'
     favicon: 'media/matematico_favicon.png'
     include_search_page: false
     features:
         - navigation.tabs
+        - navigation.sticky
         - navigation.instant
+        - navigation.indexes
 
     font:
         text: Inter
@@ -25,19 +27,23 @@ nav:
   - Home: README.md
   # - Tutorial:
   #   - Overview: manual/index.md
-  - Programs:
+  - Programs: 
+    - program/README.md
+    - Generate structure: program/generate_structure.md
+    - Canonical configuration: program/canonical_configuration.md
     - Extract forceconstants: program/extract_forceconstants.md
     - Phonon dispersion relations: program/phonon_dispersion_relations.md
-    - Canonical configuration: program/canonical_configuration.md
-    - Anharmonic free energy: program/anharmonic_free_energy.md
+    - Thermal conductivity 2023: program/thermal_conductivity_2023.md
     - Thermal conductivity: program/thermal_conductivity.md
     - Lineshape: program/lineshape.md
+    - Anharmonic free energy: program/anharmonic_free_energy.md
     - Atomic distribution: program/atomic_distribution.md
     - Pack simulation: program/pack_simulation.md
-    - Generate structure: program/generate_structure.md
-    - Crystal structure info: program/crystal_structure_info.md
     - Samples from MD: program/samples_from_md.md
+    - Dump dynamical matrices: program/dump_dynamical_matrices.md
+    - Crystal structure info: program/crystal_structure_info.md
     - Refine structure: program/refine_structure.md
+    - Phase space: program/phasespace_surface.md
   - Files: files.md
 
 markdown_extensions:

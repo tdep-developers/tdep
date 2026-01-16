@@ -1043,7 +1043,7 @@ subroutine generate(sl,uc,ss,cutoff2,cutoff3,cutoff4,polar,transposition,spacegr
         call get_unique_tuplets(sl,sh,uc,ss)
 
         if ( sl%firstorder  )                call nullspace_singletshells(sl,sh)
-        if ( sl%secondorder )                call nullspace_pairshells(sl,sh,ss)
+        ! if ( sl%secondorder )                call nullspace_pairshells(sl,sh,ss)  ! the interface is declared but there is no implementation...
         if ( sl%thirdorder  )                call nullspace_tripletshells(sl,sh,ss)
         if ( sl%fourthorder )                call nullspace_quartetshells(sl,sh,ss)
         if ( sl%polar )                      call nullspace_Zshells(sl,uc)

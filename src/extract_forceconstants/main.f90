@@ -51,7 +51,6 @@ end block init
 ! We need a forcemap to continue.
 getfrcmap: block
     type(lo_interaction_tensors) :: slt
-    real(r8) :: t0
 
     ! Either read it from file or create it
     if (opts%readforcemap) then
@@ -62,8 +61,8 @@ getfrcmap: block
         end if
         call map%read_from_hdf5(uc, 'infile.forcemap.hdf5', opts%verbosity)
         ! Update constraints that depend on structure
-        call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%neq2, &
-                                           opts%rotationalconstraints, opts%huanginvariance, opts%hermitian)
+        !call lo_secondorder_rot_herm_huang(map, uc, map%constraints%eq2, map%constraints%neq2, &
+        !                                   opts%rotationalconstraints, opts%huanginvariance, opts%hermitian)
     else
         ! Now we have to calculate the whole thing.
         call uc%classify('wedge', timereversal=.true.)
@@ -90,12 +89,6 @@ getfrcmap: block
         call map%generate(uc, ss, polarcorrectiontype=opts%polarcorrectiontype, &
                           st=slt, mw=mw, mem=mem, verbosity=opts%verbosity, devmode=opts%devmode)
 
-        ! Create the constraints
-        t0 = walltime()
-        call map%forceconstant_constraints(uc, opts%rotationalconstraints, &
-                                           opts%huanginvariance, opts%hermitian, opts%verbosity + 10)
-        if (mw%talk) write (*, *) '... got constraints in ', tochar(walltime() - t0), 's'
-        ! Maybe print forcemap to file.
         if (opts%printforcemap .and. mw%talk) then
             call map%write_to_hdf5('outfile.forcemap.hdf5', opts%verbosity)
         end if
@@ -339,14 +332,27 @@ getfc: block
     end if
     if (map%have_fc_pair) then
         call map%get_secondorder_forceconstant(uc, fc2, mem, opts%verbosity)
+        call fc2%get_elastic_constants(uc, mw, opts%verbosity)
         if (mw%talk) then
             call fc2%writetofile(uc, 'outfile.forceconstant')
-            call fc2%get_elastic_constants(uc)
             write (*, *) ''
-            write (*, *) 'ELASTIC CONSTANTS (GPa):'
+            write (*, *) 'ELASTIC CONSTANTS (short range) (GPa):'
             do i = 1, 6
                 write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
             end do
+            write (*, *) 'ELASTIC CONSTANTS (long range) (GPa):'
+            do i = 1, 6
+                write (*, "(6(3X,F15.5))") lo_chop(fc2%elastic_constants_voigt_longrange(:, i)*lo_pressure_HartreeBohr_to_GPa, lo_tol)
+            end do
+            write (*, *) 'ELASTIC CONSTANTS (total) (GPa):'
+            do i = 1, 6
+                write (*, "(6(3X,F15.5))") lo_chop((fc2%elastic_constants_voigt(:, i) + fc2%elastic_constants_voigt_longrange(:, i))*lo_pressure_HartreeBohr_to_GPa, lo_tol)
+            end do
+
+            if ( opts%dumpepw ) then
+                ! If desired, write IFCs in EPW format
+                call fc2%write_to_qe(uc,mw,mem)
+            endif
         end if
     end if
     if (map%have_fc_triplet) then
@@ -436,7 +442,7 @@ getU0: block
     if ((mw%talk) .and. (opts%verbosity > 0)) then
         write (*, *) ''
         write (*, *) 'CALCULATING POTENTIAL ENERGIES (meV/atom)'
-        write (*, '(A)') '   conf        Epot                  Epolar                &
+        write (*, '(A)') '   conf              Epot                  Epolar                &
         &Epair                 Etriplet              Equartet'
     end if
 
@@ -539,7 +545,7 @@ getU0: block
         if ((mw%talk) .and. (opts%verbosity > 0)) then
             ctr = ctr + 1
             if (lo_trueNtimes(ctr, 20, ctrtot)) then
-                write (*, "(1X,I5,5(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
+                write (*, "(1X,I5,F30.12,4(2X,F20.12))") t, e0(t)*tomev, ep(t)*tomev, e2(t)*tomev, e3(t)*tomev, e4(t)*tomev
             end if
         end if
     end do
@@ -555,6 +561,25 @@ getU0: block
     call mw%allreduce('sum', e2)
     call mw%allreduce('sum', e3)
     call mw%allreduce('sum', e4)
+
+    ! dump to outfile.enegies
+    if ((mw%talk) .and. (opts%verbosity > 0)) then
+        ! file for the energies
+        u = open_file('out', 'outfile.energies')
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, "(A)") '#  conf    Epot                  Epolar                &
+            &Epair                 Etriplet              Equartet'
+
+        do t = 1, sim%nt
+            ! Dump it to file
+            write (u, "(1X,I5,5(2X,E20.12))") t, e0(t)*toev, ep(t)*toev, e2(t)*toev, e3(t)*toev, e4(t)*toev
+        end do
+
+        ! close outfile.energies
+        write (*, '(A)') ' ... energies writen to `outfile.energies`'
+        close (u)
+    end if
 
     ! Subtract a baseline to get sensible numbers to work with
     ebuf = e0 - e2 - e3 - e4 - ep
@@ -612,7 +637,12 @@ getU0: block
 
         ! Dump it to file
         u = open_file('out', 'outfile.U0')
-        write (u, "(4(1X,E19.12))") &
+        write (u, '(A,A)') '# Unit:      ', 'eV/atom'
+        write (u, '(A,A)') '# no. atoms: ', tochar(ss%na)
+        write (u, "(A)") '#            mean(Epot)                     mean(Epot - Epolar - E2) &
+            &      mean(Epot - Epolar - E2 - E3)  mean(Epot - Epolar - E2 - E3 - E4)'
+
+        write (u, "(4(1X,E30.12))") &
             (baseline + lo_mean(e0))*toev, &
             (baseline + lo_mean(e0 - ep - e2))*toev, &
             (baseline + lo_mean(e0 - ep - e2 - e3))*toev, &

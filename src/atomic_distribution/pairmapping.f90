@@ -5,7 +5,6 @@ module pairmapping
 use konstanter, only: r8, lo_huge, lo_hugeint, lo_sqtol, lo_tol, lo_bohr_to_A, lo_exitcode_symmetry
 use gottochblandat, only: walltime, lo_determ, lo_sqnorm, tochar, lo_cross, lo_chop
 use type_crystalstructure, only: lo_crystalstructure
-use type_symmetrylist, only: lo_symlist
 use type_mdsim, only: lo_mdsim
 use type_distancetable, only: lo_distancetable
 use lo_symmetry_of_interactions, only: lo_interaction_tensors

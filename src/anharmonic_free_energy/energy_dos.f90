@@ -89,7 +89,7 @@
 !    pd%dos=0.0_flyt
 !    pd%dosprojection=.true.
 !    pd%dossmear=drd%default_smearing()
-!    pd%dosmax=maxval(pd%omega) 
+!    pd%dosmax=maxval(pd%omega)
 !
 !    t0=mpi_wtime()
 !    ! Add it up, with a little smearing
@@ -124,12 +124,12 @@
 !        !
 !        if ( mw%talk ) call lo_progressbar(' ... integrating phonon dos',q1,lsmpi%nq,mpi_wtime()-t0)
 !        !
-!    enddo    
+!    enddo
 !
 !    ! Add things together
 !    call mpi_allreduce(dum_site,pd%pdos_site,opts%nf*uc%na,MPI_DOUBLE_PRECISION,MPI_SUM,mw%comm,mw%error)
 !    call mpi_allreduce(dum_mode,pd%pdos_mode,opts%nf*dr%nb,MPI_DOUBLE_PRECISION,MPI_SUM,mw%comm,mw%error)
-!    
+!
 !    if ( mw%r .eq. 0 ) then
 !        ! Start normalizing, first the whole thing
 !        do mode=1,drd%nb
@@ -170,5 +170,4 @@
 !    endif
 !
 !end subroutine
-
 

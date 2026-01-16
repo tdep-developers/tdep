@@ -67,9 +67,9 @@ subroutine parse(opts)
                  help_markdown="That is, use \( \sqrt{\frac{\hbar (2n+1) }{2 m \omega}} \) as the mean normal mode amplitudes instead of the classical \( \frac{1}{\omega}\sqrt{\frac{k_BT}{m}} \)", &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
-    call cli%add(switch='--output_format', switch_ab='-of', &
-                 help='Selects output format. 1 is VASP, 2 is Abinit, 4 is FHI-Aims, 5 is Siesta. Default 1.', &
-                 required=.false., act='store', def='1', choices='1,2,4,5', error=lo_status)
+    call cli%add(switch='--output_format', switch_ab='-of', hidden=.false., &
+                 help='Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims, 5 Siesta, 6 QE and 7 Parsec', &
+                 required=.false., act='store', def='1', choices='1,2,4,5,6,7', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--mindist', &
                  help='What is the smallest distance between two atoms allowed, in units of the nearest neighbour distance.', &
