@@ -1,0 +1,4 @@
+# wether to use the apple accelerate framework on macos
+option('accfrmwrk', type : 'boolean', value : false)
+# option('linalg_flavor', type : 'combo', choices : ['auto', 'lapack', 'mkl'])
+# option('fft_flavor', type : 'combo', choices : ['auto', 'fftw', 'mkl_dfti'])

@@ -13,12 +13,23 @@ add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
 dep_mpi = dependency('mpi', language: 'fortran')
 
 # linear algebra
-dep_blas = dependency('blas', required: false)
-if not dep_blas.found()
-  message('Did not find the blas library. Trying with openblas')
-  dep_blas = dependency('openblas', required: true) # required as it is the last try
+dep_linalg_found = false
+# 1) try accelerate framework for macos (if wanted)
+if build_machine.system() == 'darwin' and get_option('accfrmwrk') == true
+  dep_linalg = dependency('appleframeworks', modules : 'accelerate', required: false)
+  dep_linalg_found = dep_linalg.found()
 endif
-dep_lapack = dependency('lapack')
+
+# 2) try blas/openblas + lapack otherwise
+if not dep_linalg_found
+  dep_blas = dependency('blas', required: false)
+  if not dep_blas.found()
+    message('Did not find the blas library. Trying with openblas')
+    dep_blas = dependency('openblas', required: true) # required as it is the last try
+  endif
+  dep_lapack = dependency('lapack', required: true)
+  dep_linalg = [dep_blas, dep_lapack]
+endif
 # # add some common path to pkg-config search path
 # env = environ()
 # env.prepend('PKG_CONFIG_PATH', '/usr/lib/x86_64-linux-gnu')
@@ -31,7 +42,8 @@ dep_fftw = dependency('fftw3')
 # hdf5
 dep_hdf5 = dependency('hdf5', language: 'fortran', version: '>1.10.7')
 
-dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5]
+# dep_all = [dep_mpi, dep_blas, dep_lapack, dep_fftw, dep_hdf5]
+dep_all = [dep_mpi, dep_linalg, dep_fftw, dep_hdf5]
 
 subdir('src/libolle')
 subdir('src/libflap')
