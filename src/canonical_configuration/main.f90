@@ -11,6 +11,7 @@ use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_jij_secondorder, only: lo_jij_secondorder
 use type_mdsim, only: lo_mdsim
+use lo_randomnumbers, only: lo_mersennetwister
 
 use options, only: lo_opts
 use semirandom, only: generate_semirandom_configurations
@@ -23,19 +24,37 @@ type(lo_jij_secondorder) :: jij
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 integer, dimension(:), allocatable :: alloy_permutation
+type(lo_mersennetwister), save :: tw
 
 ! Get the necessary things first
 init: block
+    real(r8) :: seed
     ! Get CLI options
     call opts%parse()
     call mw%init()
     call mem%init()
     if (.not. mw%talk) opts%verbosity = -100
 
+    ! initialize random numbers
+    if (opts%seed < 0) then
+        ! fully random
+        seed = walltime()
+        if (mw%talk) print *, '... walltime() used to initialize random state'
+    else
+        ! use inverse of seed because integer part is ignored in lo_randomnumbers.f90
+        if (mw%talk) print *, '... RANDOM SEED: ', opts%seed
+        if (opts%seed == 0) then
+            seed = 0.0_r8
+        else
+            seed = 1.0_r8/float(opts%seed)
+        end if
+    end if
+    call tw%init(iseed=mw%r, rseed=seed)
+
     ! Just make sure no clever person starts running this in parallel.
-    ! if ( mw%n .gt. 1 ) then
-    !     call lo_stop_gracefully(['Do not run this in parallel.'],lo_exitcode_param,__FILE__,__LINE__)
-    ! endif
+    if (mw%n .gt. 1) then
+        call lo_stop_gracefully(['Do not run this in parallel.'], lo_exitcode_param, __FILE__, __LINE__)
+    end if
 
     ! Read structures
     if (mw%talk) write (*, *) '... reading infiles'
@@ -115,7 +134,11 @@ if (opts%modes) then
     if (mw%talk) write (*, '(1X,A,I5,A)') '--> ', opts%nconf, ' structures'
 end if
 
-write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)'
+if (opts%modes) then
+    write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)         frequency(THz)'
+else
+    write (*, "(1X,A)") '  no.   +/-      ek(K)          ep(K)          <ek/ep>         T(K)          <T>(K)      <msd>(A)'
+end if
 dumpconf: block
     type(lo_mdsim) :: sim
     type(lo_crystalstructure) :: p
@@ -188,9 +211,9 @@ dumpconf: block
             else
                 invert = .false.
             end if
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, imode=imode, invert=invert, tw=tw)
         else
-            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw)
+            call fcss%initialize_cell(p, uc, fc, opts%temperature, opts%zpm, .false., opts%mindist, mw, tw=tw)
         end if
 
         ! dump to file
@@ -278,8 +301,15 @@ dumpconf: block
         else
             invert_char = '+'
         end if
-        write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8)") iconf, invert_char, &
-            ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
+        if (opts%modes) then
+            write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8,2X,F10.3)") iconf, invert_char, &
+                ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, &
+                avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf, fcss%omega(imode)*lo_frequency_Hartree_to_THz
+        else
+            write (*, "(1X,I4,5X,A,5(2X,F13.5),2X,F15.8)") iconf, invert_char, &
+                ek/lo_kb_hartree/1.5_r8, ep/lo_kb_hartree/1.5_r8, ratio, temp, &
+                avgtemp/iconf, avgmsd*lo_bohr_to_A/iconf
+        end if
     end do
 
     ! And, at the end, maybe dump the fake simulation

@@ -1,6 +1,5 @@
 submodule(type_forceconstant_secondorder) type_forceconstant_secondorder_aux
 use konstanter, only: lo_exitcode_blaslapack
-use lo_randomnumbers, only: lo_mersennetwister
 use gottochblandat, only: lo_planck, lo_harmonic_oscillator_free_energy, lo_negsqrt
 use type_distancetable, only: lo_distancetable
 use type_blas_lapack_wrappers, only: lo_dsyevr, lo_dsyevd
@@ -363,7 +362,7 @@ contains
 end subroutine
 
 !> use the harmonic model to initialize a cell
-module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
+module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert, tw)
     !> force constant for this (super) cell
     class(lo_forceconstant_secondorder), intent(inout) :: fcss
     !> supercell to be thermally populated
@@ -388,10 +387,12 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
     integer, intent(in), optional :: imode
     !> use negative mode amplitude so that u_i = \sum_s -Q_s X_si)
     logical, intent(in), optional :: invert
+    !> maybe there is already a random number generator
+    type(lo_mersennetwister), intent(inout), optional :: tw
     real(r8) :: inv_prefactor
 
     ! Not sure about save attribute here.
-    type(lo_mersennetwister), save :: tw
+    type(lo_mersennetwister), save :: tw_local
     integer :: solrnk
     logical :: sync
 
@@ -403,10 +404,11 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
     end if
 
     init: block
+        if (present(tw)) tw_local = tw
         ! Seed rng if needed
-        if (tw%initialized .eqv. .false.) then
+        if (tw_local%initialized .eqv. .false.) then
             ! make sure to seed it with the rank to make it different on all MPI ranks.
-            call tw%init(iseed=mw%r, rseed=walltime())
+            call tw_local%init(iseed=mw%r, rseed=walltime())
         end if
 
         ! Decide on syncinc thingies
@@ -481,7 +483,7 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
                 dstloop: do iter = 1, maxiter
                     ! Generate displacements
                     modeloop: do i = 1, ss%na*3
-                        call tw%rnd_boxmuller_pair(1.0_r8, 0.0_r8, x1, x2)
+                        call tw_local%rnd_boxmuller_pair(1.0_r8, 0.0_r8, x1, x2)
                         l = 0
                         do a1 = 1, ss%na
                         do j = 1, 3
