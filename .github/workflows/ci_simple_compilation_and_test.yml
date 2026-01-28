@@ -48,8 +48,18 @@ jobs:
           cat .github/important_settings.fastcompile >> important_settings
           cat .github/important_settings.x86_64_debugflags >> important_settings
           bash build_things.sh --nthreads_make ${{ env.N_THREADS }}
-      - name: compile TDEP production
+          rm -r build # clean build dir
+      - name: compile TDEP with meson
         if: steps.compile_debug.outcome == 'success'
+        id: compile_meson
+        run: |
+          meson setup build
+          cd build
+          meson compile
+          meson install
+          rm -r build # clean build dir
+      - name: compile TDEP production
+        if: steps.compile_meson.outcome == 'success'
         id: compile_production
         run: |
           cd ${{ github.workspace }}
