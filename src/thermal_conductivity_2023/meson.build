@@ -1,4 +1,5 @@
-executable('thermal_conductivity_2023',
+exec_name='thermal_conductivity_2023'
+executable(exec_name,
            'main.f90',
            'mfp.f90',
            'options.f90',
@@ -11,4 +12,4 @@ executable('thermal_conductivity_2023',
            install: true,
            install_dir: meson.project_build_root() / 'bin')
 
-install_symlink('thermal_conductivity_2023', pointing_to: meson.project_build_root() / 'bin/thermal_conductivity_2023', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')

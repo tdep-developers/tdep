@@ -1,4 +1,5 @@
-executable('phonon_dispersion_relations',
+exec_name='phonon_dispersion_relations'
+executable(exec_name,
            'activity.f90',
            'densityplots.f90',
            'densityplots_stuntscattering.f90',
@@ -13,4 +14,4 @@ executable('phonon_dispersion_relations',
            install: true,
            install_dir: meson.project_build_root() / 'bin')
 
-install_symlink('phonon_dispersion_relations', pointing_to: meson.project_build_root() / 'bin/phonon_dispersion_relations', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')
