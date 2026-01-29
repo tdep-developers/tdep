@@ -165,6 +165,7 @@ listofcodes="
 dump_dynamical_matrices
 phonon_dispersion_relations
 crystal_structure_info
+convert_XX_to_forceconstant
 generate_structure
 canonical_configuration
 lineshape
