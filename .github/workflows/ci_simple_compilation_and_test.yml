@@ -47,6 +47,8 @@ jobs:
           # https://github.com/mesonbuild/meson/issues/11088
           export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
           export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+          # this is only supported by pkgconf and not by pkg-config (default on Ubuntu)
+          sudo apt-get install -y pkgconf
       - name: compile TDEP with debug flags
         id: compile_debug
         run: |
