@@ -40,6 +40,7 @@ jobs:
               libopenmpi-dev \
               libfftw3-dev \
               libscalapack-openmpi-dev
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
           sudo pip3 install --upgrade meson
       - name: compile TDEP with debug flags
         id: compile_debug
