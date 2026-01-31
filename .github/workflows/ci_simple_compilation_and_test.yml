@@ -40,6 +40,15 @@ jobs:
               libopenmpi-dev \
               libfftw3-dev \
               libscalapack-openmpi-dev
+
+          sudo pip3 install --upgrade meson
+          # to circumvent meson issue with system path & pkg-config
+          # https://github.com/mesonbuild/meson/issues/12993
+          # https://github.com/mesonbuild/meson/issues/11088
+          export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+          export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+          # this is only supported by pkgconf and not by pkg-config (default on Ubuntu)
+          sudo apt-get install -y pkgconf
       - name: compile TDEP with debug flags
         id: compile_debug
         run: |
@@ -48,8 +57,18 @@ jobs:
           cat .github/important_settings.fastcompile >> important_settings
           cat .github/important_settings.x86_64_debugflags >> important_settings
           bash build_things.sh --nthreads_make ${{ env.N_THREADS }}
-      - name: compile TDEP production
+          rm -r build # clean build dir
+      - name: compile TDEP with meson
         if: steps.compile_debug.outcome == 'success'
+        id: compile_meson
+        run: |
+          meson setup build
+          cd build
+          meson compile
+          meson install
+          rm -r build # clean build dir
+      - name: compile TDEP production
+        if: steps.compile_meson.outcome == 'success'
         id: compile_production
         run: |
           cd ${{ github.workspace }}

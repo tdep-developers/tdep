@@ -1,4 +1,5 @@
-executable('dump_dynamical_matrices',
+exec_name='dump_dynamical_matrices'
+executable(exec_name,
            'main.f90',
            'options.f90',
            link_with: [libolle, libflap],
@@ -7,4 +8,4 @@ executable('dump_dynamical_matrices',
            install: true,
            install_dir: meson.project_build_root() / 'bin')
 
-install_symlink('dump_dynamical_matrices', pointing_to: meson.project_build_root() / 'bin/dump_dynamical_matrices', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')

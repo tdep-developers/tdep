@@ -1,4 +1,5 @@
-executable('anharmonic_free_energy',
+exec_name='anharmonic_free_energy'
+executable(exec_name,
            'energy.f90',
            'epot.f90',
            'main.f90',
@@ -9,4 +10,4 @@ executable('anharmonic_free_energy',
            install: true,
            install_dir: meson.project_build_root() / 'bin')
 
-install_symlink('anharmonic_free_energy', pointing_to: meson.project_build_root() / 'bin/anharmonic_free_energy', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')
