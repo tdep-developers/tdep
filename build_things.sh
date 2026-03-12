@@ -9,8 +9,8 @@ set -e
 #should everything be cleaned? I keep this in place since I might want more options in the future.
 CLEAN=YES
 MANPAGE=YES
-NTHREADS_MAKE=1
-MAKE_SHARED=YES
+NTHREADS_MAKE=4
+MAKE_SHARED=NO
 INSTALL=NO
 for i in "$@"
 do
@@ -176,6 +176,7 @@ refine_structure
 thermal_conductivity
 thermal_conductivity_2023
 anharmonic_free_energy
+MEGAFIT
 "
 
 # only when we have cgal
