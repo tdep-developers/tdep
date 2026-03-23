@@ -44,7 +44,7 @@ init: block
     if (mw%talk) write (lo_iou, *) 'READ STRUCTURE AND SETUP CUTOFFS'
     if (mw%talk .eqv. .false.) opts%verbosity = -100
     if (mw%talk) write (lo_iou, *) '... reading unitcell'
-    call uc%readfromfile('infile.ucposcar', verbosity=opts%verbosity)
+    call uc%readfromfile(trim(opts%unitcell_filename), verbosity=opts%verbosity)
     call uc%classify('wedge', timereversal=.true.)
 end block init
 
@@ -56,7 +56,7 @@ getfrcmap: block
     if (opts%readforcemap) then
         ! I might need the supercell anyway
         if (opts%readirreducible .eqv. .false.) then
-            call ss%readfromfile('infile.ssposcar')
+            call ss%readfromfile(trim(opts%supercell_filename))
             call ss%classify('supercell', uc)
         end if
         call map%read_from_hdf5(uc, 'infile.forcemap.hdf5', opts%verbosity)
@@ -66,7 +66,7 @@ getfrcmap: block
     else
         ! Now we have to calculate the whole thing.
         call uc%classify('wedge', timereversal=.true.)
-        call ss%readfromfile('infile.ssposcar')
+        call ss%readfromfile(trim(opts%supercell_filename))
         if (mw%talk) write (*, '(1X,A,1X,F12.5)') '... min cutoff: ', ss%mincutoff()*lo_bohr_to_A
         if (mw%talk) write (*, '(1X,A,1X,F12.5)') '... max cutoff: ', ss%maxcutoff()*lo_bohr_to_A
         if (mw%talk) write (*, '(1X,A,1X,F12.5)') '--> rc2 cutoff: ', opts%cutoff2*lo_bohr_to_A
@@ -393,7 +393,7 @@ getU0: block
 
     ! Make sure we have the supercell and MD data
     if (ss%na .lt. 0) then
-        call ss%readfromfile('infile.ssposcar')
+        call ss%readfromfile(trim(opts%supercell_filename))
         call ss%classify('supercell', uc)
     end if
     if (sim%na .lt. 0) then

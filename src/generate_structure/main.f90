@@ -27,7 +27,7 @@ init: block
     call mw%init()
     if (mw%talk .eqv. .false.) opts%verbosity = -100
     ! read positions
-    call uc%readfromfile('infile.ucposcar', verbosity=opts%verbosity)
+    call uc%readfromfile(trim(opts%unitcell_filename), verbosity=opts%verbosity)
     if (mw%talk) write (*, *) '... read unitcell'
 end block init
 
@@ -120,6 +120,9 @@ getsupercell: block
             call uc%writetofile('outfile.unitcell_parsec', opts%outputformat)
             call ss%writetofile('outfile.supercell_parsec', opts%outputformat)
             write (*, *) '... wrote supercell in PARSEC format'
+        case (8) ! Extended XYZ
+            call ss%writetofile('outfile.ssposcar.xyz', opts%outputformat)
+            write (*, *) '... wrote supercell in Extended XYZ format'
         end select
     end if
 end block getsupercell

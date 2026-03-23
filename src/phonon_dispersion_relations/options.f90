@@ -41,6 +41,8 @@ type lo_opts
     integer, dimension(3) :: ssdim = -lo_hugeint
     integer :: nsample = -lo_hugeint
     logical :: U0 = .false.
+    ! structure filename
+    character(len=2000) :: unitcell_filename = 'infile.ucposcar'
 contains
     procedure :: parse
 end type
@@ -176,6 +178,12 @@ subroutine parse(opts)
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
 
+! Structure file
+    call cli%add(switch='--unitcell', switch_ab='-uc', &
+                 help='Filename for the unitcell structure (POSCAR or Extended XYZ).', &
+                 required=.false., act='store', def='infile.ucposcar', error=lo_status)
+    if (lo_status .ne. 0) stop
+
 ! actually parse it
     call cli%parse(error=lo_status)
     if (lo_status .ne. 0) stop
@@ -236,6 +244,7 @@ subroutine parse(opts)
 
     call cli%get(switch='--inelastic', val=opts%inelastic)
     call cli%get(switch='--U0', val=opts%U0)
+    call cli%get(switch='--unitcell', val=opts%unitcell_filename)
 
 ! should the full mesh be calculated?
     opts%fullmesh = .false.

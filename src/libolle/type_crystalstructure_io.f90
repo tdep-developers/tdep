@@ -5,7 +5,9 @@ use konstanter, only: lo_volume_bohr_to_A
 implicit none
 contains
 
-!> Reads a vasp poscar from file
+!> Reads a crystal structure from file. Supports VASP POSCAR and Extended XYZ formats.
+!> Format is detected by file extension: .xyz or .extxyz triggers Extended XYZ parsing,
+!> everything else is treated as VASP POSCAR.
 module subroutine readfromfile(p,filename,verbosity)
     !> the crystal structure
     class(lo_crystalstructure), intent(out) :: p
@@ -14,16 +16,9 @@ module subroutine readfromfile(p,filename,verbosity)
     !> verbosity
     integer, intent(in), optional :: verbosity
 
-    real(flyt), dimension(:,:), allocatable :: r, noncollmagmom, alloy_concentrations
-    real(flyt), dimension(:), allocatable :: collmagmom
-    real(flyt), dimension(3,3) :: m
-    integer, dimension(:,:), allocatable :: alloy_components
-    integer, dimension(:), allocatable :: atomic_number,alloy_componentcounter
-    integer :: n_elem,verb
-    character(len=1000), dimension(:), allocatable :: symbols
-    character(len=1000) :: header
-    logical, dimension(:), allocatable :: cmatom
-    logical :: seldyn,alloy,collmag,noncollmag
+    integer :: verb
+    character(len=1000) :: fn
+    integer :: flen
 
     if ( present(verbosity) ) then
         verb=verbosity
@@ -31,322 +26,431 @@ module subroutine readfromfile(p,filename,verbosity)
         verb=0
     endif
 
-    ! Since this is fortran, I have to dummy open the file and count some stuff first.
-    ! the only thing this should do is get the number of different elements, and check
-    ! if selective dynamics are used.
-    dummyopen: block
-        integer, parameter :: max_n_elements=20000
-        integer :: u,i,j,k
-        character(len=10*max_n_elements) :: trams
-        !
-        u=open_file('in',trim(filename))
-            read(u,*) trams
-            read(u,*) trams
-            read(u,*) trams
-            read(u,*) trams
-            read(u,*) trams
-            read(u,*) trams
-            read(u,'(A)') trams
-            j=0
-            i=0
-            ! figure out how many specified elements there are, this is surprisingly robust.
-            do
-                if ( j > max_n_elements ) exit
-                j=j+1
-                if ( trams(j:j) .ne. ' ' ) then
-                   i=i+1
-                   do k=1,max_n_elements
-                        if ( trams(j+1:j+1) .eq. ' ' ) exit
-                        if ( trams(j+1:j+1) .ne. ' ' ) j=j+1
-                        if ( k .eq. max_n_elements ) then
-                            write(*,*) 'more than '//tochar(max_n_elements)//' different elements in the structure? really?'
-                            stop
+    ! Detect format by file extension
+    fn=trim(adjustl(filename))
+    flen=len_trim(fn)
+    if ( flen .ge. 4 .and. fn(flen-3:flen) .eq. '.xyz' ) then
+        call read_extxyz(p, filename, verb)
+    elseif ( flen .ge. 7 .and. fn(flen-6:flen) .eq. '.extxyz' ) then
+        call read_extxyz(p, filename, verb)
+    else
+        call read_poscar(p, filename, verb)
+    endif
+
+    contains
+
+    !> Reads a VASP POSCAR format file
+    subroutine read_poscar(p, filename, verb)
+        class(lo_crystalstructure), intent(out) :: p
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: verb
+
+        real(flyt), dimension(:,:), allocatable :: r, noncollmagmom, alloy_concentrations
+        real(flyt), dimension(:), allocatable :: collmagmom
+        real(flyt), dimension(3,3) :: m
+        integer, dimension(:,:), allocatable :: alloy_components
+        integer, dimension(:), allocatable :: atomic_number,alloy_componentcounter
+        integer :: n_elem
+        character(len=1000), dimension(:), allocatable :: symbols
+        character(len=1000) :: header
+        logical, dimension(:), allocatable :: cmatom
+        logical :: seldyn,alloy,collmag,noncollmag
+
+        ! Since this is fortran, I have to dummy open the file and count some stuff first.
+        ! the only thing this should do is get the number of different elements, and check
+        ! if selective dynamics are used.
+        dummyopen: block
+            integer, parameter :: max_n_elements=20000
+            integer :: u,i,j,k
+            character(len=10*max_n_elements) :: trams
+            !
+            u=open_file('in',trim(filename))
+                read(u,*) trams
+                read(u,*) trams
+                read(u,*) trams
+                read(u,*) trams
+                read(u,*) trams
+                read(u,*) trams
+                read(u,'(A)') trams
+                j=0
+                i=0
+                ! figure out how many specified elements there are, this is surprisingly robust.
+                do
+                    if ( j > max_n_elements ) exit
+                    j=j+1
+                    if ( trams(j:j) .ne. ' ' ) then
+                       i=i+1
+                       do k=1,max_n_elements
+                            if ( trams(j+1:j+1) .eq. ' ' ) exit
+                            if ( trams(j+1:j+1) .ne. ' ' ) j=j+1
+                            if ( k .eq. max_n_elements ) then
+                                write(*,*) 'more than '//tochar(max_n_elements)//' different elements in the structure? really?'
+                                stop
+                            endif
+                       enddo
+                    endif
+                enddo
+                n_elem=i
+                ! perhaps it is a POSCAR with selective dynamics
+                ! I will ignore that, but it's nice if it does not crash
+                read(u,*) trams
+                seldyn=.false.
+                if ( trams(1:1) .eq. 's' .or. trams(1:1) .eq. 'S' ) seldyn=.true.
+            close(u)
+        end block dummyopen
+
+        ! Then we open the file for reals this time, and get stuff
+        readstuff: block
+            real(flyt) :: latpar_or_volume,f0
+            real(flyt), dimension(3,3) :: im
+            real(flyt), dimension(3) :: v
+            integer, dimension(max_n_components) :: di
+            integer, dimension(n_elem) :: elemcount
+            integer :: i,j,k,l,u,na,ii,jj
+            character(len=1) :: trams
+            character(len=10), dimension(max_n_components) :: dvsp
+            character(len=10) :: dumsp
+            character(len=2000) :: dumstr
+            logical :: cartesian
+
+            u=open_file('in',trim(filename))
+                ! the header
+                read(u,*) header
+                read(u,*) latpar_or_volume
+                read(u,*) m(:,1)
+                read(u,*) m(:,2)
+                read(u,*) m(:,3)
+                lo_allocate(symbols(n_elem))
+                read(u,*) symbols
+                read(u,*) elemcount
+                read(u,*) trams
+                ! Figure out if input is in fractional or cartesian coordinates.
+                if ( trams .eq. 'C' .or. trams .eq. 'c' ) then
+                    cartesian=.true.
+                elseif ( trams .eq. 'D' .or. trams .eq. 'd' ) then
+                    cartesian=.false.
+                else
+                    call lo_stop_gracefully(['Specify either Cartesian or direct coordinates in '//trim(filename)],lo_exitcode_io)
+                endif
+                ! Maybe skip a line
+                if ( seldyn ) read(u,*) trams
+
+                ! Now we parsed the header, some small figuring out to do, such as how the input was
+                ! specified and that stuff.
+                alloy=.false.
+                do i=1,n_elem
+                    if ( symbols(i)(1:5) .eq. 'alloy' .or. symbols(i)(1:5) .eq. 'Alloy' .or. symbols(i)(1:5) .eq. 'ALLOY' ) then
+                        symbols(i)='ALLOY'
+                        alloy=.true.
+                    endif
+                enddo
+                collmag=.false.
+                do i=1,n_elem
+                    if ( symbols(i)(1:2) .eq. 'CM' ) then
+                        symbols(i)='CM'
+                        collmag=.true.
+                    endif
+                enddo
+                noncollmag=.false.
+                do i=1,n_elem
+                    if ( symbols(i)(1:3) .eq. 'NCM' ) then
+                        symbols(i)='NCM'
+                        noncollmag=.true.
+                    endif
+                enddo
+
+                if ( alloy .and. collmag ) then
+                    call lo_stop_gracefully(['I will bother with combined alloy and magnetic stuff on a rainy day. Very rainy day.'],lo_exitcode_io)
+                endif
+
+                na=sum(elemcount)
+                ! figure out if I have lattice parameter or volume
+                if ( latpar_or_volume .gt. 0.0_flyt ) then
+                    m=m*latpar_or_volume
+                else
+                    f0=( abs(latpar_or_volume)/abs(lo_determ(m)) )**(1.0_flyt/3.0_flyt)
+                    m=m*f0
+                endif
+                im=lo_invert3x3matrix( m )
+
+                ! Some temporary space for all possible variants of things I want to read in
+                lo_allocate(r(3,na))
+                lo_allocate(atomic_number(na))
+                lo_allocate(collmagmom(na))
+                lo_allocate(cmatom(na))
+                lo_allocate(noncollmagmom(3,na))
+                lo_allocate(alloy_concentrations(max_n_components,na))
+                lo_allocate(alloy_components(max_n_components,na))
+                lo_allocate(alloy_componentcounter(na))
+
+                r=0.0_flyt
+                atomic_number=0
+                collmagmom=0.0_flyt
+                noncollmagmom=0.0_flyt
+                cmatom=.false.
+                alloy_concentrations=0.0_flyt
+                alloy_components=0
+                alloy_componentcounter=0
+
+                ! The basic stuff has been figured out now, read the actual positions and stuff
+                if ( alloy ) then
+                    l=0
+                    do i=1,n_elem
+                    do j=1,elemcount(i)
+                        l=l+1
+                        if ( trim(symbols(i)) .eq. 'ALLOY' ) then
+                            read(u,'(A)') dumstr ! fetch this line to a buffer
+                            read(dumstr,*) v,k
+                            ! Quick sanity test
+                            if ( k .le. 1 ) then
+                                call lo_stop_gracefully(['It makes no sense to have an alloy with one component.'],lo_exitcode_io)
+                            endif
+
+                            ! Not the most elegant solution, but it works.
+                            select case(k)
+                                case(2)
+                                    read(dumstr,*) v,alloy_componentcounter(l),&
+                                                   dvsp(1),alloy_concentrations(1,l),&
+                                                   dvsp(2),alloy_concentrations(2,l)
+                                case(3)
+                                    read(dumstr,*) v,alloy_componentcounter(l),&
+                                                   dvsp(1),alloy_concentrations(1,l),&
+                                                   dvsp(2),alloy_concentrations(2,l),&
+                                                   dvsp(3),alloy_concentrations(3,l)
+                                case(4)
+                                    read(dumstr,*) v,alloy_componentcounter(l),&
+                                                   dvsp(1),alloy_concentrations(1,l),&
+                                                   dvsp(2),alloy_concentrations(2,l),&
+                                                   dvsp(3),alloy_concentrations(3,l),&
+                                                   dvsp(4),alloy_concentrations(4,l)
+                                case(5)
+                                    read(dumstr,*) v,alloy_componentcounter(l),&
+                                                   dvsp(1),alloy_concentrations(1,l),&
+                                                   dvsp(2),alloy_concentrations(2,l),&
+                                                   dvsp(3),alloy_concentrations(3,l),&
+                                                   dvsp(4),alloy_concentrations(4,l),&
+                                                   dvsp(5),alloy_concentrations(5,l)
+                                case(6)
+                                    read(dumstr,*) v,alloy_componentcounter(l),&
+                                                   dvsp(1),alloy_concentrations(1,l),&
+                                                   dvsp(2),alloy_concentrations(2,l),&
+                                                   dvsp(3),alloy_concentrations(3,l),&
+                                                   dvsp(4),alloy_concentrations(4,l),&
+                                                   dvsp(5),alloy_concentrations(5,l),&
+                                                   dvsp(6),alloy_concentrations(6,l)
+                                case default
+                                    call lo_stop_gracefully(['I have not bothered with input for more than six components.'],lo_exitcode_io,__FILE__,__LINE__)
+                            end select
+
+                            ! transform component labels to atomic numbers
+                            do k=1,alloy_componentcounter(l)
+                                alloy_components(k,l)=symbol_to_z( trim(adjustl(dvsp(k))) )
+                            enddo
+                            ! Some sanity checks right away, the components have to be unique
+                            do ii=1,alloy_componentcounter(l)
+                                do jj=ii+1,alloy_componentcounter(l)
+                                    if ( alloy_components(ii,l) .eq. alloy_components(jj,l) ) then
+                                        call lo_stop_gracefully(['You can not alloy something with itself.'],lo_exitcode_io,__FILE__,__LINE__)
+                                    endif
+                                enddo
+                            enddo
+                            ! concentrations have to add up to 1
+                            if ( abs(sum(alloy_concentrations(1:alloy_componentcounter(l),l))-1.0_flyt) .gt. lo_tol ) then
+                                call lo_stop_gracefully(['Alloy concentrations have to add up to 1.'],lo_exitcode_io,__FILE__,__LINE__)
+                            endif
+                            ! Sort components by atomic number
+                            k=alloy_componentcounter(l)
+                            di=0
+                            call qsort(alloy_components(1:k,l),di(1:k))
+                            alloy_concentrations(1:k,l)=alloy_concentrations(di(1:k),l)
+                            ! Make sure the concentrations add up to 1
+                            alloy_concentrations(1:k,l)=lo_chop( alloy_concentrations(1:k,l)/sum(alloy_concentrations(1:k,l)) ,lo_tol )
+                        else
+                            ! no need to bother, just read normally
+                            read(u,*) v
+                            atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
+                            alloy_componentcounter(l)=1
+                            alloy_concentrations(1,l)=1.0_flyt
+                            alloy_components(1,l)=symbol_to_z( trim(adjustl(symbols(i))) )
                         endif
-                   enddo
+                        ! fix cartesian stuff right away
+                        if ( cartesian ) then
+                            v=matmul(im,v)
+                        endif
+                        ! make sure the fractional coordinates really are that.
+                        r(:,l)=lo_clean_fractional_coordinates(v)
+                    enddo
+                    enddo
+                elseif ( collmag ) then
+                    ! Now there are some sort of magnetic moments specified.
+                    cmatom=.false.
+                    collmagmom=0.0_flyt
+                    l=0
+                    do i=1,n_elem
+                    do j=1,elemcount(i)
+                        l=l+1
+                        if ( trim(symbols(i)) .eq. 'CM' ) then
+                            ! reading a DLM atom
+                            read(u,*) v,dumsp,collmagmom(l)
+                            cmatom(l)=.true.
+                            atomic_number(l)=symbol_to_z(trim(dumsp))
+                        else
+                            read(u,*) v
+                            atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
+                        endif
+                        ! fix cartesian stuff right away
+                        if ( cartesian ) then
+                            v=matmul(im,v)
+                        endif
+                        ! make sure the fractional coordinates really are that.
+                        r(:,l)=lo_clean_fractional_coordinates(v)
+                    enddo
+                    enddo
+                elseif ( noncollmag ) then
+                    ! Non-collinear magnetic moments specified!
+                    cmatom=.false.
+                    noncollmagmom=0.0_flyt
+                    l=0
+                    do i=1,n_elem
+                    do j=1,elemcount(i)
+                        l=l+1
+                        if ( trim(symbols(i)) .eq. 'NCM' ) then
+                            ! reading an atom with non-collinear moment
+                            read(u,*) v,dumsp,noncollmagmom(:,l)
+                            cmatom(l)=.true.
+                            atomic_number(l)=symbol_to_z(trim(dumsp))
+                        else
+                            read(u,*) v
+                            atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
+                        endif
+                        ! fix cartesian stuff right away
+                        if ( cartesian ) then
+                            v=matmul(im,v)
+                        endif
+                        ! make sure the fractional coordinates really are that.
+                        r(:,l)=lo_clean_fractional_coordinates(v)
+                    enddo
+                    enddo
+                else
+                    ! Not an alloy or dlm, easy.
+                    ! get the atomic number
+                    l=0
+                    do i=1,n_elem
+                    do j=1,elemcount(i)
+                        l=l+1
+                        atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
+                    enddo
+                    enddo
+                    ! now read the positions
+                    do i=1,na
+                        read(u,*) v
+                        ! fix cartesian stuff right away
+                        if ( cartesian ) then
+                            v=matmul(im,v)
+                        endif
+                        ! make sure the fractional coordinates really are that.
+                        r(:,i)=lo_clean_fractional_coordinates(v)
+                    enddo
                 endif
-            enddo
-            n_elem=i
-            ! perhaps it is a POSCAR with selective dynamics
-            ! I will ignore that, but it's nice if it does not crash
-            read(u,*) trams
-            seldyn=.false.
-            if ( trams(1:1) .eq. 's' .or. trams(1:1) .eq. 'S' ) seldyn=.true.
-        close(u)
-    end block dummyopen
+            close(u)
+            ! Maybe say that this was mildly successful
+            if ( verb .gt. 0 ) then
+                write(*,*) 'Parsed POSCAR header, found '//tochar(sum(elemcount))//' atoms.'
+            endif
+        end block readstuff
 
-    ! Then we open the file for reals this time, and get stuff
-    readstuff: block
-        real(flyt) :: latpar_or_volume,f0
-        real(flyt), dimension(3,3) :: im
+        ! Do the real parsing, with all the classification and stuff.
+        call p%generate(m,r,atomic_number,enhet=1,verbosity=verb,collmag=collmag,cmatom=cmatom,collmagmom=collmagmom,&
+                        noncollmag=noncollmag,noncollmagmom=noncollmagmom,alloy=alloy,&
+                        alloy_componentcounter=alloy_componentcounter,alloy_components=alloy_components,&
+                        alloy_concentrations=alloy_concentrations)
+
+        ! And some cleanup
+        lo_deallocate(symbols)
+        lo_deallocate(r)
+        lo_deallocate(atomic_number)
+        lo_deallocate(cmatom)
+        lo_deallocate(collmagmom)
+        lo_deallocate(noncollmagmom)
+    end subroutine
+
+    !> Reads an Extended XYZ format file.
+    !> Format:
+    !>   Line 1: number of atoms
+    !>   Line 2: key=value pairs, must include Lattice="ax ay az bx by bz cx cy cz"
+    !>           Optional: Properties="species:S:1:pos:R:3" (default assumed)
+    !>           Coordinates are always Cartesian in Angstroms.
+    !>   Lines 3+: symbol x y z
+    subroutine read_extxyz(p, filename, verb)
+        class(lo_crystalstructure), intent(out) :: p
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: verb
+
+        real(flyt), dimension(:,:), allocatable :: r
+        real(flyt), dimension(3,3) :: m, im
         real(flyt), dimension(3) :: v
-        integer, dimension(max_n_components) :: di
-        integer, dimension(n_elem) :: elemcount
-        integer :: i,j,k,l,u,na,ii,jj
-        character(len=1) :: trams
-        character(len=10), dimension(max_n_components) :: dvsp
-        character(len=10) :: dumsp
-        character(len=2000) :: dumstr
-        logical :: cartesian
+        integer, dimension(:), allocatable :: atomic_number
+        integer :: na, u, i, istart, iend
+        character(len=4000) :: line
+        character(len=10) :: sym
 
+        ! Line 1: number of atoms
         u=open_file('in',trim(filename))
-            ! the header
-            read(u,*) header
-            read(u,*) latpar_or_volume
-            read(u,*) m(:,1)
-            read(u,*) m(:,2)
-            read(u,*) m(:,3)
-            lo_allocate(symbols(n_elem))
-            read(u,*) symbols
-            read(u,*) elemcount
-            read(u,*) trams
-            ! Figure out if input is in fractional or cartesian coordinates.
-            if ( trams .eq. 'C' .or. trams .eq. 'c' ) then
-                cartesian=.true.
-            elseif ( trams .eq. 'D' .or. trams .eq. 'd' ) then
-                cartesian=.false.
-            else
-                call lo_stop_gracefully(['Specify either Cartesian or direct coordinates in '//trim(filename)],lo_exitcode_io)
+            read(u,*) na
+            ! Line 2: comment/properties line with Lattice="..." and optional pbc="..."
+            read(u,'(A)') line
+
+            ! Parse Lattice="ax ay az bx by bz cx cy cz" from the comment line
+            m=0.0_flyt
+            istart=index(line,'Lattice="')
+            if ( istart .eq. 0 ) then
+                istart=index(line,'lattice="')
             endif
-            ! Maybe skip a line
-            if ( seldyn ) read(u,*) trams
-
-            ! Now we parsed the header, some small figuring out to do, such as how the input was
-            ! specified and that stuff.
-            alloy=.false.
-            do i=1,n_elem
-                if ( symbols(i)(1:5) .eq. 'alloy' .or. symbols(i)(1:5) .eq. 'Alloy' .or. symbols(i)(1:5) .eq. 'ALLOY' ) then
-                    symbols(i)='ALLOY'
-                    alloy=.true.
-                endif
-            enddo
-            collmag=.false.
-            do i=1,n_elem
-                if ( symbols(i)(1:2) .eq. 'CM' ) then
-                    symbols(i)='CM'
-                    collmag=.true.
-                endif
-            enddo
-            noncollmag=.false.
-            do i=1,n_elem
-                if ( symbols(i)(1:3) .eq. 'NCM' ) then
-                    symbols(i)='NCM'
-                    noncollmag=.true.
-                endif
-            enddo
-
-            if ( alloy .and. collmag ) then
-                call lo_stop_gracefully(['I will bother with combined alloy and magnetic stuff on a rainy day. Very rainy day.'],lo_exitcode_io)
+            if ( istart .eq. 0 ) then
+                call lo_stop_gracefully(['Extended XYZ file missing Lattice="..." in comment line: '//trim(filename)],&
+                                        lo_exitcode_io,__FILE__,__LINE__)
             endif
-
-            na=sum(elemcount)
-            ! figure out if I have lattice parameter or volume
-            if ( latpar_or_volume .gt. 0.0_flyt ) then
-                m=m*latpar_or_volume
-            else
-                f0=( abs(latpar_or_volume)/abs(lo_determ(m)) )**(1.0_flyt/3.0_flyt)
-                m=m*f0
+            istart=istart+9 ! skip past Lattice="
+            iend=index(line(istart:),'"')
+            if ( iend .eq. 0 ) then
+                call lo_stop_gracefully(['Extended XYZ file has malformed Lattice="..." (missing closing quote): '//trim(filename)],&
+                                        lo_exitcode_io,__FILE__,__LINE__)
             endif
-            im=lo_invert3x3matrix( m )
+            iend=istart+iend-2 ! position of last char before closing quote
+            ! Read 9 floats: lattice vectors as rows (a1x a1y a1z a2x a2y a2z a3x a3y a3z)
+            ! Extended XYZ convention: rows are lattice vectors, so we read row-major
+            ! and store as columns (Fortran convention in TDEP: m(:,i) is the i-th vector)
+            read(line(istart:iend),*) m(1,1),m(2,1),m(3,1), m(1,2),m(2,2),m(3,2), m(1,3),m(2,3),m(3,3)
 
-            ! Some temporary space for all possible variants of things I want to read in
+            im=lo_invert3x3matrix(m)
+
+            ! Allocate arrays
             lo_allocate(r(3,na))
             lo_allocate(atomic_number(na))
-            lo_allocate(collmagmom(na))
-            lo_allocate(cmatom(na))
-            lo_allocate(noncollmagmom(3,na))
-            lo_allocate(alloy_concentrations(max_n_components,na))
-            lo_allocate(alloy_components(max_n_components,na))
-            lo_allocate(alloy_componentcounter(na))
-
             r=0.0_flyt
             atomic_number=0
-            collmagmom=0.0_flyt
-            noncollmagmom=0.0_flyt
-            cmatom=.false.
-            alloy_concentrations=0.0_flyt
-            alloy_components=0
-            alloy_componentcounter=0
 
-            ! The basic stuff has been figured out now, read the actual positions and stuff
-            if ( alloy ) then
-                l=0
-                do i=1,n_elem
-                do j=1,elemcount(i)
-                    l=l+1
-                    if ( trim(symbols(i)) .eq. 'ALLOY' ) then
-                        read(u,'(A)') dumstr ! fetch this line to a buffer
-                        read(dumstr,*) v,k
-                        ! Quick sanity test
-                        if ( k .le. 1 ) then
-                            call lo_stop_gracefully(['It makes no sense to have an alloy with one component.'],lo_exitcode_io)
-                        endif
-
-                        ! Not the most elegant solution, but it works.
-                        select case(k)
-                            case(2)
-                                read(dumstr,*) v,alloy_componentcounter(l),&
-                                               dvsp(1),alloy_concentrations(1,l),&
-                                               dvsp(2),alloy_concentrations(2,l)
-                            case(3)
-                                read(dumstr,*) v,alloy_componentcounter(l),&
-                                               dvsp(1),alloy_concentrations(1,l),&
-                                               dvsp(2),alloy_concentrations(2,l),&
-                                               dvsp(3),alloy_concentrations(3,l)
-                            case(4)
-                                read(dumstr,*) v,alloy_componentcounter(l),&
-                                               dvsp(1),alloy_concentrations(1,l),&
-                                               dvsp(2),alloy_concentrations(2,l),&
-                                               dvsp(3),alloy_concentrations(3,l),&
-                                               dvsp(4),alloy_concentrations(4,l)
-                            case(5)
-                                read(dumstr,*) v,alloy_componentcounter(l),&
-                                               dvsp(1),alloy_concentrations(1,l),&
-                                               dvsp(2),alloy_concentrations(2,l),&
-                                               dvsp(3),alloy_concentrations(3,l),&
-                                               dvsp(4),alloy_concentrations(4,l),&
-                                               dvsp(5),alloy_concentrations(5,l)
-                            case(6)
-                                read(dumstr,*) v,alloy_componentcounter(l),&
-                                               dvsp(1),alloy_concentrations(1,l),&
-                                               dvsp(2),alloy_concentrations(2,l),&
-                                               dvsp(3),alloy_concentrations(3,l),&
-                                               dvsp(4),alloy_concentrations(4,l),&
-                                               dvsp(5),alloy_concentrations(5,l),&
-                                               dvsp(6),alloy_concentrations(6,l)
-                            case default
-                                call lo_stop_gracefully(['I have not bothered with input for more than six components.'],lo_exitcode_io,__FILE__,__LINE__)
-                        end select
-
-                        ! transform component labels to atomic numbers
-                        do k=1,alloy_componentcounter(l)
-                            alloy_components(k,l)=symbol_to_z( trim(adjustl(dvsp(k))) )
-                        enddo
-                        ! Some sanity checks right away, the components have to be unique
-                        do ii=1,alloy_componentcounter(l)
-                            do jj=ii+1,alloy_componentcounter(l)
-                                if ( alloy_components(ii,l) .eq. alloy_components(jj,l) ) then
-                                    call lo_stop_gracefully(['You can not alloy something with itself.'],lo_exitcode_io,__FILE__,__LINE__)
-                                endif
-                            enddo
-                        enddo
-                        ! concentrations have to add up to 1
-                        if ( abs(sum(alloy_concentrations(1:alloy_componentcounter(l),l))-1.0_flyt) .gt. lo_tol ) then
-                            call lo_stop_gracefully(['Alloy concentrations have to add up to 1.'],lo_exitcode_io,__FILE__,__LINE__)
-                        endif
-                        ! Sort components by atomic number
-                        k=alloy_componentcounter(l)
-                        di=0
-                        call qsort(alloy_components(1:k,l),di(1:k))
-                        alloy_concentrations(1:k,l)=alloy_concentrations(di(1:k),l)
-                        ! Make sure the concentrations add up to 1
-                        alloy_concentrations(1:k,l)=lo_chop( alloy_concentrations(1:k,l)/sum(alloy_concentrations(1:k,l)) ,lo_tol )
-                    else
-                        ! no need to bother, just read normally
-                        read(u,*) v
-                        atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
-                        alloy_componentcounter(l)=1
-                        alloy_concentrations(1,l)=1.0_flyt
-                        alloy_components(1,l)=symbol_to_z( trim(adjustl(symbols(i))) )
-                    endif
-                    ! fix cartesian stuff right away
-                    if ( cartesian ) then
-                        v=matmul(im,v)
-                    endif
-                    ! make sure the fractional coordinates really are that.
-                    r(:,l)=lo_clean_fractional_coordinates(v)
-                enddo
-                enddo
-            elseif ( collmag ) then
-                ! Now there are some sort of magnetic moments specified.
-                cmatom=.false.
-                collmagmom=0.0_flyt
-                l=0
-                do i=1,n_elem
-                do j=1,elemcount(i)
-                    l=l+1
-                    if ( trim(symbols(i)) .eq. 'CM' ) then
-                        ! reading a DLM atom
-                        read(u,*) v,dumsp,collmagmom(l)
-                        cmatom(l)=.true.
-                        atomic_number(l)=symbol_to_z(trim(dumsp))
-                    else
-                        read(u,*) v
-                        atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
-                    endif
-                    ! fix cartesian stuff right away
-                    if ( cartesian ) then
-                        v=matmul(im,v)
-                    endif
-                    ! make sure the fractional coordinates really are that.
-                    r(:,l)=lo_clean_fractional_coordinates(v)
-                enddo
-                enddo
-            elseif ( noncollmag ) then
-                ! Non-collinear magnetic moments specified!
-                cmatom=.false.
-                noncollmagmom=0.0_flyt
-                l=0
-                do i=1,n_elem
-                do j=1,elemcount(i)
-                    l=l+1
-                    if ( trim(symbols(i)) .eq. 'NCM' ) then
-                        ! reading an atom with non-collinear moment
-                        read(u,*) v,dumsp,noncollmagmom(:,l)
-                        cmatom(l)=.true.
-                        atomic_number(l)=symbol_to_z(trim(dumsp))
-                    else
-                        read(u,*) v
-                        atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
-                    endif
-                    ! fix cartesian stuff right away
-                    if ( cartesian ) then
-                        v=matmul(im,v)
-                    endif
-                    ! make sure the fractional coordinates really are that.
-                    r(:,l)=lo_clean_fractional_coordinates(v)
-                enddo
-                enddo
-            else
-                ! Not an alloy or dlm, easy.
-                ! get the atomic number
-                l=0
-                do i=1,n_elem
-                do j=1,elemcount(i)
-                    l=l+1
-                    atomic_number(l)=symbol_to_z( trim(adjustl(symbols(i))) )
-                enddo
-                enddo
-                ! now read the positions
-                do i=1,na
-                    read(u,*) v
-                    ! fix cartesian stuff right away
-                    if ( cartesian ) then
-                        v=matmul(im,v)
-                    endif
-                    ! make sure the fractional coordinates really are that.
-                    r(:,i)=lo_clean_fractional_coordinates(v)
-                enddo
-            endif
+            ! Read atom lines: symbol x y z (Cartesian, Angstroms)
+            do i=1,na
+                read(u,*) sym, v(1), v(2), v(3)
+                atomic_number(i)=symbol_to_z(trim(adjustl(sym)))
+                ! Convert Cartesian to fractional coordinates
+                v=matmul(im,v)
+                r(:,i)=lo_clean_fractional_coordinates(v)
+            enddo
         close(u)
-        ! Maybe say that this was mildly successful
+
         if ( verb .gt. 0 ) then
-            write(*,*) 'Parsed POSCAR header, found '//tochar(sum(elemcount))//' atoms.'
+            write(*,*) 'Parsed Extended XYZ file, found '//tochar(na)//' atoms.'
         endif
-    end block readstuff
 
-    ! Do the real parsing, with all the classification and stuff.
-    call p%generate(m,r,atomic_number,enhet=1,verbosity=verb,collmag=collmag,cmatom=cmatom,collmagmom=collmagmom,&
-                    noncollmag=noncollmag,noncollmagmom=noncollmagmom,alloy=alloy,&
-                    alloy_componentcounter=alloy_componentcounter,alloy_components=alloy_components,&
-                    alloy_concentrations=alloy_concentrations)
+        ! Generate the crystal structure (enhet=1 means Angstroms)
+        call p%generate(m,r,atomic_number,enhet=1,verbosity=verb)
 
-    ! And some cleanup
-    lo_deallocate(symbols)
-    lo_deallocate(r)
-    lo_deallocate(atomic_number)
-    lo_deallocate(cmatom)
-    lo_deallocate(collmagmom)
-    lo_deallocate(noncollmagmom)
+        lo_deallocate(r)
+        lo_deallocate(atomic_number)
+    end subroutine
+
 end subroutine
 
 !> Writes a structure to file or stdout. Use 'stdout' as the filename if you want to write it to screen.
@@ -382,6 +486,8 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
             call writetofile_qe(p,filename,write_velocities)
         case(7) ! Parsec
             call writetofile_parsec(p,filename,write_velocities)
+        case(8) ! Extended XYZ
+            call writetofile_extxyz(p,filename,write_velocities)
         case default
             call lo_stop_gracefully(['Unknown output format: '//tochar(output_format)],lo_exitcode_io,__FILE__,__LINE__)
     end select
@@ -910,6 +1016,48 @@ module subroutine writetofile(p,filename,output_format,write_velocities,transfor
         endif
         do i=1,p%na
             write(u,"(1X,3(1X,E19.12),1X,A)") p%r(:,i),trim(p%atomic_symbol( p%species(i) ))
+        enddo
+
+        if ( filename .ne. 'stdout' ) close(u)
+    end subroutine
+
+    !> Writes a structure in Extended XYZ format
+    subroutine writetofile_extxyz(p,filename,write_velocities)
+        !> crystal structure
+        class(lo_crystalstructure), intent(in) :: p
+        !> the filename
+        character(len=*), intent(in) :: filename
+        !> if velocities should be written. Default false.
+        logical, intent(in), optional :: write_velocities
+
+        integer :: u, i
+        real(flyt), dimension(3,3) :: lat
+
+        if ( filename .eq. 'stdout' ) then
+            u=6
+        else
+            u=open_file('out',filename)
+        endif
+
+        ! Lattice vectors in Angstroms (internal storage is Bohr)
+        lat=p%latticevectors*lo_bohr_to_A
+
+        ! Line 1: number of atoms
+        write(u,'(I0)') p%na
+        ! Line 2: Lattice="..." Properties="..." pbc="T T T"
+        write(u,'(A,9(ES23.15,1X),A)') &
+            'Lattice="', &
+            lat(1,1),lat(2,1),lat(3,1), &
+            lat(1,2),lat(2,2),lat(3,2), &
+            lat(1,3),lat(2,3),lat(3,3), &
+            '" Properties="species:S:1:pos:R:3" pbc="T T T"'
+        ! Lines 3+: symbol x y z (Cartesian, Angstroms)
+        do i=1,p%na
+            write(u,'(A4,3(1X,ES23.15))') &
+                trim(p%atomic_symbol(p%species(i))), &
+                p%rcart(1,i)*lo_bohr_to_A, &
+                p%rcart(2,i)*lo_bohr_to_A, &
+                p%rcart(3,i)*lo_bohr_to_A
         enddo
 
         if ( filename .ne. 'stdout' ) close(u)

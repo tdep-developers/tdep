@@ -70,6 +70,9 @@ type lo_opts
     logical :: devmode = .false.
     ! Dump IFCs in EPW format
     logical :: dumpepw = .false.
+    ! structure filenames
+    character(len=2000) :: unitcell_filename = 'infile.ucposcar'
+    character(len=2000) :: supercell_filename = 'infile.ssposcar'
 contains
     procedure :: parse
 end type
@@ -252,6 +255,14 @@ subroutine parse(opts)
     call cli%add(switch='--output_epw', switch_ab='-epw', hidden=.false., help='Write the (second order) interatomic force constants in XML format useable by EPW.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--unitcell', switch_ab='-uc', &
+                 help='Filename for the unitcell structure (POSCAR or Extended XYZ).', &
+                 required=.false., act='store', def='infile.ucposcar', error=lo_status)
+    if (lo_status .ne. 0) stop
+    call cli%add(switch='--supercell', switch_ab='-ss', &
+                 help='Filename for the supercell structure (POSCAR or Extended XYZ).', &
+                 required=.false., act='store', def='infile.ssposcar', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     ! actually parse it
     call cli%parse(error=lo_status)
@@ -311,6 +322,8 @@ subroutine parse(opts)
     call cli%get(switch='--fakediel', val=opts%fake_dielectric)
     call cli%get(switch='--developermode', val=opts%devmode)
     call cli%get(switch='--output_epw', val=opts%dumpepw)
+    call cli%get(switch='--unitcell', val=opts%unitcell_filename)
+    call cli%get(switch='--supercell', val=opts%supercell_filename)
 
     if (lo_status .ne. 0) stop
 

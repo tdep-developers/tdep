@@ -48,7 +48,7 @@ init: block
     call mem%init()
 
     ! Read the crystal structure and make sure I have all the symmetry information
-    call uc%readfromfile('infile.ucposcar', verbosity=opts%verbosity)
+    call uc%readfromfile(trim(opts%unitcell_filename), verbosity=opts%verbosity)
     call uc%classify('wedge', timereversal=opts%timereversal)
     ! Maybe non-default isotope distribution
     if (opts%readiso) then

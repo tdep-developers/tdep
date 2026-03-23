@@ -25,6 +25,8 @@ type lo_opts
     integer :: outputformat
     ! automagic stuff
     integer :: desired_na
+    ! structure filename
+    character(len=2000) :: unitcell_filename = 'infile.ucposcar'
 contains
     procedure :: parse
 end type
@@ -64,8 +66,8 @@ subroutine parse(opts)
                  required=.false., act='store', def='5.0', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--output_format', switch_ab='-of', hidden=.false., &
-                 help='Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims, 5 Siesta, 6 QE and 7 Parsec', &
-                 required=.false., act='store', def='1', choices='1,2,4,5,6,7', error=lo_status)
+                 help='Output format. 1 is VASP, 2 Abinit, 4 FHI-Aims, 5 Siesta, 6 QE, 7 Parsec and 8 Extended XYZ', &
+                 required=.false., act='store', def='1', choices='1,2,4,5,6,7,8', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--thirdorder_cutoff', switch_ab='-rc3', hidden=.true., &
                  help='Cutoff for the third order force constants', &
@@ -113,6 +115,10 @@ subroutine parse(opts)
                  help='Number SQS structures to generate', &
                  required=.false., act='store', def='5', error=lo_status)
     if (lo_status .ne. 0) stop
+    call cli%add(switch='--unitcell', switch_ab='-uc', &
+                 help='Filename for the unitcell structure (POSCAR or Extended XYZ).', &
+                 required=.false., act='store', def='infile.ucposcar', error=lo_status)
+    if (lo_status .ne. 0) stop
     cli_manpage
     cli_verbose
 
@@ -147,6 +153,7 @@ subroutine parse(opts)
     call cli%get(switch='-mc', val=opts%magnconf)
     call cli%get(switch='-na', val=opts%desired_na)
     call cli%get(switch='--nsqs', val=opts%nsqs)
+    call cli%get(switch='--unitcell', val=opts%unitcell_filename)
 
     ! get input to atomic units right away
     opts%cutoff2 = opts%cutoff2*lo_A_to_Bohr
