@@ -1,15 +1,15 @@
 submodule(lo_selfenergy_interpolation) lo_selfenergy_interpolation_grid
-use gottochblandat, only: lo_lorentz
+use konstanter, only: lo_kb_Hartree
+use gottochblandat, only: lo_lorentz,lo_outerproduct
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
-use lo_thermal_transport, only: lo_thermal_conductivity
 use type_qpointmesh, only: lo_qpoint_mesh
 implicit none
 
 contains
 
 !> Calculate the spectral function along a path in the BZ
-module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefactor, temperature, tc, pd, dr, mw, mem)
+module subroutine spectral_function_grid_rough(ise, uc, fc, qp, smearing_prefactor, temperature, pd, kappa_bubble, mw, mem)
     !> interpolated self-energy thing
     class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
     !> crystal structure
@@ -22,25 +22,23 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
     real(r8), intent(in) :: smearing_prefactor
     !> temperature
     real(r8), intent(in) :: temperature
-    !> thermal conductivity
-    type(lo_thermal_conductivity), intent(out) :: tc
     !> phonon dos
     type(lo_phonon_dos), intent(out) :: pd
-    !> dispersions on tight grid
-    type(lo_phonon_dispersions), intent(out) :: dr
+    !> diagonal bubble thermal transport
+    real(r8), dimension(3,3) :: kappa_bubble
     !> mpi communicator
     type(lo_mpi_helper), intent(inout) :: mw
     !> memory tracker
     type(lo_mem_helper), intent(inout) :: mem
 
-
-    real(r8) :: timer, t0, t1
+    ! Dispersions on the tight grid
+    type(lo_distributed_phonon_dispersions) :: dr
     integer :: solrnk
 
     ! Start timers
-    timer = walltime()
-    t0 = timer
-    t1 = timer
+    ! timer = walltime()
+    ! t0 = timer
+    ! t1 = timer
 
     ! Set some basic things
     init: block
@@ -53,8 +51,8 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         ! Which rank do we solve serial things on?
         solrnk = 0
 
-        ! Harmonic dispersions
-        call dr%generate(qp, fc, uc, mw=mw, mem=mem, verbosity=-1)
+        ! Harmonic dispersions (distributed)
+        call dr%generate(qp,uc,fc,smearing_prefactor,mw,mem,verbosity=-1)
 
         ! Then I guess we make some space for the DOS?
         ! make space in the dos
@@ -75,13 +73,7 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         pd%pdos_site = 0.0_r8
         pd%pdos_mode = 0.0_r8
 
-        if (mw%talk) then
-            t1 = walltime()
-            write (lo_iou, *) '... made space (', tochar(t1 - t0), 's)'
-            t0 = t1
-        end if
-
-        call tc%initialize(dr, ise%n_energy, pd%dosmax, temperature, mw)
+        !call tc%initialize(dr, ise%n_energy, pd%dosmax, temperature, mw)
     end block init
 
     ! Calculate self-energies / spectral functions
@@ -89,15 +81,16 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         real(r8), parameter :: integraltol=1E-13_r8
         complex(r8), dimension(3) :: cv0
         !real(r8), parameter :: largedistance = 1.0E10_r8*lo_A_to_bohr
-        real(r8), dimension(:, :), allocatable :: buf_spectral, buf_spectral_smeared
+        real(r8), dimension(:, :), allocatable :: buf_spectral
         real(r8), dimension(:, :), allocatable :: buf_sigmaIm, buf_sigmaRe
         real(r8), dimension(:), allocatable :: buf_taper, siteproj, normalizationfactor, xmid, xlo, xhi
-        real(r8), dimension(3), parameter :: qdir = [1.0_r8, 0.0_r8, 0.0_r8]
-        real(r8) :: f0, f1, f2, sigma
-        integer :: iq, imode, iatom,local_iq
+        real(r8), dimension(3,3) :: m0,m1
+        real(r8), dimension(3) :: v0,v1
+        !real(r8), dimension(3), parameter :: qdir = [1.0_r8, 0.0_r8, 0.0_r8]
+        real(r8) :: f0, f1, f2, sigma, pref
+        integer :: iq, imode, iatom,i,ii,iop
         ! A little space for temporary buffers
         call mem%allocate(buf_spectral, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(buf_spectral_smeared, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(buf_sigmaIm, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(buf_sigmaRe, [pd%n_dos_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(buf_taper, pd%n_dos_point, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -107,26 +100,21 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
         call mem%allocate(xlo, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(xhi, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         buf_spectral = 0.0_r8
-        buf_spectral_smeared = 0.0_r8
         buf_sigmaIm = 0.0_r8
         buf_sigmaRe = 0.0_r8
         buf_taper = 0.0_r8
         siteproj = 0.0_r8
 
-        local_iq=0
-        qploop: do iq = 1, qp%n_irr_point
-            ! Make it parallel over q-points
-            if ( mod(iq,mw%n) .ne. mw%r ) cycle
+        m0=0.0_r8
+        qploop: do i=1,dr%n_irr_qpoint_local
+            iq=dr%iq(i)%global_irreducible_index
 
             if (mw%talk) then
-                t1 = walltime()
-                write (lo_iou, *) '... q-point '//tochar(iq)//' out of '//tochar(qp%n_irr_point)
-                t0 = t1
+                write (lo_iou, *) '... q-point '//tochar(i)//' out of '//tochar(dr%n_irr_qpoint_local)
             end if
 
             ! reset buffers
             buf_spectral = 0.0_r8
-            buf_spectral_smeared = 0.0_r8
             buf_sigmaIm = 0.0_r8
             buf_sigmaRe = 0.0_r8
             normalizationfactor = 0.0_r8
@@ -134,73 +122,77 @@ module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefac
             xlo = 0.0_r8
             xhi = 0.0_r8
             ! interpolate self-energy to this q-vector
-            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(iq)%omega,dr%iq(iq)%egv,buf_sigmaRe,buf_sigmaIm,mem)
+            call ise%evaluate(uc,qp%ip(iq)%r,dr%iq(i)%omega,dr%iq(i)%egv,buf_sigmaRe,buf_sigmaIm,mem)
 
             ! Evaluate spectral functions and smear and so on.
             do imode = 1, dr%n_mode
                 ! Get the spectral functions
-                if ( dr%iq(iq)%omega(imode) .gt. lo_freqtol ) then
+                if ( dr%iq(i)%omega(imode) .lt. lo_freqtol ) cycle
 
-                    ! Taper self-energy?
-                    call lo_tapering_function(ise%omega, buf_taper)
-                    buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
+                ! Taper self-energy?
+                call lo_tapering_function(ise%omega, buf_taper)
+                buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
 
-                    ! First up would be to find a normalization factor per mode
-                    call lo_find_spectral_function_max_and_fwhm(dr%iq(iq)%omega(imode), ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
-                    call lo_integrate_spectral_function(ise%omega, dr%iq(iq)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
-                    1.0_r8, temperature, integraltol, f0, f1, f2)
-                    normalizationfactor(imode)=1.0_r8/f0
+                ! First up would be to find a normalization factor per mode
+                call lo_find_spectral_function_max_and_fwhm(dr%iq(i)%omega(imode), ise%omega, buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode))
+                call lo_integrate_spectral_function(ise%omega, dr%iq(i)%omega(imode), buf_sigmaIm(:,imode), buf_sigmaRe(:,imode), xmid(imode),xlo(imode),xhi(imode), &
+                1.0_r8, temperature, integraltol, f0, f1, f2)
 
-                    call lo_evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
-                    buf_spectral_smeared(:, imode) = buf_spectral(:, imode)
-                    sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
-                    call lo_gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral_smeared(:, imode))
+                ! f0 holds norm of spectral function
+                ! f1 is squared spectral function
+                ! f2 is bose-einstein factors times squared spectral function.
+                m1=0.0_r8
+                v0=dr%iq(i)%vel(:,imode)
+                do ii=1,qp%ip(iq)%n_full_point
+                    iop=qp%ip(iq)%operation_full_point(ii)
+                    if ( iop .gt. 0 ) then
+                        v1=matmul( uc%sym%op(iop)%m,v0 )
+                    else
+                        v1=-matmul( uc%sym%op(iop)%m,v0 )
+                    endif
+                    m1=m1+lo_outerproduct(v1,v1)
+                enddo
+                m1=m1/real(qp%ip(iq)%n_full_point,r8)
 
-                    ! Normalize both.
-                    f0 = lo_trapezoid_integration(ise%omega, buf_spectral(:, imode))
-                    buf_spectral(:, imode) = buf_spectral(:, imode)/f0
-                    f0 = lo_trapezoid_integration(ise%omega, buf_spectral_smeared(:, imode))
-                    buf_spectral_smeared(:, imode) = buf_spectral_smeared(:, imode)/f0
+                ! Accumulate thermal conductivity
+                pref = lo_pi/(lo_kb_hartree*temperature**2*uc%volume)
+                m0=m0 + m1*pref*f2/f0/f0*qp%ip(iq)%integration_weight
 
-                    ! Accumulate DOS?
-                    do iatom = 1, uc%na
-                        cv0 = dr%iq(iq)%egv((iatom - 1)*3 + 1:iatom*3, imode)
-                        siteproj(iatom) = abs(dot_product(cv0, conjg(cv0)))
-                    end do
+                normalizationfactor(imode)=1.0_r8/f0
 
-                    ! Add together in the right place
-                    pd%pdos_mode(:, imode) = pd%pdos_mode(:, imode) + buf_spectral_smeared(:, imode)*qp%ip(iq)%integration_weight
-                    do iatom = 1, uc%na
-                        pd%pdos_site(:, iatom) = pd%pdos_site(:, iatom) + buf_spectral_smeared(:, imode)*siteproj(iatom)*qp%ip(iq)%integration_weight
-                    end do
-                else
-                    buf_spectral(:, imode) = 0.0_r8
-                    buf_spectral_smeared(:, imode) = 0.0_r8
-                end if
+                ! Not a crazy spot to store thermal transport.
+
+                ! Smear spectral function
+                call lo_evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(i)%omega(imode), buf_spectral(:, imode))
+                sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(i)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
+                call lo_gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral(:, imode))
+                ! Normalize
+                f0 = lo_trapezoid_integration(ise%omega, buf_spectral(:, imode))
+                buf_spectral(:, imode) = buf_spectral(:, imode)/f0
+
+                ! Accumulate DOS?
+                do iatom = 1, uc%na
+                    cv0 = dr%iq(i)%egv((iatom - 1)*3 + 1:iatom*3, imode)
+                    siteproj(iatom) = abs(dot_product(cv0, conjg(cv0)))
+                end do
+
+                ! Add together in the right place
+                pd%pdos_mode(:, imode) = pd%pdos_mode(:, imode) + buf_spectral(:, imode)*qp%ip(iq)%integration_weight
+                do iatom = 1, uc%na
+                    pd%pdos_site(:, iatom) = pd%pdos_site(:, iatom) + buf_spectral(:, imode)*siteproj(iatom)*qp%ip(iq)%integration_weight
+                end do
+
             end do
-
-            ! Accumulate thermal transport data
-            local_iq=local_iq+1
-            call tc%accumulate(iq, local_iq, qp, dr, fc, uc, buf_spectral_smeared, buf_sigmaIm, buf_sigmaRe, normalizationfactor, xmid, xlo, xhi, mem)
-
-            ! if (mw%talk) then
-            !     t1 = walltime()
-            !     write (lo_iou, *) '     kappa accumulation (', tochar(t1 - t0), 's)'
-            !     t0 = t1
-            ! end if
         enddo qploop
 
         ! Sync across ranks
         call mw%allreduce('sum', pd%pdos_site)
         call mw%allreduce('sum', pd%pdos_mode)
-
-        ! Accumulate spectral things
-        !call mw%allreduce('max', tc%lifetime)
-        call mw%allreduce('sum', tc%spectral_kappa)
+        call mw%allreduce('sum', m0)
+        kappa_bubble=m0
 
         ! Cleanup
         call mem%deallocate(buf_spectral, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(buf_spectral_smeared, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_sigmaIm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_sigmaRe, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(buf_taper, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

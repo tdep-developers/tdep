@@ -24,8 +24,8 @@ use lo_symmetry_of_interactions, only: lo_interaction_tensors
 use type_forcemap, only: lo_forcemap
 
 use lo_tetrahedron_interpolation, only: lo_linear_tetrahedron_interpolation
+use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
 use type_phonon_dos, only: lo_phonon_dos
-use lo_thermal_transport, only: lo_thermal_conductivity
 use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function,lo_gaussian_smear_spectral_function,lo_find_spectral_function_max_and_fwhm,lo_integrate_spectral_function,lo_tapering_function,lo_make_eigenvector_parallel,lo_optical_manifold
 implicit none
 
@@ -50,27 +50,6 @@ type lo_interpolated_selfenergy_grid
     type(lo_forceconstant_secondorder) :: aux_fc
     !> Is this a polar material?
     logical :: polar=.false.
-
-    ! ! harmonic omega, per q
-    ! real(r8), dimension(:,:), allocatable :: harm_omega
-    ! complex(r8), dimension(:,:,:), allocatable :: harm_egv
-    ! real(r8), dimension(:,:,:), allocatable :: sIm,sRe
-
-    ! ! Fourier interpolation thingies
-    ! integer :: n_rvec=-lo_hugeint
-    ! real(r8), dimension(:,:,:,:), allocatable :: bre,bim
-    ! complex(r8), dimension(:,:,:,:), allocatable :: bc
-    ! real(r8), dimension(:,:), allocatable :: rvec
-    ! integer, dimension(:,:), allocatable :: atomind
-
-    ! complex(r8), dimension(:,:,:,:), allocatable :: rfc
-    ! complex(r8), dimension(:,:,:,:), allocatable :: ifc
-
-    ! ! TDEP interpolation thingies
-    ! type(lo_forcemap) :: map
-    ! complex(r8), dimension(:,:), allocatable :: irr_re
-    ! complex(r8), dimension(:,:), allocatable :: irr_im
-
     ! Weird optical manifold thing for interpolation
     real(r8), dimension(:,:), allocatable :: optical_manifold
     contains
@@ -79,7 +58,7 @@ type lo_interpolated_selfenergy_grid
         procedure :: evaluate_smeared_J=>evaluate_self_energy
         procedure :: destroy=>destroy_interpolated_selfenergy
         procedure :: spectral_function_along_path=>spectral_function_path_interp
-        procedure :: spectral_function_on_grid=>spectral_function_grid_interp
+        procedure :: spectral_function_on_grid_rough=>spectral_function_grid_rough
 end type
 
 interface ! to evaluate
@@ -104,17 +83,26 @@ interface ! to path
         type(lo_mpi_helper), intent(inout) :: mw
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
-    module subroutine spectral_function_grid_interp(ise, uc, fc, qp, smearing_prefactor, temperature, tc, pd, dr, mw, mem)
+    module subroutine spectral_function_grid_rough(ise, uc, fc, qp, smearing_prefactor, temperature, pd, kappa_bubble, mw, mem)
+        !> interpolated self-energy thing
         class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
+        !> crystal structure
         type(lo_crystalstructure), intent(inout) :: uc
+        !> second order force constant
         type(lo_forceconstant_secondorder), intent(inout) :: fc
+        !> q-grid we interpolate to
         class(lo_qpoint_mesh), intent(inout) :: qp
+        !> smearing prefactor
         real(r8), intent(in) :: smearing_prefactor
+        !> temperature
         real(r8), intent(in) :: temperature
-        type(lo_thermal_conductivity), intent(out) :: tc
+        !> phonon dos
         type(lo_phonon_dos), intent(out) :: pd
-        type(lo_phonon_dispersions), intent(out) :: dr
+        !> diagonal bubble thermal transport
+        real(r8), dimension(3,3) :: kappa_bubble
+        !> mpi communicator
         type(lo_mpi_helper), intent(inout) :: mw
+        !> memory tracker
         type(lo_mem_helper), intent(inout) :: mem
     end subroutine
 end interface
