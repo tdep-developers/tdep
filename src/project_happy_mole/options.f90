@@ -54,7 +54,7 @@ subroutine parse(opts)
     logical :: dumlog
 
     ! basic info
-    call cli%init(progname='lineshape', &
+    call cli%init(progname='project_happy_mole', &
                   authors=lo_author, &
                   version=lo_version, &
                   license=lo_licence, &
