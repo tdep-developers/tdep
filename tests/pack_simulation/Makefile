@@ -1,2 +1,0 @@
-testfiles:
-	pack_simulation
