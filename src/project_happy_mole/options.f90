@@ -17,6 +17,8 @@ type lo_opts
     real(r8) :: sigma = -lo_huge
     real(r8) :: maxf = -lo_huge
 
+    logical :: readselfenergy = .false.
+
     logical :: polariton = .false.
 
     logical :: isotopescattering = .false.
@@ -110,6 +112,12 @@ subroutine parse(opts)
     call cli%add(switch='--polariton', &
                  help='Calculate the self-energy for phonon polaritons.', &
                  required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
+
+    call cli%add(switch='--readselfenergy', &
+                 help='Read the interpolated self-energy from file instead of calculating it.', &
+                 required=.false., act='store_true', def='.false.', error=lo_status)
+    if (lo_status .ne. 0) stop
 
     cli_readiso
     cli_readqmesh
@@ -145,6 +153,7 @@ subroutine parse(opts)
     call cli%get(switch='--meshtype', val=opts%meshtype)
     call cli%get(switch='--readqmesh', val=opts%readqmesh)
     call cli%get(switch='--polariton', val=opts%polariton)
+    call cli%get(switch='--readselfenergy', val=opts%readselfenergy)
 
     call cli%get(switch='--no_isotope_scattering', val=dumlog)
     opts%isotopescattering = .not. dumlog

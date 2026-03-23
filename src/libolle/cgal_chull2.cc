@@ -1,4 +1,3 @@
- 
 #include <iostream>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/convex_hull_2.h>
@@ -17,7 +16,7 @@ extern "C"{
 
         // Now I have to stuff these points into something that CGAL likes
         Point_2 *points_in_cgal_format;
-        points_in_cgal_format = new Point_2[np]; 
+        points_in_cgal_format = new Point_2[np];
         int l=0;
         for(int j=0;j<np;j++){
             points_in_cgal_format[j]=Point_2(r[l+0],r[l+1]);
@@ -42,8 +41,8 @@ extern "C"{
             }
         }
         // this is my feeble attempt at cleanup, seems to work
-        delete points_in_cgal_format;        
-        delete result;
+        delete[] points_in_cgal_format;
+        delete[] result;
     }
 }
 

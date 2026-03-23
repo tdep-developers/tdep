@@ -1,10 +1,12 @@
 module lo_spectralfunction_helpers
 use konstanter, only: r8,lo_huge,lo_hugeint,lo_exitcode_param,lo_pi,lo_freqtol
-use gottochblandat, only: lo_planck,lo_stop_gracefully,lo_gauss,lo_return_unique,lo_complex_singular_value_decomposition
+use gottochblandat, only: lo_planck,lo_stop_gracefully,lo_gauss,lo_return_unique,lo_complex_singular_value_decomposition,lo_invert3x3matrix,lo_real_symmetric_eigenvalues_eigenvectors
 use type_blas_lapack_wrappers, only: lo_gemm,lo_zheev
 use lo_brents_method, only: lo_brent_helper
 use quadratures_stencils, only: lo_centraldifference, lo_gaussianquadrature
 use lo_sorting, only: lo_qsort
+use type_crystalstructure, only: lo_crystalstructure
+use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 implicit none
 
 private
@@ -17,7 +19,7 @@ public :: lo_integrate_spectral_function
 public :: lo_integrate_two_spectral_functions
 public :: lo_integrate_spectral_function_and_return_nodes
 public :: lo_make_eigenvector_parallel
-public :: lo_permute_eigenpairs
+public :: lo_optical_manifold
 
 contains
 
@@ -402,7 +404,7 @@ function lo_interpolated_spectral_function(x, yim, yre, omega, scalefactor, xi) 
     ! yi=scalefactor*sigmaIm*(1.0_r8/f0-1.0_r8/f1)/lo_pi
 end function
 
-module subroutine lo_tapering_function(x,y)
+subroutine lo_tapering_function(x,y)
     !> energy axis
     real(r8), dimension(:), intent(in) :: x
     !> tapering function
@@ -1200,99 +1202,56 @@ subroutine lo_make_eigenvector_parallel(ref,egv)
     ! enddo
 end subroutine
 
-subroutine lo_permute_eigenpairs(ref_egv,ref_val,egv,val)
-    !> reference eigenvectors
-    complex(r8), dimension(:,:), intent(in) :: ref_egv
-    !> reference eigenvalues
-    real(r8), dimension(:), intent(in) :: ref_val
-    !> eigenvector to rotate
-    complex(r8), dimension(:,:), intent(in) :: egv
-    !> reference eigenvalues
-    real(r8), dimension(:), intent(inout) :: val
+!> Non-analytical contribution at Gamma
+module subroutine lo_optical_manifold(fc,uc,projection)
+    !> forceconstant
+    type(lo_forceconstant_secondorder), intent(in) :: fc
+    !> structure
+    type(lo_crystalstructure), intent(in) :: uc
+    !> non-analytical dynamical matrix
+    real(r8), dimension(:,:), intent(out) :: projection
 
-    complex(r8), dimension(:,:), allocatable :: ovl,ood,vec,trafo,cm0,cm1,U,V
-    real(r8), dimension(:), allocatable :: unique_ref,unique_val,singV
-    logical, dimension(:), allocatable :: modefixed
-    !real(r8), dimension(:), allocatable :: val
-    integer :: i,j,k,n
-    real(r8) :: f0
+    real(r8), dimension(:,:), allocatable :: m0,egv
+    real(r8), dimension(:,:), allocatable :: C
+    real(r8), dimension(:), allocatable :: val
+    real(r8), dimension(3,3) :: ieps
+    integer :: a1,i,j,ii
 
-
-    n=size(ref_egv,1)
-    ! First I guess I divide the modes into degenerate subspaces.
-    !call lo_return_unique(ref_val, unique_ref)
-
-    ! Next up, if I do the rotation/alignment thing rounded to integers
-    ! I should be able to identify at least roughly what subspace aligns
-    ! with what subspace in some way?
-    allocate(ovl(n,n))
-    allocate(U(n,n))
-    allocate(V(n,n))
-    allocate(trafo(n,n))
-    allocate(singV(n))
-    call lo_gemm(ref_egv,egv,ovl,transa='C')
-    ! SVD
-    call lo_complex_singular_value_decomposition(ovl,singV,U,V)
-    call lo_gemm(U,V,trafo)
-    ! Make the transformation an integer matrix? Since I can actually only
-
-    do i=1,n
-        k=0
-        f0=0.0_r8
-        do j=1,n
-            if ( abs(trafo(j,i)) .gt. f0 ) then
-                k=j
-                f0=abs(trafo(j,i))
-            endif
+    if ( fc%polar ) then
+        ! Build optical matrix thingy
+        ieps=lo_invert3x3matrix(fc%loto%eps)
+        allocate(C(3*uc%na,3))
+        C=0.0_r8
+        do a1=1,uc%na
+        do i=1,3
+            ii = (a1 - 1)*3 + i
+            do j=1,3
+                C(ii,j)=fc%loto%born_effective_charges(j,i,a1)*uc%invsqrtmass(a1)
+            enddo
         enddo
-        trafo(:,i)=0.0_r8
-        trafo(k,i)=1.0_r8
-        do j=i+1,n
-            trafo(k,j)=0.0_r8
         enddo
-    enddo
+        allocate(m0(uc%na*3,uc%na*3))
+        m0=0.0_r8
+        m0=matmul(matmul(C,ieps),transpose(C))
 
-    !call lo_gemm(egv,trafo,cm0)
-    val=matmul(val,transpose(real(trafo,r8)))
+        allocate(egv(uc%na*3,uc%na*3))
+        allocate(val(uc%na*3))
+        egv=0.0_r8
+        val=0.0_r8
+        call lo_real_symmetric_eigenvalues_eigenvectors(m0,val,egv)
 
-    !do i=1,unique_ref
-    !enddo
-
-
-    ! do i=1,n
-    !     if ( modefixed(i) ) cycle
-    !     k=0
-    !     do j=1,n
-    !         if ( abs(ref_val(i)-ref_val(j)) .lt. lo_freqtol ) k=k+1
-    !     enddo
-    ! enddo
-
-
-
-    ! ! Calculate the overlap
-    ! allocate(ovl(n,n))
-    ! allocate(ood(n,n))
-    ! allocate(vec(n,n))
-    ! allocate(cm0(n,n))
-    ! allocate(cm1(n,n))
-    ! allocate(trafo(n,n))
-    ! allocate(val(n))
-    ! call lo_gemm(ref,egv,ovl,transa='C')
-    ! ! SVD
-    ! call lo_complex_singular_value_decomposition(ovl,val,U,V)
-    ! call lo_gemm(U,V,trafo)
-    ! call lo_gemm(egv,trafo,cm0)
-    ! egv=cm0
-
-    ! write(*,*) 'orig'
-    ! do i=1,n
-    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
-    ! enddo
-    ! write(*,*) 'new'
-    ! call lo_gemm(ref,egv,ovl,transa='C')
-    ! do i=1,n
-    !     write(*,"(6(1X,F13.6))") abs(ovl(i,:))
-    ! enddo
+        projection=0.0_r8
+        do ii=1,uc%na*3
+            if ( abs(val(ii)) .lt. 1E-10_r8 ) cycle
+            do i=1,uc%na*3
+            do j=1,uc%na*3
+                projection(i,j)=projection(i,j) + egv(i,ii)*egv(j,ii)
+            enddo
+            enddo
+        enddo
+    else
+        projection=0.0_r8
+    endif
 end subroutine
 
 end module

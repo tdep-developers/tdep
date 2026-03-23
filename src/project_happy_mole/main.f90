@@ -38,6 +38,7 @@ type(lo_phonon_dispersions) :: dr,ddr,kdr
 type(lo_distributed_phonon_dispersions) :: pdr,psdr
 
 class(lo_qpoint_mesh), allocatable :: qp,dqp,kqp
+type(lo_interpolated_selfenergy_grid) :: ise
 
 ! Read information from file and work out the heuristics.
 init: block
@@ -84,9 +85,13 @@ init: block
 
     call tmr_init%tock('read forceconstants')
 
-    ! Get a q-point meshes. We only want FFT meshes.
+    ! Get q-point meshes. I will allow for the sigma mesh to not be FFT.
     call lo_generate_qmesh(qp, uc, opts%qgrid, 'fft', timereversal=opts%timereversal, headrankonly=.false., mw=mw, mem=mem, verbosity=opts%verbosity)
-    call lo_generate_qmesh(dqp, uc, opts%qgrid_sigma, 'fft', timereversal=opts%timereversal, headrankonly=.false., mw=mw, mem=mem, verbosity=opts%verbosity)
+    if ( opts%readqmesh ) then
+        call lo_read_qmesh_from_file(dqp, uc, 'infile.qgrid.hdf5', mem, verbosity=opts%verbosity)
+    else
+        call lo_generate_qmesh(dqp, uc, opts%qgrid_sigma, 'fft', timereversal=opts%timereversal, headrankonly=.false., mw=mw, mem=mem, verbosity=opts%verbosity)
+    endif
     call lo_generate_qmesh(kqp, uc, opts%qgrid_kappa, 'fft', timereversal=opts%timereversal, headrankonly=.false., mw=mw, mem=mem, verbosity=opts%verbosity)
 
     if ( mw%talk ) then
@@ -114,98 +119,105 @@ end block init
 
 ! Think the first iteration will be special in many ways, so let's make
 ! that one its own thing.
-firstiteration: block
-    type(lo_interpolated_selfenergy_grid) :: ise
-    type(lo_phonon_bandstructure) :: bs
-    type(lo_phonon_dos) :: pd
-    type(lo_thermal_conductivity) :: tc
-    !type(lo_scattering_matrix) :: scm
-    integer :: iter
+if ( opts%readselfenergy) then
+    readselfenergy: block
+        call ise%destroy()
+        call ise%read_from_hdf5(uc,fc2,'infile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+        call mw%barrier()
+    end block readselfenergy
+else
+    calculateselfenergy: block
+        type(lo_phonon_bandstructure) :: bs
+        type(lo_phonon_dos) :: pd
+        type(lo_thermal_conductivity) :: tc
+        integer :: iter
 
-    ! This is the zeroth iteration, or whatever I should call it. Here we
-    ! always use adaptive Gaussian integration, because we have to use something.
-    call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
-        opts%temperature, opts%maxf, opts%nf, 2, opts%sigma,&
-        opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
-        mw, mem, opts%verbosity)
-
-    ! For diagnostics I guess dumping the self-energy on a path makes sense?
-    ! For that we first need the perfectly normal path for reference.
-    call bs%generate(uc, fc2, timereversal=.true., mw=mw, mem=mem, verbosity=opts%verbosity, npts=100, readpathfromfile=.false.)
-
-    ! Make sure the interpolated self-energy is nothing
-    call ise%destroy()
-    ! Read it from file?
-    call ise%read_from_hdf5(uc,fc2,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
-    call mw%barrier()
-
-    ! ! Get spectral function on a path?
-    if (mw%talk) then
-        write(*,*) '... generating spectral function on path'
-    endif
-    call ise%spectral_function_along_path(bs,uc,mw,mem)
-
-    ! Generate spectral function on a grid?
-    if (mw%talk) then
-       write(*,*) '... generating spectral function on a grid'
-    endif
-    call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
-
-    if (mw%talk) then
-        write (*, *) '... writing output'
-        call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_0.hdf5', mem)
-        call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_0.hdf5')
-        call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_0.hdf5',mem)
-    end if
-    call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
-
-if ( mw%talk ) write(*,*) 'done here ',__FILE__,__LINE__
-call mw%destroy()
-stop
-
-    ! Generate a bubble-only thermal transport (for now)
-    if (mw%talk) then
-        write(*,*) '... generating bubble-only thermal transport'
-    endif
-    call bubble_only_transport(kqp,psdr,uc,ise,opts%sigma,opts%temperature,mw,mem,opts%verbosity)
-
-
-    ! Create scattering matrix?
-    !call scm%generate(uc,fc2,fc3,ise,kqp,mw,mem,opts%verbosity+5)
-
-    ! Then I guess we start to iterate, self-consistently?
-    do iter=1,-1
-        ! Then I guess the next step is to get the self-energy again, but this time using
-        ! a convolution integration instead?
+        ! This is the zeroth iteration, or whatever I should call it. Here we
+        ! always use adaptive Gaussian integration, because we have to use something.
         call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
-            opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
+            opts%temperature, opts%maxf, opts%nf, 2, opts%sigma,&
             opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
             mw, mem, opts%verbosity)
 
-        ! Make sure the intermediate things are cleaned:
-        call ise%destroy()
-        call kdr%destroy()
-        call tc%destroy()
-        call pd%destroy()
-        ! Then we read the newly created interpolation and get a spectral function on a path?
+        ! For diagnostics I guess dumping the self-energy on a path makes sense?
+        ! For that we first need the perfectly normal path for reference.
+        call bs%generate(uc, fc2, timereversal=.true., mw=mw, mem=mem, verbosity=opts%verbosity, npts=100, readpathfromfile=.false.)
 
-        ! Read it from file?
-        !call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
-        ! Get spectral function on a path?
+        ! Make sure the interpolated self-energy is nothing
+        call ise%destroy()
+        call ise%read_from_hdf5(uc,fc2,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+        call mw%barrier()
+
+        ! Get spectral function on a path, for diagnostics
+        if (mw%talk) then
+            write(*,*) '... generating spectral function on path'
+        endif
         call ise%spectral_function_along_path(bs,uc,mw,mem)
-        ! Spectral function on a grid
+
+        ! Generate spectral function on a grid?
+        if (mw%talk) then
+           write(*,*) '... generating spectral function on a grid'
+        endif
         call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
+
         if (mw%talk) then
             write (*, *) '... writing output'
-            call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_'//tochar(iter)//'.hdf5', mem)
-            call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_'//tochar(iter)//'.hdf5')
-            call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_'//tochar(iter)//'.hdf5',mem)
+            call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_0.hdf5', mem)
+            call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_0.hdf5')
+            call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_0.hdf5',mem)
         end if
-        call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_'//tochar(iter)//'.hdf5',opts%enhet,mw,mem)
-    enddo
+        call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_0.hdf5',opts%enhet,mw,mem)
 
-end block firstiteration
+        ! ! Generate a bubble-only thermal transport (for now)
+        ! if (mw%talk) then
+        !     write(*,*) '... generating bubble-only thermal transport'
+        ! endif
+        ! call bubble_only_transport(kqp,psdr,uc,ise,opts%sigma,opts%temperature,mw,mem,opts%verbosity)
 
+    if ( mw%talk ) write(*,*) 'done here ',__FILE__,__LINE__
+    call mw%destroy()
+    stop
+
+
+        ! Create scattering matrix?
+        !call scm%generate(uc,fc2,fc3,ise,kqp,mw,mem,opts%verbosity+5)
+
+        ! Then I guess we start to iterate, self-consistently?
+        do iter=1,-1
+            ! Then I guess the next step is to get the self-energy again, but this time using
+            ! a convolution integration instead?
+            call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
+                opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
+                opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
+                mw, mem, opts%verbosity)
+
+            ! Make sure the intermediate things are cleaned:
+            call ise%destroy()
+            call kdr%destroy()
+            call tc%destroy()
+            call pd%destroy()
+            ! Then we read the newly created interpolation and get a spectral function on a path?
+
+            ! Read it from file?
+            !call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
+            ! Get spectral function on a path?
+            call ise%spectral_function_along_path(bs,uc,mw,mem)
+            ! Spectral function on a grid
+            call ise%spectral_function_on_grid(uc,fc2,kqp,opts%sigma,opts%temperature,tc,pd,kdr,mw,mem)
+            if (mw%talk) then
+                write (*, *) '... writing output'
+                call bs%write_to_hdf5(uc, opts%enhet, 'outfile.dispersion_relations_'//tochar(iter)//'.hdf5', mem)
+                call bs%write_spectral_function_to_hdf5(opts%enhet, 'outfile.phonon_spectral_function_'//tochar(iter)//'.hdf5')
+                call pd%write_to_hdf5(uc,opts%enhet,'outfile.spectral_function_dos_'//tochar(iter)//'.hdf5',mem)
+            end if
+            call tc%write_to_hdf5(kqp,kdr,uc,'outfile.thermal_conductivity_'//tochar(iter)//'.hdf5',opts%enhet,mw,mem)
+        enddo
+
+    end block calculateselfenergy
+endif
+
+postselfenergy: block
+end block postselfenergy
 
 ! All done, print timings
 if (mw%talk) then

@@ -28,7 +28,7 @@ use lo_voronoi, only: lo_voronoi_cell
 use lo_selfenergy_interpolation, only: lo_interpolated_selfenergy_grid
 use lo_evaluate_phonon_self_energy, only: lo_phonon_selfenergy
 use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
-use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function,lo_tapering_function,lo_make_eigenvector_parallel,lo_permute_eigenpairs
+use lo_spectralfunction_helpers, only: lo_evaluate_spectral_function,lo_tapering_function,lo_make_eigenvector_parallel,lo_optical_manifold
 
 implicit none
 
@@ -90,6 +90,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
     type(lo_hdf5_helper) :: h5
     type(lo_forceconstant_secondorder) :: aux_fc
     type(lo_phonon_dispersions) :: aux_dr
+    real(r8), dimension(:,:), allocatable :: optical_manifold
     integer :: writerank
 
 
@@ -133,6 +134,11 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
 
         ! And calculate the dispersions for the auxiliary IFCs
         call aux_dr%generate(dqp,aux_fc,uc,mw,mem,verbosity)
+
+        ! Figure out a way to project onto the optical manifold
+        allocate(optical_manifold(uc%na*3,uc%na*3))
+        optical_manifold=0.0_r8
+        call lo_optical_manifold(fc,uc,optical_manifold)
     end block auxiliaryfc
     endif
 
@@ -146,9 +152,15 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
         complex(r8), dimension(:,:), allocatable :: left_trf,right_trf,aux_dynmat
         complex(r8), dimension(:,:,:), allocatable :: bufc,symmetryop
         real(r8), dimension(:,:,:), allocatable :: bufr
-        real(r8), dimension(:), allocatable :: aux_omega
-        real(r8) :: f0,f1,fm0,fm1
+        real(r8), dimension(:,:), allocatable :: gamma_dynmat,gdm0
+        real(r8), dimension(:), allocatable :: aux_omega,optical_scalefactor
+        real(r8) :: f0,f1,fm0,fm1,sf0,ratio0,ratio1
         integer :: iq,ie,imode,iatom,ialpha,ii,i,iop
+
+        allocate(gamma_dynmat(uc%na*3,uc%na*3))
+        allocate(gdm0(uc%na*3,uc%na*3))
+        gamma_dynmat=0.0_r8
+        gdm0=0.0_r8
 
         call tmr%start()
         do iq=1,dqp%n_irr_point
@@ -185,6 +197,8 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
             ! Convert self-energies to xyz coordinates and dump to file
             if ( mw%r .eq. writerank ) then
 
+                call lo_optical_manifold(fc,uc,gdm0)
+
                 allocate(bufc(se%n_mode,se%n_mode,se%n_energy))
                 allocate(bufr(se%n_mode,se%n_mode,se%n_energy))
                 allocate(eig(se%n_mode,se%n_mode))
@@ -199,6 +213,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 allocate(right_trf(uc%na*3,uc%na*3))
                 allocate(aux_dynmat(uc%na*3,uc%na*3))
                 allocate(aux_omega(uc%na*3))
+                allocate(optical_scalefactor(uc%na*3))
 
                 bufc=0.0_r8
                 bufr=0.0_r8
@@ -224,12 +239,23 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                         aux_omega(imode)=sqrt( abs(cm0(imode,imode)) )
                     enddo
 
+                    ! Optical scale factor?
+                    do imode=1,ddr%n_mode
+                        optical_scalefactor(imode)=abs( dot_product( ddr%iq(iq)%egv(:,imode),matmul(optical_manifold,ddr%iq(iq)%egv(:,imode)) ) )
+                    enddo
+                    optical_scalefactor=optical_scalefactor**4
+
                     eig=ddr%iq(iq)%egv
                     inveig=transpose(conjg(eig))
                     do imode=1,ddr%n_mode
                         if ( ddr%iq(iq)%omega(imode) .gt. lo_freqtol ) then
-                            f0=sqrt(ddr%iq(iq)%omega(imode))
-                            f0=f0/aux_omega(imode)
+                            sf0=optical_scalefactor(imode)
+                            ratio0=aux_omega(imode)/sqrt(ddr%iq(iq)%omega(imode))
+                            ratio1=sqrt(ddr%iq(iq)%omega(imode))
+                            f0=sf0*ratio0 + (1.0_r8-sf0)*ratio1
+                            !f0=sqrt(ddr%iq(iq)%omega(imode))
+                            !f0=f0/aux_omega(imode)
+                            !f0=f0/sqrt(aux_omega(imode))
                             f1=1.0_r8/f0
                         else
                             f0=0.0_r8
@@ -238,8 +264,10 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                         do iatom=1,uc%na
                             do ialpha=1,3
                                 ii=(iatom-1)*3 + ialpha
-                                eig(ii,imode)=eig(ii,imode)*f0
-                                inveig(imode,ii)=inveig(imode,ii)*f0
+                                eig(ii,imode)=eig(ii,imode)*f1
+                                inveig(imode,ii)=inveig(imode,ii)*f1
+                                ! eig(ii,imode)=eig(ii,imode)*f0
+                                ! inveig(imode,ii)=inveig(imode,ii)*f0
                             enddo
                         enddo
                     enddo
@@ -365,6 +393,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 deallocate(right_trf)
                 deallocate(aux_dynmat)
                 deallocate(aux_omega)
+                deallocate(optical_scalefactor)
 
                 call h5%close_group()
 
@@ -736,6 +765,8 @@ subroutine create_auxiliary_ifc(uc,fc,aux_fc,mw,mem)
     call lo_irreducible_forceconstant_from_qmesh_dynmat(map, uc, list_qp, nq, dynmat, lrdynmat, .true., .true., mw, -1, .true.) !, weights=wts)
     ! And finally, return a new non-polar second order forceconstant.
     call map%get_secondorder_forceconstant(uc,aux_fc,mem,-1)
+
+
 
     ! ! Then again, to match eigenvectors somehow:
     ! allocate(dm0(uc%na*3,uc%na*3))

@@ -2,9 +2,9 @@ module lo_tetrahedron_interpolation
 !!
 !! Tetrahedral interpolation
 !!
-use konstanter, only: r8, lo_huge, lo_hugeint, lo_tol
+use konstanter, only: r8, lo_huge, lo_hugeint, lo_tol, lo_exitcode_param, lo_sqtol
 use gottochblandat, only: lo_cross, walltime, lo_sqnorm, lo_signed_tetrahedron_volume, &
-    lo_clean_fractional_coordinates, lo_invert3x3matrix, lo_chop
+    lo_clean_fractional_coordinates, lo_invert3x3matrix, lo_chop, lo_stop_gracefully
 use geometryfunctions, only: lo_plane
 use type_crystalstructure, only: lo_crystalstructure
 use type_phonon_dispersions, only: lo_phonon_dispersions
@@ -69,11 +69,20 @@ subroutine indices_and_weights(box,qp,uc,r,weight,irreducible_ind,full_ind)
     real(r8), dimension(3) :: v0,v1
     integer :: ti,i,j
 
-    ! Which tetrahedron are we in? First switch to the first unit cell
-    v0=matmul(uc%inv_reciprocal_latticevectors,r)
-    v0=lo_clean_fractional_coordinates(v0)
-    v0=matmul(uc%reciprocal_latticevectors,v0)
-    ti = tetind(box,v0)
+    select type(qp)
+    type is(lo_fft_mesh)
+        ! Which tetrahedron are we in? First switch to the first unit cell
+        v0=matmul(uc%inv_reciprocal_latticevectors,r)
+        v0=lo_clean_fractional_coordinates(v0)
+        v0=matmul(uc%reciprocal_latticevectors,v0)
+        ti = tetind(box,v0)
+    type is(lo_wedge_mesh)
+        ! Switch to the first BZ
+        v0=r-uc%bz%gshift(r)
+        ti = tetind(box,v0)
+    class default
+        call lo_stop_gracefully(['Unknown qmesh type'],lo_exitcode_param,__FILE__,__LINE__)
+    end select
 
     ! Convert to tetrahedral coordinates?
     do i=1,4
@@ -121,37 +130,65 @@ subroutine generate_triangulation(box,qp,uc)
 
     allocate(tet(3,4,qp%n_full_tet))
     tet=-lo_huge
-    do i=1,qp%n_full_tet
-        ! the centers of the tetrahdrons
-        v0=0.0_r8
-        do j=1,4
-            tet(:,j,i)=matmul(uc%inv_reciprocal_latticevectors, qp%ap( qp%at(i)%full_index(j) )%r )
-        enddo
-        ! Make sure they are in the same cell
-        v0=tet(:,1,i)
-        do j=1,4
-            tet(:,j,i)=lo_clean_fractional_coordinates( tet(:,j,i)-v0 +0.5_r8 ) - 0.5_r8
-            tet(:,j,i)=tet(:,j,i)+v0
-        enddo
-        ! Now get the center of the tetrahedron and make
-        ! sure it is inside the unit cell.
-        v1=0.0_r8
-        do j=1,4
-            v1=v1 + 0.25_r8*tet(:,j,i)
-        enddo
 
-        v0=0.0_r8
-        do k=1,3
-            if ( v1(k) .lt. 0.0_r8 ) v0(k)=v0(k)+1.0_r8
-            if ( v1(k) .gt. 1.0_r8 ) v0(k)=v0(k)-1.0_r8
-        enddo
+    select type(qp)
+    type is(lo_fft_mesh)
+        fftmesh: block
+            do i=1,qp%n_full_tet
+                ! the centers of the tetrahdrons
+                v0=0.0_r8
+                do j=1,4
+                    tet(:,j,i)=matmul(uc%inv_reciprocal_latticevectors, qp%ap( qp%at(i)%full_index(j) )%r )
+                enddo
+                ! Make sure they are in the same cell
+                v0=tet(:,1,i)
+                do j=1,4
+                    tet(:,j,i)=lo_clean_fractional_coordinates( tet(:,j,i)-v0 +0.5_r8 ) - 0.5_r8
+                    tet(:,j,i)=tet(:,j,i)+v0
+                enddo
+                ! Now get the center of the tetrahedron and make
+                ! sure it is inside the unit cell.
+                v1=0.0_r8
+                do j=1,4
+                    v1=v1 + 0.25_r8*tet(:,j,i)
+                enddo
 
-        do j=1,4
-            tet(:,j,i)=tet(:,j,i) + v0
-            tet(:,j,i)=matmul(uc%reciprocal_latticevectors, tet(:,j,i))
-        enddo
-        ! Get the center of the tetrahedron
-    enddo
+                v0=0.0_r8
+                do k=1,3
+                    if ( v1(k) .lt. 0.0_r8 ) v0(k)=v0(k)+1.0_r8
+                    if ( v1(k) .gt. 1.0_r8 ) v0(k)=v0(k)-1.0_r8
+                enddo
+
+                do j=1,4
+                    tet(:,j,i)=tet(:,j,i) + v0
+                    tet(:,j,i)=matmul(uc%reciprocal_latticevectors, tet(:,j,i))
+                enddo
+                ! Get the center of the tetrahedron
+            enddo
+        end block fftmesh
+    type is(lo_wedge_mesh)
+        wedgemesh: block
+            do i=1,qp%n_full_tet
+                ! the centers of the tetrahdrons. With a sanity
+                ! check that they are all inside the first bz.
+                v0=0.0_r8
+                do j=1,4
+                    tet(:,j,i)=qp%ap( qp%at(i)%full_index(j) )%r
+                    v0=v0+qp%ap( qp%at(i)%full_index(j) )%r
+                enddo
+                v0=v0*0.25_r8
+                v1=uc%bz%gshift(v0)
+                if ( norm2(v1) .gt. lo_sqtol ) then
+                    call lo_stop_gracefully(['Tetrahedron outside BZ, should not happen'],lo_exitcode_param,__FILE__,__LINE__)
+                endif
+            enddo
+
+
+        end block wedgemesh
+    class default
+        call lo_stop_gracefully(['Unknown qmesh type'],lo_exitcode_param,__FILE__,__LINE__)
+    end select
+
 
     ! Get centers of tetrahedrons
     allocate(tetctr(3,qp%n_full_tet))
@@ -188,6 +225,9 @@ subroutine generate_triangulation(box,qp,uc)
         box%boxdim(j)=rmax(j)-rmin(j)
         box%nbox(j)=floor(box%boxdim(j)/maxtetrad)
     enddo
+
+
+
     allocate(box%b(box%nbox(1),box%nbox(2),box%nbox(3)))
 
     ! stuff tetrahdrons into boxes, first reset the counter

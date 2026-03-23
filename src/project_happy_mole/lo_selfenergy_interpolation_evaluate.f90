@@ -25,12 +25,16 @@ module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,
     type(lo_mpi_helper), intent(inout), optional :: mw
 
     type(lo_qpoint) :: qpoint
+
     complex(r8), dimension(:,:), allocatable :: left_trf,right_trf
     complex(r8), dimension(:,:,:), allocatable :: buf_cre,buf_cim
+    real(r8), dimension(:), allocatable :: optical_scalefactor
     integer :: n_mode
 
     ! Some prep
     init: block
+        integer :: imode
+
         n_mode=size(omega)
 
         qpoint%r=qv
@@ -39,93 +43,142 @@ module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,
         allocate(buf_cim(n_mode,n_mode,ise%n_energy))
         buf_cre=0.0_r8
         buf_cim=0.0_r8
+
+        allocate(optical_scalefactor(n_mode))
+        do imode=1,n_mode
+            optical_scalefactor(imode)=abs( dot_product( egv(:,imode),matmul(ise%optical_manifold,egv(:,imode)) ) )
+        enddo
+        optical_scalefactor=optical_scalefactor**4
+
     end block init
 
-    ! ! Linearly interpolate the raw self-energy to this q
-    ! linear_interpolation: block
-    !     complex(r8), dimension(:,:,:), allocatable :: rotmat
-    !     complex(r8), dimension(:,:), allocatable :: cm0,cm1
-    !     real(r8), dimension(4) :: weight
-    !     integer, dimension(4) :: irr_ind,full_ind
-    !     integer :: i,iq,ie,ii,iop
+    ! Linearly interpolate the raw self-energy to this q
+    linear_interpolation: block
+        complex(r8), dimension(:,:,:), allocatable :: rotmat
+        complex(r8), dimension(:,:), allocatable :: cm0,cm1
+        real(r8), dimension(4) :: weight
+        integer, dimension(4) :: irr_ind,full_ind
+        integer :: i,iq,ie,ii,iop
 
-    !     call ise%box%indices_and_weights(ise%qp,p,qv,weight,irr_ind,full_ind)
+        call ise%box%indices_and_weights(ise%qp,p,qv,weight,irr_ind,full_ind)
 
-    !     ! Have to symmetry-rotate self-energy
-    !     allocate(rotmat(n_mode,n_mode,4))
-    !     rotmat=0.0_r8
-    !     do i=1,4
-    !         ii=full_ind(i)
-    !         iop=ise%qp%ap(ii)%operation_from_irreducible
-    !         if ( iop .gt. 0 ) then
-    !             call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(iop),inverseoperation=.false.)
-    !         else
-    !             call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(-iop),inverseoperation=.true.)
-    !         endif
-    !     enddo
-
-    !     allocate(cm0(n_mode,n_mode))
-    !     allocate(cm1(n_mode,n_mode))
-    !     cm0=0.0_r8
-    !     cm1=0.0_r8
-
-    !     buf_cre=0.0_r8
-    !     buf_cim=0.0_r8
-    !     do i=1,4
-    !         iq=irr_ind(i)
-    !         do ie=1,ise%n_energy
-
-    !             cm0=ise%sigma_Re(:,:,ie,iq)
-    !             call lo_gemm(rotmat(:,:,i),cm0,cm1)
-    !             call lo_gemm(cm1,rotmat(:,:,i),cm0,transb='C')
-    !             buf_cre(:,:,ie)=buf_cre(:,:,ie) + weight(i)*cm0
-
-    !             cm0=ise%sigma_Im(:,:,ie,iq)
-    !             call lo_gemm(rotmat(:,:,i),cm0,cm1)
-    !             call lo_gemm(cm1,rotmat(:,:,i),cm0,transb='C')
-    !             buf_cim(:,:,ie)=buf_cim(:,:,ie) + weight(i)*cm0
-    !         enddo
-    !     enddo
-    !     deallocate(cm0)
-    !     deallocate(cm1)
-    !     deallocate(rotmat)
-    ! end block linear_interpolation
-
-    fourier_interpolation: block
-        complex(r8), dimension(:), allocatable :: phasefactor
-        real(r8) :: kdotr
-        integer :: ie,ir,a1,a2
-
-        allocate(phasefactor(ise%n_rvec))
-        phasefactor=0.0_r8
-        do ir=1,ise%n_rvec
-            kdotr=dot_product(qv,ise%rvec(:,ir))*lo_twopi
-            phasefactor(ir)=cmplx(cos(kdotr),sin(kdotr),r8)
+        ! Have to symmetry-rotate self-energy
+        allocate(rotmat(n_mode,n_mode,4))
+        rotmat=0.0_r8
+        do i=1,4
+            ii=full_ind(i)
+            iop=ise%qp%ap(ii)%operation_from_irreducible
+            if ( iop .gt. 0 ) then
+                call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(iop),inverseoperation=.false.)
+            else
+                call lo_eigenvector_transformation_matrix(rotmat(:,:,i),p%rcart,ise%qp%ip( irr_ind(i) )%r,p%sym%op(-iop),inverseoperation=.true.)
+            endif
         enddo
 
-        buf_cim=0.0_r8
+        allocate(cm0(n_mode,n_mode))
+        allocate(cm1(n_mode,n_mode))
+        cm0=0.0_r8
+        cm1=0.0_r8
+
         buf_cre=0.0_r8
-        do ie=1,ise%n_energy
-            do ir=1,ise%n_rvec
-                a1=ise%atomind(1,ir)
-                a2=ise%atomind(2,ir)
+        buf_cim=0.0_r8
+        do i=1,4
+            iq=irr_ind(i)
+            do ie=1,ise%n_energy
 
-                buf_cim((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)=&
-                buf_cim((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)+&
-                phasefactor(ir)*(ise%ifc(:,:,ir,ie))
+                cm0=ise%sigma_Re(:,:,ie,iq)
+                call lo_gemm(rotmat(:,:,i),cm0,cm1)
+                call lo_gemm(cm1,rotmat(:,:,i),cm0,transb='C')
+                buf_cre(:,:,ie)=buf_cre(:,:,ie) + weight(i)*cm0
 
-                buf_cre((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)=&
-                buf_cre((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)+&
-                phasefactor(ir)*(ise%rfc(:,:,ir,ie))
+                cm0=ise%sigma_Im(:,:,ie,iq)
+                call lo_gemm(rotmat(:,:,i),cm0,cm1)
+                call lo_gemm(cm1,rotmat(:,:,i),cm0,transb='C')
+                buf_cim(:,:,ie)=buf_cim(:,:,ie) + weight(i)*cm0
             enddo
         enddo
-    end block fourier_interpolation
+        deallocate(cm0)
+        deallocate(cm1)
+        deallocate(rotmat)
+    end block linear_interpolation
+
+    ! fourier_interpolation: block
+    !     complex(r8), dimension(:), allocatable :: phasefactor
+    !     real(r8) :: kdotr
+    !     integer :: ie,ir,a1,a2
+
+    !     allocate(phasefactor(ise%n_rvec))
+    !     phasefactor=0.0_r8
+    !     do ir=1,ise%n_rvec
+    !         kdotr=dot_product(qv,ise%rvec(:,ir))*lo_twopi
+    !         phasefactor(ir)=cmplx(cos(kdotr),sin(kdotr),r8)
+    !     enddo
+
+    !     buf_cim=0.0_r8
+    !     buf_cre=0.0_r8
+    !     do ie=1,ise%n_energy
+    !         do ir=1,ise%n_rvec
+    !             a1=ise%atomind(1,ir)
+    !             a2=ise%atomind(2,ir)
+
+    !             buf_cim((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)=&
+    !             buf_cim((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)+&
+    !             phasefactor(ir)*(ise%ifc(:,:,ir,ie))
+
+    !             buf_cre((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)=&
+    !             buf_cre((a2-1)*3+1:a2*3,(a1-1)*3+1:a1*3,ie)+&
+    !             phasefactor(ir)*(ise%rfc(:,:,ir,ie))
+    !         enddo
+    !     enddo
+    ! end block fourier_interpolation
+
+    ! tdep_interpolation: block
+    !     complex(r8), dimension(:,:), allocatable :: cfm
+    !     complex(r8), dimension(:), allocatable :: cv0
+    !     integer :: ie,a1,a2,i,j,k,ii,jj
+
+    !     allocate( cfm( (p%na*3)**2,ise%map%xuc%nx_fc_pair ) )
+    !     allocate( cv0( (p%na*3)**2 ) )
+    !     call lo_dynamical_matrix_coefficient_matrix_for_single_q(ise%map,qv,cfm)
+    !     do ie=1,ise%n_energy
+    !         cv0=matmul(cfm,ise%irr_re(:,ie))
+
+    !         k=0
+    !         do a1 = 1, p%na
+    !         do a2 = 1, p%na
+    !             do i = 1, 3
+    !             do j = 1, 3
+    !                 ii=(a1-1)*3 + i
+    !                 jj=(a2-1)*3 + j
+    !                 k=k+1
+    !                 buf_cre(jj,ii,ie)=cv0(k)
+    !             end do
+    !             end do
+    !         end do
+    !         end do
+
+    !         cv0=matmul(cfm,ise%irr_im(:,ie))
+    !         k=0
+    !         do a1 = 1, p%na
+    !         do a2 = 1, p%na
+    !             do i = 1, 3
+    !             do j = 1, 3
+    !                 ii=(a1-1)*3 + i
+    !                 jj=(a2-1)*3 + j
+    !                 k=k+1
+    !                 buf_cim(jj,ii,ie)=cv0(k)
+    !             end do
+    !             end do
+    !         end do
+    !         end do
+    !     enddo
+    ! end block tdep_interpolation
 
     build_trafo: block
         complex(r8), dimension(:,:), allocatable :: aux_eig,aux_inveig,aux_trafo,eig,inveig
         complex(r8), dimension(:,:), allocatable :: cm0,cm1
         real(r8), dimension(:), allocatable :: aux_omega
-        real(r8) :: f0,f1,fm0,fm1
+        real(r8) :: f0,f1,fm0,fm1,sf0,ratio0,ratio1
         integer :: imode,iatom,ialpha,ii
 
         allocate(left_trf(n_mode,n_mode))
@@ -162,8 +215,15 @@ module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,
             inveig=transpose(conjg(eig))
             do imode=1,n_mode
                 if ( omega(imode) .gt. lo_freqtol ) then
-                    f0=sqrt(omega(imode))
-                    f0=f0/aux_omega(imode)
+                    !f0=sqrt(omega(imode))
+                    !f0=f0/aux_omega(imode)
+                    !f0=f0/sqrt(aux_omega(imode))
+
+                    sf0=optical_scalefactor(imode)
+                    ratio0=aux_omega(imode)/sqrt(omega(imode))
+                    ratio1=sqrt(omega(imode))
+                    f0=sf0*ratio0 + (1.0_r8-sf0)*ratio1
+
                     f1=1.0_r8/f0
                 else
                     f0=0.0_r8
@@ -172,8 +232,10 @@ module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,
                 do iatom=1,p%na
                     do ialpha=1,3
                         ii=(iatom-1)*3 + ialpha
-                        eig(ii,imode)=eig(ii,imode)*f1
-                        inveig(imode,ii)=inveig(imode,ii)*f1
+                        eig(ii,imode)=eig(ii,imode)*f0
+                        inveig(imode,ii)=inveig(imode,ii)*f0
+                        ! eig(ii,imode)=eig(ii,imode)*f1
+                        ! inveig(imode,ii)=inveig(imode,ii)*f1
                     enddo
                 enddo
             enddo
