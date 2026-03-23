@@ -49,7 +49,6 @@ module subroutine evaluate_self_energy(ise,p,qv,omega,egv,sigma_Re,sigma_Im,mem,
             optical_scalefactor(imode)=abs( dot_product( egv(:,imode),matmul(ise%optical_manifold,egv(:,imode)) ) )
         enddo
         optical_scalefactor=optical_scalefactor**4
-
     end block init
 
     ! Linearly interpolate the raw self-energy to this q

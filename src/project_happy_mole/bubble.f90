@@ -413,7 +413,6 @@ subroutine integrate_over_two_spectral(nodeA,nodeB,omegaT,temperature,omegaA,ome
 
             ! evaluate scalar conductivity vertices
 
-
             ! Accumulate integral. First is just spectral function.
             f0=f0 + abs(jA)*weight(i)
 

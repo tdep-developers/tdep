@@ -1203,7 +1203,7 @@ subroutine lo_make_eigenvector_parallel(ref,egv)
 end subroutine
 
 !> Non-analytical contribution at Gamma
-module subroutine lo_optical_manifold(fc,uc,projection)
+subroutine lo_optical_manifold(fc,uc,projection)
     !> forceconstant
     type(lo_forceconstant_secondorder), intent(in) :: fc
     !> structure

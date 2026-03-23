@@ -134,7 +134,7 @@ else
 
         ! This is the zeroth iteration, or whatever I should call it. Here we
         ! always use adaptive Gaussian integration, because we have to use something.
-        call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
+        call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,ddr,pdr, &
             opts%temperature, opts%maxf, opts%nf, 2, opts%sigma,&
             opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
             mw, mem, opts%verbosity)
@@ -174,31 +174,33 @@ else
         ! endif
         ! call bubble_only_transport(kqp,psdr,uc,ise,opts%sigma,opts%temperature,mw,mem,opts%verbosity)
 
-    if ( mw%talk ) write(*,*) 'done here ',__FILE__,__LINE__
-    call mw%destroy()
-    stop
+    ! if ( mw%talk ) write(*,*) 'done here ',__FILE__,__LINE__
+    ! call mw%destroy()
+    ! stop
 
 
         ! Create scattering matrix?
         !call scm%generate(uc,fc2,fc3,ise,kqp,mw,mem,opts%verbosity+5)
 
         ! Then I guess we start to iterate, self-consistently?
-        do iter=1,-1
+        do iter=1,4
             ! Then I guess the next step is to get the self-energy again, but this time using
             ! a convolution integration instead?
-            call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,dr,ddr,pdr, &
+            call generate_interpolated_selfenergy('outfile.interpolated_selfenergy.hdf5',uc,fc2,fc3,fc4,ise,qp,dqp,ddr,pdr, &
                 opts%temperature, opts%maxf, opts%nf, 4, opts%sigma,&
                 opts%isotopescattering, opts%thirdorder, opts%fourthorder, &
                 mw, mem, opts%verbosity)
 
             ! Make sure the intermediate things are cleaned:
             call ise%destroy()
-            call kdr%destroy()
+            !call kdr%destroy()
             call tc%destroy()
             call pd%destroy()
             ! Then we read the newly created interpolation and get a spectral function on a path?
 
             ! Read it from file?
+            call ise%destroy()
+            call ise%read_from_hdf5(uc,fc2,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
             !call ise%read_from_hdf5(uc,'outfile.interpolated_selfenergy.hdf5',mw,mem,opts%verbosity+1)
             ! Get spectral function on a path?
             call ise%spectral_function_along_path(bs,uc,mw,mem)

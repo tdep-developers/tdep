@@ -38,7 +38,7 @@ public :: generate_interpolated_selfenergy
 contains
 
 !> create the interpolated self-energy object and store it to file
-subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr,ddr,pdr, &
+subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,ddr,pdr, &
     temperature, max_energy, n_energy, integrationtype, sigma,&
     use_isotope, use_thirdorder, use_fourthorder, &
     mw, mem, verbosity)
@@ -58,8 +58,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
     class(lo_qpoint_mesh), intent(in) :: qp
     !> q-point mesh the self-energy is evaluated on
     class(lo_qpoint_mesh), intent(inout) :: dqp
-    !> harmonic properties on the integration mesh
-    type(lo_phonon_dispersions), intent(in) :: dr
     !> harmonic propertors on the sigma mesh
     type(lo_phonon_dispersions), intent(in) :: ddr
     !> distributed harmonic properties on the integration mesh
@@ -182,18 +180,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                 endif
             endif
 
-            if ( mw%r .eq. writerank ) then
-                call h5%open_group('write','se_qpoint_'//tochar(iq))
-                    ! store reference harmonic
-                    call h5%store_data(ddr%iq(iq)%omega, h5%group_id, 'omega')
-                    call h5%store_data(aimag(ddr%iq(iq)%egv), h5%group_id, 'im_egv')
-                    call h5%store_data(real(ddr%iq(iq)%egv,r8), h5%group_id, 're_egv')
-                    ! store actual self-energies
-                    call h5%store_data(se%im, h5%group_id, 'sigma_im')
-                    call h5%store_data(se%re, h5%group_id, 'sigma_re')
-                call h5%close_group()
-            endif
-
             ! Convert self-energies to xyz coordinates and dump to file
             if ( mw%r .eq. writerank ) then
 
@@ -253,9 +239,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                             ratio0=aux_omega(imode)/sqrt(ddr%iq(iq)%omega(imode))
                             ratio1=sqrt(ddr%iq(iq)%omega(imode))
                             f0=sf0*ratio0 + (1.0_r8-sf0)*ratio1
-                            !f0=sqrt(ddr%iq(iq)%omega(imode))
-                            !f0=f0/aux_omega(imode)
-                            !f0=f0/sqrt(aux_omega(imode))
                             f1=1.0_r8/f0
                         else
                             f0=0.0_r8
@@ -266,8 +249,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                                 ii=(iatom-1)*3 + ialpha
                                 eig(ii,imode)=eig(ii,imode)*f1
                                 inveig(imode,ii)=inveig(imode,ii)*f1
-                                ! eig(ii,imode)=eig(ii,imode)*f0
-                                ! inveig(imode,ii)=inveig(imode,ii)*f0
                             enddo
                         enddo
                     enddo
@@ -331,7 +312,8 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                     call lo_gemm(left_trf,sigma_mode,halfproduct)
                     call lo_gemm(halfproduct,right_trf,sigma_xyz)
 
-                    ! Seems like a reasonable thing to enforce symmetry? Not sure if it really helps.
+                    ! Seems like a reasonable thing to enforce symmetry? Not sure if
+                    ! it really helps. But likely does not hurt either.
                     cm0=0.0_r8
                     do i=1,dqp%ip(iq)%n_invariant_operation
                         iop = dqp%ip(iq)%invariant_operation(i)
@@ -360,7 +342,6 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dr
                     call lo_gemm(halfproduct,right_trf,sigma_xyz)
 
                     ! Seems like a reasonable thing to enforce symmetry?
-                    ! Not sure if it really helps.
                     cm0=0.0_r8
                     do i=1,dqp%ip(iq)%n_invariant_operation
                         iop = dqp%ip(iq)%invariant_operation(i)

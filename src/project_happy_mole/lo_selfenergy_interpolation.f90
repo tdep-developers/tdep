@@ -31,7 +31,7 @@ implicit none
 
 private
 public :: lo_interpolated_selfenergy_grid
-public :: lo_dynamical_matrix_coefficient_matrix_for_single_q
+!public :: lo_dynamical_matrix_coefficient_matrix_for_single_q
 
 type lo_interpolated_selfenergy_grid
     !> point locator thingy
@@ -51,25 +51,25 @@ type lo_interpolated_selfenergy_grid
     !> Is this a polar material?
     logical :: polar=.false.
 
-    ! harmonic omega, per q
-    real(r8), dimension(:,:), allocatable :: harm_omega
-    complex(r8), dimension(:,:,:), allocatable :: harm_egv
-    real(r8), dimension(:,:,:), allocatable :: sIm,sRe
+    ! ! harmonic omega, per q
+    ! real(r8), dimension(:,:), allocatable :: harm_omega
+    ! complex(r8), dimension(:,:,:), allocatable :: harm_egv
+    ! real(r8), dimension(:,:,:), allocatable :: sIm,sRe
 
-    ! Fourier interpolation thingies
-    integer :: n_rvec=-lo_hugeint
-    real(r8), dimension(:,:,:,:), allocatable :: bre,bim
-    complex(r8), dimension(:,:,:,:), allocatable :: bc
-    real(r8), dimension(:,:), allocatable :: rvec
-    integer, dimension(:,:), allocatable :: atomind
+    ! ! Fourier interpolation thingies
+    ! integer :: n_rvec=-lo_hugeint
+    ! real(r8), dimension(:,:,:,:), allocatable :: bre,bim
+    ! complex(r8), dimension(:,:,:,:), allocatable :: bc
+    ! real(r8), dimension(:,:), allocatable :: rvec
+    ! integer, dimension(:,:), allocatable :: atomind
 
-    complex(r8), dimension(:,:,:,:), allocatable :: rfc
-    complex(r8), dimension(:,:,:,:), allocatable :: ifc
+    ! complex(r8), dimension(:,:,:,:), allocatable :: rfc
+    ! complex(r8), dimension(:,:,:,:), allocatable :: ifc
 
-    ! TDEP interpolation thingies
-    type(lo_forcemap) :: map
-    complex(r8), dimension(:,:), allocatable :: irr_re
-    complex(r8), dimension(:,:), allocatable :: irr_im
+    ! ! TDEP interpolation thingies
+    ! type(lo_forcemap) :: map
+    ! complex(r8), dimension(:,:), allocatable :: irr_re
+    ! complex(r8), dimension(:,:), allocatable :: irr_im
 
     ! Weird optical manifold thing for interpolation
     real(r8), dimension(:,:), allocatable :: optical_manifold
@@ -140,14 +140,10 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
     ! First we grab the raw data from file.
     readfile: block
         real(r8), dimension(:,:,:), allocatable :: rbuf0,rbuf1
-        real(r8), dimension(:,:), allocatable :: rb2,rb3
-        real(r8), dimension(:), allocatable :: rb1
         type(lo_hdf5_helper) :: h5
         integer :: iq
-        ! complex(r8), dimension(3,3) :: cm0,cm1
-        ! integer :: iq,jq,ie,a1,a2
 
-        if ( verbosity .gt. 0 ) then
+        if ( mw%talk  ) then
             write(*,*) ''
             write(*,*) 'Reading interpolated self-energy from file'
         endif
@@ -199,35 +195,6 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
             call h5%close_group()
         enddo
 
-        allocate(ise%harm_egv(p%na*3,p%na*3,ise%qp%n_irr_point))
-        allocate(ise%harm_omega(p%na*3,ise%qp%n_irr_point))
-        allocate(ise%sIm(size(ise%omega),p%na*3,ise%qp%n_irr_point))
-        allocate(ise%sRe(size(ise%omega),p%na*3,ise%qp%n_irr_point))
-
-        do iq=1,ise%qp%n_irr_point
-            call h5%open_group('read','se_qpoint_'//tochar(iq))
-
-            call h5%read_data(rb1,h5%group_id,'omega')
-            ise%harm_omega(:,iq)=rb1
-            deallocate(rb1)
-
-            call h5%read_data(rb2,h5%group_id,'re_egv')
-            call h5%read_data(rb3,h5%group_id,'im_egv')
-            ise%harm_egv(:,:,iq)=cmplx(rb2,rb3,r8)
-            deallocate(rb2)
-            deallocate(rb3)
-
-            call h5%read_data(rb2,h5%group_id,'sigma_im')
-            call h5%read_data(rb3,h5%group_id,'sigma_re')
-            ise%sIm(:,:,iq)=rb2
-            ise%sRe(:,:,iq)=rb3
-            deallocate(rb2)
-            deallocate(rb3)
-
-            call h5%close_group()
-        enddo
-
-
         if ( verbosity .gt. 0 ) then
             write(*,*) '... read self-energy'
         endif
@@ -247,6 +214,23 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
             write(*,*) 'Done reading self-energy from file'
         endif
     end block readfile
+
+end subroutine
+
+
+subroutine destroy_interpolated_selfenergy(ise)
+    class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
+
+    call ise%box%destroy()
+    if ( allocated(ise%qp) ) then
+        call ise%qp%destroy(ise%qp)
+    endif
+    ise%n_energy=-lo_hugeint
+    if ( allocated(ise%omega   ) ) deallocate(ise%omega   )
+    if ( allocated(ise%sigma_Re) ) deallocate(ise%sigma_Re)
+    if ( allocated(ise%sigma_Im) ) deallocate(ise%sigma_Im)
+    call ise%aux_fc%destroy()
+end subroutine
 
         ! ! Store the grid into a Fourier interpolation thingy?
         ! fourierinterpolation: block
@@ -677,112 +661,94 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
     !     ! Now do a fit at all energies?
     ! end block tdepinterpolation
 
-end subroutine
+! !> Construct the dynamical matrix coefficient matrix for a specific q-point
+! subroutine lo_dynamical_matrix_coefficient_matrix_for_single_q(map, qv, coefficientmatrix, uc)
+!     !> forcemap
+!     type(lo_forcemap), intent(in) :: map
+!     !> q-vector
+!     real(r8), dimension(3), intent(in) :: qv
+!     !> coefficient matrix
+!     complex(r8), dimension(:, :), intent(out) :: coefficientmatrix
+!     !> unitcell, in case I want the masses in there
+!     type(lo_crystalstructure), intent(in), optional :: uc
 
-!> Construct the dynamical matrix coefficient matrix for a specific q-point
-subroutine lo_dynamical_matrix_coefficient_matrix_for_single_q(map, qv, coefficientmatrix, uc)
-    !> forcemap
-    type(lo_forcemap), intent(in) :: map
-    !> q-vector
-    real(r8), dimension(3), intent(in) :: qv
-    !> coefficient matrix
-    complex(r8), dimension(:, :), intent(out) :: coefficientmatrix
-    !> unitcell, in case I want the masses in there
-    type(lo_crystalstructure), intent(in), optional :: uc
+!     complex(r8), dimension(:, :, :, :, :), allocatable :: Ck
+!     complex(r8), dimension(9, 9) :: C1
+!     complex(r8) :: expiqr
+!     real(r8) :: k_dot_r
+!     integer :: i, j, k, l, ii, jj, sh, o, a1, a2, ipair
+!     integer :: nx, na, nfc
 
-    complex(r8), dimension(:, :, :, :, :), allocatable :: Ck
-    complex(r8), dimension(9, 9) :: C1
-    complex(r8) :: expiqr
-    real(r8) :: k_dot_r
-    integer :: i, j, k, l, ii, jj, sh, o, a1, a2, ipair
-    integer :: nx, na, nfc
+!     ! Size of things
+!     na = map%n_atom_uc         ! number of atoms
+!     nx = map%xuc%nx_fc_pair    ! dimensions of irreducible IFC
 
-    ! Size of things
-    na = map%n_atom_uc         ! number of atoms
-    nx = map%xuc%nx_fc_pair    ! dimensions of irreducible IFC
+!     if (size(coefficientmatrix, 1) .ne. 3*3*na*na ) then
+!         write (*, *) 'bad dimensions in dynmatrixcoeffM'
+!         stop
+!     end if
+!     if (size(coefficientmatrix, 2) .ne. nx) then
+!         write (*, *) 'bad dimensions in dynmatrixcoeffM'
+!         stop
+!     end if
 
-    if (size(coefficientmatrix, 1) .ne. 3*3*na*na ) then
-        write (*, *) 'bad dimensions in dynmatrixcoeffM'
-        stop
-    end if
-    if (size(coefficientmatrix, 2) .ne. nx) then
-        write (*, *) 'bad dimensions in dynmatrixcoeffM'
-        stop
-    end if
+!     allocate (Ck(3, 3, na, na, nx))
+!     Ck = 0.0_r8
+!     do ipair = 1, map%xuc%n_fc_pair
+!         !write(*,*) 'DANGER INDEX CHECK THIS',__LINE__,__FILE__
+!         a1 = map%xuc%fc_pair(ipair)%i1
+!         a2 = map%xuc%fc_pair(ipair)%i2
+!         sh = map%xuc%fc_pair(ipair)%irreducible_shell
+!         o = map%xuc%fc_pair(ipair)%operation_from_shell
+!         nfc = map%fc_pair_shell(sh)%nx
+!         if (nfc .eq. 0) cycle
+!         ! Get the Fourier transform thingy
+!         k_dot_r = dot_product(map%xuc%fc_pair(ipair)%lv, qv)*lo_twopi
+!         expiqr = cmplx(cos(k_dot_r), sin(k_dot_r), r8)
+!         C1 = 0.0_r8
+!         C1(:, 1:nfc) = matmul(map%op_pair(o)%sotr, map%fc_pair_shell(sh)%coeff)
+!         ! Add to the self-term
+!         do k = 1, nfc
+!             l = map%fc_pair_shell(sh)%ind_global(k)
+!             do i = 1, 3
+!             do j = 1, 3
+!                 ii = (i - 1)*3 + j
+!                 Ck(i, j, a1, a1, l) = Ck(i, j, a1, a1, l) - C1(ii, k)
+!             end do
+!             end do
+!         end do
+!         ! not the self-term
+!         C1 = C1*expiqr
+!         do k = 1, nfc
+!             l = map%fc_pair_shell(sh)%ind_global(k)
+!             do i = 1, 3
+!             do j = 1, 3
+!                 ii = (i - 1)*3 + j
+!                 Ck(i, j, a1, a2, l) = Ck(i, j, a1, a2, l) + C1(ii, k)
+!             end do
+!             end do
+!         end do
+!     end do
 
-    allocate (Ck(3, 3, na, na, nx))
-    Ck = 0.0_r8
-    do ipair = 1, map%xuc%n_fc_pair
-        !write(*,*) 'DANGER INDEX CHECK THIS',__LINE__,__FILE__
-        a1 = map%xuc%fc_pair(ipair)%i1
-        a2 = map%xuc%fc_pair(ipair)%i2
-        sh = map%xuc%fc_pair(ipair)%irreducible_shell
-        o = map%xuc%fc_pair(ipair)%operation_from_shell
-        nfc = map%fc_pair_shell(sh)%nx
-        if (nfc .eq. 0) cycle
-        ! Get the Fourier transform thingy
-        k_dot_r = dot_product(map%xuc%fc_pair(ipair)%lv, qv)*lo_twopi
-        expiqr = cmplx(cos(k_dot_r), sin(k_dot_r), r8)
-        C1 = 0.0_r8
-        C1(:, 1:nfc) = matmul(map%op_pair(o)%sotr, map%fc_pair_shell(sh)%coeff)
-        ! Add to the self-term
-        do k = 1, nfc
-            l = map%fc_pair_shell(sh)%ind_global(k)
-            do i = 1, 3
-            do j = 1, 3
-                ii = (i - 1)*3 + j
-                Ck(i, j, a1, a1, l) = Ck(i, j, a1, a1, l) - C1(ii, k)
-            end do
-            end do
-        end do
-        ! not the self-term
-        C1 = C1*expiqr
-        do k = 1, nfc
-            l = map%fc_pair_shell(sh)%ind_global(k)
-            do i = 1, 3
-            do j = 1, 3
-                ii = (i - 1)*3 + j
-                Ck(i, j, a1, a2, l) = Ck(i, j, a1, a2, l) + C1(ii, k)
-            end do
-            end do
-        end do
-    end do
+!     ! Put this in the right place
+!     coefficientmatrix = 0.0_r8
+!     jj = 0
+!     do a1 = 1, na
+!     do a2 = 1, na
+!         do i = 1, 3
+!         do j = 1, 3
+!             jj = jj + 1
+!             if (present(uc)) then
+!                 coefficientmatrix(jj, :) = lo_chop(Ck(i, j, a1, a2, :), lo_sqtol)*uc%invsqrtmass(a1)*uc%invsqrtmass(a2)
+!             else
+!                 coefficientmatrix(jj, :) = lo_chop(Ck(i, j, a1, a2, :), lo_sqtol)
+!             end if
+!         end do
+!         end do
+!     end do
+!     end do
 
-    ! Put this in the right place
-    coefficientmatrix = 0.0_r8
-    jj = 0
-    do a1 = 1, na
-    do a2 = 1, na
-        do i = 1, 3
-        do j = 1, 3
-            jj = jj + 1
-            if (present(uc)) then
-                coefficientmatrix(jj, :) = lo_chop(Ck(i, j, a1, a2, :), lo_sqtol)*uc%invsqrtmass(a1)*uc%invsqrtmass(a2)
-            else
-                coefficientmatrix(jj, :) = lo_chop(Ck(i, j, a1, a2, :), lo_sqtol)
-            end if
-        end do
-        end do
-    end do
-    end do
-
-    deallocate (Ck)
-end subroutine
-
-subroutine destroy_interpolated_selfenergy(ise)
-    class(lo_interpolated_selfenergy_grid), intent(inout) :: ise
-
-    call ise%box%destroy()
-    if ( allocated(ise%qp) ) then
-        call ise%qp%destroy(ise%qp)
-    endif
-    ise%n_energy=-lo_hugeint
-    if ( allocated(ise%omega   ) ) deallocate(ise%omega   )
-    if ( allocated(ise%sigma_Re) ) deallocate(ise%sigma_Re)
-    if ( allocated(ise%sigma_Im) ) deallocate(ise%sigma_Im)
-    call ise%aux_fc%destroy()
-end subroutine
-
-
+!     deallocate (Ck)
+! end subroutine
 
 end module
