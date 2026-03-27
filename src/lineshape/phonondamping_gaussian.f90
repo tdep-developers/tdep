@@ -48,7 +48,7 @@ subroutine isotope_imaginary_selfenergy_gaussian(wp, qp, dr, se, sr, mw, mem, ve
             case (2)
                 do b2 = 1, dr%n_mode
                     v0 = dr%iq(q)%vel(:, b2)
-                    sigma(b2) = qp%smearingparameter(v0, dr%default_smearing(b2), se%smearing_prefactor)
+                    sigma(b2) = qp%adaptive_sigma(v0, dr%default_smearing(b2), se%smearing_prefactor)
                 end do
             end select
             ! Get the prefactor
@@ -85,7 +85,7 @@ subroutine isotope_imaginary_selfenergy_gaussian(wp, qp, dr, se, sr, mw, mem, ve
             case (2)
                 do b2 = 1, dr%n_mode
                     v0 = dr%aq(q)%vel(:, b2)
-                    sigma(b2) = qp%smearingparameter(v0, dr%default_smearing(b2), se%smearing_prefactor)
+                    sigma(b2) = qp%adaptive_sigma(v0, dr%default_smearing(b2), se%smearing_prefactor)
                 end do
             end select
             ! Get the prefactor
@@ -193,8 +193,8 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
                         s3 = dr%default_smearing(b3)
                         sigma = sqrt(s2**2 + s3**2)
                     case (2)
-                        s2 = qp%adaptive_sigma(qp%ip(q)%radius, dr%iq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
-                        s3 = qp%adaptive_sigma(qp%ip(q)%radius, dr%iq(q)%vel(:, b3), dr%default_smearing(b3), se%smearing_prefactor)
+                        s2 = qp%adaptive_sigma( dr%iq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
+                        s3 = qp%adaptive_sigma( dr%iq(q)%vel(:, b3), dr%default_smearing(b3), se%smearing_prefactor)
                         sigma = sqrt(s2**2 + s3**2)
                         !v0=dr%iq(q)%vel(:,b2)
                         !v1=dr%iq(q)%vel(:,b3)
@@ -287,8 +287,8 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
                             ! sigma=sqrt(s2**2 + s3**2)
                             sigma = 1.0_r8*lo_frequency_THz_to_Hartree
                         case (2)
-                            s2 = qp%adaptive_sigma(qp%ap(q)%radius, dr%aq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
-                            s3 = qp%adaptive_sigma(qp%ap(q)%radius, sr%vel3(:, b3, q), dr%default_smearing(b3), se%smearing_prefactor)
+                            s2 = qp%adaptive_sigma( dr%aq(q)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
+                            s3 = qp%adaptive_sigma( sr%vel3(:, b3, q), dr%default_smearing(b3), se%smearing_prefactor)
                             sigma = sqrt(s2**2 + s3**2)
                         end select
                         ! fetch frequencies

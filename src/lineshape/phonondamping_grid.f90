@@ -148,7 +148,7 @@ module subroutine get_selfenergy_on_closed_grid(sf, tc, pd, qp, dr, uc, fc, fct,
                     buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
                     call evaluate_spectral_function(se%energy_axis, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(iq)%omega(imode), buf_spectral(:, imode))
 
-                    sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), opts%sigma)
+                    sigma = qp%adaptive_sigma( dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), opts%sigma)
                     buf_spectral_smeared(:, imode) = buf_spectral(:, imode)
                     call gaussian_smear_spectral_function(se%energy_axis, sigma, buf_spectral_smeared(:, imode))
                     ! Normalize both.

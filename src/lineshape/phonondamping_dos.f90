@@ -153,7 +153,7 @@ module subroutine get_intensity_as_dos(pd, qpd, drd, uc, fc, fct, fcf, ise, sf, 
                 buf_spectralfunction(:, imode) = buf1
 
                 ! Smear spectral function
-                sigma = qpd%adaptive_sigma(qpd%ip(iq)%radius, drd%iq(iq)%vel(:, imode), drd%default_smearing(imode), pd%smearing_prefactor)
+                sigma = qpd%adaptive_sigma( drd%iq(iq)%vel(:, imode), drd%default_smearing(imode), pd%smearing_prefactor)
                 call gaussian_smear_spectral_function(se%energy_axis, sigma, buf1)
                 ! Normalize it after smearing? Probably a good idea.
                 buf1 = buf1/lo_trapezoid_integration(se%energy_axis, buf1)
@@ -438,7 +438,7 @@ module subroutine get_intensity_as_dos_interp(pd, tc, qp, dr, uc, ise, opts, mw,
                 call evaluate_spectral_function(pd%omega, buf_Im(:, imode), buf_Re(:, imode), dr%iq(iq)%omega(imode), buf0)
                 ! Taper, smear and normalize
                 buf1 = buf0*taper
-                sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), pd%smearing_prefactor)
+                sigma = qp%adaptive_sigma( dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), pd%smearing_prefactor)
                 call gaussian_smear_spectral_function(ise%energy, sigma, buf1)
                 buf1 = buf1/lo_trapezoid_integration(ise%energy, buf1)
 

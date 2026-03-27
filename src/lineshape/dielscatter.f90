@@ -388,8 +388,8 @@ subroutine generate(dir, wp, di, p, qp, dr, fc, fct, se, isf, opts, tmr, mw, mem
                 select case (opts%integrationtype)
                 case (5)
                     ! Smear?
-                    sigma2 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, b1), dr%default_smearing(b1), se%smearing_prefactor)
-                    sigma3 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
+                    sigma2 = qp%adaptive_sigma( dr%iq(iq)%vel(:, b1), dr%default_smearing(b1), se%smearing_prefactor)
+                    sigma3 = qp%adaptive_sigma( dr%iq(iq)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
                     sigma = sqrt(sigma2**2 + sigma3**2)
 
                     call ch%convolute_to_sfun(b1, b2, sigma, sabfun)
@@ -406,8 +406,8 @@ subroutine generate(dir, wp, di, p, qp, dr, fc, fct, se, isf, opts, tmr, mw, mem
                         s1 = dr%default_smearing(b1)
                         s2 = dr%default_smearing(b2)
                     case (2)
-                        s1 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, b1), dr%default_smearing(b1), se%smearing_prefactor)
-                        s2 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
+                        s1 = qp%adaptive_sigma( dr%iq(iq)%vel(:, b1), dr%default_smearing(b1), se%smearing_prefactor)
+                        s2 = qp%adaptive_sigma( dr%iq(iq)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
                     end select
                     sigma = sqrt(s1**2 + s2**2)
 

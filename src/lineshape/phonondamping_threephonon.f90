@@ -75,7 +75,7 @@ subroutine convolution_imaginary_selfenergy(se, wp, qp, dr, sr, ise, isf, p, tem
                     ! This is the closed-grid or Gamma-point case, where everything has been prepared beforehand.
                     ! Get the smearing parameters per mode?
                     do imode = 1, dr%n_mode
-                        buf_sigma2(imode) = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), se%smearing_prefactor)
+                        buf_sigma2(imode) = qp%adaptive_sigma( dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), se%smearing_prefactor)
                         buf_sigma3(imode) = buf_sigma2(imode)
                     end do
                     ! Pre-fetch the spectral functions
@@ -125,8 +125,8 @@ subroutine convolution_imaginary_selfenergy(se, wp, qp, dr, sr, ise, isf, p, tem
                     if (dr%iq(iq)%omega(mode2) .lt. lo_freqtol) cycle
                     if (dr%iq(iq)%omega(mode3) .lt. lo_freqtol) cycle
                     ! Smear?
-                    sigma2 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
-                    sigma3 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, mode3), dr%default_smearing(mode3), se%smearing_prefactor)
+                    sigma2 = qp%adaptive_sigma( dr%iq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
+                    sigma3 = qp%adaptive_sigma( dr%iq(iq)%vel(:, mode3), dr%default_smearing(mode3), se%smearing_prefactor)
                     sigma = sqrt(sigma2**2 + sigma3**2)
                     call ch%convolute_to_sfun(mode2, mode3, sigma, buf_sfun)
 
@@ -149,7 +149,7 @@ subroutine convolution_imaginary_selfenergy(se, wp, qp, dr, sr, ise, isf, p, tem
                 pref = isotope_prefactor*qp%ip(iq)%integration_weight
                 do mode2 = 1, dr%n_mode
                     buf_sfun = isf%spectralfunction(:, mode2, iq)
-                    sigma2 = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
+                    sigma2 = qp%adaptive_sigma( dr%iq(iq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
                     call gaussian_smear_spectral_function(se%energy_axis, sigma2, buf_sfun)
                     do mode1 = 1, dr%n_mode
                         se%im_iso(:, mode1) = se%im_iso(:, mode1) + buf_sfun*sr%psi_iso(mode1, mode2, iq)*pref
@@ -225,8 +225,8 @@ subroutine convolution_imaginary_selfenergy(se, wp, qp, dr, sr, ise, isf, p, tem
                     if (dr%iq(jq)%omega(mode2) .lt. lo_freqtol) cycle
                     if (dr%iq(kq)%omega(mode3) .lt. lo_freqtol) cycle
                     ! Smear?
-                    sigma2 = qp%adaptive_sigma(qp%ip(jq)%radius, dr%iq(jq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
-                    sigma3 = qp%adaptive_sigma(qp%ip(kq)%radius, dr%iq(kq)%vel(:, mode3), dr%default_smearing(mode3), se%smearing_prefactor)
+                    sigma2 = qp%adaptive_sigma( dr%iq(jq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
+                    sigma3 = qp%adaptive_sigma( dr%iq(kq)%vel(:, mode3), dr%default_smearing(mode3), se%smearing_prefactor)
                     sigma = sqrt(sigma2**2 + sigma3**2)
 
                     ! ! Do the convolution over modes
@@ -254,7 +254,7 @@ subroutine convolution_imaginary_selfenergy(se, wp, qp, dr, sr, ise, isf, p, tem
                 pref = isotope_prefactor*qp%ap(iq)%integration_weight
                 do mode2 = 1, dr%n_mode
                     buf_sfun = isf%spectralfunction(:, mode2, jq)
-                    sigma2 = qp%adaptive_sigma(qp%ip(jq)%radius, dr%iq(jq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
+                    sigma2 = qp%adaptive_sigma( dr%iq(jq)%vel(:, mode2), dr%default_smearing(mode2), se%smearing_prefactor)
                     call gaussian_smear_spectral_function(se%energy_axis, sigma2, buf_sfun)
                     do mode1 = 1, dr%n_mode
                         se%im_iso(:, mode1) = se%im_iso(:, mode1) + buf_sfun*sr%psi_iso(mode1, mode2, iq)*pref

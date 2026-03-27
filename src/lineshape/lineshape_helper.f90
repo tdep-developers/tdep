@@ -291,7 +291,7 @@ subroutine smear_spectralfunction(sf, qp, dr, maxf, smearing_prefactor, mw, mem)
         l = l + 1
         do imode = 1, dr%n_mode
             if (dr%iq(iq)%omega(imode) .gt. lo_freqtol) then
-                sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
+                sigma = qp%adaptive_sigma(dr%iq(iq)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
                 sm_buf(:, imode, l) = sf%spectralfunction(:, imode, iq)
 
                 call gaussian_smear_spectral_function(buf0, sigma, sm_buf(:, imode, l))
