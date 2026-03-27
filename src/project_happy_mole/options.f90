@@ -162,8 +162,6 @@ subroutine parse(opts)
     call cli%get(switch='--fourthorder', val=opts%fourthorder)
     call cli%get(switch='--nondiagonal', val=dumlog)
     opts%diagonal = .not. dumlog
-    !call cli%get(switch='--nosym', val=opts%nosym)
-
     call cli%get(switch='--convolution', val=opts%convolution)
 
     ! Not really options

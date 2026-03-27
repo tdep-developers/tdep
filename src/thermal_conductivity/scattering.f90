@@ -126,7 +126,8 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                     sr%be(q1, b1) = lo_planck(opts%temperature, dr%iq(q1)%omega(b1))
                 end if
 
-                sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), opts%sigma)**2
+                !sr%sigsq(q1, b1) = qp%smearingparameter(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), opts%sigma)**2
+                sr%sigsq(q1, b1) = qp%adaptive_sigma(dr%iq(q1)%vel(:, b1), dr%default_smearing(b1), opts%sigma)**2
             end do
         end do
 

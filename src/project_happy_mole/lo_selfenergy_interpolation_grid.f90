@@ -164,7 +164,7 @@ module subroutine spectral_function_grid_rough(ise, uc, fc, qp, smearing_prefact
 
                 ! Smear spectral function
                 call lo_evaluate_spectral_function(ise%omega, buf_sigmaIm(:, imode), buf_sigmaRe(:, imode), dr%iq(i)%omega(imode), buf_spectral(:, imode))
-                sigma = qp%adaptive_sigma(qp%ip(iq)%radius, dr%iq(i)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
+                sigma = qp%adaptive_sigma( dr%iq(i)%vel(:, imode), dr%default_smearing(imode), smearing_prefactor)
                 call lo_gaussian_smear_spectral_function(ise%omega, sigma, buf_spectral(:, imode))
                 ! Normalize
                 f0 = lo_trapezoid_integration(ise%omega, buf_spectral(:, imode))

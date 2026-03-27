@@ -434,12 +434,7 @@ module subroutine build_grid(qp,p,mw,mem,verbosity,nosymmetry)
 
         ! Get the q-radius per point, simplest possible way
         f0=( 3.0_r8/p%volume/real(qp%n_full_point,r8)/4.0_r8/lo_pi )**(1.0_r8/3.0_r8)
-        do i=1,qp%n_irr_point
-            qp%ip(i)%radius=f0
-        enddo
-        do i=1,qp%n_full_point
-            qp%ap(i)%radius=f0
-        enddo
+        qp%effective_radius=f0
 
         if ( verbosity .gt. 0 ) then
             t1=walltime()

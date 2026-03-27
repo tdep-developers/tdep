@@ -258,6 +258,17 @@ else
     end block calculateselfenergy
 endif
 
+! So, once we have the self-energy it might be a reasonable idea
+! to generate the kernel (I - K \Pi)^{-1} \Pi in some smart representation.
+buildkernel: block
+    type(lo_scattering_matrix) :: scm
+
+    ! So. I guess the reasonable quantity to look for is building the
+    ! collision matrix somehow. Let's try to build it on the Sigma-mesh for fun.
+    call scm%generate(uc,fc2,fc3,ise,opts%temperature,dqp,opts%sigma,mw,mem,opts%verbosity)
+
+end block buildkernel
+
 postselfenergy: block
 
         ! ! Generate a bubble-only thermal transport (for now)

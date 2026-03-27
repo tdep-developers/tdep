@@ -39,6 +39,9 @@ subroutine lo_evaluate_spectral_function(bigOmega, sigmaIm, sigmaRe, omega, spec
     real(r8) :: f0, f1, f2
     integer :: i
 
+    ! I need to safeguard in case the imaginary component at the
+    ! harmonic frequency is basically zero.
+
     ! calculate the intensity
     do i = 1, size(bigOmega)
         f0 = 2*omega*sigmaIm(i)*2*omega/lo_pi

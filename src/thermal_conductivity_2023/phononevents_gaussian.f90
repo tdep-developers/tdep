@@ -89,9 +89,9 @@ subroutine threephonon_gaussian_oneqp(qp, dr, scq, gi1, thres, smearing_prefacto
                 sigma = (1.0_r8*lo_frequency_THz_to_Hartree)*smearing_prefactor
             case (2)
                 !sigma=qp%smearingparameter(vel2(:,b2)-vel3(:,b3),(dr%default_smearing(b2)+dr%default_smearing(b3))*0.5_r8,smearing_prefactor)
-                sig1 = qp%adaptive_sigma(qp%ap(gi1)%radius, vel1(:, b1), dr%default_smearing(b1), smearing_prefactor)
-                sig2 = qp%adaptive_sigma(qp%ap(gi2)%radius, vel2(:, b2), dr%default_smearing(b2), smearing_prefactor)
-                sig3 = qp%adaptive_sigma(qp%ap(gi3)%radius, vel3(:, b3), dr%default_smearing(b3), smearing_prefactor)
+                sig1 = qp%adaptive_sigma( vel1(:, b1), dr%default_smearing(b1), smearing_prefactor)
+                sig2 = qp%adaptive_sigma( vel2(:, b2), dr%default_smearing(b2), smearing_prefactor)
+                sig3 = qp%adaptive_sigma( vel3(:, b3), dr%default_smearing(b3), smearing_prefactor)
                 sigma = sqrt(sig1**2 + sig2**2 + sig3**2)
                 !sigma=sqrt(sig2**2 + sig3**2)
             end select
@@ -155,9 +155,9 @@ subroutine threephonon_gaussian_oneqp(qp, dr, scq, gi1, thres, smearing_prefacto
                 ! sigma=sqrt(sig1**2 + sig2**2 + sig3**2)
                 sigma = (1.0_r8*lo_frequency_THz_to_Hartree)*smearing_prefactor
             case (2)
-                sig1 = qp%adaptive_sigma(qp%ap(gi1)%radius, vel1(:, b1), dr%default_smearing(b1), smearing_prefactor)
-                sig2 = qp%adaptive_sigma(qp%ap(gi2)%radius, vel2(:, b2), dr%default_smearing(b2), smearing_prefactor)
-                sig3 = qp%adaptive_sigma(qp%ap(gi3)%radius, vel3(:, b3), dr%default_smearing(b3), smearing_prefactor)
+                sig1 = qp%adaptive_sigma( vel1(:, b1), dr%default_smearing(b1), smearing_prefactor)
+                sig2 = qp%adaptive_sigma( vel2(:, b2), dr%default_smearing(b2), smearing_prefactor)
+                sig3 = qp%adaptive_sigma( vel3(:, b3), dr%default_smearing(b3), smearing_prefactor)
                 sigma = sqrt(sig1**2 + sig2**2 + sig3**2)
                 !sigma=sqrt(sig2**2 + sig3**2)
             end select
@@ -237,7 +237,7 @@ subroutine iso_gaussian_oneqp(qp, dr, scq, gi1, thres, smearing_adjustment, inte
                 case (1)
                     sigma = (1.0_r8*lo_frequency_THz_to_Hartree)*smearing_adjustment
                 case (2)
-                    sigma = qp%smearingparameter(dr%aq(gi2)%vel(:, b2), dr%default_smearing(b2), smearing_adjustment)
+                    sigma = qp%adaptive_sigma(dr%aq(gi2)%vel(:, b2), dr%default_smearing(b2), smearing_adjustment)
                 end select
 
                 if (abs(om1 - om2) .lt. thres*sigma) then
@@ -272,7 +272,7 @@ subroutine iso_gaussian_oneqp(qp, dr, scq, gi1, thres, smearing_adjustment, inte
                 case (1)
                     sigma = (1.0_r8*lo_frequency_THz_to_Hartree)*smearing_adjustment
                 case (2)
-                    sigma = qp%smearingparameter(dr%aq(gi2)%vel(:, b2), dr%default_smearing(b2), smearing_adjustment)
+                    sigma = qp%adaptive_sigma(dr%aq(gi2)%vel(:, b2), dr%default_smearing(b2), smearing_adjustment)
                 end select
 
                 if (abs(om1 - om2) .lt. thres*sigma) then

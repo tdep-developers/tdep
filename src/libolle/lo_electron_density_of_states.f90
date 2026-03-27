@@ -412,14 +412,14 @@ subroutine get_electron_dos_smearing(ed,p,kp,edr,integrationtype,smearing_adjust
                     case(4)
                         ! Semi-adaptive Gaussian smearing
                         sigma=edr%default_smearing(iband,ispin)*smearing_adjustment*2
-                    case(5)
-                        ! Even more adaptive gaussian smearing thing
-                        f0=norm2(edr%ik(ikp)%groupvelocity(:,iband,ispin))
-                        f0=f0*kp%ip(ikp)%radius
-                        sigma=f0*smearing_adjustment
-                        ! Don't make the smearing parameter too agressive.
-                        sigma=max(sigma,avgsigma/10)
-                        sigma=min(sigma,avgsigma*10)
+                    ! case(5)
+                    !     ! Even more adaptive gaussian smearing thing
+                    !     f0=norm2(edr%ik(ikp)%groupvelocity(:,iband,ispin))
+                    !     f0=f0*kp%ip(ikp)%radius
+                    !     sigma=f0*smearing_adjustment
+                    !     ! Don't make the smearing parameter too agressive.
+                    !     sigma=max(sigma,avgsigma/10)
+                    !     sigma=min(sigma,avgsigma*10)
                     end select
                     fivesigma=5*sigma
 
@@ -433,33 +433,33 @@ subroutine get_electron_dos_smearing(ed,p,kp,edr,integrationtype,smearing_adjust
                         ed%pdos_band(ie,iband,ispin)=ed%pdos_band(ie,iband,ispin)+f1
                     enddo
                 end block gaussfamily
-                case(6)
-                spherefamily: block
-                    real(r8) :: f0,f1,grad,igrad,r,bigrsq,rsq,deltae,prefactor
-                    integer :: ie,ii,jj
+                ! case(6)
+                ! spherefamily: block
+                !     real(r8) :: f0,f1,grad,igrad,r,bigrsq,rsq,deltae,prefactor
+                !     integer :: ie,ii,jj
 
-                    ! Linear sphere thing, not sure if meaningful.
-                    grad=norm2(edr%ik(ikp)%groupvelocity(:,iband,ispin))
-                    ! insert tolerance here. If no gradient, revert to adaptive Gaussian.
-                    if ( grad .lt. 1E-10_r8 ) cycle
+                !     ! Linear sphere thing, not sure if meaningful.
+                !     grad=norm2(edr%ik(ikp)%groupvelocity(:,iband,ispin))
+                !     ! insert tolerance here. If no gradient, revert to adaptive Gaussian.
+                !     if ( grad .lt. 1E-10_r8 ) cycle
 
-                    igrad=1.0_r8/grad
-                    r=kp%ip(ikp)%radius
-                    deltae=grad*r
-                    bigrsq=r**2
-                    prefactor=3.0_r8*igrad/(2*r**3)
+                !     igrad=1.0_r8/grad
+                !     r=kp%ip(ikp)%radius
+                !     deltae=grad*r
+                !     bigrsq=r**2
+                !     prefactor=3.0_r8*igrad/(2*r**3)
 
-                    f0=edr%ik(ikp)%eigenvalue(iband,ispin)
-                    ii=max(floor( (f0-totmine-deltae)*invf ),1)
-                    jj=min(ceiling( (f0-totmine+deltae)*invf ),ed%n_dos_point)
-                    do ie=ii,jj
-                        rsq=bigrsq-((ed%energy(ie)-f0)*igrad)**2
-                        if ( rsq .lt. 0.0_r8 ) cycle
-                        f1=prefactor*rsq*kp%ip(ikp)%integration_weight
-                        ed%pdos_band(ie,iband,ispin)=ed%pdos_band(ie,iband,ispin)+f1
-                    enddo
+                !     f0=edr%ik(ikp)%eigenvalue(iband,ispin)
+                !     ii=max(floor( (f0-totmine-deltae)*invf ),1)
+                !     jj=min(ceiling( (f0-totmine+deltae)*invf ),ed%n_dos_point)
+                !     do ie=ii,jj
+                !         rsq=bigrsq-((ed%energy(ie)-f0)*igrad)**2
+                !         if ( rsq .lt. 0.0_r8 ) cycle
+                !         f1=prefactor*rsq*kp%ip(ikp)%integration_weight
+                !         ed%pdos_band(ie,iband,ispin)=ed%pdos_band(ie,iband,ispin)+f1
+                !     enddo
 
-                end block spherefamily
+                ! end block spherefamily
                 end select
             enddo
 

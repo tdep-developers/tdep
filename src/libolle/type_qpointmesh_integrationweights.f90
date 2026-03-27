@@ -635,40 +635,40 @@ module pure function lo_LV_tetrahedron_fermi(ein,z,temperature,tol) result(weigh
     end block getwts
 end function
 
-!> The smearing parameter for adaptive gaussian smearing
-module pure function smearingparameter(qp,gradient,sigma,adaptiveparameter) result(w)
-    !
-    ! I add a small safety feature, the sigma is my usual sensible default
-    ! and I don't want the adaptive one to get too far from this since that
-    ! can create some strange spikes
-    !
-    !> The q-mesh
-    class(lo_qpoint_mesh), intent(in) :: qp
-    !> The gradient at this point
-    real(r8), dimension(3), intent(in) :: gradient
-    !> The base smearing
-    real(r8), intent(in) :: sigma
-    !> The scaling factor
-    real(r8), intent(in) :: adaptiveparameter
-    !> the resulting sigma
-    real(r8) :: w
-    !
-    integer :: i
-    !
-    w=0.0_r8
-    do i=1,3
-        w=w+dot_product(abs(gradient),qp%scaledrecbasis(:,i))**2
-    enddo
-    w=sqrt(w*0.083333333333_r8)*adaptiveparameter
-    ! I make sure the smearing does not get too large or small
-    w=min(w,adaptiveparameter*sigma*4.0_r8)
-    w=max(w,adaptiveparameter*sigma*0.25_r8)
-end function
+! !> The smearing parameter for adaptive gaussian smearing
+! module pure function smearingparameter(qp,gradient,sigma,adaptiveparameter) result(w)
+!     !
+!     ! I add a small safety feature, the sigma is my usual sensible default
+!     ! and I don't want the adaptive one to get too far from this since that
+!     ! can create some strange spikes
+!     !
+!     !> The q-mesh
+!     class(lo_qpoint_mesh), intent(in) :: qp
+!     !> The gradient at this point
+!     real(r8), dimension(3), intent(in) :: gradient
+!     !> The base smearing
+!     real(r8), intent(in) :: sigma
+!     !> The scaling factor
+!     real(r8), intent(in) :: adaptiveparameter
+!     !> the resulting sigma
+!     real(r8) :: w
+!     !
+!     integer :: i
+!     !
+!     w=0.0_r8
+!     do i=1,3
+!         w=w+dot_product(abs(gradient),qp%scaledrecbasis(:,i))**2
+!     enddo
+!     w=sqrt(w*0.083333333333_r8)*adaptiveparameter
+!     ! I make sure the smearing does not get too large or small
+!     w=min(w,adaptiveparameter*sigma*4.0_r8)
+!     w=max(w,adaptiveparameter*sigma*0.25_r8)
+! end function
 
 !> The smearing parameter for adaptive gaussian smearing
-module pure function adaptive_sigma(radius,gradient,default_sigma,scale) result(sigma)
-    !> radius of this q-point that give appropriate volume
-    real(r8), intent(in) :: radius
+module pure function adaptive_sigma(qp,gradient,default_sigma,scale) result(sigma)
+    !> q-point mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
     !> gradient at this point
     real(r8), dimension(3), intent(in) :: gradient
     !> baseline sensible smearing
@@ -682,7 +682,7 @@ module pure function adaptive_sigma(radius,gradient,default_sigma,scale) result(
     real(r8), parameter :: smallfactor=1.0_r8/4.0_r8       ! smallest multiple of baseline
     real(r8), parameter :: prefactor=lo_twopi/sqrt(2.0_r8) ! prefactor that takes care of 2pi and stuff.
 
-    sigma=scale*prefactor*radius*norm2(gradient)
+    sigma=scale*prefactor*qp%effective_radius*norm2(gradient)
     sigma=max(default_sigma*smallfactor*scale,sigma)
     sigma=min(default_sigma*largefactor*scale,sigma)
 end function
@@ -1393,17 +1393,6 @@ module subroutine voronoi_integration_weights(qp,p,mw,mem,integration_error,verb
         enddo
         ! sync
         call mw%allreduce('sum',wts)
-
-        ! Before we deal with multiplicities, make sure I store away the relevant radius per point
-        do ipt=1,qp%n_irr_point
-            f0=(3.0_r8*wts(ipt)/4.0_r8/lo_pi)**(1.0_r8/3.0_r8)
-            qp%ip(ipt)%radius=f0
-        enddo
-        do ipt=1,qp%n_full_point
-            jpt=qp%ap(ipt)%irreducible_index
-            f0=(3.0_r8*wts(jpt)/4.0_r8/lo_pi)**(1.0_r8/3.0_r8)
-            qp%ap(ipt)%radius=f0
-        enddo
 
         ! Take care of multiplicity
         do ipt=1,qp%n_full_point

@@ -305,7 +305,7 @@ subroutine lo_generate_distributed_dispersions(dr,qp,p,fc,smearing_prefactor,mw,
             iq=dr%iq(i)%global_irreducible_index
             do imode=1,dr%n_mode
                 if ( dr%iq(i)%omega(imode) .gt. lo_freqtol ) then
-                    dr%iq(i)%sigma(imode) = qp%adaptive_sigma( qp%ip(iq)%radius,dr%iq(i)%vel(:,imode),dr%default_smearing(imode),smearing_prefactor)
+                    dr%iq(i)%sigma(imode) = qp%adaptive_sigma( dr%iq(i)%vel(:,imode),dr%default_smearing(imode),smearing_prefactor)
                 else
                     dr%iq(i)%sigma(imode) = -1.0_r8
                 endif

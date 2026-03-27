@@ -654,13 +654,10 @@ subroutine write_irreducible_to_hdf5(dr, qp, uc, filename, mem)
     type(lo_mem_helper), intent(inout) :: mem
 
     type(lo_hdf5_helper) :: h5
-    real(r8), dimension(:, :, :, :), allocatable :: dddd
     real(r8), dimension(:, :, :), allocatable :: ddd
     real(r8), dimension(:, :), allocatable :: dd
     real(r8), dimension(:), allocatable :: di
-    real(r8), dimension(3) :: v0, v1
-    real(r8) :: n1, n, f0, omega, cv, tau
-    integer :: i, j, k, l
+    integer :: i
     character(len=1000) :: dname
 
     call h5%init(__FILE__, __LINE__)

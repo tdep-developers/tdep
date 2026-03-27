@@ -210,7 +210,7 @@ module subroutine spectral_angular_momentum(pd, uc, qp, dr, temperature, mw, mem
                         case (1) ! fix gaussian
                             sigma = dr%default_smearing(mode)*pd%smearing_prefactor
                         case (2) ! adaptive gaussian
-                            sigma = qp%smearingparameter(dr%iq(iq)%vel(:, mode), dr%default_smearing(mode), pd%smearing_prefactor)
+                            sigma = qp%adaptive_sigma(dr%iq(iq)%vel(:,mode),dr%default_smearing(mode),pd%smearing_prefactor)
                         end select
                         foursigma = sigma*4
 
@@ -575,7 +575,7 @@ module subroutine spectral_kappa(pd, uc, qp, dr, mw, mem, spec_kappa, spec_kappa
                         case (1) ! fix gaussian
                             sigma = dr%default_smearing(mode)*pd%smearing_prefactor
                         case (2) ! adaptive gaussian
-                            sigma = qp%smearingparameter(dr%iq(iq)%vel(:, mode), dr%default_smearing(mode), pd%smearing_prefactor)
+                            sigma = qp%adaptive_sigma(dr%iq(iq)%vel(:,mode),dr%default_smearing(mode),pd%smearing_prefactor)
                         end select
                         foursigma = sigma*4
 
@@ -973,8 +973,7 @@ module subroutine lo_get_phonon_dos_gaussian(pd, qp, dr, mw, verbosity)
             case (1) ! fix gaussian
                 sigma = dr%default_smearing(j)*pd%smearing_prefactor
             case (2) ! adaptive gaussian
-                sigma = qp%adaptive_sigma(qp%ip(q)%radius, dr%iq(q)%vel(:, j), dr%default_smearing(j), pd%smearing_prefactor)
-                !sigma=qp%smearingparameter(dr%iq(q)%vel(:,j),dr%default_smearing(j),pd%smearing_prefactor)
+                sigma = qp%adaptive_sigma(dr%iq(q)%vel(:, j), dr%default_smearing(j), pd%smearing_prefactor)
             end select
             foursigma = sigma*nsigma
 

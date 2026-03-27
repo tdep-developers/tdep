@@ -77,8 +77,6 @@ type, extends(lo_qpoint) :: lo_qpoint_fullgrid
     integer :: operation_from_irreducible=-lo_hugeint
     !> What is the integration weight. Normalized wuch that sum(weight)=1
     real(r8) :: integration_weight=-lo_huge
-    !> Radius of sphere that gives the same volume as the volume element the q-point represents, not taking weight into account
-    real(r8) :: radius=-lo_huge
 end type
 
 !> A q-point in the irreducible wedge
@@ -93,8 +91,6 @@ type, extends(lo_qpoint) :: lo_qpoint_irrwedge
     integer, dimension(:), allocatable :: index_full_point
     !> which symmetry operation does the transformation to the index specified above
     integer, dimension(:), allocatable :: operation_full_point
-    !> Radius of sphere that gives the same volume as the volume element the q-point represents, not taking weight into account
-    real(r8) :: radius=-lo_huge
 end type
 
 !> A q-point along a path in the Brillouin zone
@@ -125,18 +121,17 @@ type :: lo_qpoint_mesh
     type(lo_qptetrahedron), allocatable, dimension(:) :: at
 
     ! Some private things
+    real(r8), private :: effective_radius=-lo_hugeint
 
     !> scaled reciprocal basis for adaptive gaussian smearing
-    real(r8), dimension(3,3), private :: scaledrecbasis
+    !real(r8), dimension(3,3), private :: scaledrecbasis
     !> does the property on the mesh have time reversal symmetry
     logical :: timereversal=.false.
     !> Which operations are ok to test with? Only relevant in weird cases
     logical, dimension(:), allocatable :: operationok
     contains
-        !> Get the adaptive gaussian smearing parameter
-        procedure :: smearingparameter
         !> Updated way of determining smearing parameter
-        procedure, nopass :: adaptive_sigma
+        procedure :: adaptive_sigma
         !> Write it to file
         procedure :: write_to_file
         !> Write human readable information to an hdf5 handle
@@ -301,15 +296,8 @@ interface
         real(r8), intent(in) :: tol
         real(r8) :: weight
     end function
-    module pure function smearingparameter(qp,gradient,sigma,adaptiveparameter) result(w)
+    module pure function adaptive_sigma(qp,gradient,default_sigma,scale) result(sigma)
         class(lo_qpoint_mesh), intent(in) :: qp
-        real(r8), dimension(3), intent(in) :: gradient
-        real(r8), intent(in) :: sigma
-        real(r8), intent(in) :: adaptiveparameter
-        real(r8) :: w
-    end function
-    module pure function adaptive_sigma(radius,gradient,default_sigma,scale) result(sigma)
-        real(r8), intent(in) :: radius
         real(r8), dimension(3), intent(in) :: gradient
         real(r8), intent(in) :: default_sigma
         real(r8), intent(in) :: scale
@@ -617,27 +605,30 @@ subroutine lo_generate_qmesh(qp,uc,griddensity,meshtype,timereversal,headrankonl
             end select
         endif
 
-        ! Store the scaled basis for adaptive gaussian smearing
-        ! Should be done in a better place, perhaps. Also should
-        ! be done better in general.
-        select type(qp)
-        type is (lo_monkhorst_pack_mesh)
-            qp%scaledrecbasis=uc%reciprocal_latticevectors*lo_twopi
-            qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/griddensity(1)
-            qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/griddensity(2)
-            qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/griddensity(3)
-        type is (lo_fft_mesh)
-            qp%scaledrecbasis=uc%reciprocal_latticevectors*lo_twopi
-            qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/griddensity(1)
-            qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/griddensity(2)
-            qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/griddensity(3)
-        type is (lo_wedge_mesh)
-            ! Do nothing
-        type is(lo_commensurate_mesh)
-            ! Do nothing
-        class default
-            call lo_stop_gracefully(['unknown mesh type'],lo_exitcode_param,__FILE__,__LINE__,mw%comm)
-        end select
+        ! Store the effective radius per point.
+
+
+        ! ! Store the scaled basis for adaptive gaussian smearing
+        ! ! Should be done in a better place, perhaps. Also should
+        ! ! be done better in general.
+        ! select type(qp)
+        ! type is (lo_monkhorst_pack_mesh)
+        !     qp%scaledrecbasis=uc%reciprocal_latticevectors*lo_twopi
+        !     qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/griddensity(1)
+        !     qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/griddensity(2)
+        !     qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/griddensity(3)
+        ! type is (lo_fft_mesh)
+        !     qp%scaledrecbasis=uc%reciprocal_latticevectors*lo_twopi
+        !     qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/griddensity(1)
+        !     qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/griddensity(2)
+        !     qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/griddensity(3)
+        ! type is (lo_wedge_mesh)
+        !     ! Do nothing
+        ! type is(lo_commensurate_mesh)
+        !     ! Do nothing
+        ! class default
+        !     call lo_stop_gracefully(['unknown mesh type'],lo_exitcode_param,__FILE__,__LINE__,mw%comm)
+        ! end select
 
         ! In case we only wanted the mesh on the head rank, sort some thing out.
         if ( headrankonly ) then

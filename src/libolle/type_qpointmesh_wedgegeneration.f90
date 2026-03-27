@@ -214,7 +214,6 @@ module subroutine tesselate_wedge_mesh(qp,uc,wedgevertices,prunetol,splittol,mw,
         qp%n_full_point=0
         qp%n_irr_tet=0
         qp%n_full_tet=0
-        qp%scaledrecbasis=0.0_r8
         !qp%timereversal=uc%sym%timereversal
         if ( allocated(qp%ip) ) deallocate(qp%ip)
         if ( allocated(qp%ap) ) deallocate(qp%ap)
@@ -803,17 +802,9 @@ module subroutine tesselate_wedge_mesh(qp,uc,wedgevertices,prunetol,splittol,mw,
             enddo
         enddo
 
-        ! Get the scaled basis for adaptive gaussian:
-        f0=(1.0_r8*qp%n_full_point)**(1.0_r8/3.0_r8) ! points per distance, sort of
-        v0(1)=norm2(uc%reciprocal_latticevectors(:,1))
-        v0(2)=norm2(uc%reciprocal_latticevectors(:,2))
-        v0(3)=norm2(uc%reciprocal_latticevectors(:,3))
-        v0=v0*f0/sum(v0) ! get it per axis or somthing
-        ! and to normal units
-        qp%scaledrecbasis=uc%reciprocal_latticevectors*lo_twopi
-        qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/v0(1)
-        qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/v0(2)
-        qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/v0(3)
+        ! Get the q-radius per point, simplest possible way
+        f0=( 3.0_r8/uc%volume/real(qp%n_full_point,r8)/4.0_r8/lo_pi )**(1.0_r8/3.0_r8)
+        qp%effective_radius=f0
 
         if ( verbosity .gt. 0 ) then
             t1=walltime()

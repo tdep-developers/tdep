@@ -84,7 +84,7 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
     enddo
 
     ! Store the points
-    call mem%allocate(r2d,[5,qp%n_irr_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+    call mem%allocate(r2d,[4,qp%n_irr_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     call mem%allocate(i1d,qp%n_irr_point,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     call mem%allocate(i2d,[2*maxngp+1,qp%n_irr_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     r2d=0.0_r8
@@ -93,7 +93,6 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
     do i=1,qp%n_irr_point
         r2d(1:3,i)=matmul(p%inv_reciprocal_latticevectors,qp%ip(i)%r)
         r2d(4,i)=qp%ip(i)%integration_weight
-        r2d(5,i)=qp%ip(i)%radius
         i1d(i)=qp%ip(i)%full_index
         j=qp%ip(i)%n_full_point
         i2d(1,i)=j
@@ -107,14 +106,13 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
     call mem%deallocate(i1d,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     call mem%deallocate(i2d,persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
 
-    call mem%allocate(r2d,[5,qp%n_full_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
+    call mem%allocate(r2d,[4,qp%n_full_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     call mem%allocate(i2d,[2,qp%n_full_point],persistent=.false.,scalable=.false.,file=__FILE__,line=__LINE__)
     r2d=0.0_r8
     i2d=0
     do i=1,qp%n_full_point
         r2d(1:3,i)=matmul(p%inv_reciprocal_latticevectors,qp%ap(i)%r)
         r2d(4,i)=qp%ap(i)%integration_weight
-        r2d(5,i)=qp%ap(i)%radius
         i2d(1,i)=qp%ap(i)%irreducible_index
         i2d(2,i)=qp%ap(i)%operation_from_irreducible
     enddo
@@ -269,7 +267,6 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
     do i=1,qp%n_irr_point
         v0=r2d(1:3,i)
         qp%ip(i)%integration_weight=r2d(4,i)
-        qp%ip(i)%radius=r2d(5,i)
         qp%ip(i)%full_index=i1d(i)
         select type(qp)
         type is(lo_monkhorst_pack_mesh)
@@ -322,7 +319,6 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         qp%ap(i)%irreducible_index=i2d(1,i)
         qp%ap(i)%operation_from_irreducible=i2d(2,i)
         qp%ap(i)%integration_weight=r2d(4,i)
-        qp%ap(i)%radius=r2d(5,i)
         select type(qp)
         type is(lo_monkhorst_pack_mesh)
             if ( qp%is_point_on_grid(v0) ) then
@@ -426,18 +422,6 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
             qp%at(i)%integration_weight=qp%at(i)%integration_weight/f1
         enddo
         if ( verbosity .gt. 0 ) write(*,*) '... recalculated weights',f0,f1
-
-        ! and the scaled basis for adaptive gaussians
-        f0=(1.0_r8*qp%n_full_point)**(1.0_r8/3.0_r8) ! points per distance, sort of
-        v0(1)=norm2(p%reciprocal_latticevectors(:,1))
-        v0(2)=norm2(p%reciprocal_latticevectors(:,2))
-        v0(3)=norm2(p%reciprocal_latticevectors(:,3))
-        v0=v0*f0/sum(v0) ! get it per axis or somthing
-        ! and to normal units
-        qp%scaledrecbasis=p%reciprocal_latticevectors*lo_twopi
-        qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/v0(1)
-        qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/v0(2)
-        qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/v0(3)
     type is(lo_monkhorst_pack_mesh)
         allocate(qp%ind2gridind(3,qp%n_full_point))
         allocate(qp%gridind2ind(qp%griddensity(1),qp%griddensity(2),qp%griddensity(3)))
@@ -451,11 +435,6 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         enddo
         enddo
         enddo
-        ! and the scaled basis for adaptive gaussians
-        qp%scaledrecbasis=p%reciprocal_latticevectors*lo_twopi
-        qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/qp%griddensity(1)
-        qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/qp%griddensity(2)
-        qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/qp%griddensity(3)
     type is(lo_fft_mesh)
         allocate(qp%ind2gridind(3,qp%n_full_point))
         allocate(qp%gridind2ind(qp%griddensity(1),qp%griddensity(2),qp%griddensity(3)))
@@ -469,12 +448,10 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         enddo
         enddo
         enddo
-        ! and the scaled basis for adaptive gaussians
-        qp%scaledrecbasis=p%reciprocal_latticevectors*lo_twopi
-        qp%scaledrecbasis(:,1)=qp%scaledrecbasis(:,1)/qp%griddensity(1)
-        qp%scaledrecbasis(:,2)=qp%scaledrecbasis(:,2)/qp%griddensity(2)
-        qp%scaledrecbasis(:,3)=qp%scaledrecbasis(:,3)/qp%griddensity(3)
     end select
+    ! Final touch would be to set the scaling radius
+    qp%effective_radius = ( 3.0_r8/p%volume/real(qp%n_full_point,r8)/4.0_r8/lo_pi )**(1.0_r8/3.0_r8)
+
     ! And everything should be done!
     if ( present(input_id) ) then
         ! Do nothing

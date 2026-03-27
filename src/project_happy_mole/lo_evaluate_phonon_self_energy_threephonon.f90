@@ -115,7 +115,7 @@ subroutine threephonon_imaginary_selfenergy_gaussian_v0(qpoint, ompoint, se, qp,
             if ( se%thirdorder_scattering ) then
                 call op3%generate(fc2,p,mem,qvec=qv3)
                 do b1=1,se%n_mode
-                    op3%sigma(b1) = qp%adaptive_sigma( qp%ap(iq)%radius,op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
+                    op3%sigma(b1) = qp%adaptive_sigma( op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
                 enddo
 
                 call pretransform_phi(fc3, qv2, qv3, ptf_phi)
@@ -355,7 +355,7 @@ subroutine threephonon_imaginary_selfenergy_convolution_v0(qpoint, ompoint, se, 
             if ( se%thirdorder_scattering ) then
                 call op3%generate(fc2,p,mem,qvec=qv3)
                 do b1=1,se%n_mode
-                    op3%sigma(b1) = qp%adaptive_sigma( qp%ap(iq)%radius,op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
+                    op3%sigma(b1) = qp%adaptive_sigma( op3%vel(:,b1),dr%default_smearing(b1),se%smearing_prefactor)
                 enddo
 
                 call pretransform_phi(fc3, qv2, qv3, ptf_phi)
@@ -379,6 +379,8 @@ subroutine threephonon_imaginary_selfenergy_convolution_v0(qpoint, ompoint, se, 
             else
                 psisq_3ph=0.0_r8
             endif
+
+            !call cubic_degeneracy_fold_in_fold_out(ompoint%omega,dr%aq(ipt)%omega,op3%omega,psisq_3ph,lo_freqtol)
 
             if ( se%isotope_scattering ) then
                 do b1=1,dr%n_mode
@@ -579,6 +581,71 @@ subroutine pretransform_phi(fct, q2, q3, ptf)
         end do
     end do
     end do
+end subroutine
+
+!> figure out degeneracy fixer thingy
+subroutine cubic_degeneracy_fold_in_fold_out(om1,om2,om3,buf,tol)
+    !> frequencies
+    real(r8), dimension(:), intent(in) :: om1,om2,om3
+    !> buffer to fix
+    real(r8), dimension(:,:,:), intent(inout) :: buf
+    !> tolerance
+    real(r8), intent(in) :: tol
+
+    real(r8), dimension(:,:,:), allocatable :: buf0
+    integer, dimension(:,:,:), allocatable :: dj
+    integer, dimension(:,:), allocatable :: di
+    integer, dimension(3) :: n_unique
+    integer :: nb,i,j,k,ii,jj,kk
+    integer :: ctr1,ctr2,ctr3
+
+    nb=size(om1)
+
+    allocate(di(nb,3))
+    di=-1
+    ctr1=1
+    ctr2=1
+    ctr3=1
+    di(1,:)=1
+    do i=2,nb
+        if ( abs(om1(i)-om1(i-1)) .gt. tol ) ctr1=ctr1+1
+        if ( abs(om2(i)-om2(i-1)) .gt. tol ) ctr2=ctr2+1
+        if ( abs(om3(i)-om3(i-1)) .gt. tol ) ctr3=ctr3+1
+        di(i,1)=ctr1
+        di(i,2)=ctr2
+        di(i,3)=ctr3
+    enddo
+
+    allocate(buf0(nb,nb,nb))
+    allocate(dj(nb,nb,nb))
+    ! Fold in
+    buf0=0.0_r8
+    dj=0
+    do i=1,nb
+    do j=1,nb
+    do k=1,nb
+        ii=di(i,1)
+        jj=di(j,2)
+        kk=di(k,3)
+        buf0(ii,jj,kk)=buf0(ii,jj,kk)+buf(i,j,k)
+        dj(ii,jj,kk)=dj(ii,jj,kk)+1
+    enddo
+    enddo
+    enddo
+    ! Fold out
+    do i=1,nb
+    do j=1,nb
+    do k=1,nb
+        ii=di(i,1)
+        jj=di(j,2)
+        kk=di(k,3)
+        buf(i,j,k)=buf0(ii,jj,kk)/real(dj(ii,jj,kk),r8)
+    enddo
+    enddo
+    enddo
+    deallocate(di)
+    deallocate(dj)
+    deallocate(buf0)
 end subroutine
 
 end submodule
