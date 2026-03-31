@@ -1,0 +1,4 @@
+# wether to use the apple accelerate framework on macos
+option('accfrmwrk', type : 'boolean', value : false, description : 'Enables the use of Apple\'s accelerate framework for linear algebra, replacing blas/lapack.')
+# option('linalg_flavor', type : 'combo', choices : ['auto', 'lapack', 'mkl'])
+# option('fft_flavor', type : 'combo', choices : ['auto', 'fftw', 'mkl_dfti'])

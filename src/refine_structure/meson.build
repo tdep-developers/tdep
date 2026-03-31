@@ -1,4 +1,5 @@
-executable('refine_structure',
+exec_name='refine_structure'
+executable(exec_name,
            'lo_spacegroup_applyoperation.f90',
            'lo_spacegroup_charactertable.f90',
            'lo_spacegroup.f90',
@@ -9,8 +10,6 @@ executable('refine_structure',
            'refine.f90',
            link_with: [libolle, libflap],
            include_directories: ['../libolle', '../libflap'],
-           dependencies: dep_all,
-           install: true,
-           install_dir: meson.project_build_root() / 'bin')
+           dependencies: dep_all)
 
-install_symlink('refine_structure', pointing_to: meson.project_build_root() / 'bin/refine_structure', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name/ exec_name, install_dir: meson.project_source_root() / 'bin')

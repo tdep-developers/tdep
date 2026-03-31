@@ -1,10 +1,9 @@
-executable('crystal_structure_info',
+exec_name='crystal_structure_info'
+executable(exec_name,
            'main.f90',
            'options.f90',
            link_with: [libolle, libflap],
            include_directories: ['../libolle', '../libflap'],
-           dependencies: dep_all,
-           install: true,
-           install_dir: meson.project_build_root() / 'bin')
+           dependencies: dep_all)
 
-install_symlink('crystal_structure_info', pointing_to: meson.project_build_root() / 'bin/crystal_structure_info', install_dir: meson.project_source_root() / 'bin')
+install_symlink(exec_name, pointing_to: meson.project_build_root() / 'src' / exec_name / exec_name, install_dir: meson.project_source_root() / 'bin')
