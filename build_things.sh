@@ -176,6 +176,7 @@ refine_structure
 thermal_conductivity
 thermal_conductivity_2023
 anharmonic_free_energy
+effective_hamiltonian
 "
 
 # only when we have cgal

@@ -1,9 +1,9 @@
 include Makefile.inc
-CODE=anharmonic_free_energy
+CODE=effective_hamiltonian
 PROG=../../build/$(CODE)/$(CODE)
 OBJECT_PATH=../../build/$(CODE)/
 
-OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o $(OBJECT_PATH)energy.o
+OBJS = $(OBJECT_PATH)main.o $(OBJECT_PATH)options.o 
 
 LPATH = -L../../lib $(blaslapackLPATH) $(incLPATHhdf) $(incLPATHmpi)
 IPATH = -I../../inc/libolle -I../../inc/libflap $(blaslapackIPATH) $(incIPATHhdf) $(incIPATHmpi)
@@ -24,11 +24,8 @@ clean:
 .f90.o:
 	$(F90) $(F90FLAGS) -c $< $(LIBS)
 
-$(OBJECT_PATH)main.o: main.f90 $(OBJECT_PATH)options.o $(OBJECT_PATH)energy.o
-	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
-$(OBJECT_PATH)energy.o: $(OBJECT_PATH)options.o 
-	$(F90) $(F90FLAGS) -c energy.f90 $(LIBS) -o $@
+$(OBJECT_PATH)main.o: main.f90 $(OBJECT_PATH)options.o
+	$(F90) $(F90FLAGS) -c main.f90 -o $@
 $(OBJECT_PATH)options.o:
-	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
-
+	$(F90) $(F90FLAGS) -c options.f90 -o $@
 
