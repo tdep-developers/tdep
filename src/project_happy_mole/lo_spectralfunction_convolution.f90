@@ -1,5 +1,5 @@
 module lo_spectralfunction_convolution
-use konstanter, only: r8,lo_huge,lo_hugeint,lo_exitcode_param
+use konstanter, only: r8,lo_huge,lo_hugeint,lo_exitcode_param, lo_kb_Hartree
 use gottochblandat, only: lo_planck,lo_stop_gracefully
 use, intrinsic :: iso_c_binding, only: c_ptr
 implicit none
@@ -15,6 +15,8 @@ type lo_convolution_handle
     !> bose einstein factor
     real(r8), dimension(:), allocatable :: thermal_n
     real(r8), dimension(:), allocatable :: thermal_n_plus_one
+    !> strange cubic anharmonicity thermal factor
+    real(r8), dimension(:), allocatable :: cubic_thermal_factor
     !> buffers for greater and lesser Green's functions
     complex(r8), dimension(:,:), allocatable :: greater1
     complex(r8), dimension(:,:), allocatable :: greater2
@@ -22,6 +24,7 @@ type lo_convolution_handle
     complex(r8), dimension(:,:), allocatable :: lesser1
     complex(r8), dimension(:,:), allocatable :: lesser2
     complex(r8), dimension(:,:), allocatable :: lesser3
+    complex(r8), dimension(:,:), allocatable :: cubic
     !> temporary buffers
     complex(r8), dimension(:), allocatable :: rbuf
     complex(r8), dimension(:), allocatable :: cbuf
@@ -30,6 +33,7 @@ type lo_convolution_handle
     contains
         procedure :: generate=>create_convolution_handle
         procedure :: buffer_and_transform_J_to_greater_lesser
+        procedure :: buffer_and_transform_J_to_cubic_kernel
         procedure :: buffer_and_transform_J
         procedure :: destroy=>destroy_convolution_helper
         procedure :: inverse_transform_to_real
@@ -50,6 +54,7 @@ subroutine create_convolution_handle(ch,omega,temperature,n_mode)
     !> number of modes
     integer, intent(in) :: n_mode
 
+    real(r8) :: f0,f1
     integer :: i
 
     ! Number of points we are interested in?
@@ -58,24 +63,28 @@ subroutine create_convolution_handle(ch,omega,temperature,n_mode)
     allocate(ch%x(-ch%n:ch%n))
     allocate(ch%thermal_n(-ch%n:ch%n))
     allocate(ch%thermal_n_plus_one(-ch%n:ch%n))
+    allocate(ch%cubic_thermal_factor(-ch%n:ch%n))
     allocate(ch%greater1(-ch%n:ch%n, n_mode))
     allocate(ch%greater2(-ch%n:ch%n, n_mode))
     allocate(ch%greater3(-ch%n:ch%n, n_mode))
     allocate(ch%lesser1(-ch%n:ch%n, n_mode))
     allocate(ch%lesser2(-ch%n:ch%n, n_mode))
     allocate(ch%lesser3(-ch%n:ch%n, n_mode))
+    allocate(ch%cubic(-ch%n:ch%n, n_mode))
     allocate(ch%cbuf(-ch%n:ch%n))
     allocate(ch%rbuf(-ch%n:ch%n))
 
     ch%x=0.0_r8
     ch%thermal_n=0.0_r8
     ch%thermal_n_plus_one=0.0_r8
+    ch%cubic_thermal_factor=0.0_r8
     ch%greater1=0.0_r8
     ch%greater2=0.0_r8
     ch%greater3=0.0_r8
     ch%lesser1=0.0_r8
     ch%lesser2=0.0_r8
     ch%lesser3=0.0_r8
+    ch%cubic=0.0_r8
     ch%cbuf=0.0_r8
     ch%rbuf=0.0_r8
 
@@ -93,6 +102,15 @@ subroutine create_convolution_handle(ch,omega,temperature,n_mode)
         ch%thermal_n(-i) = -lo_planck(temperature, ch%x(i))-1.0_r8
     end do
     ch%thermal_n_plus_one=ch%thermal_n+1.0_r8
+
+    ! Pre-calculate the strange cubic thermal prefactor
+    ! it is
+    ! exp(omega*beta/2)*n + exp(-omega*beta/2)*(n+1)
+    do i=-ch%n,ch%n
+        f0=exp( 0.5_r8*ch%x(i)/(temperature*lo_kb_Hartree) )
+        f1=exp( -0.5_r8*ch%x(i)/(temperature*lo_kb_Hartree) )
+        ch%cubic_thermal_factor(i)=f0*ch%thermal_n(i) + f1*ch%thermal_n_plus_one(i)
+    enddo
 
     ! Pre-plan the FFTs
     call dfftw_plan_dft_1d(ch%plan_fwd, size(ch%cbuf), ch%cbuf, ch%cbuf, FFTW_FORWARD, FFTW_ESTIMATE)
@@ -131,9 +149,9 @@ subroutine buffer_and_transform_J(ch,spectralfunction,whereto)
     n_mode=size(spectralfunction,2)
     do imode=1,n_mode
         ! buffer entire spectral function, forwards and backwards
-        ch%rbuf(0:ch%n)=spectralfunction(:,imode)
+        ch%cbuf(0:ch%n)=spectralfunction(:,imode)
         do ie=1,ch%n
-            ch%rbuf(-ie)=-spectralfunction(ie+1,imode)
+            ch%cbuf(-ie)=-spectralfunction(ie+1,imode)
         enddo
         ! No prefactor here
         select case(whereto)
@@ -146,6 +164,26 @@ subroutine buffer_and_transform_J(ch,spectralfunction,whereto)
         case default
             call lo_stop_gracefully(['Unknown spectral function destination'],lo_exitcode_param,__FILE__,__LINE__)
         end select
+    enddo
+end subroutine
+
+subroutine buffer_and_transform_J_to_cubic_kernel(ch,spectralfunction)
+    !> convolution helper
+    class(lo_convolution_handle), intent(inout) :: ch
+    !> spectral function
+    real(r8), dimension(:,:), intent(in) :: spectralfunction
+
+    integer :: imode,n_mode,ie
+
+    n_mode=size(spectralfunction,2)
+    do imode=1,n_mode
+        ! buffer entire spectral function, forwards and backwards
+        ch%rbuf(0:ch%n)=spectralfunction(:,imode)
+        do ie=1,ch%n
+            ch%rbuf(-ie)=-spectralfunction(ie+1,imode)
+        enddo
+        ch%cbuf=ch%rbuf*ch%cubic_thermal_factor
+        call dfftw_execute_dft(ch%plan_fwd, ch%cbuf, ch%cubic(:, imode))
     enddo
 end subroutine
 

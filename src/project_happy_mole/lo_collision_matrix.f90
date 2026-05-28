@@ -149,7 +149,6 @@ subroutine create_scattering_matrix(scm,p,fc2,fc3,ise,temperature,qp,adaptive_pr
         enddo
         fullmatrix=fullmatrix2/size(qmesh_permutation,2)
 
-
         ! Then I guess we might need the static bubble as well.
         allocate(bar_bubble(dr%n_mode,qp%n_full_point))
         allocate(bar_transform(dr%n_mode,qp%n_full_point))
@@ -305,14 +304,15 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
     interpolate: block
         complex(r8), dimension(:), allocatable :: ptf_phi,evp1,evp2
         complex(r8) :: c0
-        real(r8), dimension(:,:,:), allocatable :: psisq_3ph
+        real(r8), dimension(:,:,:), allocatable :: psisq_3ph,buf_element
         real(r8), dimension(:,:,:), allocatable :: buf_gg,buf_ll
         real(r8), dimension(:,:), allocatable :: buf_re,buf_im,buf_j
         real(r8), dimension(:), allocatable :: buf_integral
-        real(r8) :: sigma,f0,pref
+        real(r8) :: sigma,f0,f1,pref
         integer :: imode,jmode,b1,b2,b3
 
         allocate(psisq_3ph(dr%n_mode,dr%n_mode,dr%n_mode))
+        allocate(buf_element(dr%n_mode,dr%n_mode,dr%n_mode))
         allocate(evp1(dr%n_mode**2))
         allocate(evp2(dr%n_mode**3))
         allocate(ptf_phi(dr%n_mode**3))
@@ -328,6 +328,7 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
         buf_gg=0.0_r8
         buf_ll=0.0_r8
         psisq_3ph=0.0_r8
+        buf_element=0.0_r8
         evp1=0.0_r8
         evp2=0.0_r8
         ptf_phi=0.0_r8
@@ -355,6 +356,7 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
 
         ! Start with q'
         call ise%evaluate(p,qv2,dr%aq(jq)%omega,dr%aq(jq)%egv,buf_re,buf_im,mem)
+        buf_j=0.0_r8
         do imode=1,dr%n_mode
             if ( dr%aq(jq)%omega(imode) .lt. lo_freqtol ) cycle
             call lo_evaluate_spectral_function(ise%omega,buf_im(:,imode),buf_re(:,imode),dr%aq(jq)%omega(imode),buf_j(:,imode))
@@ -363,10 +365,12 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
             buf_j(:,imode)=buf_j(:,imode)/f0
         enddo
-        call ch%buffer_and_transform_J_to_greater_lesser(buf_j,2)
+        call spectrum_degeneracy_fold_in_fold_out(dr%aq(jq)%omega,buf_j,lo_freqtol)
+        call ch%buffer_and_transform_J(buf_j,2)
 
         ! And for the third q-point
         call ise%evaluate(p,qv3,op3%omega,op3%egv,buf_re,buf_im,mem)
+        buf_j=0.0_r8
         do imode=1,dr%n_mode
             if ( op3%omega(imode) .lt. lo_freqtol ) cycle
             call lo_evaluate_spectral_function(ise%omega,buf_im(:,imode),buf_re(:,imode),op3%omega(imode),buf_j(:,imode))
@@ -375,17 +379,21 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
             buf_j(:,imode)=buf_j(:,imode)/f0
         enddo
-        call ch%buffer_and_transform_J_to_greater_lesser(buf_j,3)
+        call spectrum_degeneracy_fold_in_fold_out(op3%omega,buf_j,lo_freqtol)
+        call ch%buffer_and_transform_J_to_cubic_kernel(buf_j)
 
-        ! Convolute the greater/less combinations for s' and s''
+        ! So, at this point
+        ! ch%lesser2 holds J(q')
+        ! ch%cubic holds J(q'')*thermal prefactor
+        ! time to convolute and inverse transform the combinations
+        buf_gg=0.0_r8
         do imode=1,dr%n_mode
         do jmode=1,dr%n_mode
-            ch%cbuf = ch%greater2(:,imode)*ch%greater3(:,jmode)
+            ch%cbuf = ch%lesser2(:,imode)*ch%cubic(:,jmode)
             call ch%inverse_transform_to_real(ch%cbuf,buf_gg(:,imode,jmode))
-            ch%cbuf = ch%lesser2(:,imode)*ch%lesser3(:,jmode)
-            call ch%inverse_transform_to_real(ch%cbuf,buf_ll(:,imode,jmode))
         enddo
         enddo
+        ! write(*,*) 'three',sum(abs(buf_gg))
 
         ! Now we can fetch J_{qs}
         call ise%evaluate(p,qp%ip(iq)%r,dr%iq(iq)%omega,dr%iq(iq)%egv,buf_re,buf_im,mem)
@@ -402,26 +410,45 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
             buf_j(:,imode)=buf_j(:,imode)/f0
         enddo
+        call spectrum_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,buf_j,lo_freqtol)
 
-        ! How about adding n to both so that it becomes something symmetric?
+        ! And finally assemble
+        ! pref=1.0_r8
+        ! do b1=1,dr%n_mode
+        ! do b2=b1,dr%n_mode
+        !     buf_integral=0.0_r8
+        !     do b3=1,dr%n_mode
+        !         buf_integral = buf_integral + ( buf_gg(:,b2,b3) )*psisq_3ph(b1,b2,b3)
+        !     enddo
+        !     buf_integral = buf_integral * buf_j(:,b1)
+        !     f0=lo_trapezoid_integration(ise%omega,buf_integral)
+        !     submatrix(b1,b2) = f0*pref
+        !     submatrix(b2,b1) = f0*pref
+        ! enddo
+        ! enddo
 
-        ! So, buf_j holds the spectral function for mode qs
-        ! buf_gg holds the convoluted G^>_{s'} * G^>_{s''}
-        ! buf_ll holds the convoluted G^<_{s'} * G^<_{s''}
-        pref=lo_twopi**2 ! because my >/< don't have 2*pi. I also skip all imaginary i.
-        pref=pref*2 ! because integral from 0 to infinity
-        !pref=-pref ! because signs are confusing.
+        buf_element=0.0_r8
+        do b1=1,dr%n_mode
+        do b2=1,dr%n_mode
+        do b3=1,dr%n_mode
+            buf_integral=buf_j(:,b1)*( buf_gg(:,b2,b3) )*psisq_3ph(b1,b2,b3)
+            f0=lo_trapezoid_integration(ise%omega,buf_integral)
+            buf_integral=buf_j(:,b2)*( buf_gg(:,b1,b3) )*psisq_3ph(b2,b1,b3)
+            f1=lo_trapezoid_integration(ise%omega,buf_integral)
+            buf_element(b1,b2,b3)=f0+f1
+        enddo
+        enddo
+        enddo
+        call cubic_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,dr%aq(jq)%omega,op3%omega,buf_element,lo_freqtol)
+
+        pref=1.0_r8
         submatrix=0.0_r8
         do b1=1,dr%n_mode
         do b2=1,dr%n_mode
-            buf_integral=0.0_r8
+            f0=0.0_r8
             do b3=1,dr%n_mode
-                buf_integral = buf_integral + ( buf_gg(:,b2,b3) - buf_ll(:,b2,b3) )*psisq_3ph(b1,b2,b3)
-                !buf_integral = buf_integral + buf_j(:,b1)*ch%thermal_n(0:ch%n)*buf_gg(:,b2,b3)*psisq_3ph(b1,b2,b3)
-                !buf_integral = buf_integral - buf_j(:,b1)*ch%thermal_n_plus_one(0:ch%n)*buf_ll(:,b2,b3)*psisq_3ph(b1,b2,b3)
+                f0=f0+buf_element(b1,b2,b3)+buf_element(b2,b1,b3)
             enddo
-            buf_integral = buf_integral * buf_j(:,b1)
-            f0=lo_trapezoid_integration(ise%omega,buf_integral)
             submatrix(b1,b2) = f0*pref
         enddo
         enddo
@@ -733,7 +760,9 @@ subroutine averaged_bubble_entry(iq,p,qp,dr,ise,ch,temperature,adaptive_prefacto
             buf_j(:,imode)=buf_j(:,imode)/f0
 
             buf_n = ch%thermal_n(0:ch%n)
-            bar_transform = lo_trapezoid_integration(ise%omega,buf_n*buf_j(:,imode))
+            bar_transform = lo_trapezoid_integration(ise%omega,buf_n*(buf_n+1.0_r8)*buf_j(:,imode))
+
+            bar_bubble = lo_trapezoid_integration(ise%omega,buf_j(:,imode)*buf_j(:,imode))
         enddo
 
         deallocate(buf_re)
@@ -744,6 +773,36 @@ subroutine averaged_bubble_entry(iq,p,qp,dr,ise,ch,temperature,adaptive_prefacto
         deallocate(xhi)
     end block interpolate
 
+end subroutine
+
+!> figure out degeneracy fixer thingy
+subroutine spectrum_degeneracy_fold_in_fold_out(om,buf,tol)
+    !> frequencies
+    real(r8), dimension(:), intent(in) :: om
+    !> buffer to fix
+    real(r8), dimension(:,:), intent(inout) :: buf
+    !> tolerance
+    real(r8), intent(in) :: tol
+
+    real(r8), dimension(:,:), allocatable :: buf0
+    integer :: nb,i,j
+    integer :: ctr
+
+    nb=size(om)
+    allocate(buf0(size(buf,1),nb))
+    buf0=0.0_r8
+    do i=1,nb
+        ctr=0
+        do j=1,nb
+            if ( abs(om(i)-om(j)) .lt. tol ) then
+                ctr=ctr+1
+                buf0(:,i)=buf0(:,i)+buf(:,j)
+            endif
+        enddo
+        buf0(:,i)=buf0(:,i)/real(ctr,r8)
+    enddo
+    buf=buf0
+    deallocate(buf0)
 end subroutine
 
 !> figure out degeneracy fixer thingy
@@ -758,7 +817,6 @@ subroutine cubic_degeneracy_fold_in_fold_out(om1,om2,om3,buf,tol)
     real(r8), dimension(:,:,:), allocatable :: buf0
     integer, dimension(:,:,:), allocatable :: dj
     integer, dimension(:,:), allocatable :: di
-    integer, dimension(3) :: n_unique
     integer :: nb,i,j,k,ii,jj,kk
     integer :: ctr1,ctr2,ctr3
 
