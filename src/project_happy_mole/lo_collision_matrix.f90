@@ -124,7 +124,7 @@ subroutine create_scattering_matrix(scm,p,fc2,fc3,ise,temperature,qp,adaptive_pr
                 ! then we permute with operation
                 kq=qmesh_permutation(jq,iop)
                 ! if it's not the same we full out the row?
-                !if ( iq .eq. kq ) cycle
+                if ( iq .eq. kq ) cycle
 
                 do i=1,qp%n_full_point
                     lq=qmesh_permutation(i,iop)
@@ -350,11 +350,10 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             end do
         enddo
         enddo
-
         ! Degeneracies are extremely annoying, but has to be dealt with.
         call cubic_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,dr%aq(jq)%omega,op3%omega,psisq_3ph,lo_freqtol)
 
-        ! Start with q'
+        ! Start with q',s', evaluate, smear and normalize spectral function
         call ise%evaluate(p,qv2,dr%aq(jq)%omega,dr%aq(jq)%egv,buf_re,buf_im,mem)
         buf_j=0.0_r8
         do imode=1,dr%n_mode
@@ -365,10 +364,11 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
             buf_j(:,imode)=buf_j(:,imode)/f0
         enddo
+        ! Fix degeneracies to be on the safe side
         call spectrum_degeneracy_fold_in_fold_out(dr%aq(jq)%omega,buf_j,lo_freqtol)
         call ch%buffer_and_transform_J(buf_j,2)
 
-        ! And for the third q-point
+        ! Evaluate q'',s'' just as above
         call ise%evaluate(p,qv3,op3%omega,op3%egv,buf_re,buf_im,mem)
         buf_j=0.0_r8
         do imode=1,dr%n_mode
@@ -383,8 +383,8 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
         call ch%buffer_and_transform_J_to_cubic_kernel(buf_j)
 
         ! So, at this point
-        ! ch%lesser2 holds J(q')
-        ! ch%cubic holds J(q'')*thermal prefactor
+        ! ch%lesser2 holds J(q') in the time domain
+        ! ch%cubic holds J(q'')*thermal prefactor in the time domain
         ! time to convolute and inverse transform the combinations
         buf_gg=0.0_r8
         do imode=1,dr%n_mode
@@ -393,53 +393,34 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
             call ch%inverse_transform_to_real(ch%cbuf,buf_gg(:,imode,jmode))
         enddo
         enddo
-        ! write(*,*) 'three',sum(abs(buf_gg))
 
         ! Now we can fetch J_{qs}
         call ise%evaluate(p,qp%ip(iq)%r,dr%iq(iq)%omega,dr%iq(iq)%egv,buf_re,buf_im,mem)
         buf_j=0.0_r8
         do imode=1,dr%n_mode
-            ! skip acoustic
             if ( dr%iq(iq)%omega(imode) .lt. lo_freqtol ) cycle
-            ! raw spectral function
             call lo_evaluate_spectral_function(ise%omega,buf_im(:,imode),buf_re(:,imode),dr%iq(iq)%omega(imode),buf_j(:,imode))
-            ! smear the spectral function
             sigma=qp%adaptive_sigma( dr%iq(iq)%vel(:,imode), dr%default_smearing(imode), adaptive_prefactor)
             call lo_gaussian_smear_spectral_function(ise%omega,sigma,buf_j(:,imode))
-            ! and normalize? why not
             f0=lo_trapezoid_integration(ise%omega,buf_j(:,imode))
             buf_j(:,imode)=buf_j(:,imode)/f0
         enddo
         call spectrum_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,buf_j,lo_freqtol)
 
-        ! And finally assemble
-        ! pref=1.0_r8
-        ! do b1=1,dr%n_mode
-        ! do b2=b1,dr%n_mode
-        !     buf_integral=0.0_r8
-        !     do b3=1,dr%n_mode
-        !         buf_integral = buf_integral + ( buf_gg(:,b2,b3) )*psisq_3ph(b1,b2,b3)
-        !     enddo
-        !     buf_integral = buf_integral * buf_j(:,b1)
-        !     f0=lo_trapezoid_integration(ise%omega,buf_integral)
-        !     submatrix(b1,b2) = f0*pref
-        !     submatrix(b2,b1) = f0*pref
-        ! enddo
-        ! enddo
-
+        ! All the integrals. Can be flipped around so that it's only N^2 integrals, but
+        ! I want to get things right first.
         buf_element=0.0_r8
         do b1=1,dr%n_mode
         do b2=1,dr%n_mode
         do b3=1,dr%n_mode
             buf_integral=buf_j(:,b1)*( buf_gg(:,b2,b3) )*psisq_3ph(b1,b2,b3)
             f0=lo_trapezoid_integration(ise%omega,buf_integral)
-            buf_integral=buf_j(:,b2)*( buf_gg(:,b1,b3) )*psisq_3ph(b2,b1,b3)
-            f1=lo_trapezoid_integration(ise%omega,buf_integral)
-            buf_element(b1,b2,b3)=f0+f1
+            buf_element(b1,b2,b3)=f0
         enddo
         enddo
         enddo
-        call cubic_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,dr%aq(jq)%omega,op3%omega,buf_element,lo_freqtol)
+
+        !call cubic_degeneracy_fold_in_fold_out(dr%iq(iq)%omega,dr%aq(jq)%omega,op3%omega,buf_element,lo_freqtol)
 
         pref=1.0_r8
         submatrix=0.0_r8
@@ -447,7 +428,7 @@ subroutine cubic_scattering_matrix_entry(iq,jq,p,fc,fct,qp,dr,ise,ch,adaptive_pr
         do b2=1,dr%n_mode
             f0=0.0_r8
             do b3=1,dr%n_mode
-                f0=f0+buf_element(b1,b2,b3)+buf_element(b2,b1,b3)
+                f0=f0+buf_element(b1,b2,b3)
             enddo
             submatrix(b1,b2) = f0*pref
         enddo
