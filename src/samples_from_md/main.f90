@@ -7,12 +7,14 @@ use type_crystalstructure, only: lo_crystalstructure
 use lo_randomnumbers, only: lo_mersennetwister
 use type_mdsim, only: lo_mdsim
 use options, only: lo_opts
+use hdf5_wrappers, only: lo_hdf5_helper
 
 implicit none
 type(lo_opts) :: opts
 type(lo_mdsim) :: sim
 type(lo_crystalstructure) :: p
 type(lo_mersennetwister) :: tw
+type(lo_hdf5_helper) :: h5
 
 integer, dimension(:), allocatable  :: sample, indices, testsample
 integer :: i, j, k, ii, jj, mindist
@@ -23,6 +25,7 @@ character(len=80) :: fname
 
 ! Get options
 call opts%parse()
+call h5%initialize()
 ! Seed random numbers
 call tw%init(iseed=0, rseed=walltime())
 ! Get simulation
@@ -166,6 +169,8 @@ do i = 1, opts%n
         stop
     end select
 end do
+
+call h5%finalize()
 
 contains
 

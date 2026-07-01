@@ -836,7 +836,7 @@ subroutine write_to_hdf5(ed,filename,hdftag)
         h5%file_id=hdftag
     else
         ! Create a new file.
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('write',trim(filename))
     endif
 
@@ -849,7 +849,7 @@ subroutine write_to_hdf5(ed,filename,hdftag)
     ! close the file and hdf5, if relevant.
     if ( present(hdftag) .eqv. .false. ) then
         call h5%close_file()
-        call h5%destroy(__FILE__,__LINE__)
+        !call h5%destroy(__FILE__,__LINE__)
     endif
 end subroutine
 

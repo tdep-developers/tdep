@@ -219,7 +219,6 @@ subroutine write_to_hdf5(df, filename)
 
     type(lo_hdf5_helper) :: h5
 
-    call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     call h5%store_data(df%twotheta_axis, h5%file_id, 'twotheta')
@@ -227,7 +226,6 @@ subroutine write_to_hdf5(df, filename)
     call h5%store_data(df%intensity_ideal, h5%file_id, 'intensity_ideal')
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 end module

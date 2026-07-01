@@ -978,7 +978,7 @@ module subroutine write_bz_to_hdf5(p,filename,input_id)
         h5%file_id=input_id
     else
         ! open a new file
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('write',trim(filename))
     endif
 
@@ -1015,7 +1015,7 @@ module subroutine write_bz_to_hdf5(p,filename,input_id)
     ! maybe close
     if ( present(input_id) .eqv. .false. ) then
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
     endif
 end subroutine
 
@@ -1038,7 +1038,7 @@ module subroutine write_structure_to_hdf5(p,filename,input_id)
         h5%file_id=input_id
     elseif ( present(filename) ) then
         ! open a new file
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('write',trim(filename))
     else
         call lo_stop_gracefully(['Provide filename or input id, but only ony of them.'],lo_exitcode_param,__FILE__,__LINE__)
@@ -1060,7 +1060,7 @@ module subroutine write_structure_to_hdf5(p,filename,input_id)
     ! maybe close
     if ( present(input_id) .eqv. .false. ) then
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
     endif
 end subroutine
 

@@ -1372,7 +1372,7 @@ subroutine write_to_hdf5(sim, uc, ss, filename, verbosity, eps, Z)
         real(r8), dimension(:, :, :), allocatable :: dr
         real(r8), dimension(:), allocatable :: ds
         ! Initialize hdf5 properly
-        call h5%init(__FILE__, __LINE__)
+        !call h5%init(__FILE__, __LINE__)
         call h5%open_file('write', trim(filename))
 
         ! Store some metadata. Not sure if effective.
@@ -1487,7 +1487,7 @@ subroutine write_to_hdf5(sim, uc, ss, filename, verbosity, eps, Z)
         if (verbosity .gt. 0) write (*, *) '... wrote energies and metadata'
         ! ! And close
         call h5%close_file()
-        call h5%destroy(__FILE__, __LINE__)
+        !call h5%destroy(__FILE__, __LINE__)
     end block writefile
 
     if (verbosity .gt. 0) write (*, *) 'wrote simulation (', tochar(walltime() - timer), 's)'
@@ -1648,7 +1648,7 @@ subroutine read_from_hdf5(sim, filename, verbosity, stride, nrand, mw)
         logical, dimension(:), allocatable :: readstep
 
         ! Initialize hdf5 properly
-        call h5%init(__FILE__, __LINE__)
+        !call h5%init(__FILE__, __LINE__)
         call h5%open_file('read', trim(filename))
 
         ! Start reading some metadata, can do this on all ranks since it's very little
@@ -1900,7 +1900,7 @@ subroutine read_from_hdf5(sim, filename, verbosity, stride, nrand, mw)
         end if
 
         call h5%close_file()
-        call h5%destroy(__FILE__, __LINE__)
+        !call h5%destroy(__FILE__, __LINE__)
     end block readstuff
 
     finalize: block

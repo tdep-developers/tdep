@@ -36,11 +36,12 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
     if ( present(input_id) ) then
         h5%file_id=input_id
     else
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('write',trim(filename))
     endif
 
     ! some metadata first:
+    i=-1
     select type(qp)
         type is(lo_monkhorst_pack_mesh)
             i=1
@@ -48,7 +49,10 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
             i=2
         type is(lo_wedge_mesh)
             i=3
+        class default
+            call lo_stop_gracefully(['ERROR: undefined mesh when printing'],lo_exitcode_io,__FILE__,__LINE__)
     end select
+write(*,*) 'Printing ID:',i
     call h5%store_attribute(i,h5%file_id,'mesh_type')
 
     ! dimensions of grid, number of points, number of tetrahedrons
@@ -153,7 +157,7 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
         ! Do nothing
     else
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
     endif
 
     if ( verbosity .gt. 0 ) write(lo_iou,*) '... stored points and tetrahedrons'
@@ -192,7 +196,7 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
     if ( present(input_id) ) then
         h5%file_id=input_id
     else
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
     endif
 
@@ -206,6 +210,7 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         case(3)
             allocate(lo_wedge_mesh::qp)
         case default
+            write(*,*) 'What I read:',i
             call lo_stop_gracefully(['ERROR: strange kind of mesh in "infile.qgrid"'],lo_exitcode_io,__FILE__,__LINE__)
     end select
 
@@ -457,7 +462,7 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
         ! Do nothing
     else
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
     endif
     ! Check that I did not waste any memory.
     call mem%tock(__FILE__,__LINE__)
@@ -482,7 +487,7 @@ module subroutine write_metadata_to_hdf5(qp,filename,input_id)
         h5%file_id=input_id
     elseif ( present(filename) ) then
         ! open a new file
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('write',trim(filename))
     else
         call lo_stop_gracefully(['Provide filename or input id, but only ony of them.'],lo_exitcode_param,__FILE__,__LINE__)
@@ -505,7 +510,7 @@ module subroutine write_metadata_to_hdf5(qp,filename,input_id)
 
     if ( present(input_id) .eqv. .false. ) then
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
     endif
 
     ! Add more as needed. Symmetry operations? Entire mesh, with tetrahedrons?

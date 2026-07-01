@@ -395,7 +395,6 @@ subroutine read_spectralfunction_helper_from_hdf5(sf, filename, qp, maxf, temper
 
     ! Initialize hdf5
     if (mw%r .eq. readrnk) then
-        call h5%init()
         call h5%open_file('read', trim(filename))
 
         ! Read metadata
@@ -409,7 +408,6 @@ subroutine read_spectralfunction_helper_from_hdf5(sf, filename, qp, maxf, temper
         n_mode = size(sf%spectralfunction, 2)
 
         call h5%close_file()
-        call h5%destroy()
 
         if (verbosity .gt. 0) write (lo_iou, *) '... read spectral functions'
     end if
@@ -465,7 +463,6 @@ subroutine write_spectralfunction_helper_to_hdf5(sf, filename)
     type(lo_hdf5_helper) :: h5
 
     ! Initialize hdf5
-    call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     ! Store metadata
@@ -479,7 +476,6 @@ subroutine write_spectralfunction_helper_to_hdf5(sf, filename)
 
     ! Close the file
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> get a function that neatly tapers the imaginary part of the self-energy to sensible values.

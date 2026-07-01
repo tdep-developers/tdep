@@ -895,10 +895,19 @@ subroutine generate(sl,uc,ss,cutoff2,cutoff3,cutoff4,polar,mw,mem,verbosity,&
         ! Do the polar things? To not get lost in the heuristics I do it simple:
         ! always get the nullspace for the dielectric constant and Born charges.
         ! if not polar, switch them off.
-        call nullspace_eps_global(sl,mw,mem)
-        if ( verbosity .gt. 0 ) write(*,*) '... determined dielectric tensor nullspace'
-        call nullspace_Z_singlet(sl,sh,uc,mw,mem)
-        if ( verbosity .gt. 0 ) write(*,*) '... determined Born charge nullspace'
+
+        if ( uc%na < 33 ) then
+            call nullspace_eps_global(sl,mw,mem)
+            if ( verbosity .gt. 0 ) write(*,*) '... determined dielectric tensor nullspace'
+            call nullspace_Z_singlet(sl,sh,uc,mw,mem)
+            if ( verbosity .gt. 0 ) write(*,*) '... determined Born charge nullspace'
+
+        else
+            if ( mw%talk ) then
+                write(lo_iou,*) 'FIXME: Large unitcell with ', uc%na, ' atoms used'
+                write(lo_iou,*) 'FIXME: Raman activity will NOT be reported'
+            end if
+        endif
 
         if ( polar ) then
             if ( .not.sl%have_Z_singlet ) then

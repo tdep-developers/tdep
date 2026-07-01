@@ -6,6 +6,7 @@ use gottochblandat, only: walltime, tochar, lo_chop, lo_mean, lo_kmesh_density, 
                           open_file, lo_linspace, lo_frobnorm
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
+use hdf5_wrappers, only: lo_hdf5_helper
 use dump_data, only: lo_dump_gnuplot_2d_real
 use options, only: lo_opts
 use type_crystalstructure, only: lo_crystalstructure
@@ -26,6 +27,7 @@ implicit none
 type(lo_opts) :: opts
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 type(lo_forceconstant_secondorder) :: fc
 type(lo_forceconstant_thirdorder) :: fct
 type(lo_crystalstructure) :: uc
@@ -41,6 +43,7 @@ init: block
     timer = walltime()
     ! init MPI
     call mw%init()
+    call h5%initialize()
     ! Get the command line arguments
     call opts%parse()
     if (mw%talk .eqv. .false.) opts%verbosity = -10
@@ -352,6 +355,7 @@ wrapup: block
         write (*, *) ' '
         write (*, *) 'All done in ', tochar(walltime() - timer), 's'
     end if
+    call h5%finalize()
     call mw%destroy()
 end block wrapup
 

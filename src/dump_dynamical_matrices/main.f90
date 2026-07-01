@@ -10,6 +10,7 @@ use type_forceconstant_secondorder
 use type_phonon_dispersions
 use lo_memtracker, only: lo_mem_helper
 use mpi_wrappers, only: lo_mpi_helper
+use hdf5_wrappers, only: lo_hdf5_helper
 
 !
 implicit none
@@ -21,6 +22,7 @@ type(lo_forceconstant_secondorder) :: fc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mem_helper) :: mem
 type(lo_mpi_helper) :: mw
+type(lo_hdf5_helper) :: h5
 
 integer :: i, u, a1, a2, ii, jj
 integer :: x, y, z
@@ -37,6 +39,7 @@ character(len=500) :: string
 character(len=500) :: filnam
 
 call mw%init()
+call h5%initialize()
 call mem%init()
 
 call opts%parse()
@@ -79,6 +82,9 @@ call lo_generate_qmesh(qp, uc, opts%qgrid, 'fft', timereversal=.true., headranko
 call fc%write_to_anaddb(uc, opts%qgrid, mw, mem)
 
 call fc%write_dynmat_to_qe(uc,opts%qgrid,mw,mem)
+
+call h5%finalize()
+call mw%destroy()
 
 !else
 !    ! automagically generate a grid. Probably a bad idea, since my version of gridgeneration and

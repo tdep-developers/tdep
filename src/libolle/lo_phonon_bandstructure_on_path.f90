@@ -508,7 +508,7 @@ contains
             h5%file_id = hdftag
         else
             ! Create a new file.
-            call h5%init(__FILE__, __LINE__)
+            !call h5%init(__FILE__, __LINE__)
             call h5%open_file('write', trim(filename))
         end if
 
@@ -716,7 +716,7 @@ contains
         ! close the file and hdf5, if relevant.
         if (present(hdftag) .eqv. .false.) then
             call h5%close_file()
-            call h5%destroy(__FILE__, __LINE__)
+            !call h5%destroy(__FILE__, __LINE__)
         end if
     end subroutine
 
@@ -952,7 +952,7 @@ contains
         end select
 
         ! Create a new file.
-        call h5%init(__FILE__, __LINE__)
+        !call h5%init(__FILE__, __LINE__)
         call h5%open_file('write', trim(filename))
 
         ! the x-axis ticks
@@ -1008,7 +1008,7 @@ contains
 
         ! Close the file
         call h5%close_file()
-        call h5%destroy(__FILE__, __LINE__)
+        !call h5%destroy(__FILE__, __LINE__)
     end subroutine
 
 !> measure size in memory, in bytes

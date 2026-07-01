@@ -336,7 +336,7 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
     integer :: i, j, k, l
     character(len=1000) :: dname
 
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
     ! Some general attributes first:
     call h5%store_attribute(dr%n_mode/3, h5%file_id, 'number_of_atoms', lo_status)
@@ -637,7 +637,7 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
     end if
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
+    !call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> write the dispersion on the irreducible mesh to a hdf5 file
@@ -660,7 +660,7 @@ subroutine write_irreducible_to_hdf5(dr, qp, uc, filename, mem)
     integer :: i
     character(len=1000) :: dname
 
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     ! Some general attributes first:
@@ -737,7 +737,7 @@ subroutine write_irreducible_to_hdf5(dr, qp, uc, filename, mem)
     call mem%deallocate(di, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
+    !call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> calculate the phonon free energy as a direct sum

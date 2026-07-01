@@ -7,6 +7,7 @@ use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use type_forceconstant_thirdorder, only: lo_forceconstant_thirdorder
 use type_qpointmesh, only: lo_qpoint_mesh, lo_wedge_mesh, lo_qpoint, lo_generate_qmesh, lo_read_qmesh_from_file
 use type_phonon_dispersions, only: lo_phonon_dispersions
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 use type_phasespacesurface, only: lo_phasespacesurface
@@ -20,6 +21,7 @@ type(lo_forceconstant_thirdorder) :: fct
 type(lo_crystalstructure) :: uc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
+type(lo_hdf5_helper) :: h5
 !
 type(lo_phasespacesurface) :: ps
 type(lo_qpoint) :: qpoint
@@ -27,6 +29,7 @@ real(flyt) :: t0
 type(lo_mem_helper) :: mem
 
 call mw%init()
+call h5%initialize()
 t0 = walltime()
 call opts%parse()
 call mem%init()
@@ -115,6 +118,8 @@ else
 end if
 
 write (*, *) 'All done in ', tochar(walltime() - t0), 's'
-call mpi_finalize(lo_status)
+
+call h5%finalize()
+call mw%destroy()
 
 end program

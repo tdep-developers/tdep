@@ -11,7 +11,6 @@ subroutine write_to_hdf5(ise, filename)
     integer, dimension(:, :), allocatable :: di
     integer :: ipair, nx, i, l
 
-    call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     ! Store simple things
@@ -61,7 +60,6 @@ subroutine write_to_hdf5(ise, filename)
     deallocate (dr1)
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> write thingy to hdf5
@@ -82,7 +80,6 @@ subroutine read_from_hdf5(ise, filename, mw)
 
     ! Open on head rank
     if (mw%r .eq. readrnk) then
-        call h5%init(__FILE__, __LINE__)
         call h5%open_file('read', trim(filename))
 
         ! Read some basics
@@ -103,7 +100,6 @@ subroutine read_from_hdf5(ise, filename, mw)
         nx = size(dr0, 1)
 
         call h5%close_file()
-        call h5%destroy(__FILE__, __LINE__)
     end if
 
     ! Spread metadata around a bit

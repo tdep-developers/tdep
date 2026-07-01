@@ -5,6 +5,7 @@ use konstanter, only: r8, lo_temperaturetol, lo_status, lo_kappa_au_to_SI, lo_fr
 use gottochblandat, only: walltime, tochar, lo_linspace, lo_logspace, lo_mean
 use mpi_wrappers, only: lo_mpi_helper
 use lo_memtracker, only: lo_mem_helper
+use hdf5_wrappers, only: lo_hdf5_helper
 use type_crystalstructure, only: lo_crystalstructure
 use type_mdsim, only: lo_mdsim
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
@@ -54,6 +55,7 @@ initharmonic: block
     timer_scf = 0.0_r8
     timer_cumulative = 0.0_r8
     call mw%init()
+    call h5%initialize()
     ! Get options
     call opts%parse()
     if (mw%r .ne. 0) opts%verbosity = -100
@@ -344,7 +346,7 @@ finalize_and_write: block
 end block finalize_and_write
 
 ! And we are done!
-call mpi_barrier(mw%comm, mw%error)
-call mpi_finalize(lo_status)
+call h5%finalize()
+call mw%destroy()
 
 end program

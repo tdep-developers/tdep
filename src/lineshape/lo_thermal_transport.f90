@@ -650,7 +650,6 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
         ! And open a file for output
         if (mw%talk) then
             ! Create a new file.
-            call h5%init(__FILE__, __LINE__)
             call h5%open_file('write', trim(filename))
 
             ! what q-mesh did I use? Store the metadata in the file, just to be on the safe side.
@@ -874,7 +873,6 @@ subroutine write_to_hdf5(tc, qp, dr, p, filename, enhet, mw, mem)
     ! Close file
     if (mw%talk) then
         call h5%close_file()
-        call h5%destroy(__FILE__, __LINE__)
     end if
 
     call mem%tock(__FILE__, __LINE__, mw%comm)

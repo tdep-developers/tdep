@@ -10,6 +10,7 @@ use lo_symmetry_of_interactions, only: lo_interaction_tensors
 use type_forcemap, only: lo_forcemap
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
 use ifc_solvers, only: lo_solve_for_borncharges
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 
@@ -22,6 +23,7 @@ type(lo_opts) :: opts
 type(lo_mdsim) :: sim, trimsim
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 
 real(r8), dimension(3, 3) :: eps
 real(r8), dimension(:, :, :), allocatable :: Z
@@ -30,6 +32,7 @@ integer :: u, i, j
 ! Get the command line arguments
 call opts%parse()
 call mw%init()
+call h5%initialize()
 call mem%init()
 
 ! Sanity check to make sure no genius runs this in parallel
@@ -260,6 +263,9 @@ if (opts%nsigma .gt. 0) then
         call trimsim%write_to_hdf5(uc, ss, 'outfile.sim.hdf5', opts%verbosity + 1, eps, Z)
     end block removeoutliers
 end if
+
+call h5%finalize()
+call mw%destroy()
 
 write (*, *) ''
 write (*, *) 'All done!'

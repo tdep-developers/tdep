@@ -14,6 +14,7 @@ use gottochblandat, only: open_file, walltime, lo_chop, lo_points_on_sphere
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use lo_timetracker, only: lo_timer
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use phonondamping
 use dielscatter, only: lo_dielectric_response
@@ -28,6 +29,8 @@ type(lo_opts) :: opts
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr_init, tmr_calc, tmr_diel
+type(lo_hdf5_helper) :: h5
+
 
 type(lo_crystalstructure) :: uc
 type(lo_forceconstant_secondorder) :: fc
@@ -48,6 +51,7 @@ timer_init = walltime()
 init: block
     ! Init MPI!
     call mw%init()
+    call h5%initialize()
     ! Start the initialization timer
     call tmr_init%start()
     ! some options
@@ -446,6 +450,7 @@ if (mw%talk) then
     write (*, *) '                       total:', timer_total
 end if
 ! Kill MPI
+call h5%finalize()
 call mw%destroy()
 
 end program

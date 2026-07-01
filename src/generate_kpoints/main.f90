@@ -4,7 +4,7 @@ use konstanter, only: r8, lo_iou, lo_sqtol
 use mpi_wrappers, only: lo_mpi_helper
 use lo_memtracker, only: lo_mem_helper
 use gottochblandat, only: walltime, lo_chop, open_file, tochar, lo_determ, lo_kmesh_density
-
+use hdf5_wrappers, only: lo_hdf5_helper
 use dump_data
 
 use type_crystalstructure, only: lo_crystalstructure
@@ -16,6 +16,8 @@ implicit none
 type(lo_opts) :: opts
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
+
 type(lo_crystalstructure) :: p
 class(lo_qpoint_mesh), allocatable :: qp
 real(r8) :: timer
@@ -25,6 +27,7 @@ init: block
     timer = walltime()
     call opts%parse()
     call mw%init()
+    call h5%initialize()
     if (mw%talk .eqv. .false.) then
         opts%verbosity = -100
     end if
@@ -203,6 +206,7 @@ if (mw%talk) then
     write (lo_iou, *) ''
     write (lo_iou, *) 'All done! (', tochar(walltime() - timer), 's)'
 end if
+call h5%finalize()
 call mw%destroy()
 
 end program

@@ -7,6 +7,7 @@ use gottochblandat, only: lo_does_file_exist
 use type_crystalstructure, only: lo_crystalstructure
 use type_mdsim, only: lo_mdsim
 use lo_symmetry_of_interactions, only: lo_interaction_tensors
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 
@@ -29,6 +30,7 @@ type(lo_pairmapping) :: pm
 type(lo_pair_distribution) :: pdf
 type(lo_powderdiffraction) :: df
 type(lo_mean_square_displacement) :: msd
+type(lo_hdf5_helper) :: h5
 
 ! Fetch the normal things
 init: block
@@ -37,6 +39,7 @@ init: block
     ! get command line arguments
     call opts%parse()
     call mw%init()
+    call h5%initialize()
     if (.not. mw%talk) opts%verbosity = -100
     call mem%init()
     ! read positions
@@ -103,6 +106,7 @@ end if
 ! ! endif
 
 if (opts%verbosity .gt. 0) write (*, *) 'All done!'
+call h5%finalize()
 call mw%destroy()
 
 end program

@@ -6,6 +6,7 @@ use konstanter, only: r8, lo_tol, lo_kb_hartree, lo_bohr_to_A, lo_frequency_Hart
 use mpi_wrappers, only: lo_mpi_helper
 use lo_memtracker, only: lo_mem_helper
 use gottochblandat, only: tochar, walltime, lo_stop_gracefully, open_file
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use type_crystalstructure, only: lo_crystalstructure
 use type_forceconstant_secondorder, only: lo_forceconstant_secondorder
@@ -22,6 +23,8 @@ type(lo_forceconstant_secondorder) :: fc, fcss
 type(lo_jij_secondorder) :: jij
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
+
 integer, dimension(:), allocatable :: alloy_permutation
 
 ! Get the necessary things first
@@ -29,6 +32,7 @@ init: block
     ! Get CLI options
     call opts%parse()
     call mw%init()
+    call h5%initialize()
     call mem%init()
     if (.not. mw%talk) opts%verbosity = -100
 
@@ -293,5 +297,8 @@ dumpconf: block
         end if
     end if
 end block dumpconf
+
+call h5%finalize()
+call mw%destroy()
 
 end program

@@ -16,6 +16,7 @@ use type_forcemap, only: lo_forcemap, lo_secondorder_rot_herm_huang
 use type_mdsim, only: lo_mdsim
 use type_qpointmesh, only: lo_qpoint
 use lo_memtracker, only: lo_mem_helper
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 use ifc_solvers, only: lo_solve_for_irreducible_ifc, lo_solve_for_irreducible_ifc_fastugly
@@ -33,11 +34,13 @@ type(lo_dielectric_tensor) :: di
 !type(lo_jij_secondorder) :: jij
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 real(r8) :: t0
 
 ! To start, I need at least the unitcell
 init: block
     call mw%init()
+    call h5%initialize()
     call mem%init()
     t0 = walltime()
     call opts%parse()
@@ -743,6 +746,7 @@ if (mw%talk) then
     write (*, *) ''
     write (*, *) 'Done in ', tochar(walltime() - t0), 's'
 end if
+call h5%finalize()
 call mw%destroy()
 
 end program

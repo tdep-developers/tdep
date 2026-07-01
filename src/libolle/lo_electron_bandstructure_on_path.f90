@@ -227,7 +227,7 @@ subroutine write_to_hdf5(bs,filename,efermi,bandgap,mem)
     endif
 
     ! First dump it in hdf5, create the file
-    call h5%init(__FILE__,__LINE__)
+    !call h5%init(__FILE__,__LINE__)
     call h5%open_file('write',trim(filename))
 
     ! Write the x-axis, the ticks for the x-axis, and labels for the ticks
@@ -295,7 +295,7 @@ subroutine write_to_hdf5(bs,filename,efermi,bandgap,mem)
 
     ! close the file
     call h5%close_file()
-    call h5%destroy(__FILE__,__LINE__)
+    !call h5%destroy(__FILE__,__LINE__)
 end subroutine
 
 ! !> Dump the electron phasespace to file

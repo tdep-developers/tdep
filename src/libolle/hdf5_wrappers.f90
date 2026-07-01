@@ -1,4 +1,3 @@
-#include "precompilerdefinitions"
 module hdf5_wrappers
 !!
 !! Wrapper to read/write hdf5 files. Adding stuff to the interfaces as they are needed. Mostly because I can never remember the syntax.
@@ -21,6 +20,10 @@ public :: h5close_f,h5open_f,h5fclose_f,h5fopen_f,h5fcreate_f,h5fflush_f
 public :: h5gclose_f,h5gopen_f,h5gcreate_f
 public :: h5dclose_f,h5dopen_f,h5dcreate_f
 
+! Helper variables to make sure I don't initialize more than once
+logical, save :: hdf5_is_open = .false.
+integer, save :: hdf5_refcount = 0
+
 !> Container to store all the named constants to pass around, so that I don't need one billion use statements
 type lo_hdf5_helper
     !> Store the error codes somewhere
@@ -35,8 +38,8 @@ type lo_hdf5_helper
     integer(HID_T) :: subgroup_id=-huge(HID_T)
     contains
         ! open-close-create-destroy
-        procedure :: init
-        procedure :: destroy
+        procedure :: initialize
+        procedure :: finalize
         procedure :: open_file
         procedure :: close_file
         procedure :: open_group
@@ -146,43 +149,71 @@ end interface
 contains
 
 !> Initialize HDF5
-subroutine init(h5,filename,line)
+subroutine initialize(h5,filename,line)
     !> hdf5 helper
     class(lo_hdf5_helper), intent(out) :: h5
     !> perhaps say where we called from, for help with debugging
     character(len=*), intent(in), optional :: filename
     integer, intent(in), optional :: line
 
+    integer :: ierr
+    integer :: maj, min, rel
+    logical :: valid
+
     h5%errcode=0
-    ! Start hdf5
-    call h5open_f(h5%errcode)
-    ! Did it go ok?
-    if ( h5%errcode .ne. 0 ) then
-        if ( present(filename) .and. present(line) ) then
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,trim(filename),line)
-        else
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
+    ! Start hdf5, if not already started.
+    if ( hdf5_is_open .eqv. .false. ) then
+        call h5open_f(h5%errcode)
+        ! Did it go ok?
+        if ( h5%errcode .ne. 0 ) then
+            if ( present(filename) .and. present(line) ) then
+                call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,trim(filename),line)
+            else
+                call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
+            endif
         endif
     endif
+    ! Increment the counter: how many times I have called init:
+    hdf5_refcount = hdf5_refcount + 1
+
+    ! So some basic sanity checks, why not
+    call h5get_libversion_f(maj, min, rel, ierr)
+    print *, 'HDF5 lib version = ', maj, min, rel, ' ierr = ', ierr
+
+    call h5iis_valid_f(H5T_NATIVE_INTEGER, valid, ierr)
+    print *, 'H5T_NATIVE_INTEGER valid = ', valid, ' ierr = ', ierr
+    print *, 'H5T_NATIVE_INTEGER value = ', H5T_NATIVE_INTEGER
+
+    call h5iis_valid_f(H5T_NATIVE_DOUBLE, valid, ierr)
+    print *, 'H5T_NATIVE_DOUBLE valid = ', valid, ' ierr = ', ierr
+    print *, 'H5T_NATIVE_DOUBLE value = ', H5T_NATIVE_DOUBLE
+
+    call h5iis_valid_f(H5T_STD_I32LE, valid, ierr)
+    print *, 'H5T_STD_I32LE valid = ', valid, ' ierr = ', ierr
+    print *, 'H5T_STD_I32LE value = ', H5T_STD_I32LE
 
     ! Silence weird errors that confuse me.
-    call h5eset_auto_f(0,h5%errcode)
-    if ( h5%errcode .ne. 0 ) then
-        if ( present(filename) .and. present(line) ) then
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,trim(filename),line)
-        else
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-        endif
-    endif
+    ! call h5eset_auto_f(0,h5%errcode)
+    ! if ( h5%errcode .ne. 0 ) then
+    !     if ( present(filename) .and. present(line) ) then
+    !         call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,trim(filename),line)
+    !     else
+    !         call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
+    !     endif
+    ! endif
 end subroutine
 
 !> Close hdf5
-subroutine destroy(h5,filename,line)
+subroutine finalize(h5,filename,line)
     !> hdf5 helper
     class(lo_hdf5_helper), intent(inout) :: h5
     !> perhaps say where we called from, for help with debugging
     character(len=*), intent(in), optional :: filename
     integer, intent(in), optional :: line
+
+    ! So, we decrease the init counter by 1
+    hdf5_refcount = hdf5_refcount - 1
+
 
     !@todo insert check that hdf5 is running
     call h5close_f(h5%errcode)
@@ -211,30 +242,50 @@ subroutine open_file(h5,acc,filename)
         ! Create the property (?) that makes hdf close the file in a much angrier
         ! way, I hope. Stupid clusters. Maybe I should learn hdf5 better.
         call h5pcreate_f(H5P_FILE_ACCESS_F, fapl, h5%errcode)
-        if ( h5%errcode .ne. 0 ) then
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-        endif
+        if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,__FILE__,__LINE__)
         call h5pset_fclose_degree_f(fapl, H5F_CLOSE_STRONG_F, h5%errcode)
-        if ( h5%errcode .ne. 0 ) then
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-        endif
+        if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,__FILE__,__LINE__)
+        ! call h5pclose_f(fapl, h5%errcode)
+        ! if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,__FILE__,__LINE__)
         ! Actually create the file. Destroys any file already there.
         call h5fcreate_f(trim(filename), H5F_ACC_TRUNC_F, h5%file_id, h5%errcode,access_prp=fapl)
-        if ( h5%errcode .ne. 0 ) then
-            call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-        endif
+        if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io,__FILE__,__LINE__)
     case('read')
         if ( lo_does_file_exist(trim(filename)) ) then
-            call h5fopen_f(trim(filename), H5F_ACC_RDONLY_F, h5%file_id, h5%errcode)
-            if ( h5%errcode .ne. 0 ) then
-                call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-            endif
+            call h5fopen_f(trim(filename), H5F_ACC_RDONLY_F, h5%file_id, h5%errcode) !, access_prp=fapl)
+            if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
+            !call h5pclose_f(fapl, h5%errcode)
+            !if ( h5%errcode .ne. 0 ) call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
         else
             call lo_stop_gracefully(['could not find "'//trim(filename)//'"'],lo_exitcode_io)
         endif
     case default
         call lo_stop_gracefully(['Choose either "read" or "write" for hdf5'],lo_exitcode_io)
     end select
+end subroutine
+
+!> Close a file
+subroutine close_file(h5)
+    !> hdf5 helper
+    class(lo_hdf5_helper), intent(inout) :: h5
+
+    integer(SIZE_T) :: nopen
+
+    ! Flush the file first?
+    call h5fget_obj_count_f(h5%file_id, H5F_OBJ_ALL_F, nopen, h5%errcode)
+    if (h5%errcode .ne. 0) call lo_stop_gracefully(['h5fget_obj_count_f failed'], lo_exitcode_io)
+
+    ! Usually this should be 1: the file ID itself.
+    if (nopen .ne. 1_SIZE_T) then
+        call lo_stop_gracefully(['HDF5 file still has open objects: '//tochar(int(nopen))], lo_exitcode_io)
+    endif
+
+
+    call h5fclose_f(h5%file_id,h5%errcode)
+    if ( h5%errcode .ne. 0 ) then
+        call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
+    endif
+    h5%file_id=-huge(HID_T)
 end subroutine
 
 !> Open a group
@@ -289,19 +340,7 @@ subroutine open_subgroup(h5,acc,groupname)
     end select
 end subroutine
 
-!> Close a file
-subroutine close_file(h5)
-    !> hdf5 helper
-    class(lo_hdf5_helper), intent(inout) :: h5
 
-    ! Flush the file first?
-
-    call h5fclose_f(h5%file_id,h5%errcode)
-    if ( h5%errcode .ne. 0 ) then
-        call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(h5%errcode)],lo_exitcode_io)
-    endif
-    h5%file_id=-huge(HID_T)
-end subroutine
 
 !> Close a group
 subroutine close_group(h5)
@@ -364,7 +403,7 @@ subroutine read_int_1D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1)))
+    allocate(buf(maxdims(1)))
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -392,7 +431,7 @@ subroutine read_int_2D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2)))
+    allocate(buf(maxdims(1),maxdims(2)))
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -420,7 +459,7 @@ subroutine read_int_3D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2),maxdims(3)))
+    allocate(buf(maxdims(1),maxdims(2),maxdims(3)))
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -448,7 +487,7 @@ subroutine read_double_1D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1)))
+    allocate(buf(maxdims(1)))
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -476,7 +515,7 @@ subroutine read_double_2D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2)))
+    allocate(buf(maxdims(1),maxdims(2)))
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -504,7 +543,7 @@ subroutine read_double_3D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2),maxdims(3)))
+    allocate(buf(maxdims(1),maxdims(2),maxdims(3)))
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -532,7 +571,7 @@ subroutine read_double_4D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2),maxdims(3),maxdims(4)))
+    allocate(buf(maxdims(1),maxdims(2),maxdims(3),maxdims(4)))
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -560,7 +599,7 @@ subroutine read_double_5D_array_as_data(buf,obj_id,data_name,error)
         stop
     endif
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
-    lo_allocate(buf(maxdims(1),maxdims(2),maxdims(3),maxdims(4),maxdims(5)))
+    allocate(buf(maxdims(1),maxdims(2),maxdims(3),maxdims(4),maxdims(5)))
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, buf, dims, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
@@ -887,18 +926,39 @@ subroutine store_float_as_attribute(buf,obj_id,attribute_name,error)
     character(len=*), intent(in) :: attribute_name
     !> status
     integer, optional, intent(out) :: error
-    !
-    integer :: err,rank
-    integer(HID_T) :: attr_ds_id,attr_id
-    integer(HSIZE_T), dimension(1) :: dims
 
-    rank=1
-    dims=1
-    call h5screate_simple_f(rank,dims, attr_ds_id, err)
-    call h5acreate_f(obj_id,trim(attribute_name),H5T_NATIVE_DOUBLE,attr_ds_id,attr_id,err)
-    call h5awrite_f(attr_id, H5T_NATIVE_DOUBLE, [buf], dims, err)
-    call h5sclose_f(attr_ds_id,err)
-    if ( present(error) ) error=err
+    integer :: err, ierr
+    real(flyt), target :: tmp
+    integer(HID_T) :: attr_space_id, attr_id
+
+    err = 0
+    attr_space_id = -1_HID_T
+    attr_id       = -1_HID_T
+
+    tmp = buf
+
+    call h5screate_f(H5S_SCALAR_F, attr_space_id, err)
+
+    if (err == 0) then
+        call h5acreate_f(obj_id, trim(attribute_name), H5T_NATIVE_DOUBLE, &
+                         attr_space_id, attr_id, err)
+    end if
+
+    if (err == 0) then
+        call h5awrite_f(attr_id, H5T_NATIVE_INTEGER, c_loc(tmp), err)
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (attr_space_id >= 0_HID_T) then
+        call h5sclose_f(attr_space_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
 end subroutine
 subroutine store_float_1D_as_attribute(buf,obj_id,attribute_name,error)
     !> double to store
@@ -947,28 +1007,85 @@ subroutine store_float_2D_as_attribute(buf,obj_id,attribute_name,error)
 end subroutine
 
 subroutine store_int_as_attribute(buf,obj_id,attribute_name,error)
-    !> integer to store
     integer, intent(in) :: buf
-    !> identifier to attach the attribute to
     integer(HID_T), intent(in) :: obj_id
-    !> name of the attribute
     character(len=*), intent(in) :: attribute_name
-    !> status
     integer, optional, intent(out) :: error
-    !
-    integer :: err,rank
-    integer(HID_T) :: attr_ds_id,attr_id
-    integer(HSIZE_T), dimension(1) :: dims
-    integer, dimension(1) :: dumbuf
-    dumbuf(1)=buf
 
-    rank=1
-    dims=1
-    call h5screate_simple_f(rank,dims, attr_ds_id, err)
-    call h5acreate_f(obj_id,trim(attribute_name),H5T_NATIVE_INTEGER,attr_ds_id,attr_id,err)
-    call h5awrite_f(attr_id, H5T_NATIVE_INTEGER, dumbuf, dims, err)
-    call h5sclose_f(attr_ds_id,err)
-    if ( present(error) ) error=err
+    integer :: err, ierr
+    integer :: tmp
+    integer(HID_T) :: attr_space_id, attr_id, memtype_id
+    integer(HSIZE_T), dimension(1) :: dims
+
+    err = 0
+    attr_space_id = -1_HID_T
+    attr_id       = -1_HID_T
+    memtype_id    = H5T_NATIVE_INTEGER
+    dims(1)       = 1_HSIZE_T
+
+    tmp = buf
+
+    call h5screate_f(H5S_SCALAR_F, attr_space_id, err)
+
+    if (err == 0) then
+        call h5acreate_f(obj_id, trim(attribute_name), memtype_id, &
+                         attr_space_id, attr_id, err)
+    end if
+
+    if (err == 0) then
+        call h5awrite_f(attr_id, memtype_id, tmp, dims, err)
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (attr_space_id >= 0_HID_T) then
+        call h5sclose_f(attr_space_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
+
+    ! integer, intent(in), target :: buf
+    ! integer(HID_T), intent(in) :: obj_id
+    ! character(len=*), intent(in) :: attribute_name
+    ! integer, optional, intent(out) :: error
+
+    ! integer :: err, ierr
+    ! integer, target :: tmp
+    ! integer(HID_T) :: attr_space_id, attr_id, memtype_id
+
+    ! err = 0
+    ! attr_space_id = -1_HID_T
+    ! attr_id       = -1_HID_T
+    ! memtype_id    = H5T_NATIVE_INTEGER
+
+    ! tmp = buf
+
+    ! call h5screate_f(H5S_SCALAR_F, attr_space_id, err)
+
+    ! if (err == 0) then
+    !     call h5acreate_f(obj_id, trim(attribute_name), memtype_id, &
+    !                      attr_space_id, attr_id, err)
+    ! end if
+
+    ! if (err == 0) then
+    !     call h5awrite_f(attr_id, memtype_id, c_loc(tmp), err)
+    ! end if
+
+    ! if (attr_id >= 0_HID_T) then
+    !     call h5aclose_f(attr_id, ierr)
+    !     if (err == 0) err = ierr
+    ! end if
+
+    ! if (attr_space_id >= 0_HID_T) then
+    !     call h5sclose_f(attr_space_id, ierr)
+    !     if (err == 0) err = ierr
+    ! end if
+
+    ! if (present(error)) error = err
 end subroutine
 subroutine store_logical_as_attribute(buf,obj_id,attribute_name,error)
     !> logical to store
@@ -980,43 +1097,163 @@ subroutine store_logical_as_attribute(buf,obj_id,attribute_name,error)
     !> status
     integer, optional, intent(out) :: error
     !
-    integer :: err,i,rank
-    integer(HID_T) :: attr_ds_id,attr_id
-    integer(HSIZE_T), dimension(1) :: dims
-    ! hdf5 is stupid and can not store logicals, so I store it as an int, and when
-    ! it's read it's converted back again, or something.
+    integer :: err, ierr
+    integer, target :: tmp
+    integer(HID_T) :: attr_space_id, attr_id
+
+    err = 0
+    attr_space_id = -1_HID_T
+    attr_id       = -1_HID_T
+
     if ( buf ) then
-        i=1
+        tmp = 1
     else
-        i=0
+        tmp = 0
     endif
-    rank=1
-    dims=1
-    call h5screate_simple_f(rank,dims, attr_ds_id, err)
-    call h5acreate_f(obj_id,trim(attribute_name),H5T_NATIVE_INTEGER,attr_ds_id,attr_id,err)
-    call h5awrite_f(attr_id, H5T_NATIVE_INTEGER, [i], dims, err)
-    call h5sclose_f(attr_ds_id,err)
-    if ( present(error) ) error=err
+
+    call h5screate_f(H5S_SCALAR_F, attr_space_id, err)
+
+    if (err == 0) then
+        call h5acreate_f(obj_id, trim(attribute_name), H5T_NATIVE_INTEGER, &
+                         attr_space_id, attr_id, err)
+    end if
+
+    if (err == 0) then
+        call h5awrite_f(attr_id, H5T_NATIVE_INTEGER, c_loc(tmp), err)
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (attr_space_id >= 0_HID_T) then
+        call h5sclose_f(attr_space_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
 end subroutine
 
 subroutine read_int_as_attribute(buf,obj_id,attribute_name,error)
-    !> integer to store
     integer, intent(out) :: buf
-    !> identifier to attach the attribute to
     integer(HID_T), intent(in) :: obj_id
-    !> name of the attribute
     character(len=*), intent(in) :: attribute_name
-    !> status
     integer, optional, intent(out) :: error
-    !
-    integer :: err
-    integer(HID_T) :: attr_id
+
+    integer :: err, ierr
+    integer :: tmp,rank
+    integer(HID_T) :: attr_id, memtype_id, attr_type, attr_space
     integer(HSIZE_T), dimension(1) :: dims
-    dims=0
-    call h5aopen_f(obj_id,trim(attribute_name),attr_id,err)
-    call h5aread_f(attr_id, H5T_NATIVE_INTEGER, buf, dims, err)
-    call h5aclose_f(attr_id,err)
-    if ( present(error) ) error=err
+    logical :: is_valid
+
+    err = 0
+    attr_id    = -1_HID_T
+    memtype_id = H5T_NATIVE_INTEGER
+    dims(1)    = 1_HSIZE_T
+
+    tmp = 0
+    buf = 0
+
+    ! check that object id is fine
+    call h5iis_valid_f(obj_id, is_valid, err)
+    if (err /= 0 .or. .not. is_valid) then
+        call lo_stop_gracefully(['invalid HDF5 object id'], lo_exitcode_io)
+    end if
+    ! check that attribute exist
+    call h5aexists_f(obj_id, trim(attribute_name), is_valid, err)
+    if (err /= 0 .or. .not. is_valid ) then
+        call lo_stop_gracefully(['attribute does not exist here: '//trim(attribute_name)], lo_exitcode_io)
+    end if
+
+
+call h5iis_valid_f(obj_id, is_valid, err)
+print *, 'obj_id valid = ', is_valid, ' err = ', err
+
+call h5aexists_f(obj_id, trim(attribute_name), is_valid, err)
+print *, 'attribute exists = ', is_valid, ' err = ', err
+
+call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
+print *, 'attr_id = ', attr_id, ' err = ', err
+
+call h5aget_type_f(attr_id, attr_type, err)
+print *, 'attr_type = ', attr_type, ' err = ', err
+
+call h5aget_space_f(attr_id, attr_space, err)
+print *, 'attr_space = ', attr_space, ' err = ', err
+
+call h5sget_simple_extent_ndims_f(attr_space, rank, err)
+print *, 'rank = ', rank, ' err = ', err
+
+call h5iis_valid_f(H5T_NATIVE_INTEGER, is_valid, err)
+print *, 'H5T_NATIVE_INTEGER valid = ', is_valid, ' err = ', err
+
+write(*,*) 'h5T',H5T_NATIVE_INTEGER
+
+call h5aread_f(attr_id, H5T_NATIVE_INTEGER, tmp, dims, err)
+print *, 'read value = ', tmp, ' err = ', err
+
+    call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
+
+    if (err == 0) then
+        call h5aread_f(attr_id, memtype_id, tmp, dims, err)
+    else
+        call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)], lo_exitcode_io)
+    end if
+
+    if (err == 0) then
+        buf = tmp
+    else
+        call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)], lo_exitcode_io)
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
+
+    ! integer, intent(out) :: buf
+    ! !> identifier to attach the attribute to
+    ! integer(HID_T), intent(in) :: obj_id
+    ! !> name of the attribute
+    ! character(len=*), intent(in) :: attribute_name
+    ! !> status
+    ! integer, optional, intent(out) :: error
+
+    ! integer :: err, ierr
+    ! integer, target :: tmp
+    ! integer(HID_T) :: attr_id,memtype_id
+    ! type(c_ptr) :: tmp_ptr
+
+    ! err = 0
+    ! attr_id = -1_HID_T
+    ! memtype_id = H5T_NATIVE_INTEGER
+    ! tmp = 0
+    ! buf = 0
+
+    ! call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
+
+    ! if (err == 0) then
+    !     tmp_ptr = c_loc(tmp)
+    !     call h5aread_f(attr_id, memtype_id, tmp_ptr, err)
+    ! else
+    !     call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)],lo_exitcode_io)
+    ! end if
+
+    ! if (err == 0) then
+    !     buf = tmp
+    ! else
+    !     call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)],lo_exitcode_io)
+    ! end if
+
+    ! if (attr_id >= 0_HID_T) then
+    !     call h5aclose_f(attr_id, ierr)
+    !     if (err == 0) err = ierr
+    ! end if
+
+    ! if (present(error)) error = err
 end subroutine
 subroutine read_logical_as_attribute(buf,obj_id,attribute_name,error)
     !> integer to store
@@ -1028,19 +1265,52 @@ subroutine read_logical_as_attribute(buf,obj_id,attribute_name,error)
     !> status
     integer, optional, intent(out) :: error
     !
-    integer :: err,i
+    integer :: err, ierr
+    integer, target :: tmp
     integer(HID_T) :: attr_id
-    integer(HSIZE_T), dimension(1) :: dims
-    dims=0
-    call h5aopen_f(obj_id,trim(attribute_name),attr_id,err)
-    call h5aread_f(attr_id, H5T_NATIVE_INTEGER, i, dims, err)
-    call h5aclose_f(attr_id,err)
-    if ( i .eq. 1 ) then
-        buf=.true.
-    else
-        buf=.false.
-    endif
-    if ( present(error) ) error=err
+    type(c_ptr) :: tmp_ptr
+
+    err = 0
+    attr_id = -1_HID_T
+    tmp = 0
+    buf = .false.
+
+    call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
+
+    if (err == 0) then
+        tmp_ptr = c_loc(tmp)
+        call h5aread_f(attr_id, H5T_NATIVE_INTEGER, tmp_ptr, err)
+    end if
+
+    if (err == 0) then
+        if ( tmp .eq. 1 ) then
+            buf = .true.
+        else
+            buf = .false.
+        endif
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
+
+
+    ! integer :: err,i
+    ! integer(HID_T) :: attr_id
+    ! integer(HSIZE_T), dimension(1) :: dims
+    ! dims=0
+    ! call h5aopen_f(obj_id,trim(attribute_name),attr_id,err)
+    ! call h5aread_f(attr_id, H5T_NATIVE_INTEGER, i, dims, err)
+    ! call h5aclose_f(attr_id,err)
+    ! if ( i .eq. 1 ) then
+    !     buf=.true.
+    ! else
+    !     buf=.false.
+    ! endif
+    ! if ( present(error) ) error=err
 end subroutine
 subroutine read_float_as_attribute(buf,obj_id,attribute_name,error)
     !> integer to store
@@ -1051,15 +1321,34 @@ subroutine read_float_as_attribute(buf,obj_id,attribute_name,error)
     character(len=*), intent(in) :: attribute_name
     !> status
     integer, optional, intent(out) :: error
-    !
-    integer :: err
+
+    integer :: err, ierr
+    real(flyt), target :: tmp
     integer(HID_T) :: attr_id
-    integer(HSIZE_T), dimension(1) :: dims
-    dims=0
-    call h5aopen_f(obj_id,trim(attribute_name),attr_id,err)
-    call h5aread_f(attr_id, H5T_NATIVE_DOUBLE, buf, dims, err)
-    call h5aclose_f(attr_id,err)
-    if ( present(error) ) error=err
+    type(c_ptr) :: tmp_ptr
+
+    err = 0
+    attr_id = -1_HID_T
+    tmp = 0
+    buf = 0
+
+    call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
+
+    if (err == 0) then
+        tmp_ptr = c_loc(tmp)
+        call h5aread_f(attr_id, H5T_NATIVE_DOUBLE, tmp_ptr, err)
+    end if
+
+    if (err == 0) then
+        buf = tmp
+    end if
+
+    if (attr_id >= 0_HID_T) then
+        call h5aclose_f(attr_id, ierr)
+        if (err == 0) err = ierr
+    end if
+
+    if (present(error)) error = err
 end subroutine
 
 end module

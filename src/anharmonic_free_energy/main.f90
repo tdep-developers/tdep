@@ -15,6 +15,7 @@ use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh, lo_read_qmesh_from
 use type_phonon_dispersions, only: lo_phonon_dispersions
 use lo_phonon_bandstructure_on_path, only: lo_phonon_bandstructure
 use type_phonon_dos, only: lo_phonon_dos
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 use energy, only: perturbative_anharmonic_free_energy
@@ -33,6 +34,7 @@ type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
 type(lo_timer) :: tmr
 type(lo_mdsim) :: sim
+type(lo_hdf5_helper) :: h5
 
 real(r8), dimension(3, 5) :: cumulant
 real(r8) :: timer_init, timer_total
@@ -41,6 +43,7 @@ logical :: havehighorder
 
 ! Init MPI, timers and options
 call mw%init()
+call h5%initialize()
 timer_total = walltime()
 timer_init = walltime()
 call opts%parse()
@@ -244,6 +247,7 @@ getenergy: block
 end block getenergy
 
 ! Kill MPI
+call h5%finalize()
 call mw%destroy()
 
 end program

@@ -455,7 +455,7 @@ subroutine read_from_hdf5(eh,filename,p,nbuffer,mw,mem,verbosity)
         real(r8), dimension(:,:), allocatable :: dr
         integer :: i
 
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
 
         call h5%read_attribute(eh%n_atom,h5%file_id,'n_atom')
@@ -516,7 +516,7 @@ subroutine read_from_hdf5(eh,filename,p,nbuffer,mw,mem,verbosity)
             call h5%close_group()
         enddo
         call h5%close_file()
-        call h5%destroy(__FILE__,__LINE__)
+        !call h5%destroy(__FILE__,__LINE__)
     end block readfile
     endif
 
@@ -906,7 +906,7 @@ subroutine write_to_hdf5(eh,filename)
     real(r8), dimension(:,:), allocatable :: dr
     integer :: i
 
-    call h5%init(__FILE__,__LINE__)
+    !call h5%init(__FILE__,__LINE__)
     call h5%open_file('write',trim(filename))
 
     call h5%store_attribute(eh%n_atom,h5%file_id,'n_atom')
@@ -964,7 +964,7 @@ subroutine write_to_hdf5(eh,filename)
     enddo
 
     call h5%close_file()
-    call h5%destroy(__FILE__,__LINE__)
+    !call h5%destroy(__FILE__,__LINE__)
 end subroutine
 
 ! !> return the Hamiltonian
@@ -977,14 +977,14 @@ end subroutine
 !     complex(r8), dimension(:,:,:), intent(out) :: hamiltonian
 !     !> overlap
 !     complex(r8), dimension(:,:), intent(out) :: overlap
-! 
+!
 !     ! Fourier transform the Hamiltonian and overlap
 !     complex(r8) :: expikr
 !     real(r8), dimension(3) :: lv
 !     real(r8) :: kdotr
 !     integer :: a1,a2,i1,i2,j1,j2,ispin
 !     integer :: ipair
-! 
+!
 !     overlap=0.0_r8
 !     hamiltonian=0.0_r8
 !     do ipair=1,eh%n_pair

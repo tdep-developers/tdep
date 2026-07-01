@@ -5,6 +5,7 @@ use konstanter, only: flyt, lo_tol, lo_sqtol, lo_bohr_to_A, lo_gitbranch, lo_git
 use gottochblandat, only: lo_frobnorm, lo_chop, open_file, tochar, lo_clean_fractional_coordinates, lo_determ, &
                           lo_fetch_tolerance, walltime, lo_return_unique, lo_invert3x3matrix, qsort
 use mpi_wrappers, only: lo_mpi_helper
+use hdf5_wrappers, only: lo_hdf5_helper
 use options, only: lo_opts
 use type_crystalstructure, only: lo_crystalstructure
 use type_qpointmesh, only: lo_bandstructure
@@ -14,6 +15,7 @@ implicit none
 
 type(lo_opts) :: opts
 type(lo_mpi_helper) :: mw
+type(lo_hdf5_helper) :: h5
 type(lo_crystalstructure) :: p
 real(flyt) :: timer
 
@@ -25,6 +27,7 @@ init: block
     call opts%parse()
     ! Init MPI
     call mw%init()
+    call h5%initialize()
     ! Sanity test, don't run this in parallel.
     if (mw%n .gt. 1) then
         write (*, *) 'Do not run this in parallel'
@@ -232,6 +235,9 @@ end if
 !    enddo
 !    write(*,*) ''
 !end block report4
+
+call h5%finalize()
+call mw%destroy()
 
 write (*, *) 'All done!'
 

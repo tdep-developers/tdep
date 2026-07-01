@@ -12,6 +12,7 @@ use type_qpointmesh, only: lo_qpoint_mesh, lo_generate_qmesh
 use type_phonon_dispersions, only: lo_phonon_dispersions
 use type_phonon_dos, only: lo_phonon_dos
 use lo_timetracker, only: lo_timer
+use hdf5_wrappers, only: lo_hdf5_helper
 
 use options, only: lo_opts
 use kappa, only: get_kappa, get_kappa_offdiag, iterative_solution, symmetrize_kappa
@@ -31,6 +32,7 @@ type(lo_crystalstructure) :: uc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 type(lo_timer) :: tmr_init, tmr_scat, tmr_kappa, tmr_tot
 ! The scattering rates
 type(lo_scattering_rates) :: sr
@@ -43,6 +45,7 @@ initharmonic: block
     integer :: i, j, q1
     ! Start MPI and timers
     call mw%init()
+    call h5%initialize()
     t0 = walltime()
     ! Start the initialization timer
     call tmr_tot%start()
@@ -368,6 +371,7 @@ finalize_and_write: block
 end block finalize_and_write
 
 ! And we are done!
-call mpi_barrier(mw%comm, mw%error)
-call mpi_finalize(lo_status)
+call h5%finalize()
+call mw%destroy()
+
 end program

@@ -13,6 +13,7 @@ use gottochblandat, only: open_file, walltime, lo_chop, lo_points_on_sphere, lo_
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
 use lo_timetracker, only: lo_timer
+use hdf5_wrappers, only: lo_hdf5_helper
 use options, only: lo_opts
 
 use lo_distributed_phonon_dispersion_relations, only: lo_distributed_phonon_dispersions
@@ -26,6 +27,7 @@ implicit none
 type(lo_opts) :: opts
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 type(lo_timer) :: tmr_init
 
 type(lo_crystalstructure) :: uc
@@ -44,8 +46,7 @@ init: block
 
     ! Init MPI!
     call mw%init()
-
-    ! Init memory tracker
+    call h5%initialize()
     call mem%init()
 
     ! Start the initialization timer
@@ -292,7 +293,8 @@ if (mw%talk) then
     write (*, *) ' '
     write (*, *) 'All done! '
 end if
-! Kill MPI
+
+call h5%finalize()
 call mw%destroy()
 
 end program

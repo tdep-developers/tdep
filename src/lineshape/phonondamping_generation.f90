@@ -200,6 +200,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         se%im_iso(se%n_energy, :) = 0.0_r8
     end block sanity
 
+
     ! Kramers-Kronig-transform the imaginary part to get the real.
     if (se%thirdorder_scattering) then
         kktransform: block
@@ -208,6 +209,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             complex(r8) :: eta
             real(r8), dimension(:), allocatable :: x, xs, y0
             real(r8) :: xp, dlx
+            real(r8) :: e0,e1,e2
             integer :: imode, ie, ctr
 
             call mem%allocate(x, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -243,6 +245,29 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             call mw%allreduce('sum', se%re_3ph)
             se%re_3ph = se%re_3ph*pref
 
+            ! Get the quadratic thingy?
+            do imode=1,se%n_mode
+                y0 = se%im_3ph(:, imode)*x
+                z0 = (x + eta)**2
+                z0 = z0*z0
+                y0 = real(y0/z0,r8)
+                y0(1) = 0.0_r8
+                y0(1) = y0(1)*0.5_r8
+                y0(se%n_energy) = y0(se%n_energy)*0.5_r8
+                xp = sum(y0)*dlx*pref
+
+                e0=se%re_3ph(1,imode)
+                e1=se%re_3ph(6,imode)
+                e2=se%re_3ph(11,imode)
+                dlx=x(6)-x(1)
+
+if ( verbosity .gt. 1 ) then
+    write(*,*) 'corr',imode,se%re_3ph(1,imode),xp,(e0 -2*e1 + e2)/dlx/dlx
+endif
+                xp=(e0 -2*e1 + e2)/dlx/dlx
+                !se%re_3ph(:,imode) = se%re_3ph(:,imode) - se%re_3ph(1,imode); $ + xp*xs*0.5_r8
+            enddo
+
             call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
             call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -250,6 +275,16 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         end block kktransform
         call tmr%tock('Kramers-Kronig transformation')
     end if
+
+    stupidcorrection: block
+        real(r8) :: f0
+        integer :: imode
+
+        do imode=1,se%n_mode
+            f0=se%re_3ph(1,imode)
+            se%re_3ph(:,imode)=se%re_3ph(:,imode)-f0
+        enddo
+    end block stupidcorrection
 
     ! Normalize the spectral functions
     normalize: block
@@ -295,6 +330,14 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         call mem%deallocate(yim, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(yre, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(ysf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+        if ( verbosity .gt. 1 ) then
+            write(*,*) 'Raw normalization:'
+            do imode=1,dr%n_mode
+                if (wp%omega(imode) .lt. lo_freqtol) cycle
+                write(*,*) imode,1.0_r8/se%scalingfactor(imode)
+            enddo
+        endif
     end block normalize
     call tmr%tock('spectral function normalization')
 
