@@ -258,7 +258,7 @@ subroutine write_to_hdf5(pdf, pm, uc, sim, filename)
     integer :: ish, i, nshell, ii, ctr, j
     character(len=2000) :: str
 
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     ! Count number of relevant shells?
@@ -360,11 +360,8 @@ subroutine write_to_hdf5(pdf, pm, uc, sim, filename)
         call h5%close_group()
     enddo
 
-
-
-
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
+    !call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> get the trajectory for one pair

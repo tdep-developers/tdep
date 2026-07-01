@@ -170,7 +170,7 @@ subroutine create_scattering_matrix(scm,p,fc2,fc3,ise,temperature,qp,adaptive_pr
 
         ! Dump to file for examination
         if ( mw%talk ) then
-            call h5%init(__FILE__, __LINE__)
+            !call h5%init(__FILE__, __LINE__)
             call h5%open_file('write', 'outfile.collision_matrix.hdf5')
 
             call h5%store_data(fullmatrix,h5%file_id,'collision_matrix')
@@ -178,7 +178,7 @@ subroutine create_scattering_matrix(scm,p,fc2,fc3,ise,temperature,qp,adaptive_pr
             call h5%store_data(bar_transform,h5%file_id,'bar_transform')
 
             call h5%close_file()
-            call h5%destroy(__FILE__, __LINE__)
+            !call h5%destroy(__FILE__, __LINE__)
         endif
     end block buildmatrix
 

@@ -33,6 +33,7 @@ type(lo_crystalstructure) :: uc
 class(lo_qpoint_mesh), allocatable :: qp
 type(lo_mpi_helper) :: mw
 type(lo_mem_helper) :: mem
+type(lo_hdf5_helper) :: h5
 ! Unique
 type(lo_threephononevents) :: sc
 type(lo_mfp) :: mf

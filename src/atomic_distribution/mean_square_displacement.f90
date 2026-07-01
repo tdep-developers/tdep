@@ -123,7 +123,7 @@ subroutine write_to_hdf5(msd)
     filename = 'outfile.mean_square_displacement.hdf5'
     allocate (dr(msd%nt))
 
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', 'outfile.mean_square_displacement.hdf5')
 
     call lo_h5_store_attribute(msd%na, h5%file_id, 'number_unique_atoms', lo_status)
@@ -148,7 +148,7 @@ subroutine write_to_hdf5(msd)
     deallocate (dr)
 
     call h5%close_file()
-    call h5%destroy()
+    !call h5%destroy()
 end subroutine
 
 !> Dump it to a plaintext file

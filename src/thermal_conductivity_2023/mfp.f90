@@ -631,7 +631,7 @@ subroutine write_cumulative_plots(mf, pd, uc, enhet, filename, verbosity)
     !call return_mapping_to_unique(uc,n_unique,map_to_unique,name_of_unique)
 
     ! Initialize hdf5
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     ! some metadata, first how many temperature there are
@@ -795,7 +795,7 @@ subroutine write_cumulative_plots(mf, pd, uc, enhet, filename, verbosity)
     end do
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
+    !call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 !> logarithmically spaced points, slightly smarter in how the shifts/spacings are decided

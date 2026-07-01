@@ -136,7 +136,7 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
             write(*,*) 'Reading interpolated self-energy from file'
         endif
 
-        call h5%init(__FILE__,__LINE__)
+        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
 
         ! First we read the q-point mesh from file
@@ -188,7 +188,7 @@ subroutine read_interpolated_selfenergy_from_hdf5(ise,p,fc,filename,mw,mem,verbo
         endif
 
         call h5%close_file()
-        call h5%destroy()
+        !call h5%destroy()
 
         ! Generate triangulation thingy
         call ise%box%generate(ise%qp,p)

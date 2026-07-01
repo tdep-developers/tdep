@@ -97,7 +97,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dd
         writerank=0 !mw%n-1
 
         if ( mw%r .eq. writerank ) then
-            call h5%init(__FILE__, __LINE__)
+            !call h5%init(__FILE__, __LINE__)
             call h5%open_file('write', trim(filename))
         endif
 
@@ -385,7 +385,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dd
         ! And we are done with writing
         if ( mw%r .eq. writerank ) then
             call h5%close_file()
-            call h5%destroy(__FILE__, __LINE__)
+            !call h5%destroy(__FILE__, __LINE__)
         endif
 
         call tmr%stop()

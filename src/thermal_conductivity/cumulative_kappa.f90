@@ -624,7 +624,7 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
         call lo_stop_gracefully(['Unknown unit'], lo_exitcode_param, __FILE__, __LINE__)
     end select
 
-    call h5%init(__FILE__, __LINE__)
+    !call h5%init(__FILE__, __LINE__)
     call h5%open_file('write', trim(filename))
 
     spstr = ""
@@ -773,7 +773,7 @@ subroutine write_to_hdf5(mf, pd, uc, enhet, filename, mem)
                        enhet='hbar/m/K', dimensions='xyz,xyz')
 
     call h5%close_file()
-    call h5%destroy(__FILE__, __LINE__)
+    !call h5%destroy(__FILE__, __LINE__)
 end subroutine
 
 end module
