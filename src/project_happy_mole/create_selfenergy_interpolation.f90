@@ -384,6 +384,7 @@ subroutine generate_interpolated_selfenergy(filename,uc,fc,fct,fcf,ise,qp,dqp,dd
 
         ! And we are done with writing
         if ( mw%r .eq. writerank ) then
+write(*,*) 'CLOSING FILE'
             call h5%close_file()
             !call h5%destroy(__FILE__, __LINE__)
         endif

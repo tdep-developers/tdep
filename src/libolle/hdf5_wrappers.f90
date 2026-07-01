@@ -271,7 +271,9 @@ subroutine close_file(h5)
 
     integer(SIZE_T) :: nopen
 
-    ! Flush the file first?
+    !@TODO Here we should probably flush, seems like a reasonable idea.
+
+    ! Sanity check, make sure everything is closed/out of scope.
     call h5fget_obj_count_f(h5%file_id, H5F_OBJ_ALL_F, nopen, h5%errcode)
     if (h5%errcode .ne. 0) call lo_stop_gracefully(['h5fget_obj_count_f failed'], lo_exitcode_io)
 
@@ -340,8 +342,6 @@ subroutine open_subgroup(h5,acc,groupname)
     end select
 end subroutine
 
-
-
 !> Close a group
 subroutine close_group(h5)
     !> hdf5 helper
@@ -393,6 +393,7 @@ subroutine read_int_1D_array_as_data(buf,obj_id,data_name,error)
     integer :: err,rank
     integer(HID_T) :: dspace_id,dset_id
     integer(HSIZE_T), dimension(1) :: dims,maxdims
+
     ! sife of the array
     call h5dopen_f(obj_id, data_name, dset_id, err)
     ! figure out size
@@ -405,6 +406,7 @@ subroutine read_int_1D_array_as_data(buf,obj_id,data_name,error)
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
     allocate(buf(maxdims(1)))
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, buf, dims, err)
+    call h5sclose_f(dspace_id, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
 end subroutine
@@ -433,6 +435,7 @@ subroutine read_int_2D_array_as_data(buf,obj_id,data_name,error)
     call h5sget_simple_extent_dims_f(dspace_id, dims, maxdims, err)
     allocate(buf(maxdims(1),maxdims(2)))
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, buf, dims, err)
+    call h5sclose_f(dspace_id, err)
     call h5dclose_f(dset_id,err)
     if ( present(error) ) error=err
 end subroutine
@@ -1166,33 +1169,6 @@ subroutine read_int_as_attribute(buf,obj_id,attribute_name,error)
         call lo_stop_gracefully(['attribute does not exist here: '//trim(attribute_name)], lo_exitcode_io)
     end if
 
-
-call h5iis_valid_f(obj_id, is_valid, err)
-print *, 'obj_id valid = ', is_valid, ' err = ', err
-
-call h5aexists_f(obj_id, trim(attribute_name), is_valid, err)
-print *, 'attribute exists = ', is_valid, ' err = ', err
-
-call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
-print *, 'attr_id = ', attr_id, ' err = ', err
-
-call h5aget_type_f(attr_id, attr_type, err)
-print *, 'attr_type = ', attr_type, ' err = ', err
-
-call h5aget_space_f(attr_id, attr_space, err)
-print *, 'attr_space = ', attr_space, ' err = ', err
-
-call h5sget_simple_extent_ndims_f(attr_space, rank, err)
-print *, 'rank = ', rank, ' err = ', err
-
-call h5iis_valid_f(H5T_NATIVE_INTEGER, is_valid, err)
-print *, 'H5T_NATIVE_INTEGER valid = ', is_valid, ' err = ', err
-
-write(*,*) 'h5T',H5T_NATIVE_INTEGER
-
-call h5aread_f(attr_id, H5T_NATIVE_INTEGER, tmp, dims, err)
-print *, 'read value = ', tmp, ' err = ', err
-
     call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
 
     if (err == 0) then
@@ -1214,46 +1190,6 @@ print *, 'read value = ', tmp, ' err = ', err
 
     if (present(error)) error = err
 
-    ! integer, intent(out) :: buf
-    ! !> identifier to attach the attribute to
-    ! integer(HID_T), intent(in) :: obj_id
-    ! !> name of the attribute
-    ! character(len=*), intent(in) :: attribute_name
-    ! !> status
-    ! integer, optional, intent(out) :: error
-
-    ! integer :: err, ierr
-    ! integer, target :: tmp
-    ! integer(HID_T) :: attr_id,memtype_id
-    ! type(c_ptr) :: tmp_ptr
-
-    ! err = 0
-    ! attr_id = -1_HID_T
-    ! memtype_id = H5T_NATIVE_INTEGER
-    ! tmp = 0
-    ! buf = 0
-
-    ! call h5aopen_f(obj_id, trim(attribute_name), attr_id, err)
-
-    ! if (err == 0) then
-    !     tmp_ptr = c_loc(tmp)
-    !     call h5aread_f(attr_id, memtype_id, tmp_ptr, err)
-    ! else
-    !     call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)],lo_exitcode_io)
-    ! end if
-
-    ! if (err == 0) then
-    !     buf = tmp
-    ! else
-    !     call lo_stop_gracefully(['hdf5 nonzero exitcode: '//tochar(err)],lo_exitcode_io)
-    ! end if
-
-    ! if (attr_id >= 0_HID_T) then
-    !     call h5aclose_f(attr_id, ierr)
-    !     if (err == 0) err = ierr
-    ! end if
-
-    ! if (present(error)) error = err
 end subroutine
 subroutine read_logical_as_attribute(buf,obj_id,attribute_name,error)
     !> integer to store

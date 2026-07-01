@@ -52,7 +52,6 @@ module subroutine write_to_file(qp,p,filename,mem,verbosity,input_id)
         class default
             call lo_stop_gracefully(['ERROR: undefined mesh when printing'],lo_exitcode_io,__FILE__,__LINE__)
     end select
-write(*,*) 'Printing ID:',i
     call h5%store_attribute(i,h5%file_id,'mesh_type')
 
     ! dimensions of grid, number of points, number of tetrahedrons
@@ -196,9 +195,10 @@ module subroutine lo_read_qmesh_from_file(qp,p,filename,mem,verbosity,input_id)
     if ( present(input_id) ) then
         h5%file_id=input_id
     else
-        !call h5%init(__FILE__,__LINE__)
         call h5%open_file('read',trim(filename))
     endif
+
+
 
     ! Decide on meshtype
     call h5%read_attribute(i,h5%file_id,'mesh_type')
