@@ -1144,9 +1144,8 @@ subroutine read_int_as_attribute(buf,obj_id,attribute_name,error)
     character(len=*), intent(in) :: attribute_name
     integer, optional, intent(out) :: error
 
-    integer :: err, ierr
-    integer :: tmp,rank
-    integer(HID_T) :: attr_id, memtype_id, attr_type, attr_space
+    integer :: err, ierr, tmp
+    integer(HID_T) :: attr_id, memtype_id
     integer(HSIZE_T), dimension(1) :: dims
     logical :: is_valid
 

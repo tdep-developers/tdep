@@ -124,7 +124,7 @@ subroutine create_scattering_matrix(scm,p,fc2,fc3,ise,temperature,qp,adaptive_pr
                 ! then we permute with operation
                 kq=qmesh_permutation(jq,iop)
                 ! if it's not the same we full out the row?
-                if ( iq .eq. kq ) cycle
+                !if ( iq .eq. kq ) cycle
 
                 do i=1,qp%n_full_point
                     lq=qmesh_permutation(i,iop)
