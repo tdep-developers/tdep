@@ -157,6 +157,9 @@ initharmonic: block
     ! Make some space to keep intermediate values
     do q1 = 1, qp%n_irr_point
         allocate (dr%iq(q1)%linewidth(dr%n_mode))
+        allocate (dr%iq(q1)%lw_iso(dr%n_mode))
+        allocate (dr%iq(q1)%lw_3ph(dr%n_mode))
+        allocate (dr%iq(q1)%lw_4ph(dr%n_mode))
         allocate (dr%iq(q1)%F0(3, dr%n_mode))
         allocate (dr%iq(q1)%Fn(3, dr%n_mode))
         allocate (dr%iq(q1)%qs(dr%n_mode))
@@ -164,6 +167,9 @@ initharmonic: block
         allocate (dr%iq(q1)%scalar_mfp(dr%n_mode))
         allocate (dr%iq(q1)%kappa(3, 3, dr%n_mode))
         dr%iq(q1)%linewidth = 0.0_r8
+        dr%iq(q1)%lw_iso = 0.0_r8
+        dr%iq(q1)%lw_3ph = 0.0_r8
+        dr%iq(q1)%lw_4ph = 0.0_r8
         dr%iq(q1)%F0 = 0.0_r8
         dr%iq(q1)%Fn = 0.0_r8
         dr%iq(q1)%qs = 0.0_r8

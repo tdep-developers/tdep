@@ -213,34 +213,45 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
 
     scatt: block
         !> Buffer to contains the linewidth
-        real(r8), dimension(:, :), allocatable :: buf_lw
+        real(r8), dimension(:, :), allocatable :: buf_lw, buf_lw3, buf_lw4, buf_lwi
         !> Buffer for the linewidth of the local point
-        real(r8) :: buf, f0, velnorm, t0
+        real(r8) :: buf, buf3, buf4, bufi, f0, velnorm, t0
+        real(r8) :: fi, f3, f4
         !> Some integers for the loops
         integer :: il, j, q1, b1, b2
 
         call mem%allocate(buf_lw, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(buf_lw3, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(buf_lw4, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(buf_lwi, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         buf_lw = 0.0_r8
+        buf_lw3 = 0.0_r8
+        buf_lw4 = 0.0_r8
+        buf_lwi = 0.0_r8
 
         t0 = walltime()
         if (mw%talk) call lo_progressbar_init()
         do il = 1, sr%my_nqpoints
             buf = 0.0_r8
+            bufi = 0.0_r8
+            buf3 = 0.0_r8
+            buf4 = 0.0_r8
             if (opts%isotopescattering) then
-                call compute_isotope_scattering(il, sr, qp, dr, uc, opts%temperature, buf, &
+                call compute_isotope_scattering(il, sr, qp, dr, uc, opts%temperature, bufi, &
                                                 opts%integrationtype, opts%sigma, mw, mem)
                 call tmr%tock('isotope scattering')
             end if
             if (opts%thirdorder) then
                 call compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg3, rng, &
-                                                    buf, opts%integrationtype, opts%sigma, mw, mem)
+                                                    buf3, opts%integrationtype, opts%sigma, mw, mem)
                 call tmr%tock('threephonon scattering')
             end if
             if (opts%fourthorder) then
                 call compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg4, rng, &
-                                                   buf, opts%integrationtype, opts%sigma, mw, mem)
+                                                   buf4, opts%integrationtype, opts%sigma, mw, mem)
                 call tmr%tock('fourphonon scattering')
             end if
+            buf = bufi + buf3 + buf4
             ! We end with the boundary scattering
             if (opts%mfp_max .gt. 0.0_r8) then
                 velnorm = norm2(dr%iq(sr%my_qpoints(il))%vel(:, sr%my_modes(il)))
@@ -250,6 +261,9 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
             end if
             ! Now we can update the linewidth for this mode
             buf_lw(sr%my_qpoints(il), sr%my_modes(il)) = buf
+            buf_lwi(sr%my_qpoints(il), sr%my_modes(il)) = bufi
+            buf_lw3(sr%my_qpoints(il), sr%my_modes(il)) = buf3
+            buf_lw4(sr%my_qpoints(il), sr%my_modes(il)) = buf4
 
             if (mw%talk .and. lo_trueNtimes(il, 127, sr%my_nqpoints)) then
                 call lo_progressbar(' ... computing scattering amplitude', il, sr%my_nqpoints, walltime() - t0)
@@ -259,6 +273,9 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
 
         ! Reduce the linewidth
         call mw%allreduce('sum', buf_lw)
+        call mw%allreduce('sum', buf_lwi)
+        call mw%allreduce('sum', buf_lw3)
+        call mw%allreduce('sum', buf_lw4)
 
         ! Distribute it after fixing the degeneracies
         do q1 = 1, qp%n_irr_point
@@ -266,17 +283,32 @@ subroutine generate(sr, qp, dr, uc, fct, fcf, opts, tmr, mw, mem)
                 if (dr%iq(q1)%omega(b1) .lt. lo_freqtol) cycle
                 ! First we fix the degeneracy
                 f0 = 0.0_r8
+                fi = 0.0_r8
+                f3 = 0.0_r8
+                f4 = 0.0_r8
                 do j = 1, dr%iq(q1)%degeneracy(b1)
                     b2 = dr%iq(q1)%degenmode(j, b1)
                     f0 = f0 + buf_lw(q1, b2)
+                    fi = fi + buf_lwi(q1, b2)
+                    f3 = f3 + buf_lw3(q1, b2)
+                    f4 = f4 + buf_lw4(q1, b2)
                 end do
                 f0 = f0/real(dr%iq(q1)%degeneracy(b1), r8)
+                fi = fi/real(dr%iq(q1)%degeneracy(b1), r8)
+                f3 = f3/real(dr%iq(q1)%degeneracy(b1), r8)
+                f4 = f4/real(dr%iq(q1)%degeneracy(b1), r8)
                 do j = 1, dr%iq(q1)%degeneracy(b1)
                     b2 = dr%iq(q1)%degenmode(j, b1)
                     buf_lw(q1, b2) = f0
+                    buf_lwi(q1, b2) = fi
+                    buf_lw3(q1, b2) = f3
+                    buf_lw4(q1, b2) = f4
                 end do
                 ! Now we can set the linewidth
                 dr%iq(q1)%linewidth(b1) = buf_lw(q1, b1)
+                dr%iq(q1)%lw_iso(b1) = buf_lwi(q1, b1)
+                dr%iq(q1)%lw_3ph(b1) = buf_lw3(q1, b1)
+                dr%iq(q1)%lw_4ph(b1) = buf_lw4(q1, b1)
 
                 ! While we are at it, we can set other things
                 dr%iq(q1)%qs(b1) = 2.0_r8*dr%iq(q1)%linewidth(b1)

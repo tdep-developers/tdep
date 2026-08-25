@@ -41,6 +41,8 @@ type lo_phonon_dispersions_qpoint
     real(r8), dimension(:), allocatable :: gruneisen
     !> linewidth
     real(r8), dimension(:), allocatable :: linewidth
+    !> linewidth
+    real(r8), dimension(:), allocatable :: lw_iso, lw_3ph, lw_4ph
     !> anharmonic frequency shift
     real(r8), dimension(:), allocatable :: shift3, shift4
     !> plus scattering rate
@@ -445,6 +447,39 @@ subroutine write_to_hdf5(dr, qp, uc, filename, mem, temperature)
         do i = 1, qp%n_full_point
             do j = 1, dr%n_mode
                 dd(j, i) = dr%iq(qp%ap(i)%irreducible_index)%linewidth(j)*lo_frequency_hartree_to_Hz
+            end do
+        end do
+        call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+    if (allocated(dr%iq(1)%lw_iso)) then
+        dname = 'linewidths_isotopes'
+        call mem%allocate(dd, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_full_point
+            do j = 1, dr%n_mode
+                dd(j, i) = dr%iq(qp%ap(i)%irreducible_index)%lw_iso(j)*lo_frequency_hartree_to_Hz
+            end do
+        end do
+        call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+    if (allocated(dr%iq(1)%lw_3ph)) then
+        dname = 'linewidths_threephonons'
+        call mem%allocate(dd, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_full_point
+            do j = 1, dr%n_mode
+                dd(j, i) = dr%iq(qp%ap(i)%irreducible_index)%lw_3ph(j)*lo_frequency_hartree_to_Hz
+            end do
+        end do
+        call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
+        call mem%deallocate(dd, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    end if
+    if (allocated(dr%iq(1)%lw_4ph)) then
+        dname = 'linewidths_fourphonons'
+        call mem%allocate(dd, [dr%n_mode, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        do i = 1, qp%n_full_point
+            do j = 1, dr%n_mode
+                dd(j, i) = dr%iq(qp%ap(i)%irreducible_index)%lw_4ph(j)*lo_frequency_hartree_to_Hz
             end do
         end do
         call h5%store_data(dd, h5%file_id, trim(dname), enhet='Hz', dimensions='q-vector,mode')
