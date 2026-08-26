@@ -3,6 +3,7 @@ atomic_distribution/
 canonical_configuration/
 crystal_structure_info/
 dump_dynamical_matrices/
+convert_XX_to_forceconstant/
 extract_forceconstants/
 generate_structure/
 lineshape/
