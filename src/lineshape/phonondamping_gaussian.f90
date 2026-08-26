@@ -372,3 +372,143 @@ subroutine threephonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, tempera
     call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     if (verbosity .gt. 0) call lo_progressbar(' ... threephonon imaginary selfenergy', dr%n_mode*qp%n_full_point, dr%n_mode*qp%n_full_point, walltime() - t0)
 end subroutine
+
+
+!> fourphonon self energy gaussian
+subroutine fourphonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, temperature, mw, mem, verbosity)
+    !> harmonic properties at this q-point
+    type(lo_phonon_dispersions_qpoint), intent(in) :: wp
+    !> self-energy
+    type(lo_phonon_selfenergy), intent(inout) :: se
+    !> scattering rates
+    type(lo_listofscatteringrates), intent(inout) :: sr
+    !> qpoint mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> harmonic dispersions
+    type(lo_phonon_dispersions), intent(in) :: dr
+    !> temperature
+    real(r8), intent(in) :: temperature
+    !> MPI helper
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> memory tracker
+    type(lo_mem_helper), intent(inout) :: mem
+    !> talk a lot?
+    integer, intent(in) :: verbosity
+
+    real(r8), dimension(:), allocatable :: buf
+    real(r8) :: psisquare
+    real(r8) :: sigma, dom, om2, om3, om4, invf, s2, s3, s4
+    real(r8) :: plf1, plf2, t0, pref
+    real(r8) :: n2, n3, n4
+    integer :: q2, q3, ctr, i, ii, jj, b1, b2, b3, b4, ilo, ihi
+
+    ! set the unit
+    t0 = walltime()
+
+    invf = se%n_energy/se%energy_axis(se%n_energy)
+
+    ctr = 0
+    se%im_4ph = 0.0_r8
+    call mem%allocate(buf, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    buf = 0.0_r8
+
+    qloopfull: do q2 = 1, qp%n_full_point
+    do q3=1, qp%n_full_point
+        ! Prefactor for this q-point
+        pref = fourphonon_imag_prefactor * qp%ap(q2)%integration_weight * qp%ap(q3)%integration_weight
+        do b1 = 1, dr%n_mode
+            do b2 = 1, dr%n_mode
+                ! Make it parallel
+                ctr = ctr + 1
+                if (mod(ctr, mw%n) .ne. mw%r) cycle
+
+                do b3 = 1, dr%n_mode
+                    do b4 = 1, dr%n_mode
+                        ! reset buffer
+                        buf = 0.0_r8
+                        ilo = lo_hugeint
+                        ihi = -lo_hugeint
+                        ! Get the smearing parameter, in case it is adaptive
+                        select case (se%integrationtype)
+                        case (1)
+                            s2 = dr%default_smearing(b2)
+                            s3 = dr%default_smearing(b3)
+                            s4 = dr%default_smearing(b4)
+                            sigma = sqrt(s2**2 + s3**2 + s4**2)
+                        case (2)
+                            s2 = qp%adaptive_sigma(qp%ap(q2)%radius, dr%aq(q2)%vel(:, b2), dr%default_smearing(b2), se%smearing_prefactor)
+                            s3 = qp%adaptive_sigma(qp%ap(q3)%radius, dr%aq(q3)%vel(:, b3), dr%default_smearing(b3), se%smearing_prefactor)
+                            s4 = qp%adaptive_sigma(qp%ap(q3)%radius, sr%vel4(:, b4, q2, q3), dr%default_smearing(b4), se%smearing_prefactor)
+                            sigma = sqrt(s2**2 + s3**2 + s4**2)
+                        end select
+                        ! Fetch frequencies
+                        om2 = dr%aq(q2)%omega(b2)
+                        om3 = dr%aq(q3)%omega(b3)
+                        om4 = sr%omega4(b4, q2, q3)
+
+                        ! Define occupation numbers
+                        n2 = lo_planck(temperature, om2)
+                        n3 = lo_planck(temperature, om3)
+                        n4 = lo_planck(temperature, om4)
+
+                        plf1 = (n2 + 1) * (n3 + 1) * (n4 + 1)
+                        plf2 = n2 * n3 * n4
+                        dom = om2 + om3 + om4
+                        ! Delta(BigOmega - om2 - om3 - om4)
+                        ii = max(floor((dom - 4 * sigma)*invf), 1)
+                        jj = min(ceiling((dom + 4 * sigma) * invf), se%n_energy)
+                        ilo = min(ilo, ii)
+                        ihi = max(ihi, jj)
+                        do i = ii, jj
+                            buf(i) = buf(i) + (plf1 - plf2) * lo_gauss(se%energy_axis(i), dom, sigma)
+                        end do
+
+                        plf1 = n2 * (n3 + 1) * (n4 + 1)
+                        plf2 = (n2 + 1) * n3 * n4
+                        dom = -om2 + om3 + om4
+                        ! Delta(BigOmega - om2 + om3 + om4)
+                        ii = max(floor((dom - 4 * sigma)*invf), 1)
+                        jj = min(ceiling((dom + 4 * sigma)*invf), se%n_energy)
+                        ilo = min(ilo, ii)
+                        ihi = max(ihi, jj)
+                        do i = ii, jj
+                            buf(i) = buf(i) + 3 * (plf1 - plf2) * lo_gauss(se%energy_axis(i), dom, sigma)
+                        end do
+
+                        ! Increment the self-energy
+                        if (ilo .lt. ihi) then
+                            psisquare = abs(sr%psi_4ph(b1, b2, b3, b4, q2, q3) * conjg(sr%psi_4ph(b1, b2, b3, b4, q2, q3))) * pref
+                            se%im_4ph(ilo:ihi, b1) = se%im_4ph(ilo:ihi, b1) + buf(ilo:ihi)*psisquare
+                        end if
+                    end do
+                end do
+            end do
+        end do
+        if (verbosity .gt. 0) then
+            if (lo_trueNtimes(ctr, 127, qp%n_full_point*qp%n_full_point*dr%n_mode*dr%n_mode)) then
+                call lo_progressbar(' ... fourphonon imaginary selfenergy', ctr, dr%n_mode*dr%n_mode*qp%n_full_point*qp%n_full_point)
+            end if
+        end if
+    end do
+    end do qloopfull
+
+    ! Sum it up
+    call mw%allreduce('sum', se%im_4ph)
+
+    ! Fix degeneracies ?
+    do b1 = 1, dr%n_mode
+        buf = 0.0_r8
+        do i = 1, wp%degeneracy(b1)
+            b2 = wp%degenmode(i, b1)
+            buf = buf + se%im_4ph(:, b2)
+        end do
+        buf = buf / real(wp%degeneracy(b1), r8)
+        do i = 1, wp%degeneracy(b1)
+            b2 = wp%degenmode(i, b1)
+            se%im_4ph(:, b2) = buf
+        end do
+    end do
+    call mem%deallocate(buf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    if (verbosity .gt. 0) call lo_progressbar(' ... fourphonon imaginary selfenergy', dr%n_mode*qp%n_full_point,&
+    dr%n_mode*qp%n_full_point, walltime() - t0)
+end subroutine

@@ -54,8 +54,8 @@ type lo_mpi_helper
         !> mpi allreduce
         generic :: allreduce=>allreduce_int,allreduce_real,allreduce_1d_real,allreduce_2d_real,allreduce_3d_real,&
                               allreduce_4d_real,allreduce_5d_real,allreduce_6d_real,allreduce_1d_int,allreduce_2d_int,allreduce_3d_int,&
-                              allreduce_2d_complex,allreduce_3d_complex,allreduce_4d_complex,allreduce_5d_complex,allreduce_1d_logical,&
-                              allreduce_int8
+                              allreduce_2d_complex,allreduce_3d_complex,allreduce_4d_complex,allreduce_5d_complex,allreduce_6d_complex,&
+                              allreduce_1d_logical,allreduce_int8
         procedure, private :: allreduce_int
         procedure, private :: allreduce_1d_int
         procedure, private :: allreduce_2d_int
@@ -71,6 +71,7 @@ type lo_mpi_helper
         procedure, private :: allreduce_3d_complex
         procedure, private :: allreduce_4d_complex
         procedure, private :: allreduce_5d_complex
+        procedure, private :: allreduce_6d_complex
         procedure, private :: allreduce_1d_logical
         procedure, private :: allreduce_int8
         !> mpi broadcast
@@ -1415,6 +1416,42 @@ subroutine allreduce_5d_complex(mw,operation,x,y,filename,linenumber)
     complex(r8), dimension(:,:,:,:,:), intent(inout) :: x
     !> array to allreduce to, if omitted default to in-place
     complex(r8), dimension(:,:,:,:,:), intent(out), optional :: y
+    !> filename we call from
+    character(len=*), intent(in), optional :: filename
+    !> line number we call from
+    integer, intent(in), optional :: linenumber
+
+    integer :: mpiop
+    ! Fetch proper operation code
+    mpiop=mpi_operation_code(operation)
+    ! Do the actual communication
+    if ( present(y) ) then
+        if ( size(x) .ne. size(y) ) then
+            call lo_stop_gracefully(['mpi_allreduce inconsistent array sizes'],lo_exitcode_mpi,filename,linenumber,mw%comm)
+        endif
+        y=0.0_r8
+        call mpi_allreduce(x,y,size(x),MPI_DOUBLE_COMPLEX,mpiop,mw%comm,mw%error)
+    else
+        call mpi_allreduce(MPI_IN_PLACE,x,size(x),MPI_DOUBLE_COMPLEX,mpiop,mw%comm,mw%error)
+    endif
+    ! Check that things went ok
+    if ( mw%error .ne. 0 ) then
+        if ( present(filename) .and. present(linenumber) ) then
+            call lo_stop_gracefully(['mpi_allreduce exit code '//tochar(mw%error)],lo_exitcode_mpi,filename,linenumber,mw%comm)
+        else
+            call lo_stop_gracefully(['mpi_allreduce exit code '//tochar(mw%error)],lo_exitcode_mpi,__FILE__,__LINE__,mw%comm)
+        endif
+    endif
+end subroutine
+subroutine allreduce_6d_complex(mw,operation,x,y,filename,linenumber)
+    !> MPI helper
+    class(lo_mpi_helper), intent(inout) :: mw
+    !> what operation to do
+    character(len=*), intent(in) :: operation
+    !> array to allreduce
+    complex(r8), dimension(:,:,:,:,:,:), intent(inout) :: x
+    !> array to allreduce to, if omitted default to in-place
+    complex(r8), dimension(:,:,:,:,:,:), intent(out), optional :: y
     !> filename we call from
     character(len=*), intent(in), optional :: filename
     !> line number we call from

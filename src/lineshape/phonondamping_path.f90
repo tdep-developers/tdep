@@ -159,7 +159,7 @@ module subroutine spectral_function_along_path(bs, uc, fc, fct, fcf, ise, qp, dr
             if (mw%r .eq. solrnk) then
                 ! Store self-energy in buffers
                 buf_re(:, :, jpt) = se%re_3ph + se%re_4ph
-                buf_im(:, :, jpt) = se%im_3ph + se%im_iso
+                buf_im(:, :, jpt) = se%im_3ph + se%im_4ph + se%im_iso
                 ! Store the shifts from third and fourth order while they are available
                 do imode = 1, dr%n_mode
                     buf_shift_3rd(imode, jpt) = lo_linear_interpolation(se%energy_axis, se%re_3ph(:, imode), bs%p(iqp)%omega(imode))

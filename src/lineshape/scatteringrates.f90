@@ -17,25 +17,43 @@ private
 public :: lo_listofscatteringrates
 
 type lo_listofscatteringrates
+    !> For third order
     !> frequency at q''
     real(r8), dimension(:, :), allocatable :: omega3
     !> group velocity at q''
     real(r8), dimension(:, :, :), allocatable :: vel3
     !> three-phonon matrix elements, not squared (mode1,mode2,mode3,q)
     complex(r8), dimension(:, :, :, :), allocatable :: psi_3ph
-    !> isotope matrix elements (mode1,mode2,q)
-    real(r8), dimension(:, :, :), allocatable :: psi_iso
-    !> make a note if q1 is gamma
-    logical :: atgamma = .false.
-
     !> q-vectors are needed for evaluation of spectral functions
     real(r8), dimension(:, :), allocatable :: qvec3
     !> eigenvectors are needed for spectral functions
     complex(r8), dimension(:, :, :), allocatable :: egv3
 
+    !> For isotope
+    !> isotope matrix elements (mode1,mode2,q)
+    real(r8), dimension(:, :, :), allocatable :: psi_iso
+
+    !> make a note if q1 is gamma
+    logical :: atgamma = .false.
+
+    !> For fourth order
+    !> frequency at q4
+    real(r8), dimension(:, :, :), allocatable :: omega4
+    !> group velocity at q4
+    real(r8), dimension(:, :, :, :), allocatable :: vel4
+    !> four-phonon matrix elements, not squared (mode1, mode2, mode3, mode4, q3, q4)
+    complex(r8), dimension(:, :, :, :, :, :), allocatable :: psi_4ph
+    !> q-vectors are needed for evaluation of spectral functions
+    real(r8), dimension(:, :, :, :), allocatable :: qvec4
+    !> eigenvectors are needed for spectral functions
+    complex(r8), dimension(:, :, :, :, :), allocatable :: egv4
+
+
 contains
     !> calculate matrix elements
     procedure :: generate
+    !> calculate matrix elements only for four phonons
+    procedure :: generate_fourthorder
 end type
 
 !> build a flattened helper to make things fast
@@ -43,10 +61,12 @@ type flathelper
     !> eigenvectors?
     complex(r8), dimension(:, :), allocatable :: ugv1
     complex(r8), dimension(:, :, :), allocatable :: ugv2, ugv3
+    complex(r8), dimension(:, :, :, :), allocatable :: ugv4
     !> pre-transformed matrix element
     complex(r8), dimension(:), allocatable :: ptf_phi
     complex(r8), dimension(:), allocatable :: evp1
     complex(r8), dimension(:), allocatable :: evp2
+    complex(r8), dimension(:), allocatable :: evp3
 end type
 
 contains
@@ -862,5 +882,374 @@ end subroutine
 !         l=(gi(1)-1)*ny*nz+(gi(2)-1)*nz+gi(3)
 !     end function
 ! end function
+
+
+subroutine generate_fourthorder(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fcf, skipsym, eigenvectors, &
+    closedgrid, tmr, mw, mem, verbosity)
+    !> scattering rates
+    class(lo_listofscatteringrates), intent(out) :: sr
+    !> q-point in question
+    type(lo_qpoint) :: qpoint
+    !> harmonic properties at the relevant q-point
+    type(lo_phonon_dispersions_qpoint), intent(in) :: ompoint
+    !> harmonic properties at Gamma with the right direction
+    type(lo_phonon_dispersions_qpoint), intent(in) :: gpoint
+    !> qpoint mesh
+    class(lo_qpoint_mesh), intent(in) :: qp
+    !> phonon dispersions
+    type(lo_phonon_dispersions), intent(in) :: dr
+    !> crystal structure
+    type(lo_crystalstructure), intent(in) :: uc
+    !> second order forceconstant
+    type(lo_forceconstant_secondorder), intent(inout) :: fc
+    !> third order force constant
+    type(lo_forceconstant_fourthorder), intent(in) :: fcf
+    !> calculate everything?
+    logical, intent(in) :: skipsym, eigenvectors, closedgrid
+    !> timer
+    type(lo_timer), intent(inout) :: tmr
+    !> MPI communicator
+    type(lo_mpi_helper), intent(inout) :: mw
+    !> Memory tracker
+    type(lo_mem_helper), intent(inout) :: mem
+    !> how much to talk
+    integer, intent(in) :: verbosity
+
+    ! Just keep a list of q4, temporarily
+    type(flathelper) :: fh
+    real(r8), dimension(:, :, :), allocatable :: qvec4
+    complex(r8), dimension(:, :, :, :), allocatable :: egv4
+    real(r8) :: timer, t0, t1
+    integer :: ind_gamma_full
+
+    ! Start timer
+    timer = walltime()
+    t0 = timer
+    t1 = timer
+
+    call tmr%tick()
+
+    init: block
+        integer :: i
+
+        ! Locate the index for Gamma on the q-grid
+        do i=1, qp%n_full_point
+            if (lo_sqnorm(qp%ap(i)%r) .lt. lo_sqtol) then
+                ind_gamma_full = i
+                exit
+            end if
+        end do
+    end block init
+
+    fourthfreq: block
+    type(lo_phonon_dispersions_qpoint) :: op4
+    real(r8), dimension(3) :: qv1, qv2, qv3, qv4, v0
+    integer :: q2, q3, idxq, ctr
+
+    ! Make some space
+    allocate (sr%omega4(dr%n_mode, qp%n_full_point, qp%n_full_point))
+    allocate (sr%vel4(3, dr%n_mode, qp%n_full_point, qp%n_full_point))
+    call mem%allocate(egv4, [dr%n_mode, dr%n_mode, qp%n_full_point, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(qvec4, [3, qp%n_full_point, qp%n_full_point], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    sr%omega4 = 0.0_r8
+    sr%vel4 = 0.0_r8
+    egv4 = 0.0_r8
+    qvec4 = 0.0_r8
+
+    ctr = 0
+    do q2 = 1, qp%n_full_point
+        ! make it parallel
+        ctr = ctr + 1
+        if (mod(ctr, mw%n) .ne. mw%r) cycle
+
+        do q3 = 1, qp%n_full_point
+        ! Get the q-vectors
+        qv1 = qpoint%r
+        qv2 = qp%ap(q2)%r
+        qv3 = qp%ap(q3)%r
+        qv4 = -qv1 - qv2 - qv3
+        if (closedgrid) then
+            ! A closed grid, fetch data from the grid to the fourth point
+            qv4 = -qv1 - qv2 - qv3
+            qv4 = matmul(uc%inv_reciprocal_latticevectors, qv4)
+            qv4 = lo_clean_fractional_coordinates(qv4)
+            idxq = index_on_grid(qp, qv4)
+            sr%omega4(:, q2, q3) = dr%aq(idxq)%omega
+            sr%vel4(:, :, q2, q3) = dr%aq(idxq)%vel
+            egv4(:, :, q2, q3) = dr%aq(idxq)%egv
+            qvec4(:, q2, q3) = qv4
+        else
+            ! Not a closed grid, just fetch everything
+            ! Get harmonic things
+            call op4%generate(fc, uc, mem, qvec=qv4)
+            sr%omega4(:, q2, q3) = op4%omega
+            sr%vel4(:, :, q2, q3) = op4%vel
+            egv4(:, :, q2, q3) = op4%egv
+            qvec4(:, q2, q3) = qv4
+
+            v0 = matmul(uc%inv_reciprocal_latticevectors, qv4)
+            if (sum(abs(v0 - anint(v0))) .lt. lo_sqtol) then
+                ! we are at Gamma, Replace with proper Gamma
+                qvec4(:, q2, q3) = 0.0_r8
+                egv4(:, :, q2, q3) = gpoint%egv
+                sr%vel4(:, :, q2, q3) = gpoint%vel
+                sr%omega4(:, q2, q3) = gpoint%omega
+            end if
+        end if
+        end do
+    end do
+    call mw%allreduce('sum', sr%omega4)
+    call mw%allreduce('sum', sr%vel4)
+    call mw%allreduce('sum', egv4)
+    call mw%allreduce('sum', qvec4)
+    if (verbosity .gt. 0) then
+        t1 = walltime()
+        write (*, *) ''
+        write (*, *) "... got q'' and q''' frequencies (", tochar(t1 - t0), "s)"
+        t0 = t1
+    end if
+    end block fourthfreq
+
+    call tmr%tock("q''' harmonic properties")
+
+    pretransform: block
+        real(r8) :: f0, f1
+        integer :: iq, jq, imode, jmode, iatom, ix, ialpha, ctr
+
+        ! Some temporary space for scaled eigenvectors
+        allocate (fh%ugv1(dr%n_mode, dr%n_mode))
+        allocate (fh%ugv2(dr%n_mode, dr%n_mode, qp%n_full_point))
+        allocate (fh%ugv4(dr%n_mode, dr%n_mode, qp%n_full_point, qp%n_full_point))
+        fh%ugv1 = 0.0_r8
+        fh%ugv2 = 0.0_r8
+        fh%ugv4 = 0.0_r8
+
+        ! First fix the one at the main q-point, always the same
+        ! just pre-multiply with masses and frequencies
+        do imode = 1, dr%n_mode
+        do iatom = 1, uc%na
+        do ix = 1, 3
+            if (norm2(qpoint%r) .lt. lo_sqtol) then
+                ! Get consistent Gamma
+                if (gpoint%omega(imode) .gt. lo_freqtol) then
+                    f0 = 1.0_r8 / sqrt(gpoint%omega(imode))
+                else
+                    f0 = 0.0_r8
+                end if
+                ialpha = (iatom -1) * 3 + ix
+                f1 = uc%invsqrtmass(iatom)
+                fh%ugv1(ialpha, imode) = gpoint%egv(ialpha, imode) * f0 * f1
+            else
+                ! Just normal copy
+                if (ompoint%omega(imode) .gt. lo_freqtol) then
+                    f0 = 1.0_r8/sqrt(ompoint%omega(imode))
+                else
+                    f0 = 0.0_r8
+                end if
+                ialpha = (iatom - 1) * 3 + ix
+                f1 = uc%invsqrtmass(iatom)
+                fh%ugv1(ialpha, imode) = ompoint%egv(ialpha, imode) * f0 * f1
+            end if
+        end do
+        end do
+        end do
+
+        ! Pre-multiply eigenvectors with masses and frequencies
+        ctr = 0
+        do iq = 1, qp%n_full_point
+        ctr = ctr + 1
+        if (mod(ctr, mw%n) .ne. mw%r) cycle
+        do imode = 1, dr%n_mode
+            ! First get the thingy for q'
+            if (iq .eq. ind_gamma_full) then
+                ! Pick consistent Gamma
+                if (gpoint%omega(imode) .gt. lo_freqtol) then
+                    f0 = 1.0_r8 / sqrt(gpoint%omega(imode))
+                else
+                    f0 = 0.0_r8
+                end if
+                do iatom=1, uc%na
+                    f1 = uc%invsqrtmass(iatom)
+                    do ix = 1, 3
+                        ialpha = (iatom - 1)*3 + ix
+                        fh%ugv2(ialpha, imode, iq) = gpoint%egv(ialpha, imode)*f0*f1
+                    end do
+                end do
+            else
+                ! Not at Gamma, don't have to care
+                if (dr%aq(iq)%omega(imode) .gt. lo_freqtol) then
+                    f0 = 1.0_r8/sqrt(dr%aq(iq)%omega(imode))
+                else
+                    f0 = 0.0_r8
+                end if
+                do iatom=1, uc%na
+                    f1 = uc%invsqrtmass(iatom)
+                    do ix=1, 3
+                        ialpha = (iatom - 1)*3+ix
+                        fh%ugv2(ialpha, imode, iq) = dr%aq(iq)%egv(ialpha, imode)*f0*f1
+                    end do
+                end do
+            end if
+            ! Now we can get the things at q'' and q'''
+            do jq=1, qp%n_full_point
+                ! And finally for q'''
+                if (sr%omega4(imode, iq, jq) .gt. lo_freqtol) then
+                    f0 = 1.0_r8 / sqrt(sr%omega4(imode, iq, jq))
+                else
+                    f0 = 0.0_r8
+                end if
+                do iatom = 1, uc%na
+                    f1 = uc%invsqrtmass(iatom)
+                    do ix = 1, 3
+                        ialpha = (iatom - 1) * 3 + ix
+                        fh%ugv4(ialpha, imode, iq, jq) = egv4(ialpha, imode, iq, jq) * f0 * f1
+                    end do
+                end do
+            end do
+        end do
+        end do
+        call mw%allreduce('sum', fh%ugv2)
+        call mw%allreduce('sum', fh%ugv4)
+        ! Space for the pre-transformed phi
+        allocate (fh%ptf_phi(dr%n_mode**4))
+        fh%ptf_phi = 0.0_r8
+
+        ! Space for outer-producted eigenvectors ?
+        allocate (fh%evp1(dr%n_mode**2))
+        allocate (fh%evp2(dr%n_mode**3))
+        allocate (fh%evp3(dr%n_mode**4))
+        fh%evp1 = 0.0_r8
+        fh%evp2 = 0.0_r8
+        fh%evp3 = 0.0_r8
+
+        if (verbosity .gt. 0) then
+            t1 = walltime()
+            write (*, *) "... pretransformed and made temporary space (", tochar(t1 - t0), "s)"
+            t0 = t1
+        end if
+    end block pretransform
+
+    call tmr%tock("4ph eigenvector scaling")
+
+    ! Get the fourphonon matrix elements
+    fourphsc2: block
+        real(r8), dimension(3) :: qv2, qv3, qv4
+        integer :: q2, q3, b1, b2, b3, b4, ctr, l
+
+        ! Some space
+        t0 = walltime()
+        if (verbosity .gt. 0) call lo_progressbar_init()
+
+        ! Space for matrix elements
+        allocate (sr%psi_4ph(dr%n_mode, dr%n_mode, dr%n_mode, dr%n_mode, qp%n_full_point, qp%n_full_point))
+        sr%psi_4ph = 0.0_r8
+
+        ctr = 0
+        l =  0
+        do q2 = 1, qp%n_full_point
+            do q3 = 1, qp%n_full_point
+                ! fetch q-vectors
+                qv2 = qp%ap(q2)%r
+                qv3 = qp%ap(q3)%r
+                qv4 = qvec4(:, q2, q3)
+                ! do the half transform
+                call pretransform_phi4(fcf, qv2, qv3, qv4, fh%ptf_phi)
+                ! Get matrix elements for all modes
+                do b1=1, dr%n_mode
+                    do b2=1, dr%n_mode
+                        fh%evp1 = 0.0_r8
+                        call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q2), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
+                        do b3=1, dr%n_mode
+                            ! MPI division
+                            l = l + 1
+                            if (mod(l, mw%n) .ne. mw%r) cycle
+
+                            fh%evp2 = 0.0_r8
+                            call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b3, q3), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
+                            do b4=1, dr%n_mode
+                                fh%evp3 = 0.0_r8
+                                call zgeru(dr%n_mode, dr%n_mode*dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv4(:, b4, q2, q3), 1, fh%evp2, 1, fh%evp3, dr%n_mode)
+                                fh%evp3 = conjg(fh%evp3)
+                                sr%psi_4ph(b1, b2, b3, b4, q2, q3) = dot_product(fh%evp3, fh%ptf_phi)
+                            end do
+                        end do
+                    end do
+                end do
+
+                ! Progressbar for four phonon
+                if (verbosity .gt. 0) then
+                    ctr = ctr + 1
+                    if (lo_trueNtimes(ctr, 127, qp%n_full_point*qp%n_full_point)) then
+                        call lo_progressbar('... fourphonon matrixelements', ctr, qp%n_full_point*qp%n_full_point, walltime() - t0)
+                    end if
+                end if
+            end do
+        end do
+        ! sync across ranks
+        call mw%allreduce('sum', sr%psi_4ph)
+
+        if (verbosity .gt. 0) then
+            t1 = walltime()
+            call lo_progressbar('... fourphonon matrixelements', qp%n_full_point*dr%n_mode, qp%n_full_point*dr%n_mode, t1 - t0)
+            t0 = t1
+        end if
+    end block fourphsc2
+    call tmr%tock("four-phonon matrix elements")
+
+    ! Some cleanup
+    call mem%deallocate(egv4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(qvec4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%tock(__FILE__, __LINE__, mw%comm)
+end subroutine
+
+!> pre-transform to get half of the matrix elements for psi4
+subroutine pretransform_phi4(fcf, q2, q3, q4, ptf)
+    !> fourth order forceconstant
+    type(lo_forceconstant_fourthorder), intent(in) :: fcf
+    !> q-vectors
+    real(r8), dimension(3), intent(in) :: q2, q3, q4
+    !> flattened, pretransformed matrix element
+    complex(r8), dimension(:), intent(out) :: ptf
+
+    integer i, j, k, l, m
+
+    complex(r8) :: expiqr
+    real(r8), dimension(3) :: rv2, rv3, rv4
+    real(r8) :: iqr
+    integer :: a1, a2, a3, a4, ia, ib, ic, id, t, nb
+
+    nb = fcf%na*3
+    ptf = 0.0_r8
+    do a1=1, fcf%na
+    do t = 1,fcf%atom(a1)%n
+        a2 = fcf%atom(a1)%quartet(t)%i2
+        a3 = fcf%atom(a1)%quartet(t)%i3
+        a4 = fcf%atom(a1)%quartet(t)%i4
+
+        rv2 = fcf%atom(a1)%quartet(t)%lv2
+        rv3 = fcf%atom(a1)%quartet(t)%lv3
+        rv4 = fcf%atom(a1)%quartet(t)%lv4
+
+        iqr = dot_product(q2, rv2) + dot_product(q3, rv3) + dot_product(q4, rv4)
+        iqr = -iqr*lo_twopi
+        expiqr = cmplx(cos(iqr), sin(iqr), r8)
+        do i=1, 3
+        do j=1, 3
+        do k=1, 3
+        do l=1, 3
+            ia = (a1 - 1)*3 + i
+            ib = (a2 - 1)*3 + j
+            ic = (a3 - 1)*3 + k
+            id = (a4 - 1)*3 + l
+            ! Now for the grand flattening scheme, to be consistent with the zgeru operations
+            m = (ia - 1)*nb*nb*nb + (ib - 1)*nb*nb + (ic - 1)*nb + id
+            ptf(m) = ptf(m) + fcf%atom(a1)%quartet(t)%m(i, j, k, l)*expiqr
+        end do
+        end do
+        end do
+        end do
+    end do
+    end do
+end subroutine
 
 end module

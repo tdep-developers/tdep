@@ -72,7 +72,7 @@ init: block
         call fct%readfromfile(uc, 'infile.forceconstant_thirdorder')
         if (mw%talk) write (*, *) '... read third order forceconstant'
     end if
-    if (opts%fourthorder) then
+    if (opts%fourthorder_real .or. opts%fourthorder) then
         call fcf%readfromfile(uc, 'infile.forceconstant_fourthorder')
         if (mw%talk) write (*, *) '... read fourth order forceconstant'
     end if
