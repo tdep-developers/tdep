@@ -9,6 +9,7 @@ use konstanter, only: r8, i8, lo_iou, lo_tol, lo_sqtol, lo_pi, lo_twopi, lo_huge
 use gottochblandat, only: tochar, walltime, lo_clean_fractional_coordinates, lo_chop, lo_sqnorm
 use mpi_wrappers, only: lo_mpi_helper, lo_stop_gracefully
 use lo_memtracker, only: lo_mem_helper
+use lo_randomnumbers, only: lo_mersennetwister
 use lo_longrange_electrostatics, only: lo_ewald_parameters
 use type_crystalstructure, only: lo_crystalstructure
 use type_qpointmesh, only: lo_qpoint
@@ -196,7 +197,7 @@ interface
         real(r8), intent(in), optional :: maximum_frequency
         integer, intent(in), optional :: verbosity
     end subroutine
-    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert)
+    module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact, closest_distance, mw, nosync, imode, invert, tw)
         class(lo_forceconstant_secondorder), intent(inout) :: fcss
         type(lo_crystalstructure), intent(inout) :: ss
         type(lo_crystalstructure), intent(in) :: uc
@@ -209,6 +210,7 @@ interface
         logical, intent(in), optional :: nosync
         integer, intent(in), optional :: imode
         logical, intent(in), optional :: invert
+        type(lo_mersennetwister), intent(inout), optional :: tw
     end subroutine
     module subroutine setsumtozero(fc)
         class(lo_forceconstant_secondorder), intent(inout) :: fc
