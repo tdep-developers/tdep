@@ -31,7 +31,7 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
     !> Frequency scaled eigenvectors
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3
     !> Helper for Fourier transform of psi3
-    complex(r8), dimension(:), allocatable :: ptf, evp1, evp2
+    complex(r8), dimension(:), allocatable :: ptf, ptf1, ptf12
     !> buff to keep the off diagonal scattering matrix elements
     real(r8), dimension(:, :), allocatable :: od_terms
     !> The reducible triplet corresponding to the currently computed triplet
@@ -51,8 +51,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(ptf1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(ptf12, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv1, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv2, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv3, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -85,6 +85,12 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
 
         ! This get the ifc3 in Fourier space, but not on phonons
         call pretransform_phi3(fct, qp%ap(q2)%r, qp%ap(q3)%r, ptf)
+
+        ! Same idea as the four-phonon routine: egv1 is fixed for the whole
+        ! call, so fold it into the force constants once per q-pair rather than
+        ! rebuilding the full outer product for every band triple.
+        call zgemv('N', dr%n_mode**2, dr%n_mode, (1.0_r8, 0.0_r8), ptf, dr%n_mode**2, &
+                   egv1, 1, (0.0_r8, 0.0_r8), ptf1, 1)
         do b2 = 1, dr%n_mode
             om2 = dr%aq(q2)%omega(b2)
             if (om2 .lt. lo_freqtol) cycle
@@ -93,8 +99,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
             egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
 
             ! This is the multiplication of eigv of phonons 1 and 2
-            evp1 = 0.0_r8
-            call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv2, 1, egv1, 1, evp1, dr%n_mode)
+            call zgemv('N', dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), ptf1, dr%n_mode, &
+                       egv2, 1, (0.0_r8, 0.0_r8), ptf12, 1)
             do b3 = 1, dr%n_mode
                 om3 = dr%aq(q3)%omega(b3)
                 if (om3 .lt. lo_freqtol) cycle
@@ -105,11 +111,10 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
                 call get_dirac(sr, qp, dr, q1, q2, q3, b1, b2, b3, integrationtype, d0, d1)
 
                 ! This is the multiplication of eigv of phonons 1 and 2 and now 3
-                evp2 = 0.0_r8
-                call zgeru(dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), egv3, 1, evp1, 1, evp2, dr%n_mode)
-                evp2 = conjg(evp2)
-                ! And with this, we have the scattering matrix element coming in
-                c0 = dot_product(evp2, ptf)
+                ! And with this, we have the scattering matrix element coming in.
+                ! No conjugation: the old form conjugated evp2 and then let
+                ! dot_product conjugate it straight back again.
+                c0 = sum(ptf12*egv3)
                 psisq = threephonon_prefactor*abs(c0*conjg(c0))*mcg%weight
 
                 ! Let's get the Bose-Einstein distributions
@@ -206,8 +211,8 @@ subroutine compute_threephonon_scattering(il, sr, qp, dr, uc, fct, mcg, rng, &
 
     ! And we can deallocate everything
     call mem%deallocate(ptf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf12, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
