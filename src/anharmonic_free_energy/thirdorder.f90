@@ -222,6 +222,11 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
     end do
 
     if (mw%talk) call lo_progressbar_init()
+    ! mod(ctr, mw%n) == mw%r only hands each q-pair to one rank if every rank is
+    ! counting from the same place. Uninitialised they are not: one 64 rank run
+    ! here started them anywhere between 32764 and 32767, which leaves some pairs
+    ! summed twice and others not at all. Extremely small differences.
+    ctr = 0
     do q1=1, qp%n_irr_point
     do q2=1, qp%n_full_point
         ctr = ctr + 1

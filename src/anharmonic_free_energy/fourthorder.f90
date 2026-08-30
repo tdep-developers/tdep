@@ -231,6 +231,9 @@ subroutine free_energy_fourthorder_secondorder(uc, fcf, qp, dr, temperature, fe4
     dn = 0.0_r8
     ddn = 0.0_r8
 
+    ! Same omission as free_energy_thirdorder, though nothing calls this one yet.
+    ctr = 0
+
     do q1=1, qp%n_irr_point
     do q2=1, qp%n_full_point
     do q3=1, qp%n_full_point
