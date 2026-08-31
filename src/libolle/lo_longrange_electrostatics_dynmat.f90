@@ -127,7 +127,6 @@ module subroutine longrange_dynamical_matrix( &
         inv4lambda2 = 1.0_r8/(4.0_r8*(ew%lambda**2))
         do ig = 1, ew%n_Gvector
             Gvec = ew%Gvec(:, ig)
-            Kvec = (Gvec + q)*lo_twopi
             Kvec = lo_chop((Gvec + q)*lo_twopi, lo_sqtol)
             if (lo_sqnorm(Kvec) .lt. lo_sqtol**2 ) cycle
             ! K-norm with dielectric metric
