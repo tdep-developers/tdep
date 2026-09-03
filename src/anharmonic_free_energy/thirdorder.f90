@@ -176,10 +176,13 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
 
     !> For the smearing parameters
     real(r8), dimension(:, :), allocatable :: sigsq
-    !> Frequency scaled eigenvectors
-    complex(r8), dimension(:), allocatable :: egv1, egv2, egv3
     !> Helper for Fourier transform of psi3
-    complex(r8), dimension(:), allocatable :: ptf, evp1, evp2
+    complex(r8), dimension(:), allocatable :: ptf
+    !> Frequency-scaled eigenvectors of the three q-points, one column per mode,
+    !> the two intermediates of the contraction, and every matrix element of
+    !> this q-pair
+    complex(r8), dimension(:, :), allocatable :: E1, E2, E3, T1, T2, Cm
+    complex(r8), dimension(:, :, :), allocatable :: c0all
     !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
     real(r8) :: sigma, om1, om2, om3, n2, n3, psisq, f0, f1, plf0, plf1, perm, f2, n1, pref, t0, prefactor
     !>
@@ -193,11 +196,13 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(egv1, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(egv2, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(egv3, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(E1, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(E2, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(E3, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(T1, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(T2, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(Cm, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(c0all, [dr%n_mode, dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(sigsq, [qp%n_irr_point, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
     t0 = walltime()
@@ -222,6 +227,12 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
     end do
 
     if (mw%talk) call lo_progressbar_init()
+
+    ! mod(ctr, mw%n) == mw%r only hands each q-pair to one rank if every rank is
+    ! counting from the same place. Uninitialised they are not: one 64 rank run
+    ! here started them anywhere between 32764 and 32767, which leaves some pairs
+    ! summed twice and others not at all. Extremely small differences.
+    ctr = 0
     do q1=1, qp%n_irr_point
     do q2=1, qp%n_full_point
         ctr = ctr + 1
@@ -233,6 +244,35 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
         ! pre-transform the matrix element
         call pretransform_phi3(fct, qp%ap(q2)%r, qp%ap(q3)%r, ptf)
 
+        ! All three bands at once, peeling one index off ptf at a time.
+        !
+        ! Two things to be careful of. There is no conjugation left in the sum:
+        ! the conjg on evp2 and the one dot_product applies to its first argument
+        ! cancel, so putting either back changes the physics. And ptf comes out
+        ! with its first index slowest, which is what lets it be used directly as
+        ! a column-major n_mode^2 by n_mode matrix here.
+        E1 = 0.0_r8
+        E2 = 0.0_r8
+        E3 = 0.0_r8
+        do b1 = 1, dr%n_mode
+            if (dr%iq(q1)%omega(b1) .gt. lo_freqtol) &
+                E1(:, b1) = dr%iq(q1)%egv(:, b1)/sqrt(dr%iq(q1)%omega(b1))
+            if (dr%aq(q2)%omega(b1) .gt. lo_freqtol) &
+                E2(:, b1) = dr%aq(q2)%egv(:, b1)/sqrt(dr%aq(q2)%omega(b1))
+            if (dr%aq(q3)%omega(b1) .gt. lo_freqtol) &
+                E3(:, b1) = dr%aq(q3)%egv(:, b1)/sqrt(dr%aq(q3)%omega(b1))
+        end do
+        call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                   ptf, dr%n_mode**2, E1, dr%n_mode, (0.0_r8, 0.0_r8), T1, dr%n_mode**2)
+        do b1 = 1, dr%n_mode
+            if (dr%iq(q1)%omega(b1) .lt. lo_freqtol) cycle
+            call zgemm('N', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                       T1(:, b1), dr%n_mode, E2, dr%n_mode, (0.0_r8, 0.0_r8), T2, dr%n_mode)
+            call zgemm('T', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                       E3, dr%n_mode, T2, dr%n_mode, (0.0_r8, 0.0_r8), Cm, dr%n_mode)
+            c0all(:, :, b1) = Cm
+        end do
+
         do b1=1, dr%n_mode
             ! Get first phonon
             om1 = dr%iq(q1)%omega(b1)
@@ -240,7 +280,6 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
             n1 = lo_planck(temperature, om1)
             dn1 = lo_planck_deriv(temperature, om1)
             ddn1 = lo_planck_secondderiv(temperature, om1)
-            egv1 = dr%iq(q1)%egv(:, b1)/sqrt(om1)
             do b2=1, dr%n_mode
                 ! Get second phonon
                 om2 = dr%aq(q2)%omega(b2)
@@ -248,11 +287,7 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
                 n2 = lo_planck(temperature, om2)
                 dn2 = lo_planck_deriv(temperature, om2)
                 ddn2 = lo_planck_secondderiv(temperature, om2)
-                egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
 
-                ! Multiply first and second phonon
-                evp1 = 0.0_r8
-                call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv2, 1, egv1, 1, evp1, dr%n_mode)
                 do b3=1, dr%n_mode
                     ! Get third phonon
                     om3 = dr%aq(q3)%omega(b3)
@@ -260,15 +295,8 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
                     n3 = lo_planck(temperature, om3)
                     dn3 = lo_planck_deriv(temperature, om3)
                     ddn3 = lo_planck_secondderiv(temperature, om3)
-                    egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
-                    ! Project on third phonon
-                    evp2 = 0.0_r8
-                    call zgeru(dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), egv3, 1, evp1, 1, evp2, dr%n_mode)
-                    evp2 = conjg(evp2)
-
-                    ! Compute the scattering matrix element
-                    c0 = dot_product(evp2, ptf)
+                    c0 = c0all(b3, b2, b1)
                     psisq = real(conjg(c0)*c0, r8) * prefactor
 
                     if (quantum) then
@@ -334,11 +362,13 @@ subroutine free_energy_thirdorder(uc, fct, qp, dr, temperature, fe3, s3, cv3, qu
 
     ! And we can deallocate everything
     call mem%deallocate(ptf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(egv1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(egv2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(E1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(E2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(E3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(T1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(T2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(Cm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(c0all, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(sigsq, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
 

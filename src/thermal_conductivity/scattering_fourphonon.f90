@@ -31,7 +31,7 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
     !> Frequency scaled eigenvectors
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3, egv4
     !> Helper for Fourier transform of psi3
-    complex(r8), dimension(:), allocatable :: ptf, evp1, evp2, evp3
+    complex(r8), dimension(:), allocatable :: ptf, ptf1, ptf12, ptf123
     !> Buffer for the off-diagonal terms in the scattering matrix
     real(r8), dimension(:, :), allocatable :: od_terms
     !> The qpoints in cartesian coordinates
@@ -61,9 +61,9 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp3, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(ptf1, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(ptf12, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(ptf123, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv1, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv2, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv3, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
@@ -102,6 +102,13 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
         qv4 = qp%ap(q4)%r
         call pretransform_phi4(fcf, qv2, qv3, qv4, ptf)
 
+        ! Contract the first eigenvector into the force constants here, once per
+        ! q-quartet. egv1 is fixed for the whole routine, so there is no reason
+        ! to carry that index into the band loops: ptf is (n^3 x n) with the
+        ! first-phonon index slowest, which is exactly a matrix-vector product.
+        call zgemv('N', dr%n_mode**3, dr%n_mode, (1.0_r8, 0.0_r8), ptf, dr%n_mode**3, &
+                   egv1, 1, (0.0_r8, 0.0_r8), ptf1, 1)
+
         ! We can already take care of the multiplicity caused by permutation
         if (q2 .eq. q3 .and. q3 .eq. q4) then
             mult0 = 1.0_r8
@@ -130,8 +137,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
             n2p = n2 + 1.0_r8
             egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
 
-            evp1 = 0.0_r8
-            call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv2, 1, egv1, 1, evp1, dr%n_mode)
+            call zgemv('N', dr%n_mode**2, dr%n_mode, (1.0_r8, 0.0_r8), ptf1, dr%n_mode**2, &
+                       egv2, 1, (0.0_r8, 0.0_r8), ptf12, 1)
             do b3 = 1, dr%n_mode
                 om3 = dr%aq(q3)%omega(b3)
                 if (om3 .lt. lo_freqtol) cycle
@@ -140,8 +147,8 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
                 n3p = n3 + 1.0_r8
                 egv3 = dr%aq(q3)%egv(:, b3)/sqrt(om3)
 
-                evp2 = 0.0_r8
-                call zgeru(dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), egv3, 1, evp1, 1, evp2, dr%n_mode)
+                call zgemv('N', dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), ptf12, dr%n_mode, &
+                           egv3, 1, (0.0_r8, 0.0_r8), ptf123, 1)
                 do b4 = 1, dr%n_mode
                     om4 = dr%aq(q4)%omega(b4)
                     if (om4 .lt. lo_freqtol) cycle
@@ -152,10 +159,9 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
 
                     call get_dirac(sr, qp, dr, q1, q2, q3, q4, b1, b2, b3, b4, integrationtype, d0, d1, d2, d3)
 
-                    evp3 = 0.0_r8
-                    call zgeru(dr%n_mode, dr%n_mode**3, (1.0_r8, 0.0_r8), egv4, 1, evp2, 1, evp3, dr%n_mode)
-                    evp3 = conjg(evp3)
-                    c0 = dot_product(evp3, ptf)
+                    ! Last index. No conjugation: the old form conjugated evp3 and
+                    ! then let dot_product conjugate it straight back again.
+                    c0 = sum(ptf123*egv4)
                     psisq = fourphonon_prefactor*abs(c0*conjg(c0))*mcg%weight**2
 
                     ! Prefactors, only the Bose-Einstein distributions
@@ -251,9 +257,9 @@ subroutine compute_fourphonon_scattering(il, sr, qp, dr, uc, fcf, mcg, rng, &
 
     ! And we can deallocate everything
     call mem%deallocate(ptf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf12, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(ptf123, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)

@@ -43,7 +43,10 @@ subroutine free_energy_fourthorder(uc, fcf, qp, dr, temperature, df4, s4, cv4, q
     !> Frequency scaled eigenvectors
     complex(r8), dimension(:), allocatable :: egv1, egv2, egv3, egv4
     !> Helper for Fourier transform of psi3
-    complex(r8), dimension(:), allocatable :: ptf, evp1, evp2, evp3
+    complex(r8), dimension(:), allocatable :: ptf
+    !> Outer products of the eigenvectors, one column per mode, and the two
+    !> intermediates of the contraction above.
+    complex(r8), dimension(:, :), allocatable :: V1, V2, Wm, Sm
     !> Frequencies, bose-einstein occupation and scattering strength and some other buffer
     real(r8) :: sig, om1, om2, om3, om4, n1, n2, n3, n4, psisq, f0, f1, f2, t0, prefactor
     !>
@@ -55,9 +58,10 @@ subroutine free_energy_fourthorder(uc, fcf, qp, dr, temperature, df4, s4, cv4, q
 
     ! We start by allocating everything
     call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%allocate(evp3, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(V1, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(V2, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(Wm, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%allocate(Sm, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv1, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%allocate(egv2, dr%n_mode, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
@@ -76,24 +80,39 @@ subroutine free_energy_fourthorder(uc, fcf, qp, dr, temperature, df4, s4, cv4, q
         prefactor = qp%ip(q1)%integration_weight*qp%ap(q2)%integration_weight/uc%na
         ! pre-transform the matrix element
         call pretransform_phi4_first(fcf, qp%ip(q1)%r, qp%ap(q2)%r, ptf)
+        ! Both bands at once: psisq = Re( V2^T ptf V1 ).
+        !
+        ! The outer products the band loop kept rebuilding are just the columns of
+        ! V1 and V2, so they only need forming once per q-pair. ptf goes with
+        ! its first index slowest, so it can be used here as a column-major
+        ! n_mode^2 by n_mode^2 matrix without a copy.
+        V1 = 0.0_r8
+        V2 = 0.0_r8
+        do b1 = 1, dr%n_mode
+            om1 = dr%iq(q1)%omega(b1)
+            if (om1 .lt. lo_freqtol) cycle
+            egv1 = dr%iq(q1)%egv(:, b1)/sqrt(om1)
+            call zgerc(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv1, 1, egv1, 1, V1(:, b1), dr%n_mode)
+        end do
+        do b2 = 1, dr%n_mode
+            om2 = dr%aq(q2)%omega(b2)
+            if (om2 .lt. lo_freqtol) cycle
+            egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
+            call zgerc(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv2, 1, egv2, 1, V2(:, b2), dr%n_mode)
+        end do
+        call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                   ptf, dr%n_mode**2, V1, dr%n_mode**2, (0.0_r8, 0.0_r8), Wm, dr%n_mode**2)
+        call zgemm('T', 'N', dr%n_mode, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                   V2, dr%n_mode**2, Wm, dr%n_mode**2, (0.0_r8, 0.0_r8), Sm, dr%n_mode)
 
         do b1=1, dr%n_mode
             om1 = dr%iq(q1)%omega(b1)
             if (om1 .lt. lo_freqtol) cycle
-            egv1 = dr%iq(q1)%egv(:, b1)/sqrt(om1)
             do b2=1, dr%n_mode
                 om2 = dr%aq(q2)%omega(b2)
                 if (om2 .lt. lo_freqtol) cycle
 
-                egv2 = dr%aq(q2)%egv(:, b2)/sqrt(om2)
-                evp1 = 0.0_r8
-                evp2 = 0.0_r8
-                evp3 = 0.0_r8
-                call zgerc(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv1, 1, egv1, 1, evp1, dr%n_mode)
-                call zgerc(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), egv2, 1, egv2, 1, evp2, dr%n_mode)
-                call zgeru(dr%n_mode**2, dr%n_mode**2, (1.0_r8, 0.0_r8), evp2, 1, evp1, 1, evp3, dr%n_mode**2)
-                evp3 = conjg(evp3)
-                psisq = real(dot_product(evp3, ptf), r8)
+                psisq = real(Sm(b2, b1), r8)
 
                 if (quantum) then
                     ! Phonon occupation
@@ -144,9 +163,10 @@ subroutine free_energy_fourthorder(uc, fcf, qp, dr, temperature, df4, s4, cv4, q
 
     ! And deallocate
     call mem%deallocate(ptf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-    call mem%deallocate(evp3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(V1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(V2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(Wm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+    call mem%deallocate(Sm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     call mem%deallocate(egv2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 end subroutine
@@ -231,6 +251,8 @@ subroutine free_energy_fourthorder_secondorder(uc, fcf, qp, dr, temperature, fe4
     dn = 0.0_r8
     ddn = 0.0_r8
 
+    ! Same omission as free_energy_thirdorder, though nothing calls this one yet.
+    ctr = 0
     do q1=1, qp%n_irr_point
     do q2=1, qp%n_full_point
     do q3=1, qp%n_full_point

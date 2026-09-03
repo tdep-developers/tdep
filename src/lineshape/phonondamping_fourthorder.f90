@@ -202,7 +202,9 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
     ! New, fun way of doing things
     new: block
         complex(r8), dimension(:, :), allocatable :: bf1, bf2
-        complex(r8), dimension(:), allocatable :: evp3, ptf
+        !> conj(bf1), and the two intermediates of the contraction below
+        complex(r8), dimension(:, :), allocatable :: bf1c, Wm, Sm
+        complex(r8), dimension(:), allocatable :: ptf
         real(r8), dimension(dr%n_mode) :: bfom2
         real(r8) :: prefactor, psi, omegathres, f0
         integer :: iq, b1, b2, ctr, i
@@ -213,11 +215,12 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
 
         call mem%allocate(bf1, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(bf2, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%allocate(evp3, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(bf1c, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(Wm, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(Sm, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(ptf, dr%n_mode**4, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         bf1 = 0.0_r8
         bf2 = 0.0_r8
-        evp3 = 0.0_r8
         ptf = 0.0_r8
         ctr = 0
 
@@ -230,6 +233,9 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
                 call zgerc(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), nuvec1(:, b1), 1, nuvec1(:, b1), 1, bf1(:, b1), dr%n_mode)
             end if
         end do
+
+        ! The contraction below wants conj(bf1) and bf1 does not depend on iq.
+        bf1c = conjg(bf1)
 
         if (atgamma) then
             ! Can not use symmetry
@@ -255,15 +261,20 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
                     end if
                 end do
 
-                ! second larger outer product to get matrix elements
+                ! Both bands at once: S = bf2^H ptf conj(bf1).
+                !
+                ! ptf already comes out as the n_mode^2 by n_mode^2 matrix this
+                ! reading wants, so no repack. The n_mode^4 scratch array the
+                ! old form needed per mode pair goes away with it.
+                call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                           ptf, dr%n_mode**2, bf1c, dr%n_mode**2, (0.0_r8, 0.0_r8), Wm, dr%n_mode**2)
+                call zgemm('C', 'N', dr%n_mode, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                           bf2, dr%n_mode**2, Wm, dr%n_mode**2, (0.0_r8, 0.0_r8), Sm, dr%n_mode)
                 do b1 = 1, dr%n_mode
                     if (wp%omega(b1) .lt. omegathres) cycle
                     do b2 = 1, dr%n_mode
                         if (bfom2(b2) .lt. omegathres) cycle
-                        evp3 = 0.0_r8
-                        call zgeru(dr%n_mode**2, dr%n_mode**2, (1.0_r8, 0.0_r8), bf2(:, b2), 1, bf1(:, b1), 1, evp3, dr%n_mode**2)
-                        psi = real(dot_product(evp3, ptf), r8)
-                        delta(b1) = delta(b1) + psi
+                        delta(b1) = delta(b1) + real(Sm(b2, b1), r8)
                     end do
                 end do
 
@@ -295,15 +306,16 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
                     end if
                 end do
 
-                ! second larger outer product to get matrix elements
+                ! Both bands at once, as above: S = bf2^H ptf conj(bf1).
+                call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                           ptf, dr%n_mode**2, bf1c, dr%n_mode**2, (0.0_r8, 0.0_r8), Wm, dr%n_mode**2)
+                call zgemm('C', 'N', dr%n_mode, dr%n_mode, dr%n_mode**2, (1.0_r8, 0.0_r8), &
+                           bf2, dr%n_mode**2, Wm, dr%n_mode**2, (0.0_r8, 0.0_r8), Sm, dr%n_mode)
                 do b1 = 1, dr%n_mode
                     if (wp%omega(b1) .lt. omegathres) cycle
                     do b2 = 1, dr%n_mode
                         if (bfom2(b2) .lt. omegathres) cycle
-                        evp3 = 0.0_r8
-                        call zgeru(dr%n_mode**2, dr%n_mode**2, (1.0_r8, 0.0_r8), bf2(:, b2), 1, bf1(:, b1), 1, evp3, dr%n_mode**2)
-                        psi = real(dot_product(evp3, ptf), r8)
-                        delta(b1) = delta(b1) + psi
+                        delta(b1) = delta(b1) + real(Sm(b2, b1), r8)
                     end do
                 end do
 
@@ -330,7 +342,9 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
 
         call mem%deallocate(bf1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(bf2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
-        call mem%deallocate(evp3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(bf1c, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(Wm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(Sm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(ptf, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
 
         if (verbosity .gt. 0) then

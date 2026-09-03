@@ -168,6 +168,8 @@ module subroutine buildhelper(dh, wp, di, p, qp, dr, fc, fct, temperature, delta
         complex(r8), dimension(:, :), allocatable :: pretransform_rm2, pretransform_ir2
         complex(r8), dimension(:), allocatable :: pretransform_phi3
         complex(r8), dimension(:), allocatable :: outerprod1, outerprod2
+        !> Partial contractions of the three-phonon matrix element, see below
+        complex(r8), dimension(:, :), allocatable :: xc1, xc2, xcm
         complex(r8) cv9(9), cv3(3)
         real(r8), dimension(3) :: qv1, qv2
         integer :: ctr, ib1, ib2, ib3, iq
@@ -177,6 +179,9 @@ module subroutine buildhelper(dh, wp, di, p, qp, dr, fc, fct, temperature, delta
         call mem%allocate(pretransform_phi3, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(outerprod1, dr%n_mode**2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%allocate(outerprod2, dr%n_mode**3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(xc1, [dr%n_mode**2, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(xc2, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%allocate(xcm, [dr%n_mode, dr%n_mode], persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         pretransform_rm2 = 0.0_r8
         pretransform_ir2 = 0.0_r8
         pretransform_phi3 = 0.0_r8
@@ -227,15 +232,23 @@ module subroutine buildhelper(dh, wp, di, p, qp, dr, fc, fct, temperature, delta
             end do
 
             ! And now the three-phonon guys. There is a chance that this is correct.
+            ! One index off ptf at a time, as in free energy. Things to
+            ! keep: the conjugation sits on ugv's third factor (nowhere else),
+            ! and ptf arrives first index slowest so it needs no repack.
+            call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                       pretransform_phi3, dr%n_mode**2, dh%ugv_gamma, dr%n_mode, &
+                       (0.0_r8, 0.0_r8), xc1, dr%n_mode**2)
             do ib3 = 1, dr%n_mode ! mode at Gamma!
+                call zgemm('N', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                           xc1(:, ib3), dr%n_mode, dh%ugv(:, :, iq), dr%n_mode, &
+                           (0.0_r8, 0.0_r8), xc2, dr%n_mode)
+                call zgemm('C', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                           dh%ugv(:, :, iq), dr%n_mode, xc2, dr%n_mode, &
+                           (0.0_r8, 0.0_r8), xcm, dr%n_mode)
             do ib1 = 1, dr%n_mode ! mode at q
-                outerprod1 = 0.0_r8
-                call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), dh%ugv(:, ib1, iq), 1, dh%ugv_gamma(:, ib3), 1, outerprod1, dr%n_mode)
                 do ib2 = 1, dr%n_mode ! mode at -q
                     if (wp%omega(ib2) .lt. lo_freqtol) cycle
-                    outerprod2 = 0.0_r8
-                    call zgerc(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), dh%ugv(:, ib2, iq), 1, outerprod1, 1, outerprod2, dr%n_mode)
-                    buf_phi(ib1, ib2, ib3, iq) = dot_product(outerprod2, pretransform_phi3)
+                    buf_phi(ib1, ib2, ib3, iq) = xcm(ib2, ib1)
                     ! ! Calculate stupid matrix elements to see if I got this somewhat right? Seems like it.
                     ! omega(1)=wp%omega(ib3)
                     ! omega(2)=dr%iq(iq)%omega(ib1)
@@ -278,6 +291,9 @@ module subroutine buildhelper(dh, wp, di, p, qp, dr, fc, fct, temperature, delta
         call mem%deallocate(pretransform_phi3, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(outerprod1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
         call mem%deallocate(outerprod2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(xc1, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(xc2, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        call mem%deallocate(xcm, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
     end block order2
 
     ! build the compound matrix elements
