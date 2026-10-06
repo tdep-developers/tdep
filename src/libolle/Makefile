@@ -538,11 +538,11 @@ $(OBJECT_PATH)type_forceconstant_firstorder_io.o:\
 
 $(OBJECT_PATH)type_forceconstant_secondorder.o:\
 	type_forceconstant_secondorder.f90\
-	type_forceconstant_secondorder_aux.f90\
     $(OBJECT_PATH)konstanter.o\
     $(OBJECT_PATH)gottochblandat.o\
     $(OBJECT_PATH)mpi_wrappers.o\
 	$(OBJECT_PATH)lo_memtracker.o\
+    $(OBJECT_PATH)lo_randomnumbers.o\
 	$(OBJECT_PATH)lo_longrange_electrostatics.o\
     $(OBJECT_PATH)type_crystalstructure.o\
     $(OBJECT_PATH)type_qpointmesh.o
@@ -554,7 +554,6 @@ $(OBJECT_PATH)type_forceconstant_secondorder_dynamicalmatrix.o:\
     $(OBJECT_PATH)type_blas_lapack_wrappers.o
 	$(FC) $(FFLAGS) -c type_forceconstant_secondorder_dynamicalmatrix.f90 -o $@
 $(OBJECT_PATH)type_forceconstant_secondorder_aux.o:\
-	type_forceconstant_secondorder.f90\
 	type_forceconstant_secondorder_aux.f90\
     $(OBJECT_PATH)type_forceconstant_secondorder.o\
     $(OBJECT_PATH)type_distancetable.o\
