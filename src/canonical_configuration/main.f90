@@ -44,9 +44,9 @@ init: block
         if (mw%talk) print *, '... RANDOM SEED: ', opts%seed
     end if
 
-    ! Just make sure no clever person starts running this in parallel.
-    if (mw%n .gt. 1) then
-        call lo_stop_gracefully(['Do not run this in parallel.'], lo_exitcode_param, __FILE__, __LINE__)
+    ! Just make sure no clever person starts running this in parallel. --semirandom is MPI parallel.
+    if ((mw%n .gt. 1) .and. (.not. opts%semirandom)) then
+        call lo_stop_gracefully(['Do not run this in parallel, except with --semirandom.'], lo_exitcode_param, __FILE__, __LINE__)
     end if
 
     ! Read structures
