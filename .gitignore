@@ -42,6 +42,7 @@ Makefile.inc
 tests/test*/extract_forceconstants
 tests/test*/*.m
 tests/test*/disprel_xtck
+tests/canonical_configuration/*.dat
 
 # things in the staging area
 staging/
