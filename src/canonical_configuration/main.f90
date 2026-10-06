@@ -117,6 +117,10 @@ if (opts%semirandom) then
         call lo_stop_gracefully(['diel. cutoff (-dc2) has to be nonzero when using --semirandom'], &
                                 lo_exitcode_param, __FILE__, __LINE__)
     end if
+    if (opts%seed >= 0) then
+        call lo_stop_gracefully(['--seed is not supported with --semirandom'], &
+                                lo_exitcode_param, __FILE__, __LINE__)
+    end if
     call generate_semirandom_configurations(uc, ss, fc, fcss, opts%temperature, opts%zpm, opts%dielcutoff2, opts%dielcutoff3, opts%output_format, opts%nconf, mw, mem, opts%verbosity)
 end if
 
