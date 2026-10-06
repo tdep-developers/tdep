@@ -121,7 +121,8 @@ subroutine parse(opts)
                  required=.false., act='store_true', def='.false.', error=lo_status)
     if (lo_status .ne. 0) stop
     call cli%add(switch='--seed', &
-                 help='Seed the random number generator.', &
+                 help='Seed the random number generator to make the configurations reproducible. '// &
+                      'A negative value seeds from the wall time. Not supported with --semirandom.', &
                  hidden=.false., required=.false., act='store', def='-1', error=lo_status)
     if (lo_status .ne. 0) stop
 

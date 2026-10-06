@@ -38,6 +38,10 @@ Optional switches:
     default value -1  
     Generate forceconstants that match a maximum frequency (in THz), and build displacements according to these. See details below.
 
+* `--seed value`  
+    default value -1  
+    Seed the random number generator to make the configurations reproducible. A negative value seeds from the wall time. Not supported with --semirandom.
+
 * `--help`, `-h`  
     Print this help message
 
@@ -50,6 +54,8 @@ Optional switches:
 `canonical_configuration -n 300 -t 0 --quantum` 
 
 `canonical_configuration -n 20 -t 10 --quantum --debye_temperature 400` 
+
+`canonical_configuration -n 10 -t 300 --seed 42` 
 
 ### Longer summary
 
