@@ -561,6 +561,9 @@ module subroutine initialize_cell(fcss, ss, uc, fc, temperature, quantum, exact,
         end block builddisplacements
     end if
 
+    ! Hand the advanced random state back, so the next call draws new numbers
+    if (present(tw)) tw = tw_local
+
     ! Then sync to all ranks.
     if (sync) then
         call mw%bcast(ss%r, solrnk, __FILE__, __LINE__)

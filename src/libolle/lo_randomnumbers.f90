@@ -201,16 +201,18 @@ function random_unit_vector(tw) result(v)
 end function
 
 !> Initializes mt(nn), with an optional seed. Otherwise seeded from the walltime.
-subroutine init_genrand64(tw,iseed,rseed)
+subroutine init_genrand64(tw,iseed,rseed,seed)
     !> rng container
     class(lo_mersennetwister), intent(out) :: tw
     !> integer to seed with (usually the MPI rank)
     integer, intent(in) :: iseed
     !> floating point thing to seed with (usually the Walltime)
     real(r8), intent(in) :: rseed
+    !> exact integer seed, for reproducible random numbers. Overrides iseed and rseed.
+    integer, intent(in), optional :: seed
 
     real(r8) :: f0
-    integer(i8) :: seed
+    integer(i8) :: iseed64
     integer :: i
 
     ! Seed with the walltime? This gives me something -0.5,0.5, Kinda
@@ -223,9 +225,10 @@ subroutine init_genrand64(tw,iseed,rseed)
         f0=mod(f0-log(real(-iseed,r8)),1.0_r8)-0.5_r8
     endif
     ! Get it to an integer. This would usually be rather random, I hope.
-    seed=int(anint(f0*(2**30)),i8)
+    iseed64=int(anint(f0*(2**30)),i8)
+    if ( present(seed) ) iseed64=int(seed,i8)
 
-    tw%mt(1) = seed
+    tw%mt(1) = iseed64
     do i = 1,nn-1
         tw%mt(i+1) = 6364136223846793005_i8 * ieor(tw%mt(i), ishft(tw%mt(i), -62)) + i
     end do
