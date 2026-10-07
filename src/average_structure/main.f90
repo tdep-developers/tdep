@@ -62,12 +62,14 @@ init: block
     print *, '... No. of  lattice degrees of freedom: ', tochar(ic%nx_lattice)
     print *, '... No. of internal degrees of freedom: ', tochar(ic%nx_internal)
 
-    ! Check if there is anything to average
+    ! Check if there is anything to average, otherwise the structure is fixed by symmetry
     if (ic%nx_internal .eq. 0) then
-        call lo_stop_gracefully(['*** No. of internal degrees of freedom is 0, no averaging needed'], 3)
+        write (*, *) '... No. of internal degrees of freedom is 0, no averaging needed'
+        nuc = uc
+        nss = ss
+    else
+        call avg_structure_nvt(uc, ss, ic, sim, nuc, nss, ur)
     end if
-
-    call avg_structure_nvt(uc, ss, ic, sim, nuc, nss, ur)
 
 !stop
 !    call sim%remove_force_and_center_of_mass_drift()
