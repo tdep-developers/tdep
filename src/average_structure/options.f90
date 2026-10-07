@@ -35,14 +35,14 @@ subroutine parse(opts)
                   version=lo_version, &
                   license=lo_licence, &
                   help='Usage: ', &
-                  description='Utility to fit equations of state to volume-energy data.', &
-                  examples=["eosfit"], &
+                  description='Compute the symmetry-respecting average structure from an MD simulation.', &
+                  examples=["average_structure"], &
                   epilog=new_line('a')//"...")
 
     cli_manpage
     cli_verbose
     call cli%add(switch='--stride', switch_ab='-s', &
-                 help='Number of dimenions for the fit', &
+                 help='Use every N configuration instead of all.', &
                  required=.false., act='store', def='1', error=lo_status)
     if (lo_status .ne. 0) stop
 
