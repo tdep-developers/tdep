@@ -1,6 +1,7 @@
 #include "precompilerdefinitions"
 module options
-use konstanter, only: flyt, lo_status, lo_author, lo_version, lo_licence, lo_hugeint
+use konstanter, only: flyt, lo_status, lo_author, lo_version, lo_licence, lo_hugeint, lo_exitcode_param
+use gottochblandat, only: lo_stop_gracefully
 use flap, only: command_line_interface
 implicit none
 
@@ -64,6 +65,10 @@ subroutine parse(opts)
 
     ! Parse the rest
     call cli%get(switch='--stride', val=opts%stride, error=lo_status)
+    if (lo_status .ne. 0) stop
+    if (opts%stride .lt. 1) then
+        call lo_stop_gracefully(['--stride has to be a positive integer'], lo_exitcode_param, __FILE__, __LINE__)
+    end if
 end subroutine
 
 end module
