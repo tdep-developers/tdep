@@ -9,6 +9,7 @@ all: clean testfiles
 	
 clean:
 	rm -f */outfile*
+	rm -f */*/outfile*
 	rm -rf */__pycache__/
 	rm -rf *.pytest_cache/
 	rm -f */contcar*

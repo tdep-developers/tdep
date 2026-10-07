@@ -20,6 +20,8 @@
 
 [`samples_from_md`: Pick samples from an MD simulation in a clever way.](samples_from_md.md)
 
+[`average_structure`: Compute the symmetry-respecting average structure from an MD simulation.](average_structure.md)
+
 [`dump_dynamical_matrices`: Write dynamical matrices on q-point grid.](dump_dynamical_matrices.md)
 
 [`crystal_structure_info`: Report which crystal structure and spacegroup TDEP sees.](crystal_structure_info.md)
