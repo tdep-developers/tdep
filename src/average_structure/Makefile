@@ -23,10 +23,10 @@ clean:
 .f90.o:
 	$(F90) $(F90FLAGS) -c $< $(LIBS)
 
-$(OBJECT_PATH)main.o: $(OBJECT_PATH)options.o $(OBJECT_PATH)type_irredcell.o
+$(OBJECT_PATH)main.o: main.f90 $(OBJECT_PATH)options.o $(OBJECT_PATH)type_irredcell.o
 	$(F90) $(F90FLAGS) -c main.f90 $(LIBS) -o $@
 $(OBJECT_PATH)type_irredcell.o: type_irredcell.f90 type_irredcell_aux.f90
 	$(F90) $(F90FLAGS) -c type_irredcell.f90 $(LIBS) -o $@
-$(OBJECT_PATH)options.o:
+$(OBJECT_PATH)options.o: options.f90
 	$(F90) $(F90FLAGS) -c options.f90 $(LIBS) -o $@
 
