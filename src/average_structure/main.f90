@@ -49,8 +49,11 @@ init: block
         ur = uc
     end if
 
-    ! Read the MD simulation
+    ! Read the MD simulation, only fixed-cell simulations are supported
     call sim%read_from_file(verbosity=2, stride=opts%stride)
+    if (lo_does_file_exist('infile.lattice')) then
+        write (*, *) '... WARNING: infile.lattice is ignored, the lattice is taken from infile.ucposcar'
+    end if
 !    lo_deallocate(sim%lattice)
     ! Remove center of mass drift
 !    call sim%remove_force_and_center_of_mass_drift()

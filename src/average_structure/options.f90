@@ -13,8 +13,6 @@ type lo_opts
     integer :: verbosity = -lo_hugeint
     !> use every N timesteps
     integer :: stride = -lo_hugeint
-    !> is it a constant pressure simulation?
-    logical :: npt = .false.
 contains
     procedure :: parse
 end type
@@ -36,7 +34,7 @@ subroutine parse(opts)
                   version=lo_version, &
                   license=lo_licence, &
                   help='Usage: ', &
-                  description='Compute the symmetry-respecting average structure from an MD simulation.', &
+                  description='Compute the symmetry-respecting average structure from an MD simulation with fixed cell (NVT).', &
                   examples=["average_structure"], &
                   epilog=new_line('a')//"...")
 
