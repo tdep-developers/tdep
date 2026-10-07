@@ -34,8 +34,20 @@ init: block
     call ss%readfromfile('infile.ssposcar')
     call ss%classify('supercell', uc)
 
-    ! Reference positions to determine displacement from
-    call ur%readfromfile('infile.refposcar')
+    ! Reference positions to determine displacement from, default to the unitcell
+    if (lo_does_file_exist('infile.refposcar')) then
+        call ur%readfromfile('infile.refposcar')
+        if (ur%na .ne. uc%na) then
+            call lo_stop_gracefully(['infile.refposcar and infile.ucposcar have different number of atoms'], &
+                                    lo_exitcode_param, __FILE__, __LINE__)
+        end if
+        if (any(ur%atomic_number .ne. uc%atomic_number)) then
+            call lo_stop_gracefully(['infile.refposcar and infile.ucposcar have different species or atom order'], &
+                                    lo_exitcode_param, __FILE__, __LINE__)
+        end if
+    else
+        ur = uc
+    end if
 
     ! Read the MD simulation
     call sim%read_from_file(verbosity=2, stride=opts%stride)
