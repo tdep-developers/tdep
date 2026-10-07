@@ -1,0 +1,4 @@
+         2     # N atoms
+         2     # N timesteps
+       1.0     # timestep in fs
+     300.0     # temperature in K

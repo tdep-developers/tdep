@@ -1,5 +1,6 @@
 folders="anharmonic_free_energy/
 atomic_distribution/
+average_structure/
 canonical_configuration/
 crystal_structure_info/
 dump_dynamical_matrices/
