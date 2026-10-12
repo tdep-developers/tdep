@@ -92,7 +92,7 @@ subroutine write_lineshape_to_hdf5(se, p, qpt, wp, dir, di, qp, enhet, temperatu
         ! Write some basic things that should always be present, first the temperature
         call h5%store_attribute(temperature, h5%file_id, 'temperature')
         ! which q-point we are on
-        call h5%store_data(qpt%r, h5%file_id, 'q-point', enhet='1/A')
+        call h5%store_data(qpt%r/lo_bohr_to_A, h5%file_id, 'q-point', enhet='1/A')
         ! what q-mesh did I use? Store the metadata in the file, just to be on the safe side.
         call h5%open_group('write', 'qmesh')
         call qp%write_metadata_to_hdf5(input_id=h5%group_id)
