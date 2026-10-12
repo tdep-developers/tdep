@@ -197,36 +197,6 @@ subroutine threephonon_imaginary_selfenergy_tetrahedron(wp, qp, sr, dr, temperat
             end do
             end do
 
-            ! Adjusted version
-            do b1 = 1, dr%n_mode
-            do b2 = 1, dr%n_mode
-            do b3 = 1, dr%n_mode
-                if (b2 .eq. b3) then
-                    if (omr2(ii, b2) .gt. omthres .and. omr3(ii, b3) .gt. omthres) then
-                        f1 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q)))
-                        f0 = 1.0_r8 + lo_planck(temperature, omr2(ii, b2)) + lo_planck(temperature, omr3(ii, b3))
-                        psisq1(ii, b1, b2, b3) = f1*f0
-                        f0 = lo_planck(temperature, omr3(ii, b3)) - lo_planck(temperature, omr2(ii, b2))
-                        psisq2(ii, b1, b2, b3) = f1*f0
-                    else
-                        psisq1(ii, b1, b2, b3) = 0.0_r8
-                        psisq2(ii, b1, b2, b3) = 0.0_r8
-                    end if
-                else
-                    if (omr2(ii, b2) .gt. omthres .and. omr3(ii, b3) .gt. omthres) then
-                        f1 = abs(sr%psi_3ph(b1, b2, b3, q)*conjg(sr%psi_3ph(b1, b2, b3, q))) + abs(sr%psi_3ph(b1, b3, b2, q)*conjg(sr%psi_3ph(b1, b3, b2, q)))
-                        f0 = 1.0_r8 + lo_planck(temperature, omr2(ii, b2)) + lo_planck(temperature, omr3(ii, b3))
-                        psisq1(ii, b1, b2, b3) = f1*f0
-                        f0 = lo_planck(temperature, omr3(ii, b3)) - lo_planck(temperature, omr2(ii, b2))
-                        psisq2(ii, b1, b2, b3) = f1*f0
-                    else
-                        psisq1(ii, b1, b2, b3) = 0.0_r8
-                        psisq2(ii, b1, b2, b3) = 0.0_r8
-                    end if
-                end if
-            end do
-            end do
-            end do
         end do
         ! And add the prefactor
         psisq1 = psisq1*threephonon_prefactor*qp%at(j)%integration_weight
@@ -235,7 +205,7 @@ subroutine threephonon_imaginary_selfenergy_tetrahedron(wp, qp, sr, dr, temperat
         ! Sum over bands and frequencies
         do b2 = 1, dr%n_mode
             !do b3=1,dr%n_mode
-            do b3 = b2, dr%n_mode
+            do b3 = 1, dr%n_mode
                 ! delta(bigOM-om2-om3)
                 minc = lo_huge
                 maxc = -lo_huge
