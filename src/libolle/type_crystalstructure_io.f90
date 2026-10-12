@@ -1051,7 +1051,7 @@ module subroutine write_structure_to_hdf5(p,filename,input_id)
     call h5%store_attribute(p%na,h5%file_id,'number_of_atoms')
     call h5%store_attribute(p%volume*lo_volume_bohr_to_A,h5%file_id,'volume_of_cell')
     call h5%store_data(p%reciprocal_latticevectors/lo_Bohr_to_A,h5%file_id,'reciprocal_latticevectors',enhet='1/A')
-    call h5%store_data(p%latticevectors/lo_Bohr_to_A,h5%file_id,'latticevectors',enhet='1/A')
+    call h5%store_data(p%latticevectors*lo_Bohr_to_A,h5%file_id,'latticevectors',enhet='A')
     call p%unique_atom_label(atomnames)
     call h5%store_attribute(trim(adjustl(atomnames)),h5%file_id,'unique_atom_labels')
 
