@@ -427,6 +427,10 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
             real(r8) :: t_up, t_tot
             real(r8), dimension(3) :: qv2, qv3
             complex(r8), dimension(:, :, :), allocatable :: psi_3ph_tmp
+            !> The three indices of the matrix element peel off one at a time;
+            !> these hold the partial contractions. See the note at the first
+            !> use below.
+            complex(r8), dimension(:, :), allocatable :: xc1, xc2, xcm
             integer :: q, b1, b2, b3, ctr, l
 
             ! Some space
@@ -442,6 +446,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                 ! temporary array for scattering rates
                 allocate (psi_3ph_tmp(dr%n_mode, dr%n_mode, dr%n_mode))
                 psi_3ph_tmp = 0.0_r8
+                allocate (xc1(dr%n_mode**2, dr%n_mode), xc2(dr%n_mode, dr%n_mode), xcm(dr%n_mode, dr%n_mode))
 
                 ctr = 0
                 l = 0
@@ -462,22 +467,33 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
 
                     ! get matrix elements for all modes
                     psi_3ph_tmp = 0.0_r8
+
+                    ! One index off ptf at a time.
+                    !
+                    ! The conjugate on the third eigenvector is the zgerc the old
+                    ! comment called a complicated conjugation thingy: at Gamma the
+                    ! third eigenvector is the second one's partner. ptf arrives
+                    ! first index slowest, so it is already the n_mode^2 by n_mode
+                    ! matrix each step needs.
+                    call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                               fh%ptf_phi, dr%n_mode**2, fh%ugv1, dr%n_mode, (0.0_r8, 0.0_r8), xc1, dr%n_mode**2)
                     do b1 = 1, dr%n_mode
-
-                        do b2 = 1, dr%n_mode
-                            ! MPI division
-                            l = l + 1
-                            if (mod(l, mw%n) .ne. mw%r) cycle
-                            fh%evp1 = 0.0_r8
-                            call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
-
+                        ! MPI division, now by b1: the work per b1 is two matrix
+                        ! multiplies rather than n_mode^2 dot products.
+                        l = l + 1
+                        if (mod(l, mw%n) .eq. mw%r) then
+                            call zgemm('N', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                                       xc1(:, b1), dr%n_mode, fh%ugv2(:, :, q), dr%n_mode, &
+                                       (0.0_r8, 0.0_r8), xc2, dr%n_mode)
+                            call zgemm('C', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                                       fh%ugv2(:, :, q), dr%n_mode, xc2, dr%n_mode, &
+                                       (0.0_r8, 0.0_r8), xcm, dr%n_mode)
+                            do b2 = 1, dr%n_mode
                             do b3 = 1, dr%n_mode
-                                fh%evp2 = 0.0_r8
-                                ! complicated conjugation thingy compared with the unsymmetric below.
-                                call zgerc(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
-                                psi_3ph_tmp(b1, b2, b3) = dot_product(fh%evp2, fh%ptf_phi)
+                                psi_3ph_tmp(b1, b2, b3) = xcm(b3, b2)
                             end do
-                        end do
+                            end do
+                        end if
 
                         if (verbosity .gt. 0) then
                             ctr = ctr + 1
@@ -501,11 +517,13 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     end if
                 end do
                 deallocate (psi_3ph_tmp)
+                deallocate (xc1, xc2, xcm)
             else
                 ! Not at Gamma, have to calculate all of them
                 ! Space for matrix elements
                 allocate (sr%psi_3ph(dr%n_mode, dr%n_mode, dr%n_mode, qp%n_full_point))
                 sr%psi_3ph = 0.0_r8
+                allocate (xc1(dr%n_mode**2, dr%n_mode), xc2(dr%n_mode, dr%n_mode), xcm(dr%n_mode, dr%n_mode))
 
                 ctr = 0
                 l = 0
@@ -517,20 +535,27 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                     call pretransform_phi(fct, qv2, qv3, fh%ptf_phi)
                     !call fct%pretransform(qv2,qv3,fh%ptf_phi)
                     ! get matrix elements for all modes
+                    ! Same contraction as the Gamma branch, except the third
+                    ! eigenvector is its own here and enters unconjugated: the
+                    ! zgeru and the conjg on evp2 cancelled against dot_product
+                    ! conjugating its first argument.
+                    call zgemm('N', 'N', dr%n_mode**2, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                               fh%ptf_phi, dr%n_mode**2, fh%ugv1, dr%n_mode, (0.0_r8, 0.0_r8), xc1, dr%n_mode**2)
                     do b1 = 1, dr%n_mode
-                        do b2 = 1, dr%n_mode
-                            ! MPI division
-                            l = l + 1
-                            if (mod(l, mw%n) .ne. mw%r) cycle
-                            fh%evp1 = 0.0_r8
-                            call zgeru(dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv2(:, b2, q), 1, fh%ugv1(:, b1), 1, fh%evp1, dr%n_mode)
+                        l = l + 1
+                        if (mod(l, mw%n) .eq. mw%r) then
+                            call zgemm('N', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                                       xc1(:, b1), dr%n_mode, fh%ugv2(:, :, q), dr%n_mode, &
+                                       (0.0_r8, 0.0_r8), xc2, dr%n_mode)
+                            call zgemm('T', 'N', dr%n_mode, dr%n_mode, dr%n_mode, (1.0_r8, 0.0_r8), &
+                                       fh%ugv3(:, :, q), dr%n_mode, xc2, dr%n_mode, &
+                                       (0.0_r8, 0.0_r8), xcm, dr%n_mode)
+                            do b2 = 1, dr%n_mode
                             do b3 = 1, dr%n_mode
-                                fh%evp2 = 0.0_r8
-                                call zgeru(dr%n_mode, dr%n_mode*dr%n_mode, (1.0_r8, 0.0_r8), fh%ugv3(:, b3, q), 1, fh%evp1, 1, fh%evp2, dr%n_mode)
-                                fh%evp2 = conjg(fh%evp2)
-                                sr%psi_3ph(b1, b2, b3, q) = dot_product(fh%evp2, fh%ptf_phi)
+                                sr%psi_3ph(b1, b2, b3, q) = xcm(b3, b2)
                             end do
-                        end do
+                            end do
+                        end if
 
                         if (verbosity .gt. 0) then
                             ctr = ctr + 1
@@ -542,6 +567,7 @@ subroutine generate(sr, qpoint, ompoint, gpoint, qp, dr, uc, fc, fct, isoscatter
                 end do
                 ! sync across ranks
                 call mw%allreduce('sum', sr%psi_3ph)
+                deallocate (xc1, xc2, xcm)
 
             end if
 
