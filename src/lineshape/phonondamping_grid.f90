@@ -142,7 +142,7 @@ module subroutine get_selfenergy_on_closed_grid(sf, tc, pd, qp, dr, uc, fc, fct,
                 if (mod(imode, mw%n) .ne. mw%r) cycle
                 ! Get the spectral functions
                 if (dr%iq(iq)%omega(imode) .gt. lo_freqtol) then
-                    buf_sigmaIm(:, imode) = se%im_3ph(:, imode) + se%im_iso(:, imode)
+                    buf_sigmaIm(:, imode) = se%im_3ph(:, imode) + se%im_4ph(:, imode) + se%im_iso(:, imode)
                     buf_sigmaRe(:, imode) = se%re_3ph(:, imode) + se%re_4ph(:, imode)
                     call taperfn_im(se%energy_axis, opts%maxf, dr%iq(iq)%omega(imode), buf_taper)
                     buf_sigmaIm(:, imode) = buf_sigmaIm(:, imode)*buf_taper
@@ -414,7 +414,7 @@ module subroutine get_selfenergy_on_points(qvec, wp, qp, dr, uc, fc, fct, fcf, i
         call se%generate(qpoint, qdir, wp(iq), uc, fc, fct, fcf, ise, isf, qp, dr, opts, tmr, mw, mem, verbosity=-1)
         ! Store it
         sigmaRe(:, :, iq) = se%re_3ph + se%re_4ph
-        sigmaIm(:, :, iq) = se%im_3ph + se%im_iso
+        sigmaIm(:, :, iq) = se%im_3ph + se%im_4ph + se%im_iso
         ! Report
         if (verbosity .gt. 0) then
             write (*, *) 'did', iq, 'out of', size(qvec, 2)

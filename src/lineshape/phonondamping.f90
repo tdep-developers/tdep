@@ -41,7 +41,7 @@ type lo_phonon_selfenergy
     ! energy axis for the self-energy
     real(r8), dimension(:), allocatable :: energy_axis
     ! Imaginary part of self energy (energy,mode)
-    real(r8), dimension(:, :), allocatable :: im_3ph, im_iso
+    real(r8), dimension(:, :), allocatable :: im_3ph, im_iso, im_4ph
     ! Real part of self energy (energy,mode)
     real(r8), dimension(:, :), allocatable :: re_3ph, re_4ph
     !> Direction of probe
@@ -54,6 +54,7 @@ type lo_phonon_selfenergy
     logical :: isotope_scattering = .false.
     logical :: thirdorder_scattering = .false.
     logical :: fourthorder_scattering = .false.
+    logical :: fourthorder_real = .false.
     logical :: diagonal = .false.
     logical :: skipsym = .false.
     ! auxiliary information about lineshapes:
@@ -75,7 +76,8 @@ end type
 
 ! Prefactors, to make sure they are the same all the time.
 real(r8), parameter :: threephonon_prefactor = lo_pi/16.0_r8
-real(r8), parameter :: fourphonon_prefactor = 1.0_r8/8.0_r8
+real(r8), parameter :: fourphonon_real_prefactor = 1.0_r8/8.0_r8
+real(r8), parameter :: fourphonon_imag_prefactor = lo_pi/96.0_r8
 real(r8), parameter :: isotope_prefactor = lo_pi/4.0_r8
 
 ! dos interfaces
@@ -199,6 +201,7 @@ function se_size_in_mem(se) result(mem)
     if (allocated(se%im_3ph)) mem = mem + storage_size(se%im_3ph)*size(se%im_3ph)
     if (allocated(se%im_iso)) mem = mem + storage_size(se%im_iso)*size(se%im_iso)
     if (allocated(se%re_3ph)) mem = mem + storage_size(se%re_3ph)*size(se%re_3ph)
+    if (allocated(se%im_4ph)) mem = mem + storage_size(se%im_4ph)*size(se%im_4ph)
     if (allocated(se%re_4ph)) mem = mem + storage_size(se%re_4ph)*size(se%re_4ph)
     if (allocated(se%xmid)) mem = mem + storage_size(se%xmid)*size(se%xmid)
     if (allocated(se%xlo)) mem = mem + storage_size(se%xlo)*size(se%xlo)

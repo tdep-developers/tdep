@@ -161,6 +161,7 @@ subroutine write_lineshape_to_hdf5(se, p, qpt, wp, dir, di, qp, enhet, temperatu
         call h5%store_data(se%energy_axis*unitfactor, h5%group_id, 'frequency', enhet=trim(unitname))
         call h5%store_data(se%im_iso*unitfactor, h5%group_id, 'imaginary_isotope_selfenergy', enhet=trim(unitname))
         call h5%store_data(se%im_3ph*unitfactor, h5%group_id, 'imaginary_threephonon_selfenergy', enhet=trim(unitname))
+        call h5%store_data(se%im_4ph*unitfactor, h5%group_id, 'imaginary_fourphonon_selfenergy', enhet=trim(unitname))
         call h5%store_data(se%re_3ph*unitfactor, h5%group_id, 'real_threephonon_selfenergy', enhet=trim(unitname))
         call h5%store_data(se%re_4ph*unitfactor, h5%group_id, 'real_fourphonon_selfenergy', enhet=trim(unitname))
 
@@ -179,7 +180,7 @@ subroutine write_lineshape_to_hdf5(se, p, qpt, wp, dir, di, qp, enhet, temperatu
         ! Imaginary part of Green's function
         do i = 1, se%n_mode
             if (wp%omega(i) .gt. lo_freqtol*10) then
-                call evaluate_spectral_function(se%energy_axis, se%im_3ph(:, i) + se%im_iso(:, i), se%re_3ph(:, i) + se%re_4ph(:, i), wp%omega(i), dr0(:, i))
+                call evaluate_spectral_function(se%energy_axis, se%im_3ph(:, i) + se%im_4ph(:, i) + se%im_iso(:, i), se%re_3ph(:, i) + se%re_4ph(:, i), wp%omega(i), dr0(:, i))
             else
                 dr0(:, i) = 0.0_r8
             end if

@@ -59,6 +59,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         se%isotope_scattering = opts%isotopescattering ! include isotope scattering?
         se%thirdorder_scattering = opts%thirdorder        ! include threephonon term?
         se%fourthorder_scattering = opts%fourthorder       ! include fourphonon term?
+        se%fourthorder_real = opts%fourthorder_real       ! include fourphonon term?
         se%diagonal = opts%diagonal          ! calculate only the diagonal part of the self-energy
         se%qdir = qdir                   ! Make note on the probe direction
         ! Make sure we know exactly when to skip symmetry things
@@ -70,6 +71,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         allocate (se%im_3ph(se%n_energy, se%n_mode))
         allocate (se%im_iso(se%n_energy, se%n_mode))
         allocate (se%re_3ph(se%n_energy, se%n_mode))
+        allocate (se%im_4ph(se%n_energy, se%n_mode))
         allocate (se%re_4ph(se%n_energy, se%n_mode))
         ! Get the energy range
         if (se%integrationtype .eq. 4) then
@@ -82,16 +84,18 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
         se%im_3ph = 0.0_r8
         se%im_iso = 0.0_r8
         se%re_3ph = 0.0_r8
+        se%im_4ph = 0.0_r8
         se%re_4ph = 0.0_r8
 
         ! Now things should be clean and nice. Maybe say what we are about to do?
         if (verbosity .gt. 1) then
-            write (*, *) '         liso:', se%isotope_scattering
-            write (*, *) '  lthirdorder:', se%thirdorder_scattering
-            write (*, *) ' lfourthorder:', se%fourthorder_scattering
-            write (*, *) '        sigma:', se%smearing_prefactor*lo_mean(dr%default_smearing)*lo_frequency_hartree_to_thz, ' Thz'
-            write (*, *) '  temperature: ', tochar(opts%temperature), ' K'
-            write (*, *) '  frequencies:'
+            write (*, *) '              liso:', se%isotope_scattering
+            write (*, *) '       lthirdorder:', se%thirdorder_scattering
+            write (*, *) ' lfourthorder_real:', se%fourthorder_real
+            write (*, *) '      lfourthorder:', se%fourthorder_scattering
+            write (*, *) '             sigma:', se%smearing_prefactor*lo_mean(dr%default_smearing)*lo_frequency_hartree_to_thz, ' Thz'
+            write (*, *) '       temperature: ', tochar(opts%temperature), ' K'
+            write (*, *) '       frequencies:'
             do i = 1, dr%n_mode
                 write (*, *) '    mode ', tochar(i, -3), ', omega: ', tochar(wp%omega(i)*lo_frequency_Hartree_to_THz, 6), ' THz'
             end do
@@ -169,34 +173,35 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
 
     call tmr%tock('three-phonon integrals')
 
-    ! Maybe fourthorder things
     if (se%fourthorder_scattering) then
-        fourthorder: block
-            real(r8), dimension(:), allocatable :: delta
-            integer :: j
-
-            allocate (delta(dr%n_mode))
-            call fourphonon_selfenergy(qpoint, wp, gp, qp, uc, opts%temperature, dr, fcf, delta, se%skipsym, mw, mem, verbosity)
-            do j = 1, se%n_mode
-                se%re_4ph(:, j) = delta(j)
-            end do
-            deallocate (delta)
-        end block fourthorder
+            call sr%generate_fourthorder(qpoint, wp, gp, qp, dr, uc, fc, fcf, &
+                                         se%skipsym, .false., opts%grid, tmr, mw, mem, verbosity)
+            select case (se%integrationtype)
+            case (1:2)
+                call fourphonon_imaginary_selfenergy_gaussian(wp, se, sr, qp, dr, opts%temperature, mw, mem, verbosity)
+            case (3:5)
+                call lo_stop_gracefully(['Integration type not implemented for fourth order scattering'], lo_exitcode_param, __FILE__, __LINE__, mw%comm)
+            case default
+                call lo_stop_gracefully(['Unknown integration type'], lo_exitcode_param, __FILE__, __LINE__, mw%comm)
+            end select
     end if
 
-    call tmr%tock('four-phonon self-energy')
+    call tmr%tock('four-phonon integrals')
 
     ! finalize to ensure that it's reasonable.
     sanity: block
         ! Make sure the selfenergy is zero where it's supposed to be. First
         ! make sure it's at least not negative.
         se%im_3ph = max(se%im_3ph, 0.0_r8)
+        se%im_4ph = max(se%im_4ph, 0.0_r8)
         se%im_iso = max(se%im_iso, 0.0_r8)
         ! zero at zero
         se%im_3ph(1, :) = 0.0_r8
+        se%im_4ph(1, :) = 0.0_r8
         se%im_iso(1, :) = 0.0_r8
         ! zero at the end
         se%im_3ph(se%n_energy, :) = 0.0_r8
+        se%im_4ph(se%n_energy, :) = 0.0_r8
         se%im_iso(se%n_energy, :) = 0.0_r8
     end block sanity
 
@@ -255,7 +260,74 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
                 end do
             end if
         end block kktransform
-        call tmr%tock('Kramers-Kronig transformation')
+        call tmr%tock('Kramers-Kronig transformation 3ph')
+    end if
+
+
+    ! Kramers-Kronig-transform the imaginary part to get the real for the four phonon
+    if (se%fourthorder_scattering) then
+        kktransform_4ph: block
+            real(r8) :: pref = 2.0_r8/lo_pi
+            complex(r8), dimension(:), allocatable :: z0
+            complex(r8) :: eta
+            real(r8), dimension(:), allocatable :: x, xs, y0
+            real(r8) :: xp, dlx
+            integer :: imode, ie, ctr
+
+            call mem%allocate(x, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(xs, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(z0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%allocate(y0, se%n_energy, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+
+            x = se%energy_axis                  ! copy of x-axis
+            xs = x**2                           ! x^2, precalculated
+            dlx = x(2) - x(1)                     ! prefactor for riemann integral
+            eta = lo_imag*(x(2) - x(1))*1E-8_r8   ! small imaginary thing to avoid divergence
+
+            ctr = 0
+            do imode = 1, se%n_mode
+            do ie = 1, se%n_energy
+                ctr = ctr + 1
+                if (mod(ctr, mw%n) .ne. mw%r) cycle
+                xp = x(ie)
+                y0 = se%im_4ph(:, imode)*x
+                ! To anyone reading this code:
+                ! The correct way to compute the principal value would be
+                ! z0 = (xp + eta)**2 - xs
+                ! However, it doesn't matter for the Im -> Re transform because we
+                ! don't really hit 0.
+                z0 = xp**2 - xs + eta
+                y0 = real(y0/z0, r8)
+                y0(1) = y0(1)*0.5_r8
+                y0(se%n_energy) = y0(se%n_energy)*0.5_r8
+                se%re_4ph(ie, imode) = se%re_4ph(ie, imode) + sum(y0)*dlx
+            end do
+            end do
+            call mw%allreduce('sum', se%re_4ph)
+            se%re_4ph = se%re_4ph*pref
+
+            call mem%deallocate(x, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(xs, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(z0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+            call mem%deallocate(y0, persistent=.false., scalable=.false., file=__FILE__, line=__LINE__)
+        end block kktransform_4ph
+        call tmr%tock('Kramers-Kronig transformation 4ph')
+    end if
+
+    ! Do the fourth order real part after the Kramer-Kronig to not mess with the (maybe) already computed real part
+    if (se%fourthorder_real) then
+        fourthorder_real: block
+            real(r8), dimension(:), allocatable :: delta
+            integer :: j
+
+            allocate (delta(dr%n_mode))
+            call fourphonon_selfenergy(qpoint, wp, gp, qp, uc, opts%temperature, dr, fcf, delta, se%skipsym, mw, mem, verbosity)
+            do j = 1, se%n_mode
+                se%re_4ph(:, j) = se%re_4ph(:, j) + delta(j)
+            end do
+            deallocate (delta)
+            call tmr%tock('four-phonon real part')
+        end block fourthorder_real
     end if
 
     ! Correct the memory matrix to get back to the orthogonal time one
@@ -342,7 +414,7 @@ subroutine generate(se, qpoint, qdir, wp, uc, fc, fct, fcf, ise, isf, qp, dr, op
             if (mod(imode, mw%n) .ne. mw%r) cycle
 
             ! Evaluate rough spectral function
-            yim = se%im_3ph(:, imode) + se%im_iso(:, imode)
+            yim = se%im_3ph(:, imode) + se%im_4ph(:, imode) + se%im_iso(:, imode)
             yre = se%re_3ph(:, imode) + se%re_4ph(:, imode)
             call evaluate_spectral_function(se%energy_axis, yim, yre, wp%omega(imode), ysf)
             ! Find peaks in the spectral function
@@ -400,6 +472,7 @@ subroutine generate_interp(se, qpoint, qdir, wp, uc, ise, opts, mw, mem)
     se%isotope_scattering = opts%isotopescattering ! include isotope scattering?
     se%thirdorder_scattering = opts%thirdorder        ! include threephonon term?
     se%fourthorder_scattering = opts%fourthorder       ! include fourphonon term?
+    se%fourthorder_real = opts%fourthorder_real       ! include fourphonon term?
     se%diagonal = opts%diagonal          ! calculate only the diagonal part of the self-energy
     se%skipsym = opts%qpointpath        ! If on a path, skip using symmetry. For now, should reintroduce it later.
     se%qdir = qdir                   ! Make note on the probe direction

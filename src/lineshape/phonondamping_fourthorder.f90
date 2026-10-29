@@ -13,7 +13,7 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
     type(lo_crystalstructure), intent(in) :: uc
     !> harmonic properties for q',q'',q''
     type(lo_phonon_dispersions), intent(in) :: dr
-    !> third order force constant
+    !> fourth order force constant
     type(lo_forceconstant_fourthorder), intent(in) :: fcf
     !> temperature
     real(r8), intent(in) :: temperature
@@ -238,7 +238,7 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
                 ctr = ctr + 1
                 if (mod(ctr, mw%n) .ne. mw%r) cycle
 
-                prefactor = qp%ip(iq)%integration_weight*fourphonon_prefactor
+                prefactor = qp%ip(iq)%integration_weight*fourphonon_real_prefactor
                 ! pre-transform the matrix element
                 call pretransform_phi4(fcf, qpoint%r, qp%ip(iq)%r, ptf)
 
@@ -278,7 +278,7 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
                 ctr = ctr + 1
                 if (mod(ctr, mw%n) .ne. mw%r) cycle
 
-                prefactor = qp%ap(iq)%integration_weight*fourphonon_prefactor
+                prefactor = qp%ap(iq)%integration_weight*fourphonon_real_prefactor
                 ! pre-transform the matrix element
                 call pretransform_phi4(fcf, qpoint%r, qp%ap(iq)%r, ptf)
 
@@ -432,7 +432,7 @@ subroutine fourphonon_selfenergy(qpoint, wp, gp, qp, uc, temperature, dr, fcf, d
     !             if ( minval(omega) .gt. omegathres ) then
     !                 f0=real(fcf%scatteringamplitude(omega,egv,-qv2,-qv3,-qv4),r8)
     !                 f0=f0*(1.0_r8+lo_planck(temperature,omega(3))+lo_planck(temperature,omega(4)) )
-    !                 f0=f0*qp%ap(q)%integration_weight*fourphonon_prefactor
+    !                 f0=f0*qp%ap(q)%integration_weight*fourphonon_real_prefactor
     !             else
     !                 f0=0.0_r8
     !             endif

@@ -146,7 +146,7 @@ module subroutine get_intensity_as_dos(pd, qpd, drd, uc, fc, fct, fcf, ise, sf, 
                 if (drd%iq(iq)%omega(imode) .lt. lo_freqtol) cycle
                 ! Get the spectral function
                 buf1 = 0.0_r8
-                call evaluate_spectral_function(se%energy_axis, se%im_3ph(:, imode) + se%im_iso(:, imode), se%re_3ph(:, imode) + se%re_4ph(:, imode), drd%iq(iq)%omega(imode), buf1)
+                call evaluate_spectral_function(se%energy_axis, se%im_3ph(:, imode) + se%im_4ph(:, imode) + se%im_iso(:, imode), se%re_3ph(:, imode) + se%re_4ph(:, imode), drd%iq(iq)%omega(imode), buf1)
                 buf1 = buf1/lo_trapezoid_integration(se%energy_axis, buf1)
 
                 ! Stash the unsmeared spectral function
@@ -173,7 +173,9 @@ module subroutine get_intensity_as_dos(pd, qpd, drd, uc, fc, fct, fcf, ise, sf, 
                 ! Store shifts and linewidth
                 buf_shift_3rd(imode, iq) = lo_linear_interpolation(se%energy_axis, se%re_3ph(:, imode), drd%iq(iq)%omega(imode))
                 buf_shift_4th(imode, iq) = lo_linear_interpolation(se%energy_axis, se%re_4ph(:, imode), drd%iq(iq)%omega(imode))
-                buf_linewidth(imode, iq) = lo_linear_interpolation(se%energy_axis, se%im_3ph(:, imode), drd%iq(iq)%omega(imode)) + lo_linear_interpolation(se%energy_axis, se%im_iso(:, imode), drd%iq(iq)%omega(imode))
+                buf_linewidth(imode, iq) = lo_linear_interpolation(se%energy_axis, se%im_3ph(:, imode), drd%iq(iq)%omega(imode)) + &
+                                           lo_linear_interpolation(se%energy_axis, se%im_iso(:, imode), drd%iq(iq)%omega(imode)) + &
+                                           lo_linear_interpolation(se%energy_axis, se%im_4ph(:, imode), drd%iq(iq)%omega(imode))
             end do
 
             ! Store spectral function

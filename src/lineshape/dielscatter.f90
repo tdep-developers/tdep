@@ -248,7 +248,7 @@ subroutine generate(dir, wp, di, p, qp, dr, fc, fct, se, isf, opts, tmr, mw, mem
                 ! fetch probing energy and real and imaginary part of the self-energy
                 Z = se%energy_axis(ie)
                 dl = se%re_3ph(ie, imode) + se%re_4ph(ie, imode)
-                gm = se%im_3ph(ie, imode) + se%im_iso(ie, imode)
+                gm = se%im_3ph(ie, imode) + se%im_4ph(ie, imode) + se%im_iso(ie, imode)
 
                 ! Zeroth order IR, selfenergy=0
                 c0 = diagonal_greensfunction(om, Z, 0.0_r8, smallsmearing)
@@ -346,7 +346,7 @@ subroutine generate(dir, wp, di, p, qp, dr, fc, fct, se, isf, opts, tmr, mw, mem
                 ! fetch probing energy and real and imaginary part of the self-energy
                 Z = se%energy_axis(ie)
                 dl = se%re_3ph(ie, b1) + se%re_4ph(ie, b1)
-                gm = se%im_3ph(ie, b1) + se%im_iso(ie, b1)
+                gm = se%im_3ph(ie, b1) + se%im_4ph(ie, b1) + se%im_iso(ie, b1)
                 grfun(ie, b1) = aimag(diagonal_greensfunction(om1, Z, dl, gm))
             end do
         end do
