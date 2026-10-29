@@ -1,9 +1,11 @@
 exec_name='anharmonic_free_energy'
 executable(exec_name,
-           'energy.f90',
            'epot.f90',
+           'fourthorder.f90',
            'main.f90',
            'options.f90',
+           'thermodynamic_helpers.f90',
+           'thirdorder.f90',
            link_with: [libolle, libflap],
            include_directories: ['../libolle', '../libflap'],
            dependencies: dep_all)
